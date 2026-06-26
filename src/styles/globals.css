@@ -1,0 +1,325 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-brand: 99 102 241;
+    --radius: 0.5rem;
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 68px;
+    --header-height: 56px;
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: #e5e7eb;
+
+    /* Zen Surface Variables - Simplified & Clean */
+    --zen-bg: #f8fafc;
+    --zen-surface: #ffffff;
+    --zen-card: #ffffff;
+    --zen-border: #e2e8f0;
+
+    /* 🎨 Accent Color System (Royal Blue / Sapphire) — RGB triplets for Tailwind alpha support */
+    --accent-50:  239 246 255;
+    --accent-100: 219 234 254;
+    --accent-200: 191 219 254;
+    --accent-300: 147 197 253;
+    --accent-400: 96 165 250;
+    --accent-500: 59 130 246;
+    --accent-600: 37 99 235;
+    --accent-700: 29 78 216;
+    --accent-800: 30 64 175;
+    --accent-900: 30 58 138;
+    --accent-950: 23 37 84;
+  }
+
+  .dark {
+    --chart-tooltip-bg: #1e293b;
+    --chart-tooltip-border: #334155;
+
+    /* Zen Surface Variables (Dark) */
+    --zen-bg: #030712;    /* gray-950 */
+    --zen-surface: #030712;
+    --zen-card: #111827;   /* gray-900 */
+    --zen-border: #1f2937; /* gray-800 */
+  }
+
+  html {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    @apply border-surface-200 dark:border-surface-700;
+  }
+
+  body {
+    @apply bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900 dark:bg-brand-800 dark:text-brand-100;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-white/60 bg-white/70 p-5 shadow-lg backdrop-blur-md transition-all duration-300
+      hover:shadow-xl dark:border-surface-800/40 dark:bg-surface-900/80;
+  }
+
+  .card-flat {
+    @apply rounded-2xl border border-white/60 bg-white/70 p-5 backdrop-blur-md
+      dark:border-surface-800/40 dark:bg-surface-900/80;
+  }
+
+  .kpi-card {
+    @apply card flex flex-col gap-2;
+  }
+
+  .input-base {
+    @apply rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors
+      placeholder:text-surface-400
+      focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20
+      disabled:cursor-not-allowed disabled:bg-surface-100 disabled:opacity-60
+      dark:border-surface-600 dark:bg-surface-800 dark:placeholder:text-surface-500
+      dark:focus:border-brand-400 dark:focus:ring-brand-400/20;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+      transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+      disabled:pointer-events-none disabled:opacity-50
+      dark:focus:ring-offset-surface-900;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700
+      focus:ring-brand-500 active:bg-brand-800
+      dark:bg-brand-500 dark:hover:bg-brand-600;
+  }
+
+  .btn-secondary {
+    @apply btn border border-surface-300 bg-white text-surface-700 shadow-sm
+      hover:bg-surface-50 focus:ring-brand-500
+      dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700;
+  }
+
+  .btn-ghost {
+    @apply btn text-surface-600 hover:bg-surface-100 hover:text-surface-900
+      focus:ring-brand-500
+      dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-100;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger text-white shadow-sm hover:bg-red-600
+      focus:ring-danger active:bg-red-700;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-enterprise {
+    @apply badge bg-enterprise-light text-enterprise-dark dark:bg-blue-900/30 dark:text-blue-300;
+  }
+
+  .badge-standalone {
+    @apply badge bg-standalone-light text-standalone-dark dark:bg-green-900/30 dark:text-green-300;
+  }
+
+  .table-row {
+    @apply border-b border-surface-100 transition-colors hover:bg-surface-50
+      dark:border-surface-800 dark:hover:bg-surface-800/50;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-surface-600
+      transition-colors hover:bg-surface-100 hover:text-surface-900
+      dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-100;
+  }
+
+  .sidebar-item-active {
+    @apply sidebar-item bg-brand-50 text-brand-700
+      dark:bg-brand-950 dark:text-brand-300;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.surface.300') transparent;
+  }
+
+  .dark .scrollbar-thin {
+    scrollbar-color: theme('colors.surface.600') transparent;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent;
+  }
+}
+
+/* Custom Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors;
+}
+
+/* Outfit/Inter Font Override */
+h1, h2, h3, h4, h5, h6, .font-bold, .font-black, .font-semibold {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* 🌗 Intelligent Dark Mode Global Overrides */
+.dark .bg-white {
+  background-color: var(--zen-card) !important;
+}
+.dark .bg-slate-50,
+.dark .bg-gray-50 {
+  background-color: var(--zen-bg) !important;
+}
+.dark .bg-slate-100,
+.dark .bg-gray-100 {
+  background-color: #1f2937 !important;
+}
+.dark .text-slate-900,
+.dark .text-gray-900,
+.dark .text-slate-800,
+.dark .text-gray-800 {
+  color: #f8fafc !important;
+}
+.dark .text-slate-700,
+.dark .text-gray-700,
+.dark .text-slate-600,
+.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+.dark .text-slate-500,
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+.dark .border-slate-100,
+.dark .border-gray-100,
+.dark .border-slate-200,
+.dark .border-gray-200 {
+  border-color: var(--zen-border) !important;
+}
+
+/* Smooth Transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Browser Autofill Overrides */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #030712 inset !important;
+  -webkit-text-fill-color: #f3f4f6 !important;
+}
+
+/* 🧼 Standardize layout spacing on larger viewports to keep the UI sleek, compact, and professional */
+@media (min-width: 1024px) {
+  .p-8 {
+    padding: 1.5rem !important;
+  }
+  .px-8 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+  .py-8 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .py-10 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .py-12 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  .gap-8 {
+    gap: 1.5rem !important;
+  }
+  .gap-12 {
+    gap: 2rem !important;
+  }
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse))) !important;
+    margin-bottom: calc(1.5rem * var(--tw-space-y-reverse)) !important;
+  }
+  .space-y-12 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse))) !important;
+    margin-bottom: calc(2rem * var(--tw-space-y-reverse)) !important;
+  }
+  .mb-8 {
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+/* 🧼 Restrict rounded corners globally to keep layout sleek and compact */
+[class*="rounded-[2.5rem]"], 
+[class*="rounded-[2rem]"],
+[class*="rounded-[3rem]"] {
+  border-radius: 1rem !important;
+}
+
+/* 🚀 Premium Page Transition Animation */
+@keyframes page-fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.38;
+  }
+}
+
+.animate-skeleton-pulse {
+  animation: skeleton-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+

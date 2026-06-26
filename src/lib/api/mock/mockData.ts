@@ -1,0 +1,647 @@
+/**
+ * Comprehensive mock / seed data for the Platform Admin Portal.
+ *
+ * Deterministic IDs (UUIDs) so that cross-references are stable.
+ */
+
+import type { Merchant, MerchantNote } from '@/lib/types/merchant';
+import type { PlatformUser } from '@/lib/types/user';
+import type { Invoice } from '@/lib/types/billing';
+import type { RechargeToken } from '@/lib/types/token';
+// 2026-05-17 (Pass 35): CommissionEntry import removed (type deleted).
+import type { Ticket, TicketMessage } from '@/lib/types/helpdesk';
+import type { PlatformDashboardDto, SystemHealthDto } from '../dashboard';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function uuid(index: number): string {
+  return `00000000-0000-4000-a000-${String(index).padStart(12, '0')}`;
+}
+
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
+}
+
+// ---------------------------------------------------------------------------
+// Platform Users (2)
+// ---------------------------------------------------------------------------
+
+export const platformUsers: readonly PlatformUser[] = [
+  {
+    id: uuid(1),
+    name: 'Adnan Khalil',
+    email: 'adnan@quantix.io',
+    role: 'Admin',
+    department: 'Engineering',
+    status: 'Active',
+    lastLogin: daysAgo(0),
+    mfaEnabled: true,
+    createdAt: daysAgo(365),
+    updatedAt: daysAgo(1),
+    permissions: [
+      { id: uuid(901), resource: '*', action: 'Admin', granted: true },
+    ],
+  },
+  {
+    id: uuid(2),
+    name: 'Sara Ahmed',
+    email: 'sara@quantix.io',
+    role: 'Operator',
+    department: 'Customer Success',
+    status: 'Active',
+    lastLogin: daysAgo(1),
+    mfaEnabled: false,
+    createdAt: daysAgo(180),
+    updatedAt: daysAgo(10),
+    permissions: [
+      { id: uuid(902), resource: 'tickets', action: 'Write', granted: true },
+      { id: uuid(903), resource: 'merchants', action: 'Read', granted: true },
+    ],
+  },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Merchants (8) — 4 Enterprise, 4 Standalone; mix of Restaurant/Retail/Both
+// ---------------------------------------------------------------------------
+
+const baseChecklist = {
+  accountVerified: true,
+  profileCompleted: true,
+  firstLocationAdded: true,
+  firstTerminalActivated: true,
+  firstTransactionCompleted: true,
+  paymentMethodConfigured: true,
+  completedAt: daysAgo(30),
+} as const;
+
+export const merchants: readonly Merchant[] = [
+  {
+    id: uuid(100),
+    businessName: 'Gourmet Palace',
+    merchantType: 'Enterprise',
+    businessNature: 'Restaurant',
+    status: 'Active',
+    plan: 'Premium',
+    tier: 'Premium',
+    contactPerson: 'Ali Hassan',
+    email: 'ali@gourmetpalace.com',
+    phone: '+9665551001',
+    country: 'SA',
+    signupDate: daysAgo(200),
+    lastActivityDate: daysAgo(0),
+    locationCount: 5,
+    terminalCount: 20,
+    mrr: 2500,
+    onboardingChecklist: baseChecklist,
+    tags: ['vip', 'restaurant-chain'],
+    notes: [],
+  },
+  {
+    id: uuid(101),
+    businessName: 'TechMart Electronics',
+    merchantType: 'Enterprise',
+    businessNature: 'Retail',
+    status: 'Active',
+    plan: 'Standard',
+    tier: 'Advance',
+    contactPerson: 'Fatima Noor',
+    email: 'fatima@techmart.com',
+    phone: '+9665551002',
+    country: 'SA',
+    signupDate: daysAgo(150),
+    lastActivityDate: daysAgo(1),
+    locationCount: 3,
+    terminalCount: 12,
+    mrr: 1200,
+    onboardingChecklist: baseChecklist,
+    tags: ['retail'],
+    notes: [],
+  },
+  {
+    id: uuid(102),
+    businessName: 'Fusion Bites Group',
+    merchantType: 'Enterprise',
+    businessNature: 'Both',
+    status: 'Active',
+    plan: 'Premium',
+    tier: 'Premium',
+    contactPerson: 'Omar Farouk',
+    email: 'omar@fusionbites.com',
+    phone: '+9715551003',
+    country: 'AE',
+    signupDate: daysAgo(120),
+    lastActivityDate: daysAgo(0),
+    locationCount: 8,
+    terminalCount: 32,
+    mrr: 4200,
+    onboardingChecklist: baseChecklist,
+    tags: ['vip', 'multi-brand'],
+    notes: [],
+  },
+  {
+    id: uuid(103),
+    businessName: 'Sunrise Cafe',
+    merchantType: 'Enterprise',
+    businessNature: 'Restaurant',
+    status: 'Suspended',
+    plan: 'Basic',
+    tier: 'Standard',
+    contactPerson: 'Layla Mansour',
+    email: 'layla@sunrisecafe.com',
+    phone: '+9665551004',
+    country: 'SA',
+    signupDate: daysAgo(300),
+    lastActivityDate: daysAgo(45),
+    locationCount: 1,
+    terminalCount: 2,
+    mrr: 0,
+    onboardingChecklist: { ...baseChecklist, paymentMethodConfigured: false, completedAt: null },
+    tags: ['at-risk'],
+    notes: [],
+  },
+  {
+    id: uuid(104),
+    businessName: 'Corner Shawarma',
+    merchantType: 'Standalone',
+    businessNature: 'Restaurant',
+    status: 'Active',
+    plan: 'Token-Based',
+    tier: 'Standard',
+    contactPerson: 'Khaled Youssef',
+    email: 'khaled@cornershawarma.com',
+    phone: '+9665551005',
+    country: 'SA',
+    signupDate: daysAgo(90),
+    lastActivityDate: daysAgo(2),
+    locationCount: 1,
+    terminalCount: 1,
+    tokenBalance: 245,
+    onboardingChecklist: baseChecklist,
+    tags: ['standalone'],
+    notes: [],
+  },
+  {
+    id: uuid(105),
+    businessName: 'QuickMart',
+    merchantType: 'Standalone',
+    businessNature: 'Retail',
+    status: 'Active',
+    plan: 'Token-Based',
+    tier: 'Basic',
+    contactPerson: 'Nadia Salem',
+    email: 'nadia@quickmart.com',
+    phone: '+9665551006',
+    country: 'SA',
+    signupDate: daysAgo(60),
+    lastActivityDate: daysAgo(3),
+    locationCount: 1,
+    terminalCount: 1,
+    tokenBalance: 120,
+    onboardingChecklist: baseChecklist,
+    tags: ['standalone'],
+    notes: [],
+  },
+  {
+    id: uuid(106),
+    businessName: 'Desert Rose Sweets',
+    merchantType: 'Standalone',
+    businessNature: 'Both',
+    status: 'Active',
+    plan: 'Token-Based',
+    tier: 'Advance',
+    contactPerson: 'Mona Abed',
+    email: 'mona@desertrose.com',
+    phone: '+9715551007',
+    country: 'AE',
+    signupDate: daysAgo(45),
+    lastActivityDate: daysAgo(0),
+    locationCount: 1,
+    terminalCount: 2,
+    tokenBalance: 380,
+    onboardingChecklist: baseChecklist,
+    tags: ['standalone', 'uae'],
+    notes: [],
+  },
+  {
+    id: uuid(107),
+    businessName: 'Pixel Phone Shop',
+    merchantType: 'Standalone',
+    businessNature: 'Retail',
+    status: 'Pending',
+    plan: 'Token-Based',
+    tier: 'Basic',
+    contactPerson: 'Rami Taha',
+    email: 'rami@pixelphones.com',
+    phone: '+9665551008',
+    country: 'SA',
+    signupDate: daysAgo(5),
+    lastActivityDate: null,
+    locationCount: 0,
+    terminalCount: 0,
+    tokenBalance: 0,
+    onboardingChecklist: {
+      accountVerified: false,
+      profileCompleted: false,
+      firstLocationAdded: false,
+      firstTerminalActivated: false,
+      firstTransactionCompleted: false,
+      paymentMethodConfigured: false,
+      completedAt: null,
+    },
+    tags: ['new'],
+    notes: [],
+  },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Recharge Tokens (15)
+// ---------------------------------------------------------------------------
+
+export const tokens: readonly RechargeToken[] = Array.from({ length: 15 }, (_, i) => {
+  const tiers = ['Basic', 'Standard', 'Advance', 'Premium'] as const;
+  const statuses = ['Active', 'Active', 'Active', 'Expired', 'Consumed', 'Revoked', 'Active', 'Active', 'Active', 'Active', 'Expired', 'Active', 'Active', 'Consumed', 'Active'] as const;
+  const merchantIndex = 104 + (i % 4);
+  const tier = tiers[i % 4]!;
+  const businessTypes = ['Restaurant', 'Retail', 'Both'] as const;
+  return {
+    id: uuid(200 + i),
+    merchantId: uuid(merchantIndex),
+    merchantName: merchants.find((t) => t.id === uuid(merchantIndex))?.businessName ?? 'Unknown',
+    tier,
+    businessNature: businessTypes[i % 3]!,
+    validFrom: daysAgo(90 - i * 5),
+    validTo: daysAgo(-30 + i * 2),
+    validityDays: 90,
+    status: statuses[i]!,
+    generatedAt: daysAgo(90 - i * 5),
+    generatedBy: platformUsers[0]!.id,
+    tokenString: `QTX-${tier.toUpperCase().slice(0, 3)}-${String(1000 + i)}`,
+    qrCodeData: `https://quantix.io/token/${uuid(200 + i)}`,
+    binding: {
+      merchantId: uuid(merchantIndex),
+      businessId: uuid(merchantIndex),
+      locationId: null,
+      terminalId: null,
+    },
+    tokenVersion: 1,
+    limitsPayload: { maxTransactionsPerDay: tier === 'Basic' ? 50 : tier === 'Standard' ? 200 : 1000 },
+    featureMap: {
+      advancedReporting: tier === 'Advance' || tier === 'Premium',
+      multiLocation: tier === 'Premium',
+      apiAccess: tier !== 'Basic',
+    },
+    priceAtGeneration: tier === 'Basic' ? 72 : tier === 'Standard' ? 125 : tier === 'Advance' ? 199 : 325,
+    priceCurrency: 'USD',
+    gracePolicy: {
+      gracePeriodDays: 7,
+      warningDays: 3,
+      degradedDays: 2,
+      restrictedDays: 2,
+      readOnlyDuringGrace: true,
+      notifyDaysBeforeExpiry: [30, 14, 7, 3, 1],
+    },
+  };
+});
+
+// ---------------------------------------------------------------------------
+// Invoices (10)
+// ---------------------------------------------------------------------------
+
+export const invoices: readonly Invoice[] = [
+  {
+    id: uuid(300),
+    merchantId: uuid(100),
+    merchantName: 'Gourmet Palace',
+    merchantType: 'Enterprise',
+    type: 'Subscription',
+    invoiceNumber: 'INV-2026-0001',
+    amount: 2500,
+    tax: 375,
+    total: 2875,
+    currency: 'SAR',
+    status: 'Paid',
+    issuedDate: daysAgo(30),
+    dueDate: daysAgo(15),
+    paidDate: daysAgo(18),
+    items: [{ id: uuid(310), description: 'Premium Plan — Monthly', quantity: 1, unitPrice: 2500, amount: 2500, taxRate: 15, taxAmount: 375 }],
+  },
+  {
+    id: uuid(301),
+    merchantId: uuid(101),
+    merchantName: 'TechMart Electronics',
+    merchantType: 'Enterprise',
+    type: 'Subscription',
+    invoiceNumber: 'INV-2026-0002',
+    amount: 1200,
+    tax: 180,
+    total: 1380,
+    currency: 'SAR',
+    status: 'Paid',
+    issuedDate: daysAgo(30),
+    dueDate: daysAgo(15),
+    paidDate: daysAgo(20),
+    items: [{ id: uuid(311), description: 'Standard Plan — Monthly', quantity: 1, unitPrice: 1200, amount: 1200, taxRate: 15, taxAmount: 180 }],
+  },
+  {
+    id: uuid(302),
+    merchantId: uuid(102),
+    merchantName: 'Fusion Bites Group',
+    merchantType: 'Enterprise',
+    type: 'Subscription',
+    invoiceNumber: 'INV-2026-0003',
+    amount: 4200,
+    tax: 630,
+    total: 4830,
+    currency: 'AED',
+    status: 'Sent',
+    issuedDate: daysAgo(5),
+    dueDate: daysAgo(-10),
+    paidDate: null,
+    items: [{ id: uuid(312), description: 'Premium Plan — Monthly', quantity: 1, unitPrice: 4200, amount: 4200, taxRate: 15, taxAmount: 630 }],
+  },
+  {
+    id: uuid(303),
+    merchantId: uuid(103),
+    merchantName: 'Sunrise Cafe',
+    merchantType: 'Enterprise',
+    type: 'Subscription',
+    invoiceNumber: 'INV-2026-0004',
+    amount: 300,
+    tax: 45,
+    total: 345,
+    currency: 'SAR',
+    status: 'Overdue',
+    issuedDate: daysAgo(60),
+    dueDate: daysAgo(30),
+    paidDate: null,
+    items: [{ id: uuid(313), description: 'Basic Plan — Monthly', quantity: 1, unitPrice: 300, amount: 300, taxRate: 15, taxAmount: 45 }],
+  },
+  {
+    id: uuid(304),
+    merchantId: uuid(104),
+    merchantName: 'Corner Shawarma',
+    merchantType: 'Standalone',
+    type: 'TokenPurchase',
+    invoiceNumber: 'INV-2026-0005',
+    amount: 500,
+    tax: 75,
+    total: 575,
+    currency: 'SAR',
+    status: 'Paid',
+    issuedDate: daysAgo(20),
+    dueDate: daysAgo(5),
+    paidDate: daysAgo(19),
+    items: [{ id: uuid(314), description: 'Standard Token — 90 days', quantity: 1, unitPrice: 500, amount: 500, taxRate: 15, taxAmount: 75 }],
+  },
+  {
+    id: uuid(305),
+    merchantId: uuid(105),
+    merchantName: 'QuickMart',
+    merchantType: 'Standalone',
+    type: 'TokenPurchase',
+    invoiceNumber: 'INV-2026-0006',
+    amount: 250,
+    tax: 37.5,
+    total: 287.5,
+    currency: 'SAR',
+    status: 'Paid',
+    issuedDate: daysAgo(15),
+    dueDate: daysAgo(0),
+    paidDate: daysAgo(14),
+    items: [{ id: uuid(315), description: 'Basic Token — 90 days', quantity: 1, unitPrice: 250, amount: 250, taxRate: 15, taxAmount: 37.5 }],
+  },
+  {
+    id: uuid(306),
+    merchantId: uuid(100),
+    merchantName: 'Gourmet Palace',
+    merchantType: 'Enterprise',
+    type: 'Commission',
+    invoiceNumber: 'INV-2026-0007',
+    amount: 850,
+    tax: 127.5,
+    total: 977.5,
+    currency: 'SAR',
+    status: 'Pending',
+    issuedDate: daysAgo(3),
+    dueDate: daysAgo(-12),
+    paidDate: null,
+    items: [{ id: uuid(316), description: 'Commission — Feb 2026', quantity: 1, unitPrice: 850, amount: 850, taxRate: 15, taxAmount: 127.5 }],
+  },
+  {
+    id: uuid(307),
+    merchantId: uuid(106),
+    merchantName: 'Desert Rose Sweets',
+    merchantType: 'Standalone',
+    type: 'TokenPurchase',
+    invoiceNumber: 'INV-2026-0008',
+    amount: 750,
+    tax: 37.5,
+    total: 787.5,
+    currency: 'AED',
+    status: 'Paid',
+    issuedDate: daysAgo(10),
+    dueDate: daysAgo(-5),
+    paidDate: daysAgo(9),
+    items: [{ id: uuid(317), description: 'Advance Token — 90 days', quantity: 1, unitPrice: 750, amount: 750, taxRate: 5, taxAmount: 37.5 }],
+  },
+  {
+    id: uuid(308),
+    merchantId: uuid(102),
+    merchantName: 'Fusion Bites Group',
+    merchantType: 'Enterprise',
+    type: 'AddOn',
+    invoiceNumber: 'INV-2026-0009',
+    amount: 600,
+    tax: 90,
+    total: 690,
+    currency: 'AED',
+    status: 'Draft',
+    issuedDate: daysAgo(1),
+    dueDate: daysAgo(-14),
+    paidDate: null,
+    items: [{ id: uuid(318), description: 'Additional 10 Terminals', quantity: 10, unitPrice: 60, amount: 600, taxRate: 15, taxAmount: 90 }],
+  },
+  {
+    id: uuid(309),
+    merchantId: uuid(101),
+    merchantName: 'TechMart Electronics',
+    merchantType: 'Enterprise',
+    type: 'Usage',
+    invoiceNumber: 'INV-2026-0010',
+    amount: 340,
+    tax: 51,
+    total: 391,
+    currency: 'SAR',
+    status: 'Cancelled',
+    issuedDate: daysAgo(40),
+    dueDate: daysAgo(25),
+    paidDate: null,
+    items: [{ id: uuid(319), description: 'API overage — Feb 2026', quantity: 1, unitPrice: 340, amount: 340, taxRate: 15, taxAmount: 51 }],
+  },
+] as const;
+
+// ---------------------------------------------------------------------------
+// 2026-05-17 (Pass 35): commissionEntries[] removed (CommissionEntry type deleted).
+// Phase F adds a merchantRevenueCollections[] mock for the new RevenueCollectionsPage.
+
+// ---------------------------------------------------------------------------
+// Tickets (5)
+// ---------------------------------------------------------------------------
+
+function makeMessage(ticketId: string, idx: number, role: 'Agent' | 'Customer', content: string): TicketMessage {
+  return {
+    id: uuid(600 + idx),
+    ticketId,
+    authorId: role === 'Agent' ? platformUsers[1]!.id : uuid(100),
+    authorName: role === 'Agent' ? 'Sara Ahmed' : 'Ali Hassan',
+    authorRole: role,
+    content,
+    attachments: [],
+    createdAt: daysAgo(10 - idx),
+  };
+}
+
+export const tickets: readonly Ticket[] = [
+  {
+    id: uuid(500),
+    merchantId: uuid(100),
+    merchantName: 'Gourmet Palace',
+    merchantType: 'Enterprise',
+    subject: 'Cannot generate Z-report for Terminal 3',
+    category: 'Technical',
+    priority: 'High',
+    status: 'InProgress',
+    agentId: platformUsers[1]!.id,
+    agentName: 'Sara Ahmed',
+    createdAt: daysAgo(3),
+    updatedAt: daysAgo(1),
+    slaDeadline: daysAgo(-1),
+    messages: [
+      makeMessage(uuid(500), 0, 'Customer', 'Terminal 3 keeps timing out when generating a Z-report.'),
+      makeMessage(uuid(500), 1, 'Agent', 'We are looking into it. Can you share the terminal serial number?'),
+    ],
+    tags: ['z-report', 'terminal'],
+  },
+  {
+    id: uuid(501),
+    merchantId: uuid(101),
+    merchantName: 'TechMart Electronics',
+    merchantType: 'Enterprise',
+    subject: 'Invoice amount discrepancy',
+    category: 'Billing',
+    priority: 'Medium',
+    status: 'Open',
+    agentId: null,
+    agentName: null,
+    createdAt: daysAgo(2),
+    updatedAt: daysAgo(2),
+    slaDeadline: daysAgo(-2),
+    messages: [
+      makeMessage(uuid(501), 2, 'Customer', 'Our Feb invoice shows 12 terminals but we only have 10.'),
+    ],
+    tags: ['billing'],
+  },
+  {
+    id: uuid(502),
+    merchantId: uuid(104),
+    merchantName: 'Corner Shawarma',
+    merchantType: 'Standalone',
+    subject: 'Token expired but still within grace period',
+    category: 'Token',
+    priority: 'Urgent',
+    status: 'New',
+    agentId: null,
+    agentName: null,
+    createdAt: daysAgo(0),
+    updatedAt: daysAgo(0),
+    slaDeadline: daysAgo(-1),
+    messages: [
+      makeMessage(uuid(502), 3, 'Customer', 'My token shows expired but I should have 7 days grace.'),
+    ],
+    tags: ['token', 'grace-period'],
+  },
+  {
+    id: uuid(503),
+    merchantId: uuid(106),
+    merchantName: 'Desert Rose Sweets',
+    merchantType: 'Standalone',
+    subject: 'Request for feature: table management',
+    category: 'Feature',
+    priority: 'Low',
+    status: 'Resolved',
+    agentId: platformUsers[1]!.id,
+    agentName: 'Sara Ahmed',
+    createdAt: daysAgo(20),
+    updatedAt: daysAgo(15),
+    slaDeadline: null,
+    messages: [
+      makeMessage(uuid(503), 4, 'Customer', 'Would love table management in the Advance tier.'),
+      makeMessage(uuid(503), 5, 'Agent', 'Table management is already included. Please check Settings > Modules.'),
+    ],
+    tags: ['feature-request'],
+  },
+  {
+    id: uuid(504),
+    merchantId: uuid(102),
+    merchantName: 'Fusion Bites Group',
+    merchantType: 'Enterprise',
+    subject: 'Multi-location sync delay',
+    category: 'Technical',
+    priority: 'High',
+    status: 'WaitingOnCustomer',
+    agentId: platformUsers[1]!.id,
+    agentName: 'Sara Ahmed',
+    createdAt: daysAgo(7),
+    updatedAt: daysAgo(4),
+    slaDeadline: daysAgo(-3),
+    messages: [
+      makeMessage(uuid(504), 6, 'Customer', 'Menu changes take over 10 minutes to propagate across locations.'),
+      makeMessage(uuid(504), 7, 'Agent', 'Could you run a sync diagnostic from Settings > Sync? Share the output.'),
+    ],
+    tags: ['sync', 'multi-location'],
+  },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Dashboard metrics
+// ---------------------------------------------------------------------------
+
+export const dashboardMetrics: PlatformDashboardDto = {
+  totalMerchants: 8,
+  activeMerchants: 6,
+  enterpriseMerchants: 4,
+  standaloneMerchants: 4,
+  newSignupsThisMonth: 8,
+  enterpriseSignupsThisMonth: 4,
+  standaloneSignupsThisMonth: 4,
+  totalRevenueThisMonth: 12400,
+  subscriptionRevenue: 8200,
+  tokenRevenue: 1500,
+  commissionRevenue: 850,
+  revenueCurrency: 'SAR',
+  mrr: 12400,
+  arr: 148800,
+  activeUsers: 24,
+  walletBalanceAggregate: 18750,
+  merchantsInGracePeriod: 1,
+  openSupportTickets: 4,
+  pendingComplianceRequests: 1,
+  generatedAt: new Date().toISOString(),
+} as const;
+
+export const systemHealth: SystemHealthDto = {
+  uptimePercent: 99.97,
+  activeIncidents: 0,
+  checkedAt: new Date().toISOString(),
+  services: [
+    { serviceName: 'Platform API', status: 'Healthy', lastChecked: new Date().toISOString(), message: null },
+    { serviceName: 'Database', status: 'Healthy', lastChecked: new Date().toISOString(), message: null },
+    { serviceName: 'Redis Cache', status: 'Healthy', lastChecked: new Date().toISOString(), message: null },
+    { serviceName: 'Email Service', status: 'Healthy', lastChecked: new Date().toISOString(), message: null },
+    { serviceName: 'Payment Gateway', status: 'Degraded', lastChecked: new Date().toISOString(), message: 'Timeout on 2 of 100 requests' },
+  ],
+} as const;

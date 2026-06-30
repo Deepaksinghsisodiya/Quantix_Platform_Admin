@@ -26,13 +26,13 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    verifyMfa: builder.mutation<ApiResponse<MFAVerifyResponse>, { mfaToken: string; code: string }>({
-      query: ({ mfaToken, code }) => ({
+    verifyMfa: builder.mutation<ApiResponse<MFAVerifyResponse>, { userId: string; totpCode: string }>({
+      query: ({ userId, totpCode }) => ({
         url: '/api/v1/auth/mfa/verify',
         method: 'POST',
         data: {
-          challengeToken: mfaToken,
-          code,
+          userId,
+          totpCode,
         },
       }),
     }),
@@ -44,11 +44,11 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    enableMfa: builder.mutation<ApiResponse<string>, string>({
-      query: (totpCode) => ({
+    enableMfa: builder.mutation<ApiResponse<string>, { userId: string; totpCode: string }>({
+      query: ({ userId, totpCode }) => ({
         url: '/api/v1/auth/mfa/enable',
         method: 'POST',
-        data: { totpCode },
+        data: { userId, totpCode },
       }),
     }),
 

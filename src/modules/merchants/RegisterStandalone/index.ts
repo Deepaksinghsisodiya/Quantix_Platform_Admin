@@ -1,2 +1,3 @@
-export { default } from './RegisterStandaloneWrapper';
-export * from './RegisterStandaloneWrapper';
+﻿export { default } from '../Add/StandaloneRegisterWrapper';
+export * from '../Add/StandaloneRegisterWrapper';
+

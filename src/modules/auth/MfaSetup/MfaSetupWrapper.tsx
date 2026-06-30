@@ -59,8 +59,15 @@ export const MfaSetupWrapper: React.FC = () => {
 
   const handleVerify = async (values: any, { setSubmitting }: any) => {
     setErrorMessage('');
+    const userId = user?.userId || user?.id;
+    if (!userId) {
+      setErrorMessage('Missing user id. Please sign in again.');
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await enableMfaMutation(values.code).unwrap();
+      await enableMfaMutation({ userId, totpCode: values.code }).unwrap();
       dispatch(setMfaSetupRequired(false));
       toast.success('Two-factor authentication enabled successfully.');
       setStep(4);

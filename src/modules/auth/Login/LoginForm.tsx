@@ -1,15 +1,17 @@
 import React from 'react';
-import { Form } from 'formik';
+import { Form, type FormikProps } from 'formik';
 import { AtSign, Lock, ShieldCheck } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
 
 interface LoginFormProps {
+  formikProps: FormikProps<any>;
   step: 'credentials' | 'mfa';
   setStep: (step: 'credentials' | 'mfa') => void;
   onForgotPasswordClick: () => void;
   isSubmitting: boolean;
   resetForm?: () => void;
+  apiError?: string;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
@@ -18,6 +20,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onForgotPasswordClick,
   isSubmitting,
   resetForm,
+  apiError,
 }) => {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
@@ -47,6 +50,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
           {/* Step content */}
           <div className="transition-all duration-200">
+            {apiError && (
+              <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300" role="alert">
+                {apiError}
+              </div>
+            )}
             {step === 'credentials' ? (
               <Form className="flex flex-col gap-6" noValidate>
                 {/* Identifier */}
@@ -153,3 +161,5 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 };
 
 export default LoginForm;
+
+

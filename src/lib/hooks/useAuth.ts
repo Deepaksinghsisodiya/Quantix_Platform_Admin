@@ -111,10 +111,11 @@ export function useAuth() {
     const res = await loginTrigger({ email, password }).unwrap();
     const data = res.data;
     if (!data) throw new Error('No data returned');
-    if (data.mfaRequired && data.mfaChallengeToken) {
-      setMfaPending(data.mfaChallengeToken);
+    const mfaUserId = data.userId ?? data.id ?? data.user?.id ?? data.user?.userId ?? data.mfaChallengeToken ?? (data as any).challengeToken ?? '';
+    if (data.mfaRequired) {
+      setMfaPending(mfaUserId);
     } else {
-      setToken(data.token || '', data.expiresAt || '');
+      setToken(data.token || data.accessToken || '', data.expiresAt || '');
       if (data.user) {
         setUser(data.user as any);
         apiLogAuditEvent({ action: 'Login', entityType: 'Session', entityId: data.user.id, details: 'Login successful' }).catch(() => {});
@@ -126,10 +127,10 @@ export function useAuth() {
   /** Step 3: Complete MFA verification. */
   const verifyMfa = async (totpCode: string): Promise<void> => {
     if (!mfaChallengeToken) throw new Error('No MFA challenge pending');
-    const res = await mfaTrigger({ mfaToken: mfaChallengeToken, code: totpCode }).unwrap();
+    const res = await mfaTrigger({ userId: mfaChallengeToken, totpCode }).unwrap();
     const data = res.data;
     if (!data) throw new Error('No data returned');
-    setToken(data.token || '', data.expiresAt || '');
+    setToken(data.token || data.accessToken || '', data.expiresAt || '');
     if (data.user) {
       setUser(data.user as any);
       apiLogAuditEvent({ action: 'Login', entityType: 'Session', entityId: data.user.id, details: 'MFA verified, login complete' }).catch(() => {});

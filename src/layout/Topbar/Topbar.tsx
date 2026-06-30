@@ -55,44 +55,51 @@ export const Topbar: React.FC<Props> = ({
   const apiResults: any[] = [];
   const isFetching = false;
 
-  // Combine Local Navigation and API Results
+  // Combine Local Navigation and API Results — recurses into nested children
+  // (e.g. "Generate Tokens" under "Token Management") so nested routes are searchable too.
   const combinedResults = useMemo(() => {
     if (!searchValue.trim() || searchValue.trim().length < 2) return [];
 
     const query = searchValue.toLowerCase();
-
-    // 1. Local Navigation Matching
     const navMatches: SearchResult[] = [];
-    navGroups.forEach(group => {
-      group.items.forEach(item => {
-        if (item.label.toLowerCase().includes(query)) {
-          navMatches.push({
-            id: item.path,
-            title: item.label,
-            subtitle: `${group.label} Section`,
-            type: 'Navigation',
-            url: item.path
-          });
-        }
-      });
+
+    navGroups.forEach((group) => {
+      const walk = (items: typeof group.items) => {
+        items.forEach((item) => {
+          if (item.label.toLowerCase().includes(query)) {
+            navMatches.push({
+              id: item.path,
+              title: item.label,
+              subtitle: `${group.label} Section`,
+              type: 'Navigation',
+              url: item.path,
+            });
+          }
+          if (item.children?.length) walk(item.children);
+        });
+      };
+      walk(group.items);
     });
 
-    // 2. Merge with API Results
     const dataResults = apiResults || [];
     return [...navMatches, ...dataResults];
   }, [searchValue, apiResults]);
 
-  // Keyboard shortcut Ctrl+K
+  // Keyboard shortcut Ctrl+K / Cmd+K, plus Escape to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         inputRef.current?.focus();
       }
+      if (e.key === 'Escape' && showResults) {
+        setShowResults(false);
+        inputRef.current?.blur();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [showResults]);
 
   // Handle outside click to close results
   useEffect(() => {
@@ -129,23 +136,27 @@ export const Topbar: React.FC<Props> = ({
   };
 
   return (
-    <header className={`fixed top-0 right-0 h-16 bg-zen-surface/85 backdrop-blur-md border-b border-slate-100 dark:border-gray-900/60 z-40 px-4 md:px-6 flex items-center justify-between transition-all duration-300 ease-in-out left-0 ${
-      isCollapsed ? 'lg:left-[70px]' : 'lg:left-[250px]'
-    }`}>
+    <header
+      className={`fixed top-0 right-0 h-16 bg-zen-surface/85 backdrop-blur-md border-b border-slate-100 dark:border-gray-900/60 z-40 px-4 md:px-6 flex items-center justify-between transition-[left] duration-300 ease-in-out left-0 ${
+        isCollapsed ? 'lg:left-[76px]' : 'lg:left-[260px]'
+      }`}
+    >
       {/* Left Section */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0">
         <button
           onClick={onMenuToggle}
-          className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-gray-900 rounded-xl transition-all lg:hidden"
+          aria-label="Open menu"
+          className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-gray-900 rounded-xl transition-all lg:hidden shrink-0"
         >
           <Menu size={22} />
         </button>
 
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2 min-w-0">
           <button
             onClick={onCollapseToggle}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="p-1.5 text-gray-400 hover:text-accent-600 hover:bg-accent-50/50 dark:hover:bg-accent-950/20 rounded-xl transition-all mr-1 shrink-0"
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             {isCollapsed ? <ChevronsRight size={18} strokeWidth={2.2} /> : <ChevronsLeft size={18} strokeWidth={2.2} />}
           </button>
@@ -153,7 +164,7 @@ export const Topbar: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Middle Section: Working Global Search */}
+      {/* Middle Section: Global Search */}
       <div className="hidden md:flex flex-1 max-w-md px-8 relative" ref={searchRef}>
         <div className="relative w-full group">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-accent-600 transition-colors duration-300">
@@ -162,6 +173,8 @@ export const Topbar: React.FC<Props> = ({
           <input
             ref={inputRef}
             type="text"
+            role="searchbox"
+            aria-label="Global search"
             className="block w-full pl-10 pr-12 py-2.5 bg-slate-50/50 dark:bg-gray-900/30 border border-slate-100 dark:border-gray-900/50 focus:border-accent-500 dark:focus:border-accent-500 focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-accent-500/10 rounded-xl text-sm transition-all duration-300 outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 font-medium"
             placeholder="Search projects, tasks, or pages..."
             value={searchValue}
@@ -203,9 +216,9 @@ export const Topbar: React.FC<Props> = ({
                       {getIcon(res.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <p className="text-[13px] font-bold text-gray-900 dark:text-gray-100 truncate leading-none">{res.title}</p>
-                        <ChevronRight size={14} className="text-gray-300 group-hover:text-accent-600 transition-colors" />
+                        <ChevronRight size={14} className="text-gray-300 group-hover:text-accent-600 transition-colors shrink-0" />
                       </div>
                       <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-1">{res.subtitle}</p>
                     </div>
@@ -222,7 +235,7 @@ export const Topbar: React.FC<Props> = ({
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* {user?.roleName?.toLowerCase() !== 'client' && <NavbarTimerStatus />} */}
 
         <ThemeToggle />
@@ -252,11 +265,6 @@ export const Topbar: React.FC<Props> = ({
             {
               label: 'Profile Settings',
               icon: <User size={15} />,
-              onClick: () => navigate('/profile'),
-            },
-            {
-              label: 'Edit Profile',
-              icon: <Edit2 size={15} />,
               onClick: () => navigate('/profile'),
             },
             {

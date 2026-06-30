@@ -1,16 +1,16 @@
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Coins, 
-  CreditCard, 
-  Percent, 
-  Headphones, 
-  PenSquare, 
-  ShieldCheck, 
-  Download, 
-  Users, 
-  ScrollText, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Building2,
+  Coins,
+  CreditCard,
+  Percent,
+  Headphones,
+  PenSquare,
+  ShieldCheck,
+  Download,
+  Users,
+  ScrollText,
+  Settings,
   BarChart3,
   Bell,
   LucideIcon
@@ -21,6 +21,8 @@ export interface NavItem {
   icon: LucideIcon;
   path: string;
   permission: string | null;
+  /** Optional nested sub-items (renders as an expandable accordion under the parent, e.g. Token Management). */
+  children?: NavItem[];
 }
 
 export interface NavGroup {
@@ -51,10 +53,17 @@ export const navGroups: NavGroup[] = [
   {
     label: 'TOKENS',
     items: [
-      { label: 'Token Management', icon: Coins, path: '/tokens', permission: 'tokens' },
-      { label: 'Generate Tokens', icon: Coins, path: '/tokens/generate', permission: 'tokens' },
-      { label: 'Batch Generate', icon: Coins, path: '/tokens/bulk', permission: 'tokens' },
-      { label: 'Token Validity', icon: Coins, path: '/tokens/validity', permission: 'tokens' },
+      {
+        label: 'Token Management',
+        icon: Coins,
+        path: '/tokens',
+        permission: 'tokens',
+        children: [
+          { label: 'Generate Tokens', icon: Coins, path: '/tokens/generate', permission: 'tokens' },
+          { label: 'Batch Generate', icon: Coins, path: '/tokens/bulk', permission: 'tokens' },
+          { label: 'Token Validity', icon: Coins, path: '/tokens/validity', permission: 'tokens' },
+        ],
+      },
     ]
   },
   {

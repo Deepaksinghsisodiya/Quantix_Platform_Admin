@@ -10,6 +10,7 @@ import {
   selectMustChangePassword,
   selectIsAdmin,
   logout as logoutAction,
+  setCredentials,
 } from '../../modules/auth/slices/authSlice';
 import { useLogoutMutation } from '../../modules/auth/services/authApi';
 import { toast } from 'sonner';
@@ -34,17 +35,21 @@ export const useAuth = () => {
     } catch (err) {
       console.error('Logout API failed:', err);
     } finally {
-      // Clear token and user from localStorage as done in LoginFormWrapper
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      localStorage.removeItem('auth_must_change_password');
-      localStorage.removeItem('auth_mfa_setup_required');
 
       dispatch(logoutAction());
       toast.success('Logged out successfully');
       navigate('/login', { replace: true });
     }
   }, [logoutMutation, dispatch, navigate]);
+
+  const completeLogin = useCallback((payload: {
+    user: any;
+    accessToken: string;
+    mfaSetupRequired?: boolean;
+    mustChangePassword?: boolean;
+  }) => {
+    dispatch(setCredentials(payload));
+  }, [dispatch]);
 
   const userRole = user?.roleName || user?.role || '';
   const normalizedRole = userRole.toLowerCase();
@@ -57,6 +62,7 @@ export const useAuth = () => {
     mfaSetupRequired,
     mustChangePassword,
     logout,
+    completeLogin,
     role: userRole,
     isAdmin,
     isMerchant: normalizedRole === 'merchant',
@@ -67,3 +73,4 @@ export const useAuth = () => {
 };
 
 export default useAuth;
+

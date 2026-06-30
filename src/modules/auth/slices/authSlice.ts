@@ -47,52 +47,9 @@ export const parseJwt = (token: string) => {
   }
 };
 
-const loadSavedAuth = () => {
-  try {
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('auth_user');
-    if (token && userStr) {
-      const user = JSON.parse(userStr);
-      const decoded = parseJwt(token);
-      
-      if (decoded && decoded.exp) {
-        const currentTime = Date.now() / 1000;
-        if (decoded.exp > currentTime + 30) {
-          let permissions = [];
-          if (decoded.permissions) {
-            if (Array.isArray(decoded.permissions)) {
-              permissions = decoded.permissions;
-            } else if (typeof decoded.permissions === 'string') {
-              try {
-                permissions = JSON.parse(decoded.permissions);
-              } catch (e) {}
-            }
-          } else {
-            permissions = user.permissions || [];
-          }
-          const mustChangePassword = localStorage.getItem('auth_must_change_password') === 'true';
-          const mfaSetupRequired = localStorage.getItem('auth_mfa_setup_required') === 'true';
-          const roleVersion = decoded.role_v ? parseInt(decoded.role_v) : (user.permissionsVersion || 0);
-          return {
-            user,
-            accessToken: token,
-            isAuthenticated: true,
-            permissions,
-            roleVersion,
-            isInitialized: true,
-            mustChangePassword,
-            mfaSetupRequired,
-          };
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore error
-  }
-  return null;
-};
+const loadSavedAuth = () => null;
 
-const savedAuth = loadSavedAuth();
+const savedAuth: any = loadSavedAuth();
 
 const initialState: AuthState = {
   user: savedAuth?.user || null,
@@ -124,11 +81,11 @@ const authSlice = createSlice({
       
       const finalMfaSetupRequired = mfaSetupRequired !== undefined
         ? mfaSetupRequired
-        : (localStorage.getItem('auth_mfa_setup_required') === 'true');
+        : false;
         
       const finalMustChangePassword = mustChangePassword !== undefined
         ? mustChangePassword
-        : (localStorage.getItem('auth_must_change_password') === 'true');
+        : false;
 
       state.accessToken = accessToken;
       state.user = user;
@@ -138,12 +95,6 @@ const authSlice = createSlice({
       state.mfaSetupRequired = finalMfaSetupRequired;
       state.mustChangePassword = finalMustChangePassword;
 
-      try {
-        localStorage.setItem('auth_token', accessToken);
-        localStorage.setItem('auth_user', JSON.stringify(user));
-        localStorage.setItem('auth_mfa_setup_required', String(finalMfaSetupRequired));
-        localStorage.setItem('auth_must_change_password', String(finalMustChangePassword));
-      } catch (e) {}
 
       let permissionsList: string[] = [];
       if (decoded) {
@@ -170,11 +121,6 @@ const authSlice = createSlice({
 
       // Sync to Zustand store
       try {
-        const expiresAt = decoded?.exp
-          ? new Date(decoded.exp * 1000).toISOString()
-          : new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-        useAuthStore.getState().setToken(accessToken, expiresAt);
         useAuthStore.getState().setUser(user);
         useAuthStore.getState().setPermissions(permissionsList);
         useAuthStore.getState().setMfaSetupRequired(finalMfaSetupRequired);
@@ -185,13 +131,6 @@ const authSlice = createSlice({
     },
 
     logout: (state) => {
-      try {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        localStorage.removeItem('auth_mfa_setup_required');
-        localStorage.removeItem('auth_must_change_password');
-      } catch (e) {}
-      
       state.user = null;
       state.accessToken = null;
       state.isAuthenticated = false;
@@ -242,10 +181,6 @@ const authSlice = createSlice({
       if (state.user) {
         state.user.isPasswordChanged = true;
         state.user.mustChangePassword = false;
-        try {
-          localStorage.setItem('auth_user', JSON.stringify(state.user));
-          localStorage.setItem('auth_must_change_password', 'false');
-        } catch (e) {}
       }
       state.mustChangePassword = false;
 
@@ -262,9 +197,6 @@ const authSlice = createSlice({
 
     updateUser: (state, action: PayloadAction<any>) => {
       state.user = { ...state.user, ...action.payload };
-      try {
-        localStorage.setItem('auth_user', JSON.stringify(state.user));
-      } catch (e) {}
 
       // Sync to Zustand store
       try {
@@ -278,9 +210,6 @@ const authSlice = createSlice({
       if (state.user) {
         state.user.profilePictureUrl = action.payload;
         state.user.profilePicture = action.payload;  // keep both in sync so sidebar & topbar update instantly
-        try {
-          localStorage.setItem('auth_user', JSON.stringify(state.user));
-        } catch (e) {}
       }
 
       // Sync to Zustand store
@@ -295,9 +224,6 @@ const authSlice = createSlice({
 
     setMfaSetupRequired: (state, action: PayloadAction<boolean>) => {
       state.mfaSetupRequired = action.payload;
-      try {
-        localStorage.setItem('auth_mfa_setup_required', String(action.payload));
-      } catch (e) {}
  
       // Sync to Zustand store
       try {
@@ -309,9 +235,6 @@ const authSlice = createSlice({
  
     setMustChangePassword: (state, action: PayloadAction<boolean>) => {
       state.mustChangePassword = action.payload;
-      try {
-        localStorage.setItem('auth_must_change_password', String(action.payload));
-      } catch (e) {}
  
       // Sync to Zustand store
       try {
@@ -351,3 +274,4 @@ export const selectIsAdmin = (state: RootState) => {
 export const selectIsLoading = (state: RootState) => state.auth.isLoading;
 
 export default authSlice.reducer;
+

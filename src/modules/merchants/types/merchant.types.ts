@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Merchant,
   OnboardingChecklist,
   DbEngine,
@@ -89,3 +89,7 @@ export interface ApiListResponse<T = any> {
   page?: number;
   pageSize?: number;
 }
+export type RegisterEnterpriseRequest = MerchantCreateEnterprise;
+export type RegisterStandaloneRequest = MerchantCreateStandalone;
+export type RegisterResponse = ApiResponse<Merchant>;
+

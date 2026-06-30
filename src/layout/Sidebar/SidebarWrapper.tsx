@@ -3,7 +3,7 @@ import { useAppSelector } from '../../app/hooks';
 import { selectCurrentUser } from '../../modules/auth/slices/authSlice';
 import { usePermission } from '../../shared/hooks/usePermission';
 import { Sidebar } from './Sidebar';
-import { navGroups } from './navConfig';
+import { navGroups, NavItem } from './navConfig';
 
 interface Props {
   mobileOpen: boolean;
@@ -16,24 +16,41 @@ export const SidebarWrapper: React.FC<Props> = ({ mobileOpen, onClose, isCollaps
   const user = useAppSelector(selectCurrentUser);
   const { hasPermission, isAdmin } = usePermission();
 
-  const filteredGroups = navGroups
-    .map(group => {
-      // Filter items within the group based on permissions
-      const accessibleItems = group.items.filter(item => 
-        !item.permission || hasPermission(item.permission, 'view')
-      );
+  const canView = (item: NavItem) => !item.permission || hasPermission(item.permission, 'view');
 
-      // A group is visible if:
-      // 1. It has at least one accessible item AND
-      // 2. (It's not admin-only OR user is Admin OR user is HR)
-      // Note: If a user has specific permission to an item in an admin-only group, 
-      // but is NOT Admin/HR, they still won't see the group unless we change this.
-      // For now, let's allow it if they have specific permissions.
+  /**
+   * Filters a single nav item by permission, recursing into children.
+   * A parent with children (e.g. "Token Management") stays visible if it has its
+   * own permission OR at least one accessible child — and only its accessible
+   * children are kept.
+   */
+  const filterItem = (item: NavItem): NavItem | null => {
+    if (!item.children?.length) {
+      return canView(item) ? item : null;
+    }
+
+    const accessibleChildren = item.children
+      .map((child) => filterItem(child))
+      .filter((child): child is NavItem => child !== null);
+
+    if (accessibleChildren.length === 0) return null;
+
+    return { ...item, children: accessibleChildren };
+  };
+
+  const filteredGroups = navGroups
+    .map((group) => {
+      const accessibleItems = group.items
+        .map((item) => filterItem(item))
+        .filter((item): item is NavItem => item !== null);
+
+      // A group is visible if it has at least one accessible item AND
+      // (it's not admin-only OR user is Admin/HR OR they hold a specific permission on an item).
       const isVisible = accessibleItems.length > 0 && (
-        !group.adminOnly || 
-        isAdmin || 
-        user?.roleName?.toLowerCase() === 'hr' || 
-        accessibleItems.some(i => !!i.permission)
+        !group.adminOnly ||
+        isAdmin ||
+        user?.roleName?.toLowerCase() === 'hr' ||
+        accessibleItems.some((i) => !!i.permission)
       );
 
       return isVisible ? { ...group, items: accessibleItems } : null;
@@ -41,10 +58,10 @@ export const SidebarWrapper: React.FC<Props> = ({ mobileOpen, onClose, isCollaps
     .filter((g): g is typeof navGroups[0] => g !== null);
 
   return (
-    <Sidebar 
-      groups={filteredGroups} 
-      mobileOpen={mobileOpen} 
-      onClose={onClose} 
+    <Sidebar
+      groups={filteredGroups}
+      mobileOpen={mobileOpen}
+      onClose={onClose}
       isCollapsed={isCollapsed}
       onCollapseToggle={onCollapseToggle}
     />

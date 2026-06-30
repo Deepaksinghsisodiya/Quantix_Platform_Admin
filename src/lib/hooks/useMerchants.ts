@@ -28,8 +28,8 @@ export function useMerchants(params: Partial<MerchantFilter & PaginationParams> 
 
   const mergedParams: MerchantFilter & Partial<PaginationParams> = {
     ...params,
-    merchantType: merchantTypeFilter !== 'All' ? merchantTypeFilter : params.merchantType,
-    businessNature: businessTypeFilter !== 'All' ? businessTypeFilter : params.businessNature,
+    merchantType: params.merchantType ?? (merchantTypeFilter !== 'All' ? merchantTypeFilter : undefined),
+    businessNature: params.businessNature ?? (businessTypeFilter !== 'All' ? businessTypeFilter : undefined),
   };
 
   return useGetMerchantsQuery(mergedParams);

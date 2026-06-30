@@ -163,7 +163,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = ({
   if (!canGenerate) {
     return (
       <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
+        <div className="px-6s py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
           <ATMBreadcrumbs />
           <ATMPageHeader
             title="Generate Recharge Token"
@@ -203,7 +203,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = ({
 
       {/* Scrollable Body Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/10 dark:bg-gray-900/10">
-        <div className="max-w-7xl mx-auto w-full">
+        <div className="max-w-full mx-auto w-full">
           {!generatedToken && (
             <TokenForm
               onSubmit={onSubmit}

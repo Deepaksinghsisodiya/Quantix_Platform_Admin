@@ -20,7 +20,7 @@ import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { cn } from '@/lib/utils/cn';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import type { TokenTier, RechargeToken, TokenTemplate } from '@/lib/types';
+import type { TokenTier, RechargeToken } from '@/lib/types';
 
 interface TierOption {
   tier: TokenTier;
@@ -104,8 +104,6 @@ export interface BulkTokenPageProps {
   merchantsError: boolean;
   refetchMerchants: () => void;
   merchantOptions: { label: string; value: string }[];
-  templatesLoading: boolean;
-  templates: readonly TokenTemplate[];
   selectedMerchant: string;
   setSelectedMerchant: (id: string) => void;
   selectedTier: TokenTier | null;
@@ -127,8 +125,6 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = ({
   merchantsError,
   refetchMerchants,
   merchantOptions,
-  templatesLoading,
-  templates,
   selectedMerchant,
   setSelectedMerchant,
   selectedTier,
@@ -151,7 +147,7 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = ({
   const discountAmount = subtotal * discount;
   const total = subtotal - discountAmount;
 
-  const canGenerate = selectedMerchant && selectedTier && quantity > 0 && !templatesLoading && templates.length > 0;
+  const canGenerate = Boolean(selectedMerchant && selectedTier && quantity > 0);
 
   const handleQuantityChange = useCallback((delta: number) => {
     setQuantity(Math.max(1, Math.min(100, quantity + delta)));
@@ -245,7 +241,7 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = ({
         <div className="grid gap-6 lg:grid-cols-3 items-start max-w-7xl mx-auto w-full">
           {/* Main Controls */}
           <div className="space-y-6 lg:col-span-2">
-            <ATMCard title="Merchant" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Merchant" padding="md" className="overflow-visible shadow-sm border border-gray-100 dark:border-gray-800">
               {merchantsLoading ? (
                 <div className="flex items-center gap-2 py-2 text-sm text-gray-500 dark:text-gray-400">
                   <Loader2 className="h-4 w-4 animate-spin text-accent-600" />
@@ -271,6 +267,9 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = ({
                   options={merchantOptions}
                   value={selectedMerchant || null}
                   onChange={(val) => setSelectedMerchant(val as string || '')}
+                  searchable
+                  clearable
+                  size="lg"
                 />
               )}
             </ATMCard>
@@ -379,12 +378,6 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = ({
                     </span>
                   </div>
                 </div>
-
-                {templates.length === 0 && !templatesLoading && (
-                  <div className="p-3 text-xs bg-amber-50 text-amber-800 rounded-xl border border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50">
-                    Warning: No system templates found in the database. Please contact an admin.
-                  </div>
-                )}
 
                 <ATMButton
                   type="button"

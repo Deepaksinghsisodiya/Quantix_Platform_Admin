@@ -45,7 +45,7 @@ const AppShell: React.FC = () => {
         <main
           className={`
             flex-1 flex flex-col transition-all duration-300 ease-in-out mt-16 relative h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-slate-950/40
-            ${isCollapsed ? 'lg:ml-[70px]' : 'lg:ml-[250px]'}
+            ${isCollapsed ? 'lg:ml-[76px]' : 'lg:ml-[260px]'}
           `}
         >
           {/* Global Ambient Glows - Shared across all dashboard pages */}

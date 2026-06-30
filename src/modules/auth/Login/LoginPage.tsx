@@ -1,8 +1,9 @@
-import React from 'react';
-import LoginFormWrapper from './LoginFormWrapper';
+﻿import React from 'react';
+import LoginWrapper from './LoginWrapper';
 
 export const LoginPage: React.FC = () => {
-  return <LoginFormWrapper />;
+  return <LoginWrapper />;
 };
 
 export default LoginPage;
+

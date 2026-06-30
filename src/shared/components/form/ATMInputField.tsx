@@ -56,6 +56,7 @@ const ATMInputField: React.FC<ATMInputFieldProps> = ({
                 <input
                     {...field}
                     {...props}
+                    value={field.value ?? ''}
                     type={inputType}
                     id={props.name}
                     className={cn(

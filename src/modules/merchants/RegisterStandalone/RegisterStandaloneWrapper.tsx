@@ -5,6 +5,7 @@ import * as Yup from 'yup';
 import { toast } from 'sonner';
 
 import { useRegisterStandaloneMutation, useActivateMerchantMutation } from '../services/merchantApi';
+import { useGenerateTokenMutation } from '@/modules/tokens/services/tokenApi';
 import RegisterStandalonePage from './RegisterStandalonePage';
 
 type TokenTier = 'Basic' | 'Standard' | 'Advance' | 'Premium';
@@ -35,6 +36,7 @@ export const RegisterStandaloneWrapper: React.FC = () => {
   const [step, setStep] = useState(0);
   const [registerStandalone, { isLoading }] = useRegisterStandaloneMutation();
   const [activateMerchant] = useActivateMerchantMutation();
+  const [generateToken] = useGenerateTokenMutation();
 
   const [activationStatus, setActivationStatus] = useState<'idle' | 'activating' | 'done' | 'error'>('idle');
   const [copied, setCopied] = useState(false);
@@ -125,10 +127,23 @@ export const RegisterStandaloneWrapper: React.FC = () => {
         initialTokenValidityDays: values.initialTokenValidityDays,
       }).unwrap();
 
-      const mockToken = `QTX-SA-${values.initialTokenTier.toUpperCase()}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      const merchantId = res.data.id;
+      const tokenRes = await generateToken({
+        merchantId,
+        tier: values.initialTokenTier,
+        businessNature: 'Retail',
+        validityDays: values.initialTokenValidityDays,
+        binding: {
+          merchantId,
+          businessId: merchantId,
+          locationId: null,
+          terminalId: null,
+        },
+      }).unwrap();
+
       setGeneratedToken({
-        tokenString: mockToken,
-        merchantId: res.data.id,
+        tokenString: tokenRes.data.tokenString,
+        merchantId,
       });
 
       toast.success('Standalone merchant registered and token generated');
@@ -183,3 +198,4 @@ export const RegisterStandaloneWrapper: React.FC = () => {
 };
 
 export default RegisterStandaloneWrapper;
+

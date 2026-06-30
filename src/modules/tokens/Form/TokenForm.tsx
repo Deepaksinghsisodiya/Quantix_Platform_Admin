@@ -210,11 +210,11 @@ export function TokenForm({
       onSubmit={handleSubmit(handleFormSubmit)}
       className={cn('space-y-6', className)}
     >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.75fr_0.9fr] items-start">
         {/* Left Column - Core Configurations */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-6 lg:col-span-1">
           {/* Merchant Selector */}
-          <ATMCard title="Merchant" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+          <ATMCard title="Merchant" padding="md" className="overflow-visible shadow-sm border border-gray-100 dark:border-gray-800">
             <Controller
               name="merchantId"
               control={control}
@@ -231,6 +231,9 @@ export function TokenForm({
                   onChange={(val) => {
                     field.onChange(val);
                   }}
+                  searchable
+                  clearable
+                  size="lg"
                 />
               )}
             />

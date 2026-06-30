@@ -10,6 +10,7 @@ export interface Permission {
 
 export interface User {
   id: string;
+  userId?: string;
   employeeCode: string;
   firstName: string;
   lastName: string;
@@ -35,6 +36,9 @@ export interface LoginRequest {
 export interface LoginResponse {
   mfaRequired: boolean;
   mfaChallengeToken?: string;
+  challengeToken?: string;
+  userId?: string;
+  id?: string;
   token?: string;
   expiresAt?: string;
   mfaSetupRequired?: boolean;
@@ -45,7 +49,8 @@ export interface LoginResponse {
 }
 
 export interface MFAVerifyResponse {
-  token: string;
+  token?: string;
+  accessToken?: string;
   expiresAt: string;
   user: User;
   permissions?: readonly string[];

@@ -1,11 +1,11 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { PlatformUser, PlatformRole } from '@/lib/types';
 import { canAccess } from '@/lib/utils/permissions';
 
 /**
  * Single source of truth for the localStorage key under which the auth state is persisted.
- * Round_16 audit C9: prevent client.ts ⇄ authStore.ts key drift that broke every authenticated
+ * Round_16 audit C9: prevent client.ts â‡„ authStore.ts key drift that broke every authenticated
  * request. Import this from any module that needs to read or invalidate the persisted token.
  */
 export const AUTH_STORAGE_KEY = 'quantix-platform-auth';
@@ -139,8 +139,6 @@ export const useAuthStore = create<AuthState>()(
       name: AUTH_STORAGE_KEY,
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
-        tokenExpiresAt: state.tokenExpiresAt,
         isAuthenticated: state.isAuthenticated,
         mfaSetupRequired: state.mfaSetupRequired,
         mustChangePassword: state.mustChangePassword,
@@ -149,3 +147,4 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+

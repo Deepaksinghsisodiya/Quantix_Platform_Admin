@@ -196,13 +196,8 @@ export const merchantApi = baseApi.injectEndpoints({
         };
         const mappedPlanId = planIdMap[data.plan?.toLowerCase() || ''] || planIdMap[data.tier?.toLowerCase() || ''] || planIdMap['professional'];
 
-        let mappedBillingCycle = 'Monthly';
-        if (data.billingFrequency === 'Annual') {
-          mappedBillingCycle = 'Annual';
-        }
-
         return {
-          url: '/api/v1/registration/manual',
+          url: '/api/v1/merchants',
           method: 'POST',
           data: {
             merchantType: 'Enterprise',
@@ -211,10 +206,16 @@ export const merchantApi = baseApi.injectEndpoints({
             contactName: data.contactPerson,
             contactEmail: data.email,
             contactPhone: data.phone,
+            addressLine1: null,
+            addressLine2: null,
+            city: null,
+            state: null,
+            postalCode: null,
             country: data.country,
             databaseEngine: data.dbEngine || 'PostgreSQL',
+            businessNature: data.businessNature || null,
+            preferredPaymentMethod: data.preferredPaymentMethod || null,
             planId: mappedPlanId,
-            billingCycle: mappedBillingCycle,
           },
         };
       },
@@ -236,7 +237,7 @@ export const merchantApi = baseApi.injectEndpoints({
         const mappedPlanId = tierIdMap[data.initialTokenTier?.toLowerCase() || ''] || null;
 
         return {
-          url: '/api/v1/registration/manual',
+          url: '/api/v1/merchants',
           method: 'POST',
           data: {
             merchantType: 'Standalone',
@@ -245,10 +246,16 @@ export const merchantApi = baseApi.injectEndpoints({
             contactName: data.contactPerson,
             contactEmail: data.email,
             contactPhone: data.phone,
+            addressLine1: null,
+            addressLine2: null,
+            city: null,
+            state: null,
+            postalCode: null,
             country: data.country,
             databaseEngine: null,
+            businessNature: data.businessNature || null,
+            preferredPaymentMethod: null,
             planId: mappedPlanId,
-            billingCycle: 'Monthly',
           },
         };
       },

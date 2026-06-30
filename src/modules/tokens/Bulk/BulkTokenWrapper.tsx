@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useMerchants } from '@/lib/hooks/useMerchants';
-import { useTokenTemplates, useBulkGenerateTokens } from '../services/useTokens';
+import { useBulkGenerateTokens, useTokenTemplates } from '../services/useTokens';
 import type { TokenTier, RechargeToken } from '@/lib/types';
 import { toast } from 'sonner';
 import { BulkTokenPage } from './BulkTokenPage';
@@ -19,29 +19,21 @@ export const BulkTokenWrapper: React.FC = () => {
     refetch: refetchMerchants,
   } = useMerchants({ merchantType: 'Standalone', pageSize: 200 });
 
-  const {
-    data: templatesData,
-    isLoading: templatesLoading,
-  } = useTokenTemplates();
-
-  const templates = templatesData?.data ?? [];
+  const { data: templatesRes } = useTokenTemplates();
+  const templates = templatesRes?.data || [];
 
   const bulkGenerateMutation = useBulkGenerateTokens();
 
   const handleGenerate = useCallback(() => {
     if (!selectedMerchant || !selectedTier || quantity <= 0) return;
 
-    // Find a template matching the selected tier
-    const template = templates.find((t) => t.tier === selectedTier);
-    if (!template) {
-      toast.error(`No system template found for ${selectedTier} tier in the database.`);
-      return;
-    }
+    const matchingTemplate = templates.find((t) => t.tier === selectedTier) || templates[0];
+    const templateId = matchingTemplate?.id || '';
 
     bulkGenerateMutation.mutate(
       {
         merchantIds: Array(quantity).fill(selectedMerchant),
-        templateId: template.id,
+        templateId,
         overrides: {
           validityDays,
           tier: selectedTier,
@@ -58,7 +50,7 @@ export const BulkTokenWrapper: React.FC = () => {
         },
       }
     );
-  }, [selectedMerchant, selectedTier, quantity, validityDays, templates, bulkGenerateMutation]);
+  }, [selectedMerchant, selectedTier, quantity, validityDays, bulkGenerateMutation, templates]);
 
   const handleDownloadCsv = useCallback(() => {
     if (generatedTokens.length === 0) return;
@@ -103,8 +95,6 @@ export const BulkTokenWrapper: React.FC = () => {
       merchantsError={merchantsError}
       refetchMerchants={refetchMerchants}
       merchantOptions={merchantOptions}
-      templatesLoading={templatesLoading}
-      templates={templates}
       selectedMerchant={selectedMerchant}
       setSelectedMerchant={setSelectedMerchant}
       selectedTier={selectedTier}

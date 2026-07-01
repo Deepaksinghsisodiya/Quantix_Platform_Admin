@@ -1,57 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Form, useFormikContext } from 'formik';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter/PasswordStrengthMeter';
 
 interface ChangePasswordFormProps {
   isSubmitting: boolean;
 }
 
-// Password Strength Meter Component
-const PasswordStrengthMeter: React.FC = () => {
-  const { values } = useFormikContext<{ newPassword: string }>();
-  const password = values.newPassword || '';
-
-  const strength = useMemo(() => {
-    if (!password) return { score: 0, label: '', color: '' };
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    if (score <= 2) return { score, label: 'Weak', color: 'bg-rose-500 text-rose-500' };
-    if (score === 3) return { score, label: 'Fair', color: 'bg-amber-500 text-amber-500' };
-    if (score === 4) return { score, label: 'Good', color: 'bg-indigo-500 text-indigo-500' };
-    return { score, label: 'Strong', color: 'bg-emerald-500 text-emerald-500' };
-  }, [password]);
-
-  if (!password) return null;
-
-  return (
-    <div className="space-y-1.5 mt-2 px-1">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-              i <= strength.score
-                ? strength.color.split(' ')[0]
-                : 'bg-surface-200 dark:bg-surface-800'
-            }`}
-          />
-        ))}
-      </div>
-      <p className={`text-[10px] font-bold uppercase tracking-widest ${strength.color.split(' ')[1]}`}>
-        {strength.label}
-      </p>
-    </div>
-  );
-};
-
 export const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isSubmitting }) => {
+  const { values } = useFormikContext<{ newPassword: string }>();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -124,7 +83,7 @@ export const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isSubmit
                   </button>
                 }
               />
-              <PasswordStrengthMeter />
+              <PasswordStrengthMeter password={values.newPassword} />
             </div>
 
             {/* Confirm Password Field */}

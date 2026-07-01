@@ -19,6 +19,22 @@ export interface TokenMetrics {
   readonly byTier: Record<string, number>;
 }
 
+export interface TokenActivation {
+  readonly tokenId: string;
+  readonly merchantId: string;
+  readonly terminalId: string | null;
+  readonly activatedAt: string;
+  readonly appVersion: string | null;
+  readonly ipAddress: string | null;
+}
+
+export interface TokenPricingResult {
+  readonly unitPrice: number;
+  readonly total: number;
+  readonly discount: number;
+  readonly currency: string;
+}
+
 type TokenListParams = Partial<TokenFilter & PaginationParams>;
 
 const tierToPlan: Record<TokenTier, PlanType> = {
@@ -159,6 +175,7 @@ const toPaginatedResponse = (response: any, params: TokenListParams): ApiRespons
 
 export const tokenApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // ─── Token List & Detail ───────────────────────────────────────────
     getTokenHistory: builder.query<ApiResponse<PaginatedResult<RechargeToken>>, TokenListParams>({
       query: (params) => {
         if (params.merchantId) {
@@ -169,6 +186,7 @@ export const tokenApi = baseApi.injectEndpoints({
           };
         }
 
+        // No "get all tokens" endpoint in Swagger — use /expiring with large window as fallback
         return {
           url: '/api/v1/tokens/expiring',
           method: 'GET',
@@ -176,7 +194,7 @@ export const tokenApi = baseApi.injectEndpoints({
         };
       },
       transformResponse: (response: any, _meta, params) => toPaginatedResponse(response, params),
-      providesTags: ['Merchants'],
+      providesTags: ['Tokens'],
     }),
 
     getToken: builder.query<ApiResponse<RechargeToken>, string>({
@@ -188,9 +206,10 @@ export const tokenApi = baseApi.injectEndpoints({
         ...response,
         data: mapTokenResponse(response.data),
       }),
-      providesTags: (_res, _err, id) => [{ type: 'Merchants', id }, 'Merchants'],
+      providesTags: (_res, _err, id) => [{ type: 'Tokens', id }, 'Tokens'],
     }),
 
+    // ─── Generate ──────────────────────────────────────────────────────
     generateToken: builder.mutation<ApiResponse<RechargeToken>, TokenGenerateRequest>({
       query: (data) => ({
         url: '/api/v1/tokens/generate',
@@ -201,7 +220,7 @@ export const tokenApi = baseApi.injectEndpoints({
         ...response,
         data: mapTokenResponse(response.data),
       }),
-      invalidatesTags: ['Merchants'],
+      invalidatesTags: ['Tokens'],
     }),
 
     bulkGenerateTokens: builder.mutation<ApiResponse<readonly RechargeToken[]>, BulkTokenRequest>({
@@ -214,9 +233,10 @@ export const tokenApi = baseApi.injectEndpoints({
         ...response,
         data: unwrapArray(response).map(mapTokenResponse),
       }),
-      invalidatesTags: ['Merchants'],
+      invalidatesTags: ['Tokens'],
     }),
 
+    // ─── Revoke ────────────────────────────────────────────────────────
     revokeToken: builder.mutation<ApiResponse<RechargeToken>, { tokenId: string; reason: string }>({
       query: ({ tokenId, reason }) => ({
         url: `/api/v1/tokens/${tokenId}/revoke`,
@@ -227,9 +247,10 @@ export const tokenApi = baseApi.injectEndpoints({
         ...response,
         data: mapTokenResponse(response.data),
       }),
-      invalidatesTags: (_res, _err, { tokenId }) => [{ type: 'Merchants', id: tokenId }, 'Merchants'],
+      invalidatesTags: (_res, _err, { tokenId }) => [{ type: 'Tokens', id: tokenId }, 'Tokens'],
     }),
 
+    // ─── Expiring Tokens ───────────────────────────────────────────────
     getExpiringTokens: builder.query<ApiResponse<readonly RechargeToken[]>, { daysWindow: number }>({
       query: ({ daysWindow }) => ({
         url: '/api/v1/tokens/expiring',
@@ -240,23 +261,138 @@ export const tokenApi = baseApi.injectEndpoints({
         ...response,
         data: unwrapArray(response).map(mapTokenResponse),
       }),
+      providesTags: ['Tokens'],
     }),
 
+    /** Swagger: GET /api/v1/tokens/expiring/by-merchant */
+    getExpiringByMerchant: builder.query<ApiResponse<any>, { daysWindow: number }>({
+      query: ({ daysWindow }) => ({
+        url: '/api/v1/tokens/expiring/by-merchant',
+        method: 'GET',
+        params: { daysWindow },
+      }),
+      providesTags: ['Tokens'],
+    }),
+
+    // ─── Token Activations ─────────────────────────────────────────────
+    /** Swagger: GET /api/v1/tokens/activations */
+    getTokenActivations: builder.query<ApiResponse<readonly TokenActivation[]>, { merchantId?: string; dateFrom?: string; dateTo?: string }>({
+      query: (params) => ({
+        url: '/api/v1/tokens/activations',
+        method: 'GET',
+        params,
+      }),
+      providesTags: ['Tokens'],
+    }),
+
+    // ─── Export ────────────────────────────────────────────────────────
+    /** Swagger: GET /api/v1/tokens/export/csv — server-side CSV export */
+    exportTokensCsv: builder.query<Blob, { merchantId?: string; status?: string }>({
+      query: (params) => ({
+        url: '/api/v1/tokens/export/csv',
+        method: 'GET',
+        params,
+        responseType: 'blob',
+      }),
+    }),
+
+    // ─── Pricing ───────────────────────────────────────────────────────
+    /** Swagger: GET /api/v1/tokens/pricing */
+    getTokenPricing: builder.query<ApiResponse<TokenPricingResult>, { plan?: string; validityDays?: number; quantity?: number }>({
+      query: (params) => ({
+        url: '/api/v1/tokens/pricing',
+        method: 'GET',
+        params,
+      }),
+    }),
+
+    // ─── Renewal Reminders ─────────────────────────────────────────────
+    /** Swagger: POST /api/v1/tokens/renewal-reminders */
+    sendRenewalReminders: builder.mutation<ApiResponse<{ sentCount: number }>, void>({
+      query: () => ({
+        url: '/api/v1/tokens/renewal-reminders',
+        method: 'POST',
+      }),
+    }),
+
+    // ─── Templates ─────────────────────────────────────────────────────
     getTokenTemplates: builder.query<ApiResponse<readonly TokenTemplate[]>, void>({
       query: () => ({
         url: '/api/v1/tokens/templates',
         method: 'GET',
         params: { isActive: true },
       }),
+      providesTags: ['Tokens'],
     }),
 
+    /** Swagger: GET /api/v1/tokens/templates/{id} */
+    getTokenTemplateById: builder.query<ApiResponse<TokenTemplate>, string>({
+      query: (id) => ({
+        url: `/api/v1/tokens/templates/${id}`,
+        method: 'GET',
+      }),
+      providesTags: (_res, _err, id) => [{ type: 'Tokens', id }],
+    }),
+
+    /** Swagger: POST /api/v1/tokens/templates */
+    createTokenTemplate: builder.mutation<ApiResponse<TokenTemplate>, {
+      templateName: string;
+      plan: PlanType;
+      defaultLimitsPayload?: string | null;
+      defaultFeatureMap?: string | null;
+      defaultGracePolicyDays?: string | null;
+      description?: string | null;
+    }>({
+      query: (data) => ({
+        url: '/api/v1/tokens/templates',
+        method: 'POST',
+        data,
+      }),
+      invalidatesTags: ['Tokens'],
+    }),
+
+    /** Swagger: PUT /api/v1/tokens/templates/{id} */
+    updateTokenTemplate: builder.mutation<ApiResponse<TokenTemplate>, {
+      id: string;
+      templateName?: string | null;
+      defaultLimitsPayload?: string | null;
+      defaultFeatureMap?: string | null;
+      defaultGracePolicyDays?: string | null;
+      description?: string | null;
+      isActive?: boolean | null;
+    }>({
+      query: ({ id, ...data }) => ({
+        url: `/api/v1/tokens/templates/${id}`,
+        method: 'PUT',
+        data,
+      }),
+      invalidatesTags: ['Tokens'],
+    }),
+
+    /** Swagger: POST /api/v1/tokens/templates/{id}/deactivate */
+    deactivateTokenTemplate: builder.mutation<ApiResponse<TokenTemplate>, string>({
+      query: (id) => ({
+        url: `/api/v1/tokens/templates/${id}/deactivate`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Tokens'],
+    }),
+
+    // ─── Dashboard Metrics ─────────────────────────────────────────────
+    /** Swagger: GET /api/v1/dashboard/token-metrics — dedicated server-side metrics */
     getTokenMetrics: builder.query<ApiResponse<TokenMetrics>, void>({
       query: () => ({
-        url: '/api/v1/tokens/expiring',
+        url: '/api/v1/dashboard/token-metrics',
         method: 'GET',
-        params: { daysWindow: 3650 },
       }),
       transformResponse: (response: ApiResponse<any>) => {
+        const raw = response?.data;
+        if (raw && typeof raw === 'object' && 'totalActive' in raw) {
+          // Server returned pre-computed metrics — use directly
+          return response;
+        }
+
+        // Fallback: if response is a list of tokens, compute client-side
         const tokens = unwrapArray(response).map(mapTokenResponse);
         const now = new Date();
         const month = now.getMonth();
@@ -285,15 +421,7 @@ export const tokenApi = baseApi.injectEndpoints({
           },
         };
       },
-    }),
-
-    renewToken: builder.mutation<ApiResponse<RechargeToken>, { tokenId: string; validityDays: number }>({
-      query: ({ tokenId, validityDays }) => ({
-        url: `/api/v1/tokens/${tokenId}/renew`,
-        method: 'POST',
-        data: { validityDays },
-      }),
-      invalidatesTags: (_res, _err, { tokenId }) => [{ type: 'Merchants', id: tokenId }, 'Merchants'],
+      providesTags: ['Tokens'],
     }),
   }),
 });
@@ -305,7 +433,16 @@ export const {
   useBulkGenerateTokensMutation,
   useRevokeTokenMutation,
   useGetExpiringTokensQuery,
+  useGetExpiringByMerchantQuery,
+  useGetTokenActivationsQuery,
+  useExportTokensCsvQuery,
+  useLazyExportTokensCsvQuery,
+  useGetTokenPricingQuery,
+  useSendRenewalRemindersMutation,
   useGetTokenTemplatesQuery,
+  useGetTokenTemplateByIdQuery,
+  useCreateTokenTemplateMutation,
+  useUpdateTokenTemplateMutation,
+  useDeactivateTokenTemplateMutation,
   useGetTokenMetricsQuery,
-  useRenewTokenMutation,
 } = tokenApi;

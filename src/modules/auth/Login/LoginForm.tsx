@@ -106,10 +106,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                     <ShieldCheck className="h-7 w-7 text-accent-600 dark:text-accent-400" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-base font-bold text-surface-900 dark:text-surface-50">
+                    <h3 className="text-base font-bold text-surface-900 dark:text-surface-555">
                       Two-Factor Authentication
                     </h3>
-                    <p className="text-xs text-surface-400 dark:text-surface-555 leading-relaxed px-2">
+                    <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed px-2">
                       Enter the 6-digit authenticator code or an 8-digit backup recovery code.
                     </p>
                   </div>
@@ -161,5 +161,3 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 };
 
 export default LoginForm;
-
-

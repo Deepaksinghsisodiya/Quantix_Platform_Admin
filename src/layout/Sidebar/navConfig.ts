@@ -21,28 +21,21 @@ export interface NavItem {
   icon: LucideIcon;
   path: string;
   permission: string | null;
-  /** Optional nested sub-items (renders as an expandable accordion under the parent, e.g. Token Management). */
+  /** Optional nested sub-items (renders as an expandable accordion under the parent). */
   children?: NavItem[];
-}
-
-export interface NavGroup {
-  label: string;
   adminOnly?: boolean;
-  items: NavItem[];
 }
 
-export const navGroups: NavGroup[] = [
+export const navItems: NavItem[] = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'dashboard' },
+  { label: 'Downloads', icon: Download, path: '/downloads', permission: 'downloads' },
+  { label: 'Notifications', icon: Bell, path: '/notifications', permission: null },
   {
-    label: 'MAIN',
-    items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'dashboard' },
-      { label: 'Downloads', icon: Download, path: '/downloads', permission: 'downloads' },
-      { label: 'Notifications', icon: Bell, path: '/notifications', permission: null },
-    ]
-  },
-  {
-    label: 'MERCHANTS',
-    items: [
+    label: 'Merchants',
+    icon: Building2,
+    path: '/merchants',
+    permission: 'merchants',
+    children: [
       { label: 'All Merchants', icon: Building2, path: '/merchants', permission: 'merchants' },
       { label: 'Register Enterprise', icon: Building2, path: '/merchants/register/enterprise', permission: 'merchants' },
       { label: 'Register Standalone', icon: Building2, path: '/merchants/register/standalone', permission: 'merchants' },
@@ -51,24 +44,22 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'TOKENS',
-    items: [
-      {
-        label: 'Token Management',
-        icon: Coins,
-        path: '/tokens',
-        permission: 'tokens',
-        children: [
-          { label: 'Generate Tokens', icon: Coins, path: '/tokens/generate', permission: 'tokens' },
-          { label: 'Batch Generate', icon: Coins, path: '/tokens/bulk', permission: 'tokens' },
-          { label: 'Token Validity', icon: Coins, path: '/tokens/validity', permission: 'tokens' },
-        ],
-      },
+    label: 'Tokens',
+    icon: Coins,
+    path: '/tokens',
+    permission: 'tokens',
+    children: [
+      { label: 'Generate Tokens', icon: Coins, path: '/tokens/generate', permission: 'tokens' },
+      { label: 'Batch Generate', icon: Coins, path: '/tokens/bulk', permission: 'tokens' },
+      { label: 'Token Validity', icon: Coins, path: '/tokens/validity', permission: 'tokens' },
     ]
   },
   {
-    label: 'BILLING & COMMISSION',
-    items: [
+    label: 'Billing & Commission',
+    icon: CreditCard,
+    path: '/billing',
+    permission: 'billing',
+    children: [
       { label: 'Billing Overview', icon: CreditCard, path: '/billing', permission: 'billing' },
       { label: 'Invoices', icon: CreditCard, path: '/billing/invoices', permission: 'billing' },
       { label: 'Plans', icon: CreditCard, path: '/billing/plans', permission: 'billing' },
@@ -80,8 +71,11 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'SUPPORT & CONTENT',
-    items: [
+    label: 'Support & Content',
+    icon: Headphones,
+    path: '/support',
+    permission: 'support',
+    children: [
       { label: 'Support Queue', icon: Headphones, path: '/support', permission: 'support' },
       { label: 'Leads', icon: Headphones, path: '/support/leads', permission: 'support' },
       { label: 'Canned Responses', icon: Headphones, path: '/support/canned-responses', permission: 'support' },
@@ -94,8 +88,11 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'COMPLIANCE & AUDIT',
-    items: [
+    label: 'Compliance & Audit',
+    icon: ShieldCheck,
+    path: '/compliance',
+    permission: 'compliance',
+    children: [
       { label: 'Compliance Overview', icon: ShieldCheck, path: '/compliance', permission: 'compliance' },
       { label: 'Data Requests', icon: ShieldCheck, path: '/compliance/data-requests', permission: 'compliance' },
       { label: 'Consent Management', icon: ShieldCheck, path: '/compliance/consent', permission: 'compliance' },
@@ -103,18 +100,24 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'USER MANAGEMENT',
+    label: 'User Management',
+    icon: Users,
+    path: '/users',
+    permission: 'users',
     adminOnly: true,
-    items: [
+    children: [
       { label: 'All Users', icon: Users, path: '/users', permission: 'users' },
       { label: 'Create User', icon: Users, path: '/users/create', permission: 'users' },
       { label: 'User Sessions', icon: Users, path: '/users/sessions', permission: 'users' },
     ]
   },
   {
-    label: 'REPORTS',
+    label: 'Reports',
+    icon: BarChart3,
+    path: '/reports',
+    permission: 'reports',
     adminOnly: true,
-    items: [
+    children: [
       { label: 'Reports Hub', icon: BarChart3, path: '/reports', permission: 'reports' },
       { label: 'Growth Reports', icon: BarChart3, path: '/reports/growth', permission: 'reports' },
       { label: 'Revenue Reports', icon: BarChart3, path: '/reports/revenue', permission: 'reports' },
@@ -127,9 +130,12 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'SYSTEM SETUP',
+    label: 'System Setup',
+    icon: Settings,
+    path: '/settings',
+    permission: 'settings',
     adminOnly: true,
-    items: [
+    children: [
       { label: 'Global Settings', icon: Settings, path: '/settings', permission: 'settings' },
       { label: 'Feature Toggles', icon: Settings, path: '/settings/features', permission: 'settings' },
       { label: 'Token Config', icon: Settings, path: '/settings/token-config', permission: 'settings' },

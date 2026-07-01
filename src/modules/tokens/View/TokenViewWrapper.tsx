@@ -111,7 +111,7 @@ export const TokenViewWrapper: React.FC = () => {
   }, [revokeReason, token, revokeMutation]);
 
   const handleBack = useCallback(() => {
-    navigate(ROUTES.TOKENS.HISTORY);
+    navigate(ROUTES.TOKENS.LIST);
   }, [navigate]);
 
   return (

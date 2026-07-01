@@ -12,7 +12,7 @@
 
 | Concern | Library |
 |---|---|
-| UI Library | React 18+ |
+| UI Library | React 19 |
 | Language | TypeScript (strict) |
 | Build Tool | Vite |
 | Global State / Server Cache | Redux Toolkit + RTK Query |
@@ -26,8 +26,14 @@
 | Tables | TanStack Table (wrapped by `ATMTable`) |
 | Class merging | clsx + tailwind-merge |
 | Dates | date-fns |
+| Charts | Recharts (wrapped by chart components in `modules/dashboard/components/charts`) |
+| CSV/Excel Export | SheetJS (`xlsx`) |
+| PDF Export | `@react-pdf/renderer` (only for report/export generation, never for the `pdf` skill's document workflows) |
+| HTML Sanitization | DOMPurify |
+| Real-time updates | Native `WebSocket` wrapped by a single `socketClient.ts` singleton (see §9.5); polling via RTK Query `pollingInterval` is the fallback where a socket channel doesn't exist yet |
 | Headless primitives | Headless UI (only when no ATM equivalent exists) |
 | Unit/Component Testing | Vitest + React Testing Library |
+| E2E Testing | Playwright |
 | API Mocking (tests) | MSW |
 
 ### 0.2 Banned Libraries
@@ -43,6 +49,10 @@ These MUST NEVER appear in `package.json`, imports, or generated code:
 - ❌ `alert()` / `confirm()` / `window.prompt()` — use **Sonner** + **ATMModal**
 - ❌ `any` type (except in explicitly justified, commented edge cases reviewed by a lead)
 - ❌ Raw MUI components or raw HTML `<input>`, `<select>`, `<button>` — use **ATM components**
+- ❌ `dangerouslySetInnerHTML` with unsanitized input — see §9.6 (Sanitization Rule)
+- ❌ Moment.js — use **date-fns**
+- ❌ Any charting library other than Recharts (e.g. Chart.js, Nivo, Victory) without explicit human approval
+- ❌ Cypress — use **Playwright** for E2E
 
 If an AI agent is asked to use a banned library, it must refuse and propose the approved alternative.
 
@@ -97,12 +107,12 @@ src/
 │   ├── dashboard/
 │   └── settings/
 ├── router/                   # Route definitions, route guards wiring, lazy imports
-├── services/                 # Cross-module API setup: axios instance, base RTK Query api
+├── services/                 # Cross-module API setup: axios instance, base RTK Query api, socket client
 ├── shared/                   # Cross-feature reusable building blocks (see §6)
 ├── store/                    # Redux store config, root reducer, middleware
 ├── theme/                    # Tailwind theme tokens, design tokens, dark mode config
 ├── types/                    # Global TypeScript types/interfaces shared across modules
-├── utils/                    # Pure utility functions (formatter, storage, jwt, etc.)
+├── utils/                    # Pure utility functions (formatter, storage, jwt, sanitize, etc.)
 ├── main.tsx
 └── vite-env.d.ts
 ```
@@ -111,18 +121,18 @@ src/
 
 - **app/** — Composes all global providers (Redux `Provider`, `ErrorBoundary`, `Toaster`, `ThemeProvider`, Router) into a single `<App />`. Nothing business-specific lives here.
 - **assets/** — Static, non-code files only. No logic.
-- **config/** — Reads `import.meta.env`, exposes typed config object (`API_BASE_URL`, `APP_ENV`, feature flags). Single point of environment access — never call `import.meta.env` directly elsewhere.
+- **config/** — Reads `import.meta.env`, exposes typed config object (`API_BASE_URL`, `WS_BASE_URL`, `APP_ENV`, feature flags). Single point of environment access — never call `import.meta.env` directly elsewhere.
 - **constants/** — App-wide constants that are not tied to one feature (e.g. `ROUTE_PATHS`, `REGEX_PATTERNS`, `DATE_FORMATS`, `HTTP_STATUS`).
-- **hooks/** — Hooks reused by 2+ modules (`useDebounce`, `usePagination`, `useTable`, `useMediaQuery`). Feature-specific hooks stay inside the module.
+- **hooks/** — Hooks reused by 2+ modules (`useDebounce`, `usePagination`, `useTable`, `useMediaQuery`, `useIdleTimer`). Feature-specific hooks stay inside the module.
 - **layouts/** — Page shells (sidebar, header, footer) consumed by the router. Layouts render `<Outlet />`; they never fetch business data themselves beyond layout-level needs (user profile, notifications count).
 - **modules/** — See §3.
 - **router/** — `AppRouter.tsx`, `routes.config.ts`, route guard wiring (`ProtectedRoute`, `PublicRoute`, `PermissionRoute`). All lazy-loaded route components are declared here.
-- **services/** — `axiosInstance.ts` (the one and only Axios instance) and `baseApi.ts` (the root RTK Query `createApi` with `tagTypes`, injected into by every module's service file).
+- **services/** — `axiosInstance.ts` (the one and only Axios instance), `baseApi.ts` (the root RTK Query `createApi` with `tagTypes`, injected into by every module's service file), and `socketClient.ts` (the one and only WebSocket client — see §9.5).
 - **shared/** — See §6. The design system and cross-cutting UI/logic.
 - **store/** — `store.ts` (configureStore), `rootReducer.ts`, persisted slices config.
 - **theme/** — Tailwind config extensions, color tokens, spacing tokens, typography scale, dark/light theme variables.
 - **types/** — Global types only (`ApiResponse<T>`, `PaginatedResponse<T>`, `User`, `Permission` if truly global). Module-specific types stay in the module.
-- **utils/** — Pure, side-effect-light functions: `storage.ts`, `jwt.ts`, `dateFormatter.ts`, `errorParser.ts`, `permissionUtils.ts`, `numberFormatter.ts`.
+- **utils/** — Pure, side-effect-light functions: `storage.ts`, `jwt.ts`, `dateFormatter.ts`, `errorParser.ts`, `permissionUtils.ts`, `numberFormatter.ts`, `sanitize.ts`.
 
 ---
 
@@ -165,11 +175,49 @@ modules/users/
 | `settlement` | Settlement cycles, payouts, reconciliation |
 | `compliance` | KYC/AML checks, document verification |
 | `helpdesk` | Support tickets, SLA tracking |
-| `notifications` | In-app + email/SMS notification center |
+| `notifications` | In-app + email/SMS notification center (real-time via socket, see §9.5) |
 | `reports` | Report generation, exports, scheduled reports |
 | `auditLogs` | Immutable activity/audit trail viewer |
 | `dashboard` | Aggregated widgets, KPIs, charts |
 | `settings` | Org-level and account-level configuration |
+| `navigation` | Sidebar menu config, permission-filtered nav tree (see §3.4) |
+
+### 3.4 Sidebar / Navigation Configuration Schema
+
+The sidebar is **data-driven**, never hardcoded JSX per item. A single typed config array lives at `modules/navigation/constants/sidebar.config.ts`:
+
+```ts
+// modules/navigation/types/navigation.types.ts
+export interface SidebarNavItem {
+  id: string;                     // stable unique key, e.g. "merchants"
+  label: string;
+  icon: IconName;                 // key into shared/icons barrel
+  path?: string;                  // omit if this item only expands children
+  permission?: string;            // gate key, e.g. "merchants.view" — omit if always visible
+  children?: SidebarNavItem[];    // nested accordion items
+  badgeCountSelector?: (state: RootState) => number; // optional live count (e.g. open tickets)
+}
+
+// modules/navigation/constants/sidebar.config.ts
+export const SIDEBAR_CONFIG: SidebarNavItem[] = [
+  { id: "dashboard", label: "Dashboard", icon: "LayoutDashboard", path: ROUTE_PATHS.DASHBOARD },
+  {
+    id: "merchants",
+    label: "Merchants",
+    icon: "Store",
+    permission: "merchants.view",
+    children: [
+      { id: "merchants.list", label: "All Merchants", path: ROUTE_PATHS.MERCHANTS, permission: "merchants.view" },
+      { id: "merchants.onboarding", label: "Onboarding", path: ROUTE_PATHS.MERCHANT_ONBOARDING, permission: "merchants.create" },
+    ],
+  },
+  // ...
+];
+```
+
+- `usePermission()` filters the tree recursively at render time inside `shared/components/layout/Sidebar` — a parent with zero visible children after filtering is hidden entirely, never shown as a dead-end expandable.
+- The config is the **single source of truth**; adding a nav item never requires touching the Sidebar component itself, only `sidebar.config.ts`.
+- Collapsed/expanded accordion state is local `useState` in the Sidebar component (or `uiSlice` if it must persist across sessions per §32.1), never re-derived from the route on every render.
 
 ---
 
@@ -184,7 +232,8 @@ modules/auth/
 ├── components/
 │   ├── AuthLayout/
 │   ├── OTPInputGroup/
-│   └── PasswordStrengthMeter/
+│   ├── PasswordStrengthMeter/
+│   └── IdleTimeoutModal/          # "You'll be logged out in 60s" warning
 ├── pages/
 │   ├── Login/
 │   │   ├── LoginWrapper.tsx       # Formik + Yup + RTK Query + navigation + toast
@@ -205,7 +254,8 @@ modules/auth/
 ├── hooks/
 │   ├── useAuth.ts
 │   ├── useSession.ts
-│   └── useTokenRefresh.ts
+│   ├── useTokenRefresh.ts
+│   └── useIdleTimer.ts             # tracks user inactivity, triggers IdleTimeoutModal
 ├── services/
 │   └── authApi.ts                  # RTK Query injected endpoints
 ├── types/
@@ -223,10 +273,12 @@ modules/auth/
 ### 4.2 Responsibility Breakdown
 
 - **pages/** — One folder per auth screen: Login, MFA, Forgot Password, Verify OTP, Reset Password, Change Password, Session Expired, Unauthorized, Forbidden.
+- **components/IdleTimeoutModal/** — Presentational countdown modal, driven entirely by props from `useIdleTimer`. Never fetches data or owns timers itself.
 - **routes/ProtectedRoute.tsx** — Redirects to `/login` if no valid session; renders children/`<Outlet />` otherwise.
 - **routes/PublicRoute.tsx** — Redirects authenticated users away from auth pages (e.g. logged-in user hitting `/login` → redirect to dashboard).
 - **hooks/useAuth.ts** — Exposes `user`, `isAuthenticated`, `login`, `logout`, `hasPermission`.
 - **hooks/useTokenRefresh.ts** — Encapsulates silent refresh-token logic, exposed for the Axios interceptor and for manual triggers.
+- **hooks/useIdleTimer.ts** — Listens for user activity (mouse/keyboard/touch), starts a countdown after N minutes of inactivity (configurable via `config/`), exposes `isWarning`, `secondsRemaining`, `resetTimer`, `forceLogout`. Drives `IdleTimeoutModal`. On expiry, calls `logout()` and redirects to `/session-expired`.
 - **services/authApi.ts** — All auth-related RTK Query endpoints (`login`, `verifyOtp`, `forgotPassword`, `resetPassword`, `changePassword`, `refreshToken`, `logout`).
 - **utils/tokenStorage.ts** — Single source of truth for reading/writing access & refresh tokens (memory + secure storage strategy). No other file reads/writes tokens directly.
 - **interceptors/authInterceptor.ts** — Registered once on the Axios instance in `services/axiosInstance.ts`; attaches `Authorization` header; on `401`, attempts silent refresh once, then force-logs-out on failure.
@@ -259,6 +311,10 @@ Page → Wrapper → Form → ATM Components
 - MUST NOT contain business logic or validation rules
 
 This separation guarantees Forms are 100% reusable/testable in isolation (e.g., in Storybook or unit tests) with mock props.
+
+### 4.4 Never Bypass Auth Module Boundaries
+
+Components outside `modules/auth` must **never** read authentication state directly via raw `useSelector` on the auth slice, and must **never** invoke the `logout` action directly. All auth state/actions are consumed exclusively through `useAuth()` (re-exported from `modules/auth`'s barrel). This keeps token/session logic single-sourced and prevents the dual-state drift (Redux vs. any other store) seen in past audits.
 
 ---
 
@@ -296,7 +352,7 @@ modules/roles/
 
 - **List** — `RoleListWrapper` owns `useGetRolesQuery`, pagination state, filters, and renders `ATMTable` with column defs + a presentational table view.
 - **Add/Edit** — Share a single `RoleForm.tsx` presenter; each has its own Wrapper handling `useCreateRoleMutation` / `useUpdateRoleMutation`, initial values (Edit pre-fills via `useGetRoleByIdQuery`), and navigation back to List on success.
-- **View** — Read-only detail Wrapper, typically just a query + presentational detail layout (no Formik needed unless inline-editing).
+- **View** — Read-only detail Wrapper, typically just a query + `ATMDetailGrid` presentational layout (no Formik needed unless inline-editing).
 
 ### 5.2 Complex CRUD Module
 
@@ -310,7 +366,7 @@ modules/merchants/
 │   ├── Onboarding/
 │   │   ├── steps/
 │   │   │   ├── BusinessDetailsStep/
-│   │   │   ├── KYCDocumentsStep/
+│   │   │   ├── KYCDocumentsStep/       # uses ATMFileUpload (see §7)
 │   │   │   ├── BankDetailsStep/
 │   │   │   └── ReviewStep/
 │   │   ├── OnboardingPage.tsx
@@ -323,7 +379,7 @@ modules/merchants/
 │   │   │   ├── TransactionsTab/
 │   │   │   └── SettlementTab/
 │   │   ├── MerchantDetailPage.tsx
-│   │   └── MerchantDetailWrapper.tsx
+│   │   └── MerchantDetailWrapper.tsx  # renders tabs via ATMTabbedLayout (see §7)
 │   └── Edit/
 ├── services/
 │   ├── merchantApi.ts
@@ -338,7 +394,7 @@ modules/merchants/
 
 - Nested pages (tabs, steps) live under their parent page folder, never flattened into the module root.
 - Each sub-module (e.g., `Onboarding`) may have its own `services`/`types` co-located if highly specific, otherwise shares the module-level `services/`.
-- Detail pages with tabs: each tab is its own Wrapper + presenter pair, lazy-loaded if heavy.
+- Detail pages with tabs: each tab is its own Wrapper + presenter pair, lazy-loaded if heavy, and the tab shell itself is built from the shared `ATMTabbedLayout` component (§7) — never a bespoke tab implementation per module.
 
 ---
 
@@ -348,13 +404,13 @@ modules/merchants/
 shared/
 ├── components/
 │   ├── ui/              # ATM* design-system primitives (buttons, inputs, badges...)
-│   ├── layout/           # PageHeader, Breadcrumbs, Sidebar items, EmptyLayout pieces
+│   ├── layout/           # PageHeader, Breadcrumbs, Sidebar, EmptyLayout pieces
 │   ├── tables/           # ATMTable, column helpers, table toolbar, pagination controls
 │   ├── forms/             # Generic Formik field wrappers (ATMInputField etc.), FormWrapper
-│   ├── modals/            # ATMModal, ConfirmDialog, DrawerModal
+│   ├── modals/            # ATMModal, ATMConfirmDialog, DrawerModal
 │   └── skeletons/         # ATMTableSkeleton, ATMCardSkeleton, ATMPageSkeleton
-├── hooks/                 # useDebounce, usePagination, useClickOutside, usePermission
-├── utils/                 # cn() (clsx+twMerge), arrayHelpers, objectHelpers
+├── hooks/                 # useDebounce, usePagination, useClickOutside, usePermission, useBulkAction
+├── utils/                 # cn() (clsx+twMerge), arrayHelpers, objectHelpers, sanitize.ts
 ├── constants/              # shared regex, shared option lists, shared enums
 ├── types/                  # ApiResponse<T>, PaginatedResponse<T>, SelectOption
 ├── icons/                   # Centralized icon re-exports (wrap Lucide/React Icons)
@@ -365,13 +421,13 @@ shared/
 ### 6.1 Folder Responsibilities
 
 - **components/ui/** — The design system. Every `ATM*` component lives here with its own subfolder containing `Component.tsx`, `Component.types.ts`, and `Component.test.tsx`.
-- **components/layout/** — Structural, cross-page UI not tied to one feature (e.g. `PageHeader`, `Breadcrumbs`).
+- **components/layout/** — Structural, cross-page UI not tied to one feature (e.g. `PageHeader`, `Breadcrumbs`, `Sidebar` driven by `SIDEBAR_CONFIG` from §3.4).
 - **components/tables/** — `ATMTable` wraps TanStack Table; exposes a typed `columns` API; handles sorting/pagination/selection UI chrome generically.
 - **components/forms/** — Formik-aware field wrappers that bridge Formik's `useField`/`FieldProps` to ATM UI primitives (e.g. `ATMInputField` = `ATMInput` + Formik error/touched wiring).
-- **components/modals/** — `ATMModal` (base), `ConfirmDialog` (built on ATMModal for destructive actions), `DrawerModal` (slide-in panel variant).
+- **components/modals/** — `ATMModal` (base), `ATMConfirmDialog` (built on ATMModal for destructive actions), `DrawerModal` (slide-in panel variant).
 - **components/skeletons/** — Loading placeholders matching the shape of real content, used during RTK Query `isLoading`.
-- **hooks/** — Cross-feature hooks not auth/table specific in nature but reused broadly.
-- **utils/** — Pure helper functions with zero React dependency, usable in services or components alike.
+- **hooks/** — Cross-feature hooks not auth/table specific in nature but reused broadly, including `useBulkAction` (§23.1).
+- **utils/** — Pure helper functions with zero React dependency, usable in services or components alike, including `sanitize.ts` (§9.6).
 - **icons/** — A single `Icons.ts` barrel re-exporting curated icon names from Lucide/React Icons, so icon usage stays consistent and tree-shakeable.
 - **providers/** — App-wide context providers composed in `app/AppProviders.tsx`.
 - **guards/** — Declarative permission/role/feature-flag gating components, e.g. `<PermissionGuard permission="users.create"><ATMButton/></PermissionGuard>`.
@@ -393,12 +449,17 @@ All UI MUST be built from `ATM*` components. Raw HTML inputs/buttons or raw MUI 
 | `ATMRadioGroup` | Radio button group, Formik-aware |
 | `ATMSwitch` | Toggle switch, Formik-aware |
 | `ATMMultiSelect` | Multi-select with chips/tags |
+| `ATMFileUpload` | Drag-and-drop / click-to-browse file upload, Formik-aware, supports progress + preview |
 | `ATMButton` | Primary button with variants & loading state |
 | `ATMIconButton` | Icon-only button |
 | `ATMTable` | TanStack Table wrapper with pagination/sorting/selection |
 | `ATMPageHeader` | Page title, breadcrumb, action slot |
 | `ATMCard` | Generic content card container |
 | `ATMModal` | Base modal/dialog |
+| `ATMConfirmDialog` | Destructive-action confirmation, built on `ATMModal` |
+| `ATMFormGrid` | Responsive grid layout wrapper for form fields (auto column-span rules across breakpoints), used inside every multi-field Form presenter |
+| `ATMTabbedLayout` | Standard tab shell for Detail pages with tabs (§5.2); handles active-tab state, keyboard nav, lazy tab content, and URL sync |
+| `ATMDetailGrid` | Standard read-only key/value detail layout for View pages (§5.1); renders label/value pairs in a responsive grid with consistent typography |
 | `ATMBadge` | Status/label pill |
 | `ATMTooltip` | Hover tooltip |
 | `ATMLoader` | Spinner |
@@ -410,10 +471,11 @@ All UI MUST be built from `ATM*` components. Raw HTML inputs/buttons or raw MUI 
 
 1. Every `ATM*` component accepts a `className` prop merged via `cn()` (`clsx` + `tailwind-merge`) — never overridden, always merged.
 2. Every `ATM*` component is fully typed; no `any` props.
-3. Field-level ATM components (`ATMInputField`, `ATMSelectField`, etc.) internally use Formik's `useField` and automatically render error/touched state — Wrappers never manually wire `error={errors.x && touched.x}` per field.
+3. Field-level ATM components (`ATMInputField`, `ATMSelectField`, `ATMFileUpload`, etc.) internally use Formik's `useField` and automatically render error/touched state — Wrappers never manually wire `error={errors.x && touched.x}` per field.
 4. New visual patterns repeated 2+ times MUST be extracted into a new `ATM*` component before reuse, not copy-pasted.
 5. ATM components must support `disabled`, `loading` (where relevant), and forward `ref` where DOM access is needed.
 6. ATM components live under `shared/components/ui/<ComponentName>/` with co-located types and tests.
+7. `ATMFileUpload` enforces file-size and MIME-type limits passed in as props (sourced from `constants/` per §32.5) and never silently accepts an out-of-policy file — it surfaces a Formik field error instead.
 
 ---
 
@@ -530,6 +592,16 @@ toggleUserStatus: builder.mutation<void, { id: string; isActive: boolean }>({
 - File names: `<entity>Api.ts` (e.g. `userApi.ts`, `merchantOnboardingApi.ts`).
 - Hooks auto-generated by RTK Query are consumed as-is (`useGetUsersQuery`), never manually wrapped unless adding cross-cutting logic (in which case create `use<Entity>List.ts` in module `hooks/`).
 
+### 8.7 Polling Fallback for Near-Real-Time Data
+
+Where a WebSocket channel (§9.5) doesn't yet exist for a given data type, use RTK Query's built-in `pollingInterval` rather than inventing a custom interval/timer:
+
+```ts
+useGetOpenTicketsQuery(undefined, { pollingInterval: 30_000 });
+```
+
+Polling is a temporary/fallback pattern; once a socket channel is available for that data, migrate off polling.
+
 ---
 
 ## 9. Axios Rules
@@ -563,7 +635,37 @@ export const axiosInstance = axios.create({
 ### 9.4 Rules
 
 - No module is allowed to import `axios` directly. All HTTP calls go through RTK Query, which internally uses `axiosInstance`.
-- File upload calls (multipart) still go through RTK Query mutations using `axiosBaseQuery`, with `FormData` as the body.
+- File upload calls (multipart) still go through RTK Query mutations using `axiosBaseQuery`, with `FormData` as the body, and are surfaced in the UI via `ATMFileUpload`'s progress prop.
+
+### 9.5 Real-Time / WebSocket Strategy
+
+- `src/services/socketClient.ts` is the **only** place a WebSocket connection is opened. It is a singleton, connected once after login (token attached as a query param or first-message auth handshake) and torn down on logout.
+- `socketClient.ts` exposes a minimal typed pub/sub API: `subscribe(channel, handler)` / `unsubscribe(channel, handler)` — modules never touch the raw `WebSocket` instance.
+- Modules that need live data (e.g. `notifications`, `auditLogs` live-tail) subscribe inside a module-specific hook (e.g. `useNotificationSocket.ts`) that dispatches into RTK Query's cache via `baseApi.util.updateQueryData`, keeping sockets and RTK Query cache in sync rather than maintaining a parallel state source.
+- Reconnection uses exponential backoff (capped) and surfaces a non-blocking "reconnecting..." indicator; it never blocks the UI or shows a hard error for a transient drop.
+- Where no socket channel exists yet for a given feature, fall back to RTK Query polling (§8.7) rather than inventing a bespoke interval.
+
+### 9.6 Sanitization Rule (Security-Critical)
+
+- `dangerouslySetInnerHTML` MUST NEVER be used with raw, unsanitized input — whether from the API, user input, or any external source.
+- Any HTML that must be rendered (rich-text content, formatted notification bodies, etc.) MUST first pass through `shared/utils/sanitize.ts`, a thin wrapper around **DOMPurify**:
+
+```ts
+// shared/utils/sanitize.ts
+import DOMPurify from "dompurify";
+
+export function sanitizeHtml(dirty: string): string {
+  return DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
+}
+```
+
+```tsx
+// Correct usage — never skip sanitizeHtml()
+<div dangerouslySetInnerHTML={{ __html: sanitizeHtml(notification.bodyHtml) }} />
+```
+
+- Code review and AI agents must treat any new `dangerouslySetInnerHTML` usage without a preceding `sanitizeHtml()` call as a blocking issue, not a style nitpick.
+- Prefer rendering plain text/structured React elements over raw HTML wherever the content doesn't genuinely require rich formatting.
 
 ---
 
@@ -620,6 +722,7 @@ const LoginForm = ({ values, errors, touched, handleChange, handleBlur, handleSu
 - `initialValues` always fully typed via a `<FormName>FormValues` interface — never inferred loosely.
 - Use `enableReinitialize: true` only for Edit forms hydrating from async data.
 - Prefer field-level ATM wrapper components (`ATMInputField`) that internally consume `useField` over manually wiring `values`/`errors`/`handleChange` in large forms — both patterns are acceptable, but be consistent within a module.
+- Multi-field forms lay out fields inside `ATMFormGrid` rather than ad-hoc `<div className="grid ...">` markup, so column-span/breakpoint behavior stays consistent app-wide.
 - Async submit errors always go through `parseApiError()`; field-level 422 errors map to `setErrors`, non-field errors go to `toast.error`.
 - Never put `await fetch/axios` calls inside the Form component — only inside the Wrapper's `onSubmit`.
 
@@ -764,7 +867,7 @@ Every page-level route component is `React.lazy`-imported and wrapped in `<Suspe
 
 ### 13.4 Nested Routes
 
-Module detail pages with tabs use nested routes (`/merchants/:id`, `/merchants/:id/documents`, `/merchants/:id/transactions`) rendering via `<Outlet />` inside a shared `MerchantDetailLayout`.
+Module detail pages with tabs use nested routes (`/merchants/:id`, `/merchants/:id/documents`, `/merchants/:id/transactions`) rendering via `<Outlet />` inside a shared `MerchantDetailLayout`, itself built on `ATMTabbedLayout` (§7).
 
 ### 13.5 404 / Unauthorized / Forbidden
 
@@ -797,6 +900,8 @@ Module detail pages with tabs use nested routes (`/merchants/:id`, `/merchants/:
 | `usePermission` | `hasPermission(key)`, `hasAnyPermission([...])` |
 | `useClickOutside` | Detect outside clicks (for dropdowns/modals) |
 | `useMediaQuery` | Responsive breakpoint detection |
+| `useBulkAction` | Generic selected-rows + bulk-mutation orchestration for `ATMTable` (§23.1) |
+| `useIdleTimer` | Inactivity tracking for session-timeout warning (re-exported from `modules/auth`) |
 
 ### 15.2 Rules
 
@@ -817,6 +922,9 @@ Module detail pages with tabs use nested routes (`/merchants/:id`, `/merchants/:
 | `utils/numberFormatter.ts` | Currency, percentage, large-number (K/M/B) formatting |
 | `utils/errorParser.ts` | `parseApiError(error): { message, fieldErrors? }` — the single funnel for all API errors |
 | `utils/permissionUtils.ts` | `hasPermission`, `hasAnyPermission`, `hasAllPermissions` pure functions |
+| `shared/utils/sanitize.ts` | `sanitizeHtml(dirty): string` — the single funnel for any HTML rendered via `dangerouslySetInnerHTML` (§9.6) |
+| `modules/reports/utils/exportToCsv.ts` | Wraps SheetJS to export `ATMTable` data / report data to `.xlsx`/`.csv` |
+| `modules/reports/utils/exportToPdf.ts` | Wraps `@react-pdf/renderer` to export report data to `.pdf` |
 | `constants/regex.ts` | Shared regex patterns (email, phone, PAN, GSTIN, etc.) |
 | `shared/utils/cn.ts` | `cn(...inputs) = twMerge(clsx(inputs))` — used by every ATM component |
 
@@ -842,7 +950,8 @@ All utils are pure functions, fully unit-tested, and free of React/Redux imports
 | RTK Query hooks | auto-generated | `useGetUsersQuery`, `useCreateUserMutation` |
 | Redux slices | camelCase, `<feature>Slice` | `uiSlice`, `sessionSlice` |
 | Slice actions | camelCase | `setSidebarOpen`, `clearSession` |
-| Test files | `<name>.test.ts(x)` | `LoginForm.test.tsx` |
+| Test files (unit/component) | `<name>.test.ts(x)` | `LoginForm.test.tsx` |
+| Test files (E2E) | `<flow>.spec.ts` | `login.spec.ts` |
 | Validation schema files | `<feature>.validation.ts` | `user.validation.ts` |
 | Service files | `<entity>Api.ts` | `merchantApi.ts` |
 | Module barrel | `index.ts` | re-exports public API only |
@@ -899,7 +1008,7 @@ All utils are pure functions, fully unit-tested, and free of React/Redux imports
   - `toast.error(message)` — failed mutation/query, derived from `parseApiError()`.
   - `toast.loading(message)` / `toast.promise(promise, {...})` — for long-running actions (exports, bulk operations).
 - Toast messages are short, user-facing, and never expose raw stack traces or internal error codes — `parseApiError()` maps technical errors to friendly copy.
-- Destructive confirmations (delete, deactivate) use `ConfirmDialog` (built on `ATMModal`), **not** a toast and **not** `window.confirm()`.
+- Destructive confirmations (delete, deactivate) use `ATMConfirmDialog` (built on `ATMModal`), **not** a toast and **not** `window.confirm()`.
 
 ---
 
@@ -974,8 +1083,39 @@ Rules:
 - **Sorting** — server-side sort state lifted to the Wrapper, passed as query params to RTK Query; `ATMTable` is "controlled" for sorting too (no client-side re-sort of paginated data).
 - **Filtering** — column filters and a global search box live in a `TableToolbar` (presentational), with filter state owned by the Wrapper and synced to RTK Query query params (and optionally URL search params).
 - **Actions column** — a dedicated `actions` column rendering `ATMIconButton`s (edit/delete/view), gated by `<PermissionGuard>`.
-- **Selection** — row selection (checkboxes) enabled via TanStack's row selection state when bulk actions are required; selected IDs lifted to the Wrapper for bulk mutation calls.
+- **Selection** — row selection (checkboxes) enabled via TanStack's row selection state when bulk actions are required; selected IDs lifted to the Wrapper for bulk mutation calls via `useBulkAction` (§23.1).
 - Empty/error states inside tables render `ATMNoData` (no results) distinctly from `ATMEmptyState` (true zero-state, e.g. "no clients yet, add one").
+
+### 23.1 Bulk Actions Pattern
+
+Any table supporting bulk operations (bulk deactivate, bulk delete, bulk export) uses the shared `useBulkAction` hook instead of a bespoke per-module implementation:
+
+```ts
+// shared/hooks/useBulkAction.ts
+export function useBulkAction<TId extends string>(options: {
+  selectedIds: TId[];
+  action: (ids: TId[]) => Promise<void>;
+  confirmMessage?: string;
+  successMessage: string;
+}) {
+  // Owns: confirm-dialog open state, isSubmitting, calling `action`,
+  // toast.success/error, and clearing selection on success.
+  // Returns: { execute, isSubmitting, isConfirmOpen, openConfirm, closeConfirm }
+}
+```
+
+```tsx
+// RoleListWrapper.tsx
+const { execute, isSubmitting, isConfirmOpen, openConfirm, closeConfirm } = useBulkAction({
+  selectedIds,
+  action: (ids) => bulkDeactivateRoles(ids).unwrap(),
+  confirmMessage: "Deactivate the selected roles?",
+  successMessage: "Roles deactivated",
+});
+```
+
+- The Wrapper never manually orchestrates confirm-dialog + loading + toast + selection-clear logic inline — that's what `useBulkAction` centralizes, preventing drift between modules' bulk-action UX.
+- The confirmation itself always renders via `ATMConfirmDialog`, never `window.confirm()`.
 
 ---
 
@@ -991,6 +1131,7 @@ Rules:
 1. **Route Guard** — `<PermissionRoute permission="users.view">` blocks entire pages.
 2. **Component Guard** — `<PermissionGuard permission="users.create">{children}</PermissionGuard>` hides/disables UI fragments.
 3. **Hook** — `usePermission()` exposes `hasPermission`, `hasAnyPermission`, `hasAllPermissions` for imperative checks (e.g. inside column action renderers).
+4. **Navigation** — the sidebar config (§3.4) is filtered through the same `usePermission()` so nav visibility, route access, and in-page action visibility are always derived from one permission source, never three separate ad-hoc checks.
 
 ### 24.3 Hide vs Disable
 
@@ -1007,7 +1148,7 @@ Rules:
 ## 25. Performance
 
 - **Lazy Loading** — every route-level page component via `React.lazy`; heavy modules (reports, charts) additionally lazy-load their chart libraries.
-- **Code Splitting** — natural by-route splitting via lazy imports; large third-party libs (chart libs, PDF export) dynamically `import()`ed only when the feature is used.
+- **Code Splitting** — natural by-route splitting via lazy imports; large third-party libs (Recharts, `@react-pdf/renderer`, SheetJS) dynamically `import()`ed only when the feature is used.
 - **Memoization** — `React.memo` for presentational components receiving stable props inside large lists (table rows, card grids); `useMemo` for expensive derived data (e.g. column defs depending on permissions); `useCallback` for handlers passed to memoized children.
 - **Suspense** — used at route boundaries and for lazy-loaded heavy widgets (charts) with skeleton fallbacks.
 - **Virtualization** — required for any list/table rendering 200+ rows client-side at once (rare given server-side pagination, but applicable to things like permission checklists or audit log live-tail views) — use a virtualization-friendly pattern within `ATMTable`'s body when needed.
@@ -1018,7 +1159,7 @@ Rules:
 ## 26. Accessibility
 
 - All ATM interactive components are keyboard-navigable (`Tab`, `Shift+Tab`, `Enter`, `Space`, `Esc` where relevant).
-- `ATMModal`/`ConfirmDialog` trap focus while open and restore focus to the triggering element on close.
+- `ATMModal`/`ATMConfirmDialog`/`ATMTabbedLayout` trap focus while open (modals) or manage roving tabindex (tabs), and restore focus to the triggering element on close.
 - All form fields have associated `<label>` (via ATM field components) and `aria-invalid`/`aria-describedby` wired to error messages.
 - Icon-only buttons (`ATMIconButton`) always have an `aria-label`.
 - Color is never the only signal for state (status badges pair color with text/icon).
@@ -1031,29 +1172,33 @@ Rules:
 
 ### 27.1 Stack
 
-- **Vitest** — test runner, assertions, mocking.
+- **Vitest** — unit/component test runner, assertions, mocking.
 - **React Testing Library** — component rendering/interaction, user-centric queries.
 - **MSW** — mocks RTK Query network calls at the network boundary, not by mocking hooks directly.
+- **Playwright** — end-to-end tests against a running build, covering critical user flows (login, create merchant, bulk deactivate, etc.).
 
 ### 27.2 Folder/Naming Convention
 
-- Co-located tests: `Component.tsx` + `Component.test.tsx` in the same folder.
+- Co-located unit/component tests: `Component.tsx` + `Component.test.tsx` in the same folder.
 - Hook tests: `useThing.ts` + `useThing.test.ts`.
 - MSW handlers: `modules/<feature>/__mocks__/<feature>.handlers.ts`, aggregated in a root `mocks/server.ts`.
+- E2E specs: top-level `e2e/` folder, one file per critical flow, named `<flow>.spec.ts` (e.g. `e2e/login.spec.ts`, `e2e/merchant-onboarding.spec.ts`). E2E specs are **not** co-located with source, since they cross module boundaries by nature.
 
 ### 27.3 What to Test
 
 - **Forms (presentational)** — render with mock Formik props, assert field rendering and `onChange`/`onBlur`/`onSubmit` callbacks fire correctly. No API/Formik internals needed since Forms don't own them.
 - **Wrappers** — render with MSW-mocked API, assert loading → success/error states, toast calls (mock `sonner`), navigation calls (mock `react-router-dom`'s `useNavigate`).
 - **Hooks** — `renderHook`, assert returned state/handlers behave correctly across inputs.
-- **Utils** — pure unit tests, full branch coverage for `errorParser`, `permissionUtils`, formatters.
+- **Utils** — pure unit tests, full branch coverage for `errorParser`, `permissionUtils`, `sanitize`, formatters.
 - **ATM components** — render variants (sizes, states: disabled/loading/error), snapshot only for stable visual primitives, behavior assertions for interactive ones.
+- **E2E (Playwright)** — the handful of business-critical flows end-to-end: login + MFA, merchant onboarding happy path, bulk deactivate with confirm, permission-gated route redirect. Not every CRUD screen needs an E2E spec — reserve E2E for flows where a Vitest/RTL gap would let a real regression through (multi-step, cross-module, or auth-dependent flows).
 
 ### 27.4 Best Practices
 
 - Query by role/label text (`getByRole`, `getByLabelText`) over `data-testid` where possible; reserve `data-testid` for elements with no accessible semantics.
 - No testing of implementation details (internal state, private functions) — test observable behavior only.
 - Each PR touching a Wrapper or Form must include/update its corresponding test file.
+- E2E specs run against a seeded test environment/mock backend, never against production data.
 
 ---
 
@@ -1094,7 +1239,8 @@ Example: `feat(users): add bulk deactivate action with confirm dialog`
 - [ ] Loading states present for every async action
 - [ ] Permissions gated via guards, not ad-hoc conditionals
 - [ ] Absolute imports used; no deep relative paths
-- [ ] Tests added/updated for Wrapper, Form, hooks, and utils touched
+- [ ] Any `dangerouslySetInnerHTML` usage goes through `sanitizeHtml()`
+- [ ] Tests added/updated for Wrapper, Form, hooks, and utils touched (+ E2E spec if a new critical flow was introduced)
 - [ ] No console.logs / commented-out code left behind
 - [ ] Accessibility: labels, aria attributes, keyboard nav verified
 
@@ -1109,6 +1255,7 @@ Example: `feat(users): add bulk deactivate action with confirm dialog`
 - [ ] Toasts and error messages are user-friendly, not raw technical errors
 - [ ] Performance: no obviously unnecessary re-renders or missing memoization on hot paths
 - [ ] Tests are meaningful (assert behavior, not implementation)
+- [ ] No raw `useSelector` on auth slice or raw `logout` dispatch outside `modules/auth` (§4.4)
 
 ---
 
@@ -1126,19 +1273,19 @@ These rules are binding for every AI coding agent operating on this repository.
 8. Always generate full TypeScript types/interfaces for props, DTOs, and API responses — never leave implicit `any`.
 9. Always use strict TypeScript; never disable strict checks to "make it compile."
 10. Never use `any`; use `unknown` with narrowing, or a precise type/generic instead.
-11. Never introduce React Hook Form, Zod, Zustand, or TanStack Query, even if asked — explain the approved alternative instead.
+11. Never introduce React Hook Form, Zod, Zustand, TanStack Query, Moment.js, or a second charting/E2E library, even if asked — explain the approved alternative instead.
 12. Never use inline styles except for truly dynamic, non-Tailwind-expressible values.
 13. Never duplicate code that already exists as a shared hook/util/ATM component — reuse or extend it.
 14. Always create a reusable `ATM*` component when a UI pattern repeats more than once.
 15. Always use barrel exports (`index.ts`) at module boundaries; never deep-import another module's internals.
 16. Always follow feature-first architecture; never scatter one feature's files across unrelated top-level folders.
-17. Always keep authentication logic (tokens, session, auth API calls) inside `modules/auth`; never leak it into `shared/`, layouts, or other modules.
+17. Always keep authentication logic (tokens, session, auth API calls) inside `modules/auth`; never leak it into `shared/`, layouts, or other modules — and never read auth state via raw `useSelector` or dispatch `logout` directly outside `modules/auth` (§4.4).
 18. Always route API errors through `parseApiError()`; never show raw error objects or stack traces to the user.
 19. Always show a loading state for any async user action (button, form, table, page).
 20. Always gate permission-sensitive UI with `PermissionGuard`/`PermissionRoute`; never hardcode role checks inline with magic strings scattered around — use `usePermission`.
 21. Always use Sonner for notifications; never `alert()`/`confirm()`.
 22. Always use absolute imports (`@modules/...`, `@shared/...`); never deep relative imports (`../../../../`).
-23. Always colocate tests with the Wrapper/Form/hook/util being added or changed.
+23. Always colocate unit/component tests with the Wrapper/Form/hook/util being added or changed; add a Playwright spec under `e2e/` when introducing a new business-critical flow.
 24. When generating a new CRUD module, always scaffold the full standard structure (`pages/List`, `Add`, `Edit`, `View`, `services`, `types`, `constants`, `index.ts`) even if some screens start minimal — never silently omit a layer.
 25. When extending RTK Query, always add proper `tagTypes`/`providesTags`/`invalidatesTags` — never leave stale-cache bugs by omitting invalidation.
 26. When uncertain whether something is feature-specific or shared, default to feature-specific first; promote to `shared/` only once reused by a second module (avoid premature abstraction).
@@ -1146,6 +1293,11 @@ These rules are binding for every AI coding agent operating on this repository.
 28. Never generate code that bypasses the Page → Wrapper → Form layering "for simplicity" — simplicity must be achieved within the architecture, not by abandoning it.
 29. Always prefer composition over prop-drilling more than 2 levels — lift state to the nearest Wrapper or relevant Redux slice instead.
 30. Always write self-documenting code with precise names over excessive comments; comments explain *why*, not *what*.
+31. Never render HTML via `dangerouslySetInnerHTML` without first passing it through `sanitizeHtml()` (§9.6) — treat any exception as a blocking security issue.
+32. Never open a raw `WebSocket` or a second socket connection anywhere outside `services/socketClient.ts`; always subscribe via its typed pub/sub API (§9.5).
+33. Always build tab shells from `ATMTabbedLayout` and read-only detail screens from `ATMDetailGrid` — never hand-roll a bespoke tabs or key/value layout implementation per module.
+34. Always route bulk table operations through `useBulkAction` (§23.1) — never hand-roll per-module confirm+loading+toast+selection-clear orchestration.
+35. Always add new sidebar entries via `SIDEBAR_CONFIG` (§3.4) — never hardcode a new nav item directly inside the Sidebar component.
 
 ---
 
@@ -1163,6 +1315,8 @@ These rules are binding for every AI coding agent operating on this repository.
 - Do use `clsx`/`tailwind-merge` (`cn()`) for every conditional class.
 - Do add new shared primitives to `shared/components/ui` the moment a pattern is reused.
 - Do keep module `index.ts` exports minimal and intentional (only what other modules truly need).
+- Do sanitize any HTML before rendering it via `dangerouslySetInnerHTML` (§9.6).
+- Do use `useBulkAction` for any new bulk-operation UI (§23.1).
 
 ### ❌ Don't
 
@@ -1172,12 +1326,15 @@ These rules are binding for every AI coding agent operating on this repository.
 - Don't hardcode API URLs — always go through `config.API_BASE_URL` + relative paths in services.
 - Don't hardcode role/permission strings inline in JSX conditionals.
 - Don't create a new `createApi` instance per module — inject into the single `baseApi`.
-- Don't use `window.confirm`/`alert` for destructive actions — use `ConfirmDialog`.
+- Don't use `window.confirm`/`alert` for destructive actions — use `ATMConfirmDialog`.
 - Don't write CSS files, `.module.css`, or `styled-components` — Tailwind only.
 - Don't leave `console.log` statements in committed code.
 - Don't catch errors and do nothing (silent failure) — always surface via toast or inline error UI.
 - Don't import a sibling module's internal component/service file directly — go through its barrel.
 - Don't add a library not listed in §0.1 without explicit human approval.
+- Don't render unsanitized HTML via `dangerouslySetInnerHTML` (§9.6).
+- Don't open a second WebSocket connection outside `socketClient.ts` (§9.5).
+- Don't read auth state or dispatch `logout` directly outside `modules/auth` (§4.4).
 
 ---
 
@@ -1214,8 +1371,8 @@ modules/dashboard/
 │   │   ├── ActiveMerchantsWidget/
 │   │   └── PendingApprovalsWidget/
 │   └── charts/
-│       ├── RevenueTrendChart/
-│       └── SettlementVolumeChart/
+│       ├── RevenueTrendChart/          # Recharts, dynamically imported
+│       └── SettlementVolumeChart/      # Recharts, dynamically imported
 ├── pages/
 │   ├── DashboardPage.tsx
 │   └── DashboardWrapper.tsx
@@ -1246,25 +1403,77 @@ modules/settings/
 
 See §6 in full.
 
+### 31.6 Navigation Module Template
+
+```
+modules/navigation/
+├── constants/sidebar.config.ts     # SIDEBAR_CONFIG (see §3.4)
+├── types/navigation.types.ts       # SidebarNavItem
+├── hooks/useFilteredSidebar.ts     # applies usePermission() over SIDEBAR_CONFIG
+└── index.ts
+```
+
 ---
 
-## 32. Known Gaps / What This Document Intentionally Leaves Open
+## 32. Environment & Configuration
+
+### 32.1 Env File Convention
+
+```
+.env.development       # local dev defaults, safe to commit as .env.example
+.env.staging            # staging API/WS URLs, feature flags
+.env.production          # production API/WS URLs
+.env.local                # gitignored — personal overrides, never committed
+```
+
+- Vite mode flags (`--mode staging`) select which `.env.<mode>` file loads.
+- `config/index.ts` is the only file reading `import.meta.env.*`; it exposes a typed, validated config object (throw at boot if a required var is missing, don't silently fall back to `undefined` in production builds).
+- Secrets (API keys) never live in frontend env files beyond public, client-safe keys — anything sensitive stays server-side.
+
+### 32.2 Redux Persistence Strategy
+
+- `redux-persist` (or an equivalent lightweight persistence layer) is applied **selectively**, not to the whole store.
+- Persisted: `uiSlice` (sidebar collapsed state, theme preference).
+- Session-only (never persisted): `authSlice`/`sessionSlice` tokens (delegate to `tokenStorage`'s own strategy, not `redux-persist`), any in-flight form/wizard state.
+- New slices default to **not persisted** unless explicitly justified in the PR description.
+
+### 32.3 Multi-Tenancy Header
+
+- Tenant/org context is sent via a dedicated header, `X-Org-Id`, attached in the Axios request interceptor (§9.2) alongside the `Authorization` header — sourced from the active session's org claim, never from a URL param or client-editable field alone.
+- If the backend later moves this into the JWT claim instead, only `axiosInstance.ts`'s interceptor changes — no module code should read/attach org context itself.
+
+### 32.4 Monitoring / Observability
+
+- A single hook point exists in `app/AppProviders.tsx` (error boundary) and `services/axiosInstance.ts` (5xx/network interceptor branch) for wiring a monitoring SDK (Sentry, Datadog RUM, or equivalent).
+- Until a provider is chosen, these hook points log to `console.error` with a structured `{ context, error }` shape so swapping in a real SDK later is a one-line change per hook point, not a refactor.
+
+### 32.5 File Upload Limits
+
+- Global defaults live in `constants/fileUpload.constants.ts`: `MAX_FILE_SIZE_MB`, `ALLOWED_DOCUMENT_MIME_TYPES`, `ALLOWED_IMAGE_MIME_TYPES`.
+- Per-document-type overrides (e.g. KYC PAN card vs. bank statement) are passed as props into `ATMFileUpload` from the owning module's constants, composed on top of the global defaults — never hardcoded inline in a component.
+
+### 32.6 i18n
+
+- No i18n library is adopted yet. All user-facing strings are still hardcoded English in components.
+- If/when localization is scoped, this section will specify the library (e.g. `react-i18next`) and the translation-key file convention; until then, agents should not preemptively wrap strings in a translation function.
+
+---
+
+## 33. Known Gaps / What This Document Intentionally Leaves Open
 
 Even at this depth, the following are deliberately left for follow-up decisions (call these out when generating code that touches them, rather than guessing silently):
 
-1. **State Persistence Strategy** — which Redux slices use `redux-persist` (e.g. theme, sidebar collapsed state) vs. session-only. To be decided per slice.
-2. **Multi-Tenancy Header Strategy** — exact header name/shape for tenant/org context (`X-Org-Id` vs. JWT claim vs. subdomain-based) needs backend confirmation.
-3. **i18n** — no internationalization library is specified yet (e.g. `react-i18next`); add a dedicated section once localization is in scope.
-4. **Monitoring/Observability** — Sentry/Datadog/LogRocket hookup points are referenced (§9.2, §21.4) but the actual provider/SDK is not yet chosen.
-5. **File Upload Size/Type Limits** — global constants exist in principle (`constants/`) but exact business limits per document type (KYC docs, etc.) need product input.
-6. **Design Tokens Source of Truth** — whether `theme/` tokens are hand-authored or generated from a Figma token export (e.g. Style Dictionary) is undecided.
-7. **CI/CD Pipeline** — lint/test/build gates, preview deployments, and versioning strategy are out of scope for this document; cover in a separate `CONTRIBUTING.md`/CI config.
-8. **API Versioning** — whether `baseURL` includes `/v1/` and how breaking backend changes are coordinated with frontend releases.
-9. **Feature Flags** — `config/` is set up to hold flags conceptually, but the flag provider (LaunchDarkly, home-grown, env-based) is unspecified.
-10. **Storybook** — ATM component documentation/visual testing via Storybook is recommended but not mandated; add if the team adopts it.
+1. **i18n** — see §32.6; no internationalization library is specified yet.
+2. **Monitoring/Observability provider** — hook points exist (§32.4) but the actual SDK (Sentry/Datadog/LogRocket) is not yet chosen.
+3. **Design Tokens Source of Truth** — whether `theme/` tokens are hand-authored or generated from a Figma token export (e.g. Style Dictionary) is undecided.
+4. **CI/CD Pipeline** — lint/test/build gates, preview deployments, and versioning strategy are out of scope for this document; cover in a separate `CONTRIBUTING.md`/CI config.
+5. **API Versioning** — whether `baseURL` includes `/v1/` and how breaking backend changes are coordinated with frontend releases.
+6. **Feature Flags** — `config/` is set up to hold flags conceptually, but the flag provider (LaunchDarkly, home-grown, env-based) is unspecified.
+7. **Storybook** — ATM component documentation/visual testing via Storybook is recommended but not mandated; add if the team adopts it.
+8. **Socket auth handshake details** — §9.5 specifies a singleton client and pub/sub API, but the exact auth handshake (token-in-query-param vs. first-message auth vs. cookie-based) needs backend confirmation.
 
 ---
 
-*This document is a living standard. Any change to architecture, banned/approved libraries, or naming conventions must be proposed as a PR to this file and reviewed before AI agents or engineers adopt the new convention.* read authentication state directly via `useSelector` or invoke `logout` action raw in separate module components.
+*This document is a living standard. Any change to architecture, banned/approved libraries, or naming conventions must be proposed as a PR to this file and reviewed before AI agents or engineers adopt the new convention.*
 
 <!-- http://localhost:5104/swagger/v1/swagger.json -->

@@ -28,7 +28,7 @@ export const Breadcrumb: React.FC = () => {
 
   return (
     <nav className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-      <Link to="/" className="hover:text-accent-600 dark:hover:text-accent-400 transition-colors flex items-center gap-1">
+      <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1">
         <Home size={14} />
       </Link>
  
@@ -49,7 +49,7 @@ export const Breadcrumb: React.FC = () => {
                 {displayName}
               </span>
             ) : (
-              <Link to={routeTo} className="hover:text-accent-600 dark:hover:text-accent-400 transition-colors">
+              <Link to={routeTo} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 {displayName}
               </Link>
             )}

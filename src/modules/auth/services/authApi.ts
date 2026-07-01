@@ -11,7 +11,7 @@ import type {
   User,
   ApiResponse,
   MfaSetupResponse,
-} from '../types/authTypes';
+} from '../types/auth.types';
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -64,6 +64,7 @@ export const authApi = baseApi.injectEndpoints({
       query: () => ({
         url: '/api/v1/auth/logout',
         method: 'POST',
+        data: {},
       }),
     }),
 
@@ -71,6 +72,7 @@ export const authApi = baseApi.injectEndpoints({
       query: () => ({
         url: '/api/v1/auth/refresh',
         method: 'POST',
+        data: { refreshToken: null },
       }),
     }),
 

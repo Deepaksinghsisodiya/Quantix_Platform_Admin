@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { setMfaSetupRequired, selectCurrentUser } from '../slices/authSlice';
 import { useLazySetupMfaQuery, useEnableMfaMutation } from '../services/authApi';
-import MfaSetupForm from './MfaSetupForm';
+import MFAForm from './MFAForm';
 
 const verifySchema = Yup.object().shape({
   code: Yup.string()
@@ -16,14 +16,14 @@ const verifySchema = Yup.object().shape({
     .required('Enter the 6-digit code'),
 });
 
-export const MfaSetupWrapper: React.FC = () => {
+export const MFAWrapper: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
 
   const [step, setStep] = useState(1);
   const [errorMessage, setErrorMessage] = useState('');
-  
+
   const [secret, setSecret] = useState('');
   const [totpUri, setTotpUri] = useState('');
   const [backupCodes, setBackupCodes] = useState<readonly string[]>([]);
@@ -35,7 +35,7 @@ export const MfaSetupWrapper: React.FC = () => {
   // Lazy-load the setup payload when the user advances past the overview step.
   useEffect(() => {
     if (step !== 2 || secret) return;
-    
+
     triggerSetup()
       .unwrap()
       .then((res) => {
@@ -124,7 +124,7 @@ export const MfaSetupWrapper: React.FC = () => {
       validationSchema={verifySchema}
       onSubmit={handleVerify}
     >
-      <MfaSetupForm
+      <MFAForm
         step={step}
         setStep={setStep}
         secret={secret}
@@ -143,4 +143,4 @@ export const MfaSetupWrapper: React.FC = () => {
   );
 };
 
-export default MfaSetupWrapper;
+export default MFAWrapper;

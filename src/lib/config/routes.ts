@@ -28,10 +28,8 @@ export const ROUTES = {
   TOKENS: {
     LIST: '/tokens',
     GENERATE: '/tokens/generate',
-    BATCH_GENERATE: '/tokens/batch-generate',
-    HISTORY: '/tokens/history',
+    BATCH_GENERATE: '/tokens/bulk',
     VALIDITY: '/tokens/validity',
-    PRICING: '/tokens/pricing',
     DETAIL: (id: string) => `/tokens/${id}`,
   },
 

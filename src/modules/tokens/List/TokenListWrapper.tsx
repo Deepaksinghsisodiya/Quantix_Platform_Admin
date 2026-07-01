@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useTokenHistory, useRevokeToken, useTokenMetrics } from '../services/useTokens';
+import { useTokenHistory, useRevokeToken, useTokenMetrics, useExportTokensCsv } from '../services/useTokens';
 import type { TokenTier, TokenStatus, TokenFilter, RechargeToken } from '../types/token.types';
 import { toast } from 'sonner';
 import { TokenList } from './TokenList';
@@ -21,6 +21,9 @@ export const TokenListWrapper: React.FC = () => {
   // Fetch metrics for top stats cards
   const { data: metricsData } = useTokenMetrics();
   const metrics = metricsData?.data;
+
+  // Server-side CSV export
+  const csvExport = useExportTokensCsv();
 
   const filterParams: Partial<TokenFilter> & { page: number; pageSize: number } = useMemo(
     () => ({
@@ -56,8 +59,34 @@ export const TokenListWrapper: React.FC = () => {
     );
   }, [revokeTarget, revokeReason, revokeMutation]);
 
-  const handleExportCsv = useCallback(() => {
-    if (tokens.length === 0) return;
+  const handleExportCsv = useCallback(async () => {
+    try {
+      // Try server-side export first
+      const blob = await csvExport.trigger({
+        status: statusFilter || undefined,
+      }).unwrap();
+      
+      if (blob instanceof Blob && blob.size > 0) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `token_export_${Date.now()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('CSV exported from server');
+        return;
+      }
+    } catch {
+      // Server export failed — fall back to client-side
+    }
+
+    // Client-side fallback
+    if (tokens.length === 0) {
+      toast.warning('No tokens to export');
+      return;
+    }
     try {
       const headers = ['Token ID', 'Merchant', 'Tier', 'Valid From', 'Valid To', 'Generated At', 'Status'];
       const rows = tokens.map((t) => [
@@ -84,7 +113,7 @@ export const TokenListWrapper: React.FC = () => {
     } catch {
       toast.error('Failed to export CSV');
     }
-  }, [tokens]);
+  }, [csvExport, statusFilter, tokens]);
 
   return (
     <TokenList

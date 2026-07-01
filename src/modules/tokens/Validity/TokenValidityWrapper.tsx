@@ -2,8 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ROUTES } from '@/lib/config/routes';
-import { sendRenewalReminder, sendBulkRenewalReminders } from '@/lib/api/tokens';
-import { useExpiringTokens } from '../services/useTokens';
+import { useExpiringTokens, useSendRenewalReminders } from '../services/useTokens';
 import type { TokenTier, RechargeToken } from '@/lib/types';
 import { TokenValidityPage, MerchantValidity } from './TokenValidityPage';
 
@@ -65,6 +64,8 @@ export const TokenValidityWrapper: React.FC = () => {
   const tokens = data?.data ?? [];
   const merchants = useMemo(() => adaptToValidity(tokens), [tokens]);
 
+  const sendRemindersMutation = useSendRenewalReminders();
+
   const expiring7 = useMemo(() => merchants.filter((t) => t.daysRemaining > 0 && t.daysRemaining <= 7).length, [merchants]);
   const expiring14 = useMemo(() => merchants.filter((t) => t.daysRemaining > 7 && t.daysRemaining <= 14).length, [merchants]);
   const expiring30 = useMemo(() => merchants.filter((t) => t.daysRemaining > 14 && t.daysRemaining <= 30).length, [merchants]);
@@ -83,26 +84,30 @@ export const TokenValidityWrapper: React.FC = () => {
     navigate(`${ROUTES.TOKENS.GENERATE}?${params.toString()}`);
   }, [navigate]);
 
-  const handleSendReminder = useCallback(async (merchant: MerchantValidity) => {
-    try {
-      await sendRenewalReminder(merchant.id);
-      toast.success(`Renewal reminder sent to ${merchant.merchantName}`);
-    } catch {
-      toast.error(`Failed to send reminder to ${merchant.merchantName}`);
-    }
-  }, []);
+  const handleSendReminder = useCallback((merchant: MerchantValidity) => {
+    sendRemindersMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success(`Renewal reminder sent to ${merchant.merchantName}`);
+      },
+      onError: () => {
+        toast.error(`Failed to send reminder to ${merchant.merchantName}`);
+      },
+    });
+  }, [sendRemindersMutation]);
 
   const handleBulkReminders = useCallback(async () => {
     setSendingReminders(true);
-    try {
-      const res = await sendBulkRenewalReminders(30);
-      toast.success(`Renewal reminders sent to ${res.data.sentCount} merchants expiring within 30 days`);
-    } catch {
-      toast.error('Failed to send bulk renewal reminders');
-    } finally {
-      setSendingReminders(false);
-    }
-  }, []);
+    sendRemindersMutation.mutate(undefined, {
+      onSuccess: (res) => {
+        toast.success(`Renewal reminders sent to ${res.data?.sentCount ?? 0} merchants expiring within 30 days`);
+        setSendingReminders(false);
+      },
+      onError: () => {
+        toast.error('Failed to send bulk renewal reminders');
+        setSendingReminders(false);
+      },
+    });
+  }, [sendRemindersMutation]);
 
   const dueMerchantsCount = useMemo(() => {
     return merchants.filter((t) => t.daysRemaining <= 30 && t.daysRemaining > 0).length;

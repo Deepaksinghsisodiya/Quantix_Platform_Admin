@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
-interface MfaSetupFormProps {
+interface MFAFormProps {
   step: number;
   setStep: (step: number) => void;
   secret: string;
@@ -51,9 +51,9 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
                 className={cn(
                   'flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300',
                   isComplete
-                    ? 'bg-brand-600 text-white shadow-md shadow-brand-500/25 dark:bg-brand-500'
+                    ? 'bg-accent-600 text-white shadow-md shadow-accent-500/25 dark:bg-accent-500'
                     : isActive
-                      ? 'border-2 border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-400 dark:bg-brand-950 dark:text-brand-300 scale-105'
+                      ? 'border-2 border-accent-500 bg-accent-50 text-accent-600 dark:border-accent-400 dark:bg-accent-950 dark:text-accent-300 scale-105'
                       : 'border border-surface-200 bg-surface-50 text-surface-400 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-500',
                 )}
               >
@@ -63,9 +63,9 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
                 className={cn(
                   'text-[9px] font-bold uppercase tracking-wider',
                   isActive
-                    ? 'text-brand-600 dark:text-brand-400'
+                    ? 'text-accent-600 dark:text-accent-400'
                     : isComplete
-                      ? 'text-brand-500 dark:text-brand-500'
+                      ? 'text-accent-500 dark:text-accent-500'
                       : 'text-surface-400 dark:text-surface-500',
                 )}
               >
@@ -77,7 +77,7 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
                 className={cn(
                   'mb-5 h-0.5 w-6 sm:w-8 rounded-full transition-colors duration-300',
                   stepNum < currentStep
-                    ? 'bg-brand-600 dark:bg-brand-500'
+                    ? 'bg-accent-600 dark:bg-accent-500'
                     : 'bg-surface-200 dark:bg-surface-800',
                 )}
               />
@@ -89,7 +89,7 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
   );
 }
 
-export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
+export const MFAForm: React.FC<MFAFormProps> = ({
   step,
   setStep,
   secret,
@@ -122,17 +122,17 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-brand-100 selection:text-brand-900 dark:bg-slate-950">
+    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
       {/* Ambient glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-brand-300/30 to-indigo-400/10 rounded-full blur-[140px] dark:from-brand-900/20 dark:to-indigo-900/5 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-tl from-emerald-300/20 to-brand-400/10 rounded-full blur-[140px] dark:from-emerald-950/15 dark:to-brand-900/10 pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-accent-300/30 to-indigo-400/10 rounded-full blur-[140px] dark:from-accent-900/20 dark:to-indigo-900/5 pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-tl from-emerald-300/20 to-accent-400/10 rounded-full blur-[140px] dark:from-emerald-950/15 dark:to-accent-900/10 pointer-events-none" />
 
       {/* Card Wrapper */}
       <div className="relative w-full max-w-[460px] animate-slide-up z-10">
-        <div className="rounded-[2rem] border border-white/60 bg-white/80 p-8 sm:p-10 shadow-2xl backdrop-blur-xl dark:border-surface-800/40 dark:bg-surface-900/80 shadow-brand-500/5">
+        <div className="rounded-[2rem] border border-white/60 bg-white/80 p-8 sm:p-10 shadow-2xl backdrop-blur-xl dark:border-surface-800/40 dark:bg-surface-900/80 shadow-accent-500/5">
           {/* Logo */}
           <div className="mb-6 flex flex-col items-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 shadow-lg shadow-brand-500/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-600 to-accent-400 shadow-lg shadow-accent-500/20">
               <span className="text-xl font-black text-white tracking-tighter">Q</span>
             </div>
           </div>
@@ -148,8 +148,8 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
             {step === 1 && (
               <div className="flex flex-col gap-6 animate-fade-in">
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-950/40 shadow-sm">
-                    <ShieldCheck className="h-7 w-7 text-brand-600 dark:text-brand-400 animate-pulse" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-50 dark:bg-accent-950/40 shadow-sm">
+                    <ShieldCheck className="h-7 w-7 text-accent-600 dark:text-accent-400 animate-pulse" />
                   </div>
                   <h2 className="text-lg font-bold text-surface-900 dark:text-surface-50 mt-1">
                     Enable Two-Factor Security
@@ -181,7 +181,7 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
                       key={i}
                       className="flex items-start gap-4 rounded-2xl border border-surface-100 bg-surface-50/50 p-4 dark:border-surface-800/40 dark:bg-surface-900/50"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 shadow-sm border border-brand-100/20">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-950/60 dark:text-accent-400 shadow-sm border border-accent-100/20">
                         {item.icon}
                       </div>
                       <div className="space-y-0.5">
@@ -197,7 +197,7 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
                 <div className="flex flex-col gap-3 mt-2">
                   <button
                     type="button"
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] hover:shadow-xl"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all active:scale-[0.98] hover:shadow-xl"
                     onClick={() => setStep(2)}
                   >
                     Get Started
@@ -225,7 +225,7 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
 
                 {/* QR code card */}
                 <div className="flex justify-center">
-                  <div className="rounded-[1.5rem] border border-surface-200/60 bg-white p-5 shadow-lg shadow-brand-500/5 dark:border-surface-800/40">
+                  <div className="rounded-[1.5rem] border border-surface-200/60 bg-white p-5 shadow-lg shadow-accent-500/5 dark:border-surface-800/40">
                     {totpUri ? (
                       <QRCodeSVG value={totpUri} size={170} level="M" />
                     ) : (
@@ -268,7 +268,7 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
                   <button
                     type="button"
                     disabled={!secret}
-                    className="flex-1 h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand-500/10 hover:shadow-xl hover:shadow-brand-500/20 transition-all active:scale-[0.98]"
+                    className="flex-1 h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent-500/10 hover:shadow-xl hover:shadow-accent-500/20 transition-all active:scale-[0.98]"
                     onClick={() => setStep(3)}
                   >
                     Next <ChevronRight size={16} />
@@ -281,10 +281,10 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
             {step === 3 && formik && (
               <Form className="flex flex-col gap-6 animate-fade-in" noValidate>
                 <div className="text-center space-y-1">
-                  <h2 className="text-lg font-bold text-surface-900 dark:text-surface-50">
+                  <h2 className="text-lg font-bold text-surface-900 dark:text-surface-555">
                     Verify Your Code
                   </h2>
-                  <p className="text-xs text-surface-400 dark:text-surface-550 leading-relaxed">
+                  <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed">
                     Verify connection by entering the code from your app.
                   </p>
                 </div>
@@ -302,8 +302,8 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
                     placeholder="000000"
                     className={cn(
                       'w-48 h-14 text-center text-3xl font-mono tracking-[0.4em] rounded-xl border border-surface-200 bg-surface-50/50 outline-none transition-all duration-300',
-                      'focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/5 focus:shadow-sm',
-                      'dark:border-surface-800 dark:bg-surface-900/50 dark:text-surface-100 dark:focus:border-brand-400 dark:focus:bg-surface-800',
+                      'focus:border-accent-500 focus:bg-white focus:ring-4 focus:ring-accent-500/5 focus:shadow-sm',
+                      'dark:border-surface-800 dark:bg-surface-900/50 dark:text-surface-100 dark:focus:border-accent-400 dark:focus:bg-surface-800',
                       formik.errors.code && formik.touched.code && 'border-danger focus:border-danger focus:ring-danger/5 dark:border-danger dark:focus:border-danger',
                     )}
                   />
@@ -329,7 +329,7 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 h-12 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand-500/20 transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none hover:shadow-xl hover:shadow-brand-500/25"
+                    className="flex-1 h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none hover:shadow-xl hover:shadow-accent-500/25"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
@@ -401,7 +401,7 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
 
                 <button
                   type="button"
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] hover:shadow-xl"
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all active:scale-[0.98] hover:shadow-xl"
                   onClick={onComplete}
                 >
                   Done — Go to Dashboard
@@ -420,4 +420,4 @@ export const MfaSetupForm: React.FC<MfaSetupFormProps> = ({
   );
 };
 
-export default MfaSetupForm;
+export default MFAForm;

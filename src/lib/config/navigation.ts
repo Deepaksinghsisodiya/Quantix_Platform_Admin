@@ -39,8 +39,7 @@ export const SIDEBAR_NAVIGATION: readonly NavigationGroup[] = [
       { label: 'Token Management', path: ROUTES.TOKENS.LIST, icon: 'Coins', requiredModule: 'tokens' },
       { label: 'Generate Tokens', path: ROUTES.TOKENS.GENERATE, icon: 'CirclePlus', requiredModule: 'tokens' },
       { label: 'Batch Generate', path: ROUTES.TOKENS.BATCH_GENERATE, icon: 'Layers', requiredModule: 'tokens' },
-      { label: 'Token History', path: ROUTES.TOKENS.HISTORY, icon: 'History', requiredModule: 'tokens' },
-      { label: 'Pricing', path: ROUTES.TOKENS.PRICING, icon: 'Tag', requiredModule: 'tokens' },
+      { label: 'Token Validity', path: ROUTES.TOKENS.VALIDITY, icon: 'ShieldCheck', requiredModule: 'tokens' },
     ],
   },
   {

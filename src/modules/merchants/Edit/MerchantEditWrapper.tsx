@@ -40,11 +40,10 @@ export const MerchantEditWrapper: React.FC = () => {
       await updateMerchant({
         id,
         data: {
-          businessName: values.businessName,
-          contactPerson: values.contactPerson,
-          email: values.email,
-          phone: values.phone,
-          country: values.country,
+          displayName: values.businessName,
+          contactName: values.contactPerson,
+          contactEmail: values.email,
+          contactPhone: values.phone,
         },
       }).unwrap();
       toast.success('Merchant details updated successfully');

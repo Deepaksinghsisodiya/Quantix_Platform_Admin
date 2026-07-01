@@ -1,17 +1,17 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
-import LoginPage from '@/modules/auth/Login/LoginPage';
-import MFASetupPage from '@/modules/auth/MfaSetup/MfaSetupPage';
-import ForgotPasswordPage from '@/modules/auth/ForgotPassword/ForgotPasswordPage';
-import ResetPasswordPage from '@/modules/auth/ResetPassword/ResetPasswordPage';
-import ChangePasswordPage from '@/modules/auth/ChangePassword/ChangePasswordPage';
 import {
-  selectIsAuthenticated,
-  selectMfaSetupRequired,
-  selectMustChangePassword,
+  LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  ChangePasswordPage,
+  MfaSetupPage as MFASetupPage,
+  ProtectedRoute,
+  PublicRoute,
   selectCurrentUser,
-} from '@/modules/auth/slices/authSlice';
+  selectIsAuthenticated,
+} from '@/modules/auth';
 import { usePermission } from '@/shared/hooks/usePermission';
 import type { PermissionModule } from '@/lib/utils/permissions';
 
@@ -36,29 +36,7 @@ function PageSkeleton() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Protected Route — redirects to /login when unauthenticated                */
-/* -------------------------------------------------------------------------- */
 
-function ProtectedRoute() {
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const mfaSetupRequired = useAppSelector(selectMfaSetupRequired);
-  const mustChangePassword = useAppSelector(selectMustChangePassword);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (mustChangePassword) {
-    return <Navigate to="/change-password" replace />;
-  }
-
-  if (mfaSetupRequired) {
-    return <Navigate to="/mfa-setup" replace />;
-  }
-
-  return <Outlet />;
-}
 
 /* -------------------------------------------------------------------------- */
 /*  Merchant Guard — gates merchant-only routes                               */
@@ -255,9 +233,11 @@ export function AppRouter() {
     <Suspense fallback={<PageSkeleton />}>
       <Routes>
         {/* ---- Public + first-login routes (outside ProtectedRoute) ---- */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+        </Route>
         <Route path="/mfa-setup" element={<MFASetupPage />} />
         {/* Pass 40 (2026-05-24): forced first-login password rotation. ProtectedRoute
             redirects here when mustChangePassword is true; the page itself is reachable

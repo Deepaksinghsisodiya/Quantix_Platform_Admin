@@ -1,60 +1,17 @@
-import React, { useMemo } from 'react';
-import { Form, useFormikContext } from 'formik';
+import React from 'react';
+import { Form } from 'formik';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, ShieldAlert, Key, ArrowLeft } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowLeft, Mail, Key } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
 
-// Password Strength Meter Component
-const PasswordStrengthMeter: React.FC = () => {
-  const { values } = useFormikContext<{ newPassword: string }>();
-  const password = values.newPassword || '';
-
-  const strength = useMemo(() => {
-    if (!password) return { score: 0, label: '', color: '' };
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    if (score <= 2) return { score, label: 'Weak', color: 'bg-rose-500 text-rose-500' };
-    if (score === 3) return { score, label: 'Fair', color: 'bg-amber-500 text-amber-500' };
-    if (score === 4) return { score, label: 'Good', color: 'bg-indigo-500 text-indigo-500' };
-    return { score, label: 'Strong', color: 'bg-emerald-500 text-emerald-500' };
-  }, [password]);
-
-  if (!password) return null;
-
-  return (
-    <div className="space-y-1.5 mt-2 px-1">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-              i <= strength.score
-                ? strength.color.split(' ')[0]
-                : 'bg-surface-200 dark:bg-surface-800'
-            }`}
-          />
-        ))}
-      </div>
-      <p className={`text-[10px] font-bold uppercase tracking-widest ${strength.color.split(' ')[1]}`}>
-        {strength.label}
-      </p>
-    </div>
-  );
-};
-
 interface ResetPasswordFormProps {
-  email: string | null;
-  token: string | null;
+  email?: string;
+  token?: string;
   showNew: boolean;
-  setShowNew: (show: boolean) => void;
+  setShowNew: (val: boolean) => void;
   showConfirm: boolean;
-  setShowConfirm: (show: boolean) => void;
+  setShowConfirm: (val: boolean) => void;
   isSubmitting: boolean;
 }
 
@@ -69,7 +26,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 }) => {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
-      {/* Premium Ambient Glows */}
+      {/* Ambient Ambient Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-accent-300/30 to-indigo-400/10 rounded-full blur-[140px] dark:from-accent-900/20 dark:to-indigo-900/5 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-tl from-emerald-300/20 to-accent-400/10 rounded-full blur-[140px] dark:from-emerald-950/15 dark:to-accent-900/10 pointer-events-none" />
 
@@ -84,16 +41,25 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             </div>
             <div className="text-center space-y-1">
               <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-555">
-                Reset Password
+                Quantix
               </h1>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
-                Setup new security keys
+                Platform Admin
               </p>
             </div>
           </div>
 
-          <Form className="flex flex-col gap-5" noValidate>
-            {/* Email Input (only if not prefilled from URL query params) */}
+          <Form className="flex flex-col gap-6" noValidate>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-surface-900 dark:text-surface-555">
+                Reset Password
+              </h3>
+              <p className="text-xs text-surface-400 dark:text-surface-500 px-2 leading-relaxed">
+                Enter your credentials along with the recovery code sent to your email to configure your new password.
+              </p>
+            </div>
+
+            {/* Email Field - only show if not pre-filled */}
             {!email && (
               <ATMInputField
                 name="email"
@@ -101,11 +67,11 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                 placeholder="name@quantix.io"
                 autoComplete="email"
                 required
-                icon={<ShieldAlert size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                icon={<Mail size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
               />
             )}
 
-            {/* Token/Code Input (only if not prefilled from URL query params) */}
+            {/* Token Field - only show if not pre-filled */}
             {!token && (
               <ATMInputField
                 name="token"
@@ -118,26 +84,23 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             )}
 
             {/* New Password */}
-            <div>
-              <ATMInputField
-                name="newPassword"
-                label="New Password"
-                type={showNew ? 'text' : 'password'}
-                placeholder="Enter new password"
-                required
-                icon={<Lock size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                suffix={
-                  <button
-                    type="button"
-                    className="p-1 hover:text-accent-600 dark:hover:text-accent-400 transition-colors outline-none text-surface-400"
-                    onClick={() => setShowNew(!showNew)}
-                  >
-                    {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                }
-              />
-              <PasswordStrengthMeter />
-            </div>
+            <ATMInputField
+              name="newPassword"
+              label="New Password"
+              type={showNew ? 'text' : 'password'}
+              placeholder="Enter new password"
+              required
+              icon={<Lock size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+              suffix={
+                <button
+                  type="button"
+                  className="p-1 hover:text-accent-600 dark:hover:text-accent-400 transition-colors outline-none text-surface-400"
+                  onClick={() => setShowNew(!showNew)}
+                >
+                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
+            />
 
             {/* Confirm Password */}
             <ATMInputField
@@ -150,7 +113,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
               suffix={
                 <button
                   type="button"
-                  className="p-1 hover:text-brand-600 dark:hover:text-brand-400 transition-colors outline-none text-surface-400"
+                  className="p-1 hover:text-accent-600 dark:hover:text-accent-400 transition-colors outline-none text-surface-400"
                   onClick={() => setShowConfirm(!showConfirm)}
                 >
                   {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -168,13 +131,13 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                 Reset Password
               </ATMButton>
 
-              <div className="text-center pt-1">
+              <div className="text-center pt-2">
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-surface-400 hover:text-accent-600 transition-colors"
                 >
                   <ArrowLeft size={12} />
-                  Abort & Return
+                  Back to login
                 </Link>
               </div>
             </div>

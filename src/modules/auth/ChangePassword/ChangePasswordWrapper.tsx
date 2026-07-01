@@ -4,7 +4,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { selectCurrentUser, markPasswordChanged } from '../slices/authSlice';
+import { selectCurrentUser, logout } from '../slices/authSlice';
 import { useChangePasswordMutation } from '../services/authApi';
 import ChangePasswordForm from './ChangePasswordForm';
 
@@ -43,12 +43,10 @@ export const ChangePasswordWrapper: React.FC = () => {
         newPassword: values.newPassword.trim(),
       }).unwrap();
 
-      dispatch(markPasswordChanged());
-      toast.success('Password changed successfully. Welcome to Quantix.');
-
-      const role = user.roleName || user.role;
-      const target = role === 'Merchant' ? '/merchant/dashboard' : '/dashboard';
-      navigate(target, { replace: true });
+      // Log out locally because changing the password invalidates the session tokens on the backend
+      dispatch(logout());
+      toast.success('Password changed successfully. Please log in with your new password.');
+      navigate('/login', { replace: true });
     } catch (err: any) {
       toast.error(err?.data?.message || err?.message || 'Failed to update password. Please check your current password.');
     } finally {

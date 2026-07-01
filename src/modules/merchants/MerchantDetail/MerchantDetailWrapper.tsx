@@ -37,9 +37,15 @@ export const MerchantDetailWrapper: React.FC = () => {
   const { data: merchantRes, isLoading: isMerchantLoading, error: merchantError } = useGetMerchantQuery(id ?? '');
   const { data: notesRes } = useGetMerchantNotesQuery(id ?? '');
   const { data: timelineRes } = useGetMerchantTimelineQuery(id ?? '');
-  const { data: deboardingRes } = useGetDeboardingByMerchantQuery(id ?? '', { skip: !id });
+  const merchant = merchantRes?.data;
+  const merchantStatus = merchant?.status || (merchant as any)?.merchantStatus;
 
-  // Mutations
+  // Only query deboarding when merchant is in a deboarding-relevant state
+  const shouldFetchDeboarding = !!id && !!merchant && ['Suspended', 'Cancelled', 'Deactivated'].includes(merchantStatus);
+  const { data: deboardingRes } = useGetDeboardingByMerchantQuery(id ?? '', { skip: !shouldFetchDeboarding });
+
+  const notes = notesRes?.data || [];
+  const timeline = timelineRes?.data || [];
   const [activateMerchant, { isLoading: isActivating }] = useActivateMerchantMutation();
   const [suspendMerchant, { isLoading: isSuspending }] = useSuspendMerchantMutation();
   const [reactivateMerchant, { isLoading: isReactivating }] = useReactivateMerchantWithResolutionMutation();
@@ -101,9 +107,6 @@ export const MerchantDetailWrapper: React.FC = () => {
     return () => document.removeEventListener('mousedown', close);
   }, []);
 
-  const merchant = merchantRes?.data;
-  const notes = notesRes?.data || [];
-  const timeline = timelineRes?.data || [];
 
   const handleAction = async (action: string) => {
     setMenuOpen(false);

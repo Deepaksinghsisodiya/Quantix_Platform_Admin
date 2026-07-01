@@ -5,10 +5,20 @@ import {
   useBulkGenerateTokensMutation,
   useRevokeTokenMutation,
   useGetExpiringTokensQuery,
+  useGetExpiringByMerchantQuery,
+  useGetTokenActivationsQuery,
+  useLazyExportTokensCsvQuery,
+  useGetTokenPricingQuery,
+  useSendRenewalRemindersMutation,
   useGetTokenTemplatesQuery,
+  useGetTokenTemplateByIdQuery,
+  useCreateTokenTemplateMutation,
+  useUpdateTokenTemplateMutation,
+  useDeactivateTokenTemplateMutation,
   useGetTokenMetricsQuery,
-  useRenewTokenMutation,
   type TokenMetrics,
+  type TokenActivation,
+  type TokenPricingResult,
 } from './tokenApi';
 import type {
   RechargeToken,
@@ -20,6 +30,8 @@ import type {
 import type { PaginationParams } from '@/lib/types/common';
 import { useFilterStore } from '@/lib/store/filterStore';
 import { wrapMutation } from '@/lib/utils/rtkQueryHelpers';
+
+// ─── Token List & Detail ───────────────────────────────────────────────
 
 export function useTokenHistory(params: Partial<TokenFilter & PaginationParams> = {}) {
   const { businessTypeFilter } = useFilterStore();
@@ -39,6 +51,8 @@ export function useToken(id: string | undefined) {
   });
 }
 
+// ─── Generate ──────────────────────────────────────────────────────────
+
 export function useGenerateToken() {
   const [trigger, result] = useGenerateTokenMutation();
   return wrapMutation(trigger, result);
@@ -49,10 +63,14 @@ export function useBulkGenerateTokens() {
   return wrapMutation(trigger, result);
 }
 
+// ─── Revoke ────────────────────────────────────────────────────────────
+
 export function useRevokeToken() {
   const [trigger, result] = useRevokeTokenMutation();
   return wrapMutation(trigger, result);
 }
+
+// ─── Expiring Tokens ───────────────────────────────────────────────────
 
 export function useExpiringTokens(daysWindow: number) {
   return useGetExpiringTokensQuery(
@@ -61,18 +79,70 @@ export function useExpiringTokens(daysWindow: number) {
   );
 }
 
+/** Swagger: GET /api/v1/tokens/expiring/by-merchant */
+export function useExpiringByMerchant(daysWindow: number) {
+  return useGetExpiringByMerchantQuery(
+    { daysWindow },
+    { skip: daysWindow <= 0 }
+  );
+}
+
+// ─── Token Activations ─────────────────────────────────────────────────
+
+export function useTokenActivations(params: { merchantId?: string; dateFrom?: string; dateTo?: string } = {}) {
+  return useGetTokenActivationsQuery(params);
+}
+
+// ─── Export ────────────────────────────────────────────────────────────
+
+/** Returns a lazy trigger for server-side CSV export. */
+export function useExportTokensCsv() {
+  const [trigger, result] = useLazyExportTokensCsvQuery();
+  return { trigger, ...result };
+}
+
+// ─── Pricing ───────────────────────────────────────────────────────────
+
+export function useTokenPricing(params: { plan?: string; validityDays?: number; quantity?: number }) {
+  return useGetTokenPricingQuery(params);
+}
+
+// ─── Renewal Reminders ─────────────────────────────────────────────────
+
+export function useSendRenewalReminders() {
+  const [trigger, result] = useSendRenewalRemindersMutation();
+  return wrapMutation(trigger, result);
+}
+
+// ─── Templates ─────────────────────────────────────────────────────────
+
 export function useTokenTemplates() {
   return useGetTokenTemplatesQuery();
 }
+
+export function useTokenTemplateById(id: string | undefined) {
+  return useGetTokenTemplateByIdQuery(id ?? '', { skip: !id });
+}
+
+export function useCreateTokenTemplate() {
+  const [trigger, result] = useCreateTokenTemplateMutation();
+  return wrapMutation(trigger, result);
+}
+
+export function useUpdateTokenTemplate() {
+  const [trigger, result] = useUpdateTokenTemplateMutation();
+  return wrapMutation(trigger, result);
+}
+
+export function useDeactivateTokenTemplate() {
+  const [trigger, result] = useDeactivateTokenTemplateMutation();
+  return wrapMutation(trigger, result);
+}
+
+// ─── Metrics ───────────────────────────────────────────────────────────
 
 export function useTokenMetrics() {
   return useGetTokenMetricsQuery();
 }
 
-/** FRS-SAP-1407: Renew an expiring token with a new validity period. */
-export function useRenewToken() {
-  const [trigger, result] = useRenewTokenMutation();
-  return wrapMutation(trigger, result);
-}
-export type { TokenMetrics };
-
+export type { TokenMetrics, TokenActivation, TokenPricingResult };

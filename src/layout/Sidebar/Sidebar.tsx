@@ -5,109 +5,70 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { logout, selectCurrentUser } from '../../modules/auth/slices/authSlice';
 import { toast } from 'sonner';
 import { ATMAvatar } from '../../shared/ui/ATMAvatar';
-import { NavGroup, NavItem } from './navConfig';
-import { useTheme } from '../../shared/context/ThemeContext';
+import { NavItem } from './navConfig';
 import clsx from 'clsx';
 
-/**
- * NOTE: navConfig.ts must extend NavItem with an optional `children?: NavItem[]` field
- * to support nested sub-menus (e.g. "Token Management" -> Generate Tokens / Batch Generate / Token Validity).
- * Example:
- *   { label: 'Token Management', path: '/tokens', icon: KeyRound, children: [
- *       { label: 'Generate Tokens', path: '/tokens/generate', icon: KeyRound },
- *       { label: 'Batch Generate', path: '/tokens/batch', icon: KeyRound },
- *       { label: 'Token Validity', path: '/tokens/validity', icon: KeyRound },
- *   ] }
- */
-
 interface Props {
-  groups: NavGroup[];
+  items: NavItem[];
   mobileOpen: boolean;
   onClose: () => void;
   isCollapsed: boolean;
   onCollapseToggle: () => void;
 }
 
-export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollapsed }) => {
+export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollapsed }) => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
   const config = useAppSelector((state) => state.settings.config);
-  const { sidebarStyle } = useTheme();
-
-  const appName = config.AppName || 'Quantix Plateform';
+  const appName = config.AppName || 'Quantix Platform';
   const logoUrl = config.CompanyLogo || config.AppLogo;
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
-    if (location.pathname === path) return true;
-    if (location.pathname.startsWith(path + '/')) {
-      const allPaths = groups.flatMap((g) => g.items.flatMap((i) => [i.path, ...(i.children?.map((c) => c.path) ?? [])]));
-      const hasMoreSpecificMatch = allPaths.some((p) => p !== path && p.startsWith(path) && location.pathname.startsWith(p));
-      return !hasMoreSpecificMatch;
-    }
-    return false;
+    return location.pathname === path;
   };
 
   const itemHasActiveChild = (item: NavItem): boolean =>
-    isActive(item.path) || !!item.children?.some((c) => isActive(c.path));
-
-  // ---- Group accordion state ----
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    groups.forEach((group) => {
-      initial[group.label] = group.items.some((item) => itemHasActiveChild(item));
-    });
-    return initial;
-  });
+    !!item.children?.some((c) => isActive(c.path));
 
   // ---- Nested item (sub-menu) expand state ----
   const [openItems, setOpenItems] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    groups.forEach((group) =>
-      group.items.forEach((item) => {
-        if (item.children?.length) initial[item.path] = item.children.some((c) => isActive(c.path));
-      })
-    );
+    items.forEach((item) => {
+      if (item.children?.length) {
+        initial[item.path] = item.children.some((c) => isActive(c.path));
+      }
+    });
     return initial;
   });
 
   useEffect(() => {
-    setOpenGroups((prev) => {
-      const next = { ...prev };
-      groups.forEach((group) => {
-        if (group.items.some((item) => itemHasActiveChild(item))) next[group.label] = true;
-      });
-      return next;
-    });
     setOpenItems((prev) => {
       const next = { ...prev };
-      groups.forEach((group) =>
-        group.items.forEach((item) => {
-          if (item.children?.some((c) => isActive(c.path))) next[item.path] = true;
-        })
-      );
+      items.forEach((item) => {
+        if (item.children?.some((c) => isActive(c.path))) {
+          next[item.path] = true;
+        }
+      });
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  const toggleGroup = (label: string) => setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
   const toggleItem = (path: string) => setOpenItems((prev) => ({ ...prev, [path]: !prev[path] }));
 
-  const isDarkVariant = sidebarStyle === 'dark' || sidebarStyle === 'accent';
   const isRestrictedFor = (path: string) => user?.isPasswordChanged === false && path !== '/';
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
     if (isRestrictedFor(path)) {
       e.preventDefault();
-      toast.error('Security Update Required — please complete the mandatory password update first.');
+      toast.error('Security update required — please complete the mandatory password update first.');
       return;
     }
     window.innerWidth < 1024 && onClose();
   };
 
-  /** A leaf or parent nav link row, styled to match the Token Management reference design. */
   const renderLink = (
     item: NavItem,
     opts: { nested?: boolean; hasChildren?: boolean; expanded?: boolean; onToggle?: () => void } = {}
@@ -115,47 +76,67 @@ export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollap
     const { nested, hasChildren, expanded, onToggle } = opts;
     const active = isActive(item.path);
     const restricted = isRestrictedFor(item.path);
-    const showActivePill = active && nested; // selected sub-item gets the white-bordered pill look
+    const hasActiveChild = hasChildren && item.children?.some((c) => isActive(c.path));
+
+    // Top-level item gets the "active pill" treatment only when it has no children
+    const isPillActive = active && !nested && !hasChildren;
+    const isChildActive = active && nested;
 
     const content = (
       <>
-        {/* Active rail indicator for top-level (non-nested, non-pill) items */}
-        {active && !isCollapsed && !nested && (
-          <span className={clsx(
-            "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full",
-            sidebarStyle === 'transparent' ? 'bg-accent-500' : 'bg-white'
-          )} />
+        {/* Active-rail indicator, top-level pill items only */}
+        {isPillActive && !isCollapsed && (
+          <span className="absolute left-0 top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-r-full bg-blue-600 dark:bg-blue-500" />
         )}
 
-        <item.icon
-          size={isCollapsed ? 20 : nested ? 15 : 17}
-          strokeWidth={active ? 2.4 : 2}
-          className={clsx(
-            "shrink-0 transition-transform duration-200 group-hover/item:scale-105",
-            active
-              ? sidebarStyle === 'transparent' ? 'text-accent-600 dark:text-accent-400' : 'text-white'
-              : sidebarStyle === 'transparent' ? 'text-slate-400 group-hover/item:text-slate-700 dark:group-hover/item:text-gray-200' : 'text-white/45 group-hover/item:text-white'
-          )}
-        />
+        {!nested ? (
+          <item.icon
+            size={isCollapsed ? 20 : 18}
+            strokeWidth={isPillActive || hasActiveChild ? 2 : 1.6}
+            className={clsx(
+              'shrink-0 transition-transform duration-200 group-hover/item:scale-105',
+              isPillActive
+                ? 'text-blue-600 dark:text-blue-400'
+                : hasActiveChild
+                  ? 'text-slate-700 dark:text-slate-300'
+                  : 'text-slate-400 group-hover/item:text-slate-700 dark:text-slate-500 dark:group-hover/item:text-slate-300'
+            )}
+          />
+        ) : (
+          <span
+            className={clsx(
+              'ml-0.5 mr-2 h-1 w-1 shrink-0 rounded-full transition-all duration-200',
+              isChildActive
+                ? 'scale-125 bg-blue-600 shadow-[0_0_6px_rgba(37,99,235,0.4)] dark:bg-blue-500'
+                : 'bg-slate-300 group-hover/item:bg-slate-400 dark:bg-slate-600 dark:group-hover/item:bg-slate-500'
+            )}
+          />
+        )}
 
         {!isCollapsed && (
-          <span className={clsx(
-            "tracking-tight truncate leading-tight",
-            nested ? 'text-[0.8rem]' : 'text-[0.83rem]',
-            active ? 'font-semibold' : 'font-medium'
-          )}>
+          <span
+            className={clsx(
+              'truncate tracking-tight leading-tight transition-colors duration-150',
+              nested ? 'text-[13px]' : 'text-sm font-medium',
+              isPillActive || isChildActive
+                ? 'font-semibold text-blue-600 dark:text-blue-400'
+                : hasActiveChild
+                  ? 'font-semibold text-slate-800 dark:text-gray-100'
+                  : 'text-slate-600 group-hover/item:text-slate-900 dark:text-slate-400 dark:group-hover/item:text-white'
+            )}
+          >
             {item.label}
           </span>
         )}
 
         {!isCollapsed && hasChildren && (
           <ChevronDown
-            size={13}
-            strokeWidth={2.5}
+            size={14}
+            strokeWidth={1.8}
             className={clsx(
-              "ml-auto transition-transform duration-300 shrink-0",
+              'ml-auto shrink-0 transition-transform duration-300',
               expanded ? 'rotate-0' : '-rotate-90',
-              sidebarStyle === 'transparent' ? 'text-slate-400 dark:text-gray-500' : 'text-white/40'
+              hasActiveChild ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'
             )}
           />
         )}
@@ -164,9 +145,9 @@ export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollap
           <span
             role="tooltip"
             className={clsx(
-              "pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-lg z-50",
-              "opacity-0 -translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-150",
-              "bg-slate-900 text-white dark:bg-gray-700"
+              'pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-lg',
+              'translate-x-[-4px] opacity-0 transition-all duration-150 group-hover/item:translate-x-0 group-hover/item:opacity-100',
+              'bg-slate-900 text-white dark:bg-gray-700'
             )}
           >
             {item.label}
@@ -176,22 +157,17 @@ export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollap
     );
 
     const rowClasses = clsx(
-      "group/item peer relative flex items-center rounded-xl transition-all duration-200 ease-out border outline-none",
-      "focus-visible:ring-2 focus-visible:ring-accent-500/50",
-      isCollapsed ? 'justify-center p-2.5 mx-auto w-11 h-11' : nested ? 'gap-2.5 pl-3 pr-3 py-2 ml-2' : 'gap-3 pl-4 pr-3 py-2.5',
-      showActivePill
-        ? 'border-white/25 bg-white/[0.06] text-white font-semibold shadow-inner'
-        : active
-          ? sidebarStyle === 'transparent'
-            ? 'text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-500/10 border-accent-100/60 dark:border-accent-950/30 shadow-sm'
-            : 'text-white bg-white/15 border-white/10 shadow-sm'
-          : clsx(
-              'border-transparent',
-              sidebarStyle === 'transparent'
-                ? 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-gray-900/40'
-                : 'text-white/55 hover:text-white hover:bg-white/10'
-            ),
-      restricted && 'opacity-30 cursor-not-allowed pointer-events-none'
+      'group/item peer relative flex items-center rounded-xl border border-transparent outline-none transition-all duration-200 ease-out',
+      'focus-visible:ring-2 focus-visible:ring-blue-500/50',
+      isCollapsed
+        ? 'mx-auto h-11 w-11 justify-center p-2.5'
+        : nested
+          ? 'my-0.5 ml-1 gap-3 py-2 pl-3 pr-3'
+          : 'my-0.5 gap-3 py-2.5 pl-4 pr-3.5',
+      isPillActive
+        ? 'bg-blue-50/50 text-blue-600 dark:bg-blue-950/15 dark:text-blue-400'
+        : 'text-slate-600 hover:bg-slate-50/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/20 dark:hover:text-white',
+      restricted && 'pointer-events-none cursor-not-allowed opacity-30'
     );
 
     if (hasChildren) {
@@ -213,55 +189,65 @@ export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollap
     <>
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-[2px] lg:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-40 animate-in fade-in bg-slate-900/20 backdrop-blur-[2px] duration-200 lg:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={clsx(
-          "fixed top-0 bottom-0 left-0 z-50 flex flex-col transition-[width,transform] duration-300 ease-in-out lg:translate-x-0 lg:z-30",
-          sidebarStyle === 'dark' && 'bg-slate-900 text-slate-300 border-r border-slate-800',
-          sidebarStyle === 'accent' && 'bg-accent-700 text-white/90 border-r border-accent-600',
-          sidebarStyle === 'transparent' && 'bg-zen-surface/95 backdrop-blur-md border-r border-slate-100 dark:border-gray-900/60',
+          'fixed inset-y-0 left-0 z-50 flex w-[270px] flex-col transition-[width,transform] duration-300 ease-in-out lg:z-30 lg:translate-x-0',
+          'border-r border-slate-100 bg-white text-slate-700 shadow-sm dark:border-slate-800/80 dark:bg-[#0f172a] dark:text-slate-300',
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
-          isCollapsed ? 'lg:w-[76px]' : 'lg:w-[260px]',
-          'w-[260px]'
+          isCollapsed ? 'lg:w-[76px]' : 'lg:w-[270px]'
         )}
       >
-        {/* Mobile Header */}
-        <div className="flex items-center justify-between px-5 h-16 lg:hidden border-b border-slate-100 dark:border-gray-800 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Mobile header */}
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 px-5 dark:border-slate-800/80 lg:hidden">
+          <div className="flex min-w-0 items-center gap-3">
             {logoUrl ? (
-              <img src={logoUrl} alt={appName} className="w-9 h-9 object-cover rounded-xl border border-accent-100 dark:border-accent-500/30 shadow-sm shrink-0" />
+              <img
+                src={logoUrl}
+                alt={appName}
+                className="h-9 w-9 shrink-0 rounded-xl border border-slate-100 object-cover shadow-sm dark:border-slate-800/80"
+              />
             ) : (
-              <div className="w-9 h-9 bg-accent-600 rounded-xl flex items-center justify-center font-black text-white shadow-sm text-xs shrink-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-sm dark:bg-blue-500">
                 {appName.substring(0, 2).toUpperCase()}
               </div>
             )}
-            <span className="font-bold text-slate-800 dark:text-gray-100 tracking-tight truncate">{appName}</span>
+            <span className="truncate font-bold tracking-tight text-slate-900 dark:text-gray-100">{appName}</span>
           </div>
-          <button onClick={onClose} aria-label="Close menu" className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-lg transition-colors shrink-0">
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-gray-800"
+          >
             <X size={18} />
           </button>
         </div>
 
-        {/* Desktop Header */}
-        <div className={clsx(
-          "hidden lg:flex items-center border-b transition-all duration-300 shrink-0",
-          sidebarStyle === 'transparent' ? 'border-slate-100 dark:border-gray-900/60' : 'border-white/10',
-          isCollapsed ? 'h-16 justify-center px-2' : 'px-5 h-16 justify-start'
-        )}>
-          <div className="flex items-center gap-2.5 min-w-0">
+        {/* Desktop header */}
+        <div
+          className={clsx(
+            'hidden h-16 shrink-0 items-center border-b border-slate-100 transition-all duration-300 dark:border-slate-800/80 lg:flex',
+            isCollapsed ? 'justify-center px-2' : 'justify-start px-5'
+          )}
+        >
+          <div className="flex min-w-0 items-center gap-2.5">
             {logoUrl ? (
-              <img src={logoUrl} alt={appName} className="w-8 h-8 rounded-xl object-cover border border-slate-200/50 dark:border-slate-800/80 shadow-sm shrink-0" />
+              <img
+                src={logoUrl}
+                alt={appName}
+                className="h-8 w-8 shrink-0 rounded-xl border border-slate-200/50 object-cover shadow-sm dark:border-slate-800/80"
+              />
             ) : (
-              <div className="w-8 bg-accent-600 rounded-xl aspect-square flex items-center justify-center font-black text-white shadow-sm text-xs shrink-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-sm dark:bg-blue-500">
                 {appName.substring(0, 2).toUpperCase()}
               </div>
             )}
             {!isCollapsed && (
-              <span className={clsx("font-black tracking-tight text-[0.95rem] truncate", sidebarStyle === 'transparent' ? 'text-slate-800 dark:text-gray-100' : 'text-white')}>
+              <span className="truncate text-[16px] font-extrabold tracking-tight text-slate-800 dark:text-gray-100">
                 {appName}
               </span>
             )}
@@ -269,139 +255,87 @@ export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollap
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden pt-5 px-3 custom-scrollbar">
-          <div className={clsx("flex flex-col", isCollapsed ? 'gap-4' : 'gap-1')}>
-            {groups.map((group) => {
-              const isGroupOpen = isCollapsed ? true : !!openGroups[group.label];
-              const groupHasActive = group.items.some((item) => itemHasActiveChild(item));
+        <nav className="custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden px-3 pt-5">
+          <div className="flex flex-col gap-1">
+            {items.map((item) => {
+              const hasChildren = !!item.children?.length;
+              const itemExpanded = isCollapsed ? true : !!openItems[item.path];
 
               return (
-                <div key={group.label} className="space-y-0.5">
-                  {!isCollapsed ? (
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(group.label)}
-                      aria-expanded={isGroupOpen}
+                <div key={item.path} className="space-y-0.5">
+                  {renderLink(item, {
+                    hasChildren,
+                    expanded: itemExpanded,
+                    onToggle: () => toggleItem(item.path),
+                  })}
+
+                  {/* Nested sub-menu — expanded state */}
+                  {hasChildren && !isCollapsed && (
+                    <div
                       className={clsx(
-                        "w-full px-2.5 py-2 flex items-center justify-between gap-2 rounded-lg transition-colors duration-200",
-                        sidebarStyle === 'transparent' ? 'hover:bg-slate-50 dark:hover:bg-gray-900/40' : 'hover:bg-white/5'
+                        'grid transition-all duration-300 ease-in-out',
+                        itemExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                       )}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={clsx("w-1 h-3 rounded-full transition-colors", groupHasActive ? 'bg-accent-500' : 'bg-accent-500/40')} />
-                        <h3 className={clsx(
-                          "text-[0.66rem] font-bold uppercase tracking-[0.18em] truncate",
-                          sidebarStyle === 'transparent' ? 'text-slate-400 dark:text-gray-500' : 'text-white/40'
-                        )}>
-                          {group.label}
-                        </h3>
+                      <div className="overflow-hidden">
+                        <div className="ml-6 mt-0.5 space-y-0.5 border-l border-slate-100 pl-3 dark:border-slate-800">
+                          {item.children!.map((child) => (
+                            <div key={child.path}>{renderLink(child, { nested: true })}</div>
+                          ))}
+                        </div>
                       </div>
-                      <ChevronDown
-                        size={14}
-                        strokeWidth={2.5}
-                        className={clsx(
-                          "transition-transform duration-300 shrink-0",
-                          isGroupOpen ? 'rotate-0' : '-rotate-90',
-                          sidebarStyle === 'transparent' ? 'text-slate-400 dark:text-gray-500' : 'text-white/35'
-                        )}
-                      />
-                    </button>
-                  ) : (
-                    <div className="flex justify-center py-1" aria-hidden="true">
-                      <div className={clsx("w-7 h-px", sidebarStyle === 'transparent' ? 'bg-slate-200 dark:bg-gray-800' : 'bg-white/10')} />
                     </div>
                   )}
 
-                  <div className={clsx("grid transition-all duration-300 ease-in-out", isGroupOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0')}>
-                    <div className="overflow-hidden">
-                      <div className="space-y-1 pt-0.5 pb-1">
-                        {group.items.map((item) => {
-                          const hasChildren = !!item.children?.length;
-                          const itemExpanded = isCollapsed ? true : !!openItems[item.path];
-
-                          return (
-                            <div key={item.path}>
-                              {renderLink(item, {
-                                hasChildren,
-                                expanded: itemExpanded,
-                                onToggle: () => toggleItem(item.path),
-                              })}
-
-                              {/* Nested sub-menu (Token Management style) */}
-                              {hasChildren && !isCollapsed && (
-                                <div className={clsx("grid transition-all duration-300 ease-in-out", itemExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0')}>
-                                  <div className="overflow-hidden">
-                                    <div className={clsx(
-                                      "mt-1 ml-[18px] pl-3 space-y-1 py-1 border-l",
-                                      isDarkVariant ? 'border-white/10' : 'border-slate-200 dark:border-gray-800'
-                                    )}>
-                                      {item.children!.map((child) => (
-                                        <div key={child.path}>{renderLink(child, { nested: true })}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Collapsed-mode: flatten children as their own tooltip icons stacked below parent */}
-                              {hasChildren && isCollapsed && (
-                                <div className="mt-1 space-y-1">
-                                  {item.children!.map((child) => (
-                                    <div key={child.path}>{renderLink(child)}</div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                  {/* Nested sub-menu — collapsed rail, flattened directly below parent */}
+                  {hasChildren && isCollapsed && (
+                    <div className="mt-1 space-y-1">
+                      {item.children!.map((child) => (
+                        <div key={child.path}>{renderLink(child)}</div>
+                      ))}
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
           </div>
         </nav>
 
-        {/* Footer / User card */}
-        <div className={clsx(
-          "p-3 border-t shrink-0 transition-all duration-300",
-          sidebarStyle === 'transparent' ? 'bg-zen-surface/95 border-slate-100 dark:border-gray-900/60' : 'border-white/10'
-        )}>
-          <div className={clsx(
-            "flex items-center gap-3 rounded-xl transition-all duration-300 border",
-            isCollapsed ? 'justify-center border-transparent bg-transparent p-0' : 'p-2.5',
-            !isCollapsed && sidebarStyle === 'transparent' && 'bg-slate-50 dark:bg-gray-900/30 border-slate-100 dark:border-gray-800/60',
-            !isCollapsed && sidebarStyle !== 'transparent' && 'bg-white/10 border-white/10'
-          )}>
+        {/* Footer / user card */}
+        <div className="shrink-0 border-t border-slate-100 bg-white p-3 transition-all duration-300 dark:border-slate-800/80 dark:bg-[#0f172a]">
+          <div
+            className={clsx(
+              'flex items-center gap-3 rounded-xl border transition-all duration-300',
+              isCollapsed ? 'justify-center border-transparent bg-transparent p-0' : 'border-slate-100 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-800/30'
+            )}
+          >
             <ATMAvatar
               src={user?.profilePictureUrl || user?.profilePicture || user?.avatar}
               name={`${user?.firstName} ${user?.lastName}`}
-              size={isCollapsed ? "xs" : "sm"}
-              className="shadow-sm shrink-0"
+              size={isCollapsed ? 'xs' : 'sm'}
+              className="shrink-0 shadow-sm"
             />
+
             {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className={clsx("text-[0.8rem] font-bold tracking-tight mb-0.5 truncate", sidebarStyle === 'transparent' ? 'text-slate-800 dark:text-gray-100' : 'text-white')}>
+              <div className="min-w-0 flex-1">
+                <p className="mb-0.5 truncate text-[13px] font-bold tracking-tight text-slate-800 dark:text-gray-100">
                   {user?.firstName} {user?.lastName}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 shadow-sm shadow-emerald-500/50" />
-                  <p className={clsx("text-[0.63rem] font-bold uppercase tracking-widest truncate", sidebarStyle === 'transparent' ? 'text-slate-400 dark:text-gray-500' : 'text-white/50')}>
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                  <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
                     {user?.roleName}
                   </p>
                 </div>
               </div>
             )}
+
             {!isCollapsed && (
               <button
                 onClick={() => dispatch(logout())}
                 aria-label="Logout"
                 title="Logout"
-                className={clsx(
-                  "p-2 rounded-lg shrink-0 transition-all active:scale-90",
-                  sidebarStyle === 'transparent' ? 'text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-gray-900' : 'text-white/40 hover:text-rose-300 hover:bg-white/10'
-                )}
+                className="shrink-0 rounded-lg p-2 text-slate-400 transition-all hover:bg-white hover:text-rose-500 active:scale-90 dark:hover:bg-slate-800"
               >
                 <LogOut size={15} strokeWidth={2.3} />
               </button>
@@ -413,15 +347,12 @@ export const Sidebar: React.FC<Props> = ({ groups, mobileOpen, onClose, isCollap
               onClick={() => dispatch(logout())}
               aria-label="Logout"
               title="Logout"
-              className={clsx(
-                "group/logout relative mt-2 w-11 h-11 mx-auto flex items-center justify-center rounded-lg transition-all active:scale-90",
-                isDarkVariant ? 'text-white/40 hover:text-rose-300 hover:bg-white/10' : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20'
-              )}
+              className="group/logout relative mx-auto mt-2 flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-slate-50 hover:text-rose-500 active:scale-90 dark:hover:bg-slate-800"
             >
               <LogOut size={16} strokeWidth={2.3} />
               <span
                 role="tooltip"
-                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-lg bg-slate-900 text-white dark:bg-gray-700 opacity-0 -translate-x-1 group-hover/logout:opacity-100 group-hover/logout:translate-x-0 transition-all duration-150 z-50"
+                className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 translate-x-[-4px] whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-all duration-150 group-hover/logout:translate-x-0 group-hover/logout:opacity-100 dark:bg-gray-700"
               >
                 Logout
               </span>

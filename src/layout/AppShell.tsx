@@ -44,15 +44,10 @@ const AppShell: React.FC = () => {
         {/* Main Content Area */}
         <main
           className={`
-            flex-1 flex flex-col transition-all duration-300 ease-in-out mt-16 relative h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-slate-950/40
-            ${isCollapsed ? 'lg:ml-[76px]' : 'lg:ml-[260px]'}
+            flex-1 flex flex-col transition-all duration-300 ease-in-out mt-16 relative h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-[#0b0f19]
+            ${isCollapsed ? 'lg:ml-[76px]' : 'lg:ml-[270px]'}
           `}
         >
-          {/* Global Ambient Glows - Shared across all dashboard pages */}
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-brand-300/20 to-indigo-400/5 rounded-full blur-[120px] dark:from-brand-900/10 dark:to-indigo-900/5 pointer-events-none z-0" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-tl from-emerald-300/15 to-brand-400/5 rounded-full blur-[120px] dark:from-emerald-950/10 dark:to-brand-900/5 pointer-events-none z-0" />
-          <div className="absolute top-[30%] right-[10%] w-[25%] h-[25%] bg-purple-300/10 rounded-full blur-[100px] dark:bg-purple-900/5 pointer-events-none z-0" />
-
           {/* Conditional Banner */}
           {!user?.isPasswordChanged && <PasswordWarningBanner />}
 

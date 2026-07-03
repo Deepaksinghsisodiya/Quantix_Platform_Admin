@@ -52,22 +52,23 @@ export const SignupQueueWrapper: React.FC = () => {
 
   // Map server rows to local formats
   const signups: SignupEntry[] = useMemo(() => {
-    const rows = data?.data ?? [];
-    return rows.map((r: SignupQueueEntry) => {
+    const rows = (data?.data as any[]) ?? [];
+    return rows.map((r: any) => {
+      const rawStatus = r.status || r.merchantStatus;
       const status: SignupStatus =
-        r.status === 'Pending' ? 'PendingVerification'
-        : r.status === 'Verified' ? 'PendingPayment'
-        : r.status === 'Provisioning' ? 'Provisioning'
-        : r.status === 'Completed' ? 'Active'
+        rawStatus === 'Pending' || rawStatus === 'PendingApproval' ? 'PendingVerification'
+        : rawStatus === 'Verified' ? 'PendingPayment'
+        : rawStatus === 'Provisioning' ? 'Provisioning'
+        : rawStatus === 'Completed' || rawStatus === 'Active' ? 'Active'
         : 'Failed';
       return {
-        id: r.id,
-        businessName: r.businessName,
-        merchantType: r.merchantType as 'Enterprise' | 'Standalone',
-        businessNature: '',
-        email: r.email,
+        id: r.id || r.merchantId || r.signupId || '',
+        businessName: r.businessName || r.companyName || '—',
+        merchantType: (r.merchantType as 'Enterprise' | 'Standalone') || 'Enterprise',
+        businessNature: r.businessNature || '',
+        email: r.email || r.contactEmail || '—',
         status,
-        submittedAt: r.submittedAt,
+        submittedAt: r.submittedAt || r.createdAt || new Date().toISOString(),
         error: r.error || null,
       };
     });
@@ -106,13 +107,18 @@ export const SignupQueueWrapper: React.FC = () => {
 
   const confirmAccept = useCallback(async () => {
     if (!acceptCandidate) return;
+    const targetId = acceptCandidate.id ?? (acceptCandidate as any).merchantId ?? (acceptCandidate as any).signupId;
+    if (!targetId) {
+      toast.error('Merchant ID is missing for activation');
+      return;
+    }
     setAccepting(true);
     try {
-      await activateMerchant(acceptCandidate.id).unwrap();
+      await activateMerchant(targetId).unwrap();
       toast.success(`${acceptCandidate.businessName} accepted. Credentials emailed.`);
       setAcceptCandidate(null);
     } catch (err: any) {
-      const msg = err?.data?.message || err?.message || `Failed to accept ${acceptCandidate.id}`;
+      const msg = err?.data?.message || err?.message || `Failed to accept ${targetId}`;
       toast.error(msg);
     } finally {
       setAccepting(false);

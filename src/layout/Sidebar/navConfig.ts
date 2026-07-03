@@ -37,8 +37,6 @@ export const navItems: NavItem[] = [
     permission: 'merchants',
     children: [
       { label: 'All Merchants', icon: Building2, path: '/merchants', permission: 'merchants' },
-      { label: 'Register Enterprise', icon: Building2, path: '/merchants/register/enterprise', permission: 'merchants' },
-      { label: 'Register Standalone', icon: Building2, path: '/merchants/register/standalone', permission: 'merchants' },
       { label: 'Signup Queue', icon: Building2, path: '/merchants/signups', permission: 'merchants' },
       { label: 'Deboarding Queue', icon: Building2, path: '/merchants/deboardings', permission: 'merchants' },
     ]

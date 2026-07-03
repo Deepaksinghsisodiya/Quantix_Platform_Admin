@@ -68,12 +68,15 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    refreshToken: builder.mutation<ApiResponse<RefreshTokenResponse>, void>({
-      query: () => ({
-        url: '/api/v1/auth/refresh',
-        method: 'POST',
-        data: { refreshToken: null },
-      }),
+    refreshToken: builder.mutation<ApiResponse<RefreshTokenResponse>, string | void>({
+      query: (token) => {
+        const activeToken = token || (typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : '') || '';
+        return {
+          url: '/api/v1/auth/refresh',
+          method: 'POST',
+          data: { refreshToken: activeToken },
+        };
+      },
     }),
 
     forgotPassword: builder.mutation<ApiResponse, ForgotPasswordRequest>({

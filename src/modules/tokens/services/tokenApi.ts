@@ -61,13 +61,76 @@ const safeJsonRecord = <T extends Record<string, any>>(value: unknown, fallback:
   }
 };
 
+export const DEFAULT_CANONICAL_LIMITS: Record<string, number> = {
+  MBU: 5,     // Max Users
+  MLO: 1,     // Max Locations
+  MTM: 1,     // Max Terminals
+  MPR: 500,   // Max Products
+  MDP: 5,     // Max Devices
+  MKD: 2,     // Max KDS
+  MDS: 2,     // Max Digital Signage
+  MIS: 10000, // Max Inventory SKUs
+  MPW: 5,     // Max Payment Waiters
+  MGB: 100,   // Max Gift Cards
+  MPG: 2,     // Max Payment Gateways
+  MRS: 20,    // Max Reports
+  MAC: 10,    // Max API Connections
+  MWR: 2,     // Max Warehouses
+  MWE: 2,     // Max Webshops
+  MBR: 5,     // Max Bridge Terminals
+};
+
+const LEGACY_LIMIT_MAP: Record<string, string> = {
+  MaxUsers: 'MBU',
+  users: 'MBU',
+  MaxLocations: 'MLO',
+  locations: 'MLO',
+  MaxTerminals: 'MTM',
+  terminals: 'MTM',
+  MaxProducts: 'MPR',
+  products: 'MPR',
+  MaxDevices: 'MDP',
+  devices: 'MDP',
+  MaxKDS: 'MKD',
+  kds: 'MKD',
+  MaxSignage: 'MDS',
+  MaxSKUs: 'MIS',
+  MaxWaiters: 'MPW',
+  MaxGiftCards: 'MGB',
+  MaxGateways: 'MPG',
+  MaxReports: 'MRS',
+  MaxApiConnections: 'MAC',
+  MaxWarehouses: 'MWR',
+  MaxWebshops: 'MWE',
+  MaxBridges: 'MBR',
+};
+
+export const toCanonical16LimitsPayload = (input?: Record<string, number> | null): Record<string, number> => {
+  const result: Record<string, number> = { ...DEFAULT_CANONICAL_LIMITS };
+
+  if (input && typeof input === 'object') {
+    Object.entries(input).forEach(([key, val]) => {
+      const numVal = typeof val === 'number' ? val : parseInt(String(val), 10);
+      if (Number.isFinite(numVal)) {
+        if (key in DEFAULT_CANONICAL_LIMITS) {
+          result[key] = numVal;
+        } else if (LEGACY_LIMIT_MAP[key]) {
+          result[LEGACY_LIMIT_MAP[key]] = numVal;
+        }
+      }
+    });
+  }
+
+  return result;
+};
+
 const mapGenerateTokenRequest = (request: TokenGenerateRequest) => ({
   merchantId: request.merchantId,
   terminalId: request.binding?.terminalId || null,
   plan: tierToPlan[request.tier] ?? 'Pro',
   validityDays: request.validityDays,
   gracePolicyDays: request.gracePolicy ? JSON.stringify(request.gracePolicy) : null,
-  limitsOverride: request.limitsPayload ?? null,
+  limitsOverride: toCanonical16LimitsPayload(request.limitsPayload),
   featuresOverride: request.featureMap ?? null,
 });
 
@@ -82,6 +145,7 @@ const mapBulkGenerateRequest = (request: BulkTokenRequest) => {
     gracePolicyDays: null,
     quantity: Math.max(1, request.merchantIds?.length ?? 1),
     terminalBindings: null,
+    limitsOverride: toCanonical16LimitsPayload(request.overrides?.limitsPayload),
   };
 };
 

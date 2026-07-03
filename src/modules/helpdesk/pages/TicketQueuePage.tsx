@@ -124,7 +124,8 @@ function TicketQueuePage() {
 
   const metricsQuery = useTicketMetrics();
 
-  const tickets = ticketsQuery.data?.data?.items ?? [];
+  const rawTickets = ticketsQuery.data?.data?.items ?? ticketsQuery.data?.data;
+  const tickets = Array.isArray(rawTickets) ? rawTickets : Array.isArray(ticketsQuery.data) ? (ticketsQuery.data as any[]) : [];
   const totalCount = ticketsQuery.data?.data?.totalCount ?? 0;
   const metrics = metricsQuery.data?.data;
   const isLoading = ticketsQuery.isLoading;

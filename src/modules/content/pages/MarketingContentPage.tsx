@@ -108,8 +108,9 @@ type SectionMap = Record<string, SectionState>;
 
 function buildInitialState(serverData: readonly MarketingContent[]): SectionMap {
   const map: SectionMap = {};
+  const safeData = Array.isArray(serverData) ? serverData : [];
   for (const sec of SECTIONS) {
-    const remote = serverData.find((s) => s.section === sec.key);
+    const remote = safeData.find((s) => s.section === sec.key);
     map[sec.key] = {
       content: remote?.content ?? '',
       status: remote?.status ?? 'Draft',
@@ -254,10 +255,9 @@ function MarketingContentPage() {
 
   // Hydrate local state from server
   useEffect(() => {
-    const items = marketingQuery.data?.data;
-    if (items) {
-      setSections(buildInitialState(items));
-    }
+    const rawItems = marketingQuery.data?.data;
+    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(marketingQuery.data) ? (marketingQuery.data as any[]) : [];
+    setSections(buildInitialState(items));
   }, [marketingQuery.data]);
 
   const isLoading = marketingQuery.isLoading;

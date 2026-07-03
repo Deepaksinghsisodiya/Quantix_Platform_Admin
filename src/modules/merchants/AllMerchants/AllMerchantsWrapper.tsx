@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronDown, Building2, Store, Users, UserCheck, CheckCircle2, Eye } from 'lucide-react';
+import { Plus, ChevronDown, Building2, Store, Users, UserCheck, CheckCircle2, Eye, Pencil } from 'lucide-react';
 import { useGetMerchantsQuery } from '../services/merchantApi';
 import type { Merchant } from '../types/merchant.types';
 import AllMerchantsPage from './AllMerchantsPage';
@@ -9,6 +9,7 @@ import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
+import { ATMAvatar } from '@/shared/ui/ATMAvatar';
 import { usePagination } from '@/shared/hooks/usePagination';
 import { useGetAll } from '@/shared/hooks/useGetAll';
 import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
@@ -41,7 +42,7 @@ export const AllMerchantsWrapper: React.FC = () => {
     onFilterChange,
   } = usePagination({
     page: 1,
-    pageSize: 25,
+    pageSize: 10,
     sortBy: 'businessName',
     sortDescending: false,
     merchantType: 'all',
@@ -123,14 +124,34 @@ export const AllMerchantsWrapper: React.FC = () => {
     () => [
       {
         key: 'businessName',
-        header: 'Business Name',
+        header: 'Merchant',
         sortable: true,
         renderCell: (_val, row) => {
-          const bizName = row.businessName || (row as any).companyName;
+          const bizName = row.businessName || (row as any).companyName || 'Merchant';
+          const email = row.email || (row as any).contactEmail || (row as any).adminEmail || `${bizName.toLowerCase().replace(/[^a-z0-9]/g, '')}@quantix.io`;
+          const isActive = (row.status || (row as any).merchantStatus) === 'Active';
           return (
-            <span className="font-bold text-gray-900 dark:text-white group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
-              {bizName}
-            </span>
+            <div className="flex items-center gap-4 py-2">
+              <div className="relative group shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-accent-50 dark:bg-accent-500/10 flex items-center justify-center border border-accent-100 dark:border-accent-900/30 overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-sm transition-transform group-hover:scale-105 duration-300">
+                  <ATMAvatar
+                    name={bizName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {isActive && (
+                  <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-emerald-500 border-2 border-white dark:border-gray-950 rounded-full shadow-sm" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
+                  {bizName}
+                </p>
+                <p className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none">
+                  {email}
+                </p>
+              </div>
+            </div>
           );
         },
       },
@@ -144,30 +165,17 @@ export const AllMerchantsWrapper: React.FC = () => {
             size="sm"
           />
         ),
-        width: '120px',
-      },
-      {
-        key: 'businessNature',
-        header: 'Business',
-        renderCell: (_val, row) =>
-          row.businessNature ? (
-            <span className="inline-flex items-center rounded-lg bg-gray-50 dark:bg-gray-900 px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-800">
-              {row.businessNature}
-            </span>
-          ) : (
-            <span className="text-xs text-gray-400 font-semibold">—</span>
-          ),
-        width: '120px',
+        width: '130px',
       },
       {
         key: 'plan',
         header: 'Plan / Tier',
         renderCell: (_val, row) => (
-          <span className="text-gray-600 dark:text-gray-400 font-semibold">
-            {row.plan} / {row.tier}
+          <span className="text-gray-700 dark:text-gray-300 font-semibold text-xs">
+            {row.plan || 'Standard'} {row.tier ? `(${row.tier})` : ''}
           </span>
         ),
-        width: '140px',
+        width: '160px',
       },
       {
         key: 'status',
@@ -177,78 +185,19 @@ export const AllMerchantsWrapper: React.FC = () => {
           const statusVal = row.status || (row as any).merchantStatus;
           return <StatusBadge status={statusVal} />;
         },
-        width: '110px',
+        width: '130px',
       },
       {
         key: 'signupDate',
         header: 'Signup Date',
         sortable: true,
         renderCell: (_val, row) => {
-          const sDate = row.signupDate || (row as any).createdAt;
+          const sDate = row.signupDate || (row as any).createdAt || (row as any).createdOn;
           return (
-            <span className="text-gray-500 dark:text-gray-400 font-bold tabular-nums">
-              {formatDate(sDate, 'short')}
+            <span className="text-gray-500 dark:text-gray-400 font-semibold tabular-nums text-xs">
+              {sDate ? formatDate(sDate, 'short') : 'Recently'}
             </span>
           );
-        },
-        width: '120px',
-      },
-      {
-        key: 'lastActivityDate',
-        header: 'Last Activity',
-        sortable: true,
-        renderCell: (_val, row) =>
-          row.lastActivityDate ? (
-            <span className="text-gray-500 dark:text-gray-400 font-bold">
-              {formatDate(row.lastActivityDate, 'relative')}
-            </span>
-          ) : (
-            <span className="text-gray-400 dark:text-gray-600 text-xs font-semibold">Never</span>
-          ),
-        width: '130px',
-      },
-      {
-        key: 'locationCount',
-        header: 'Locations',
-        align: 'center',
-        renderCell: (_val, row) => (
-          <span className="text-gray-600 dark:text-gray-400 font-bold tabular-nums">
-            {row.locationCount}
-          </span>
-        ),
-        width: '100px',
-      },
-      {
-        key: 'terminalCount',
-        header: 'Terminals',
-        align: 'center',
-        renderCell: (_val, row) => (
-          <span className="text-gray-600 dark:text-gray-400 font-bold tabular-nums">
-            {row.terminalCount}
-          </span>
-        ),
-        width: '100px',
-      },
-      {
-        key: 'mrr',
-        header: 'MRR / Balance',
-        align: 'right',
-        renderCell: (_val, row) => {
-          if (row.merchantType === 'Enterprise' && row.mrr != null) {
-            return (
-              <span className="font-black tabular-nums text-gray-900 dark:text-white">
-                {formatCurrency(row.mrr)}
-              </span>
-            );
-          }
-          if (row.merchantType === 'Standalone' && row.tokenBalance != null) {
-            return (
-              <span className="font-black tabular-nums text-gray-900 dark:text-white">
-                {row.tokenBalance} tokens
-              </span>
-            );
-          }
-          return <span className="text-gray-400 dark:text-gray-600 font-semibold">--</span>;
         },
         width: '140px',
       },
@@ -265,6 +214,11 @@ export const AllMerchantsWrapper: React.FC = () => {
             label: 'View Profile',
             icon: Eye,
             onClick: (r) => navigate(ROUTES.TENANTS.DETAIL(mId)),
+          },
+          {
+            label: 'Edit Details',
+            icon: Pencil,
+            onClick: (r) => navigate(ROUTES.TENANTS.EDIT(mId)),
           },
         ];
       },
@@ -339,32 +293,37 @@ export const AllMerchantsWrapper: React.FC = () => {
         />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-          <ATMStatsCard
-            label="Total Merchants"
-            value={totalCount}
-            icon={Store}
-            variant="accent"
-          />
-          <ATMStatsCard
-            label="Active Merchants"
-            value={merchants.filter((m) => m.status === 'Active').length}
-            icon={UserCheck}
-            variant="emerald"
-          />
-          <ATMStatsCard
-            label="Enterprise SaaS"
-            value={merchants.filter((m) => m.merchantType === 'Enterprise').length}
-            icon={Building2}
-            variant="purple"
-          />
-          <ATMStatsCard
-            label="Standalone Offline"
-            value={merchants.filter((m) => m.merchantType === 'Standalone').length}
-            icon={CheckCircle2}
-            variant="amber"
-          />
-        </div>
+        {(() => {
+          const safeMerchants = Array.isArray(merchants) ? merchants : [];
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
+              <ATMStatsCard
+                label="Total Merchants"
+                value={totalCount}
+                icon={Store}
+                variant="accent"
+              />
+              <ATMStatsCard
+                label="Active Merchants"
+                value={safeMerchants.filter((m) => m.status === 'Active').length}
+                icon={UserCheck}
+                variant="emerald"
+              />
+              <ATMStatsCard
+                label="Enterprise SaaS"
+                value={safeMerchants.filter((m) => m.merchantType === 'Enterprise').length}
+                icon={Building2}
+                variant="purple"
+              />
+              <ATMStatsCard
+                label="Standalone Offline"
+                value={safeMerchants.filter((m) => m.merchantType === 'Standalone').length}
+                icon={CheckCircle2}
+                variant="amber"
+              />
+            </div>
+          );
+        })()}
       </div>
 
       {/* Main Table view container */}

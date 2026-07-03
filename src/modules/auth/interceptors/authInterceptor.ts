@@ -21,11 +21,14 @@ const onTokenRefreshed = (newToken: string) => {
  */
 async function refreshPermissionsQuietly(store: any) {
   if (isSyncing || isRefreshing) return;
+  const refreshToken = store?.getState()?.auth?.refreshToken || (typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null);
+  if (!refreshToken) return;
+
   isSyncing = true;
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/auth/refresh`,
-      { refreshToken: null },
+      { refreshToken },
       { withCredentials: true }
     );
     const { data } = response.data;
@@ -42,10 +45,13 @@ async function refreshPermissionsQuietly(store: any) {
         role: data.roleName || existingUser?.role || existingUser?.roleName,
         permissions: data.permissions || existingUser?.permissions || [],
       };
-      store.dispatch(setCredentials({
-        user: newUser,
-        accessToken: newToken
-      }));
+      store.dispatch(
+        setCredentials({
+          user: newUser,
+          accessToken: newToken,
+          refreshToken: data.refreshToken || refreshToken,
+        })
+      );
     }
   } catch (err) {
     // Ignore silent sync errors
@@ -106,13 +112,22 @@ export const setupAuthInterceptor = (axiosInstance: AxiosInstance, store: any) =
           });
         }
 
+        const refreshToken = store?.getState()?.auth?.refreshToken || (typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null);
+        if (!refreshToken) {
+          store.dispatch(logout());
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = `/login?reason=session_expired&redirect=${window.location.pathname}`;
+          }
+          return Promise.reject(error);
+        }
+
         originalRequest._retry = true;
         isRefreshing = true;
 
         try {
           const response = await axios.post(
             `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/auth/refresh`,
-            { refreshToken: null },
+            { refreshToken },
             { withCredentials: true }
           );
           const { data } = response.data;
@@ -133,10 +148,12 @@ export const setupAuthInterceptor = (axiosInstance: AxiosInstance, store: any) =
             throw new Error('Invalid refresh response: missing token');
           }
 
-          store.dispatch(setCredentials({
-            user: newUser,
-            accessToken: newToken,
-          }));
+          store.dispatch(
+            setCredentials({
+              user: newUser,
+              accessToken: newToken,
+            })
+          );
 
           onTokenRefreshed(newToken);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;

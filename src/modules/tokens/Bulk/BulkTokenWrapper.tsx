@@ -17,7 +17,7 @@ export const BulkTokenWrapper: React.FC = () => {
     isLoading: merchantsLoading,
     isError: merchantsError,
     refetch: refetchMerchants,
-  } = useMerchants({ merchantType: 'Standalone', pageSize: 200 });
+  } = useMerchants({ pageSize: 200 });
 
   const { data: templatesRes } = useTokenTemplates();
   const templates = templatesRes?.data || [];

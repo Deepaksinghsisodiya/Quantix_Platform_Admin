@@ -29,7 +29,7 @@ export const ATMMultiSelectField: React.FC<Props> = ({
   options,
   value,
   onChange,
-  placeholder = 'ATMSelect options',
+  placeholder = 'Select options',
   error,
   helperText,
   disabled,

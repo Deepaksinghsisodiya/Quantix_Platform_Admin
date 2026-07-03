@@ -15,7 +15,7 @@ export function App() {
   return (
     <Provider store={store}>
       <ErrorBoundary>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ThemeProvider>
             <AuthProvider>
               <AppRouter />

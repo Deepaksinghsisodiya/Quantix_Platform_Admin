@@ -33,15 +33,16 @@ export const MerchantDetailWrapper: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Queries
-  const { data: merchantRes, isLoading: isMerchantLoading, error: merchantError } = useGetMerchantQuery(id ?? '');
-  const { data: notesRes } = useGetMerchantNotesQuery(id ?? '');
-  const { data: timelineRes } = useGetMerchantTimelineQuery(id ?? '');
+  // Queries (skip invalid IDs like 'register', 'new', 'undefined')
+  const isValidId = !!id && id !== 'register' && id !== 'new' && id !== 'undefined';
+  const { data: merchantRes, isLoading: isMerchantLoading, error: merchantError } = useGetMerchantQuery(id ?? '', { skip: !isValidId });
+  const { data: notesRes } = useGetMerchantNotesQuery(id ?? '', { skip: !isValidId });
+  const { data: timelineRes } = useGetMerchantTimelineQuery(id ?? '', { skip: !isValidId });
   const merchant = merchantRes?.data;
   const merchantStatus = merchant?.status || (merchant as any)?.merchantStatus;
 
   // Only query deboarding when merchant is in a deboarding-relevant state
-  const shouldFetchDeboarding = !!id && !!merchant && ['Suspended', 'Cancelled', 'Deactivated'].includes(merchantStatus);
+  const shouldFetchDeboarding = isValidId && !!merchant && ['Suspended', 'Cancelled', 'Deactivated'].includes(merchantStatus);
   const { data: deboardingRes } = useGetDeboardingByMerchantQuery(id ?? '', { skip: !shouldFetchDeboarding });
 
   const notes = notesRes?.data || [];

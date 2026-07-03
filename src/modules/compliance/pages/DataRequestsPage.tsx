@@ -70,8 +70,9 @@ function DataRequestsPage() {
   const fulfillMut = useFulfillDataRequest();
 
   const requests = useMemo<DataRequestVM[]>(() => {
-    const items = requestsQuery.data?.data?.items ?? [];
-    return items.map((r) => ({
+    const rawItems = requestsQuery.data?.data?.items ?? requestsQuery.data?.data;
+    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(requestsQuery.data) ? (requestsQuery.data as any[]) : [];
+    return items.map((r: any) => ({
       id: r.id,
       merchant: r.merchantName,
       merchantType: r.merchantType,

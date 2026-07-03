@@ -129,9 +129,9 @@ interface ServiceStatus {
   uptime: string;
 }
 
-// Adapt functions (bridging server shapes to charts)
+// Adapt functions (bridging server shapes to charts) with bulletproof Array.isArray fallbacks
 function adaptRevenueData(metrics: RevenueMetricsDto | undefined, filter: 'All' | MerchantType): any[] {
-  if (!metrics) return [];
+  if (!metrics || !metrics.lines || !Array.isArray(metrics.lines)) return [];
   return metrics.lines.map((l) => {
     const enterprise = filter === 'Enterprise' ? l.amount : filter === 'All' ? l.amount : 0;
     const standalone = filter === 'Standalone' ? l.amount : 0;
@@ -146,7 +146,7 @@ function adaptRevenueData(metrics: RevenueMetricsDto | undefined, filter: 'All' 
 }
 
 function adaptGrowthData(growth: MerchantGrowthDto | undefined): any[] {
-  if (!growth) return [];
+  if (!growth || !growth.cohorts || !Array.isArray(growth.cohorts)) return [];
   return growth.cohorts.map((c) => ({
     month: c.cohortLabel,
     signups: c.merchantCount,
@@ -156,7 +156,7 @@ function adaptGrowthData(growth: MerchantGrowthDto | undefined): any[] {
 }
 
 function adaptSourceAttribution(growth: MerchantGrowthDto | undefined): any[] {
-  if (!growth) return [];
+  if (!growth || !growth.sourceAttribution || !Array.isArray(growth.sourceAttribution)) return [];
   return growth.sourceAttribution.map((s) => ({
     source: s.source,
     count: s.count,
@@ -165,7 +165,7 @@ function adaptSourceAttribution(growth: MerchantGrowthDto | undefined): any[] {
 }
 
 function adaptCohortRetention(growth: MerchantGrowthDto | undefined): any[] {
-  if (!growth) return [];
+  if (!growth || !growth.cohorts || !Array.isArray(growth.cohorts)) return [];
   return growth.cohorts.map((c) => ({
     cohort: c.cohortLabel,
     month0: 100,
@@ -178,7 +178,7 @@ function adaptCohortRetention(growth: MerchantGrowthDto | undefined): any[] {
 }
 
 function adaptMerchantHealth(rows: readonly MerchantHealthDto[] | undefined): any[] {
-  if (!rows) return [];
+  if (!rows || !Array.isArray(rows)) return [];
   return rows.map((r) => {
     const activity =
       r.riskClassification === 'AtRisk' ? 'atRisk'
@@ -200,7 +200,7 @@ function adaptMerchantHealth(rows: readonly MerchantHealthDto[] | undefined): an
 }
 
 function adaptCommissionTrend(summary: CommissionDashboardDto | undefined): any[] {
-  if (!summary) return [];
+  if (!summary || !summary.trend || !Array.isArray(summary.trend)) return [];
   return summary.trend.map((t) => ({
     month: t.month,
     earned: t.amount,
@@ -209,8 +209,8 @@ function adaptCommissionTrend(summary: CommissionDashboardDto | undefined): any[
 }
 
 function adaptServices(health: SystemHealthDto | undefined): ServiceStatus[] {
-  if (!health) return [];
-  return (health.services ?? []).map((s) => ({
+  if (!health || !health.services || !Array.isArray(health.services)) return [];
+  return health.services.map((s) => ({
     name: s.serviceName,
     status: (s.status as ServiceStatus['status']) || 'Healthy',
     responseTimeMs: 0,
@@ -276,9 +276,9 @@ function KpiCard({ card, index }: { card: KpiCardData; index: number }) {
         </div>
 
         <div className="mt-4 space-y-1.5 pt-3 border-t border-gray-100 dark:border-gray-800">
-          {card.details.map((d) => (
+          {card.details.map((d, dIdx) => (
             <div
-              key={d.label}
+              key={`${d.label}-${dIdx}`}
               className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
             >
               <span className="font-medium">{d.label}</span>

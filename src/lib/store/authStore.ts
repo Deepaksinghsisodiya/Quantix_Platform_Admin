@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { PlatformUser, PlatformRole } from '@/lib/types';
 import { canAccess } from '@/lib/utils/permissions';
@@ -139,6 +139,8 @@ export const useAuthStore = create<AuthState>()(
       name: AUTH_STORAGE_KEY,
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
+        tokenExpiresAt: state.tokenExpiresAt,
         isAuthenticated: state.isAuthenticated,
         mfaSetupRequired: state.mfaSetupRequired,
         mustChangePassword: state.mustChangePassword,

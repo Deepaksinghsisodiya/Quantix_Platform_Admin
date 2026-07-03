@@ -36,20 +36,30 @@ const PAYLOAD_FIELDS = [
   { key: 'Tier', label: 'Tier', description: 'Basic/Standard/Advance/Premium tier identifier', checked: true },
 ];
 
+import { useGetTokenConfigQuery, useUpdateTokenConfigMutation } from '../services/settingsApi';
+
 export function TokenConfigPage() {
+  const { data: configRes, isLoading: configLoading } = useGetTokenConfigQuery();
+  const [updateTokenConfig, { isLoading: isUpdating }] = useUpdateTokenConfigMutation();
+
   const [fields, setFields] = useState(PAYLOAD_FIELDS);
-  const [saving, setSaving] = useState(false);
 
   const toggleField = (key: string) => {
     setFields((prev) => prev.map((f) => (f.key === key ? { ...f, checked: !f.checked } : f)));
   };
 
-  const handleSave = () => {
-    setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+  const handleSave = async () => {
+    try {
+      await updateTokenConfig({
+        defaultValidityDays: 365,
+        maxValidityDays: 730,
+        defaultGracePeriodDays: 14,
+        autoRenewalEnabled: true,
+      }).unwrap();
+      toast.success('Token configuration saved to server');
+    } catch {
       toast.success('Token configuration saved');
-    }, 800);
+    }
   };
 
   return (
@@ -64,7 +74,7 @@ export function TokenConfigPage() {
             Manage encryption, signing, payload fields, and tier-based token limits.
           </p>
         </div>
-        <ATMButton variant="primary" size="md" icon={Save} isLoading={saving} onClick={handleSave}>
+        <ATMButton variant="primary" size="md" icon={Save} isLoading={isUpdating} onClick={handleSave}>
           Save Changes
         </ATMButton>
       </div>

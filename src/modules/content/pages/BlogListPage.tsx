@@ -64,8 +64,9 @@ function BlogListPage() {
   const approveMut = useApproveReview();
 
   const posts = useMemo<BlogPostRow[]>(() => {
-    const items = postsQuery.data?.data?.items ?? [];
-    return items.map((p) => ({
+    const rawItems = postsQuery.data?.data?.items ?? postsQuery.data?.data;
+    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(postsQuery.data) ? (postsQuery.data as any[]) : [];
+    return items.map((p: any) => ({
       ...p,
       views: 0,
       category: p.tags[0] ?? 'General',

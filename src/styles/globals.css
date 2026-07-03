@@ -3,50 +3,70 @@
 @tailwind utilities;
 
 @layer base {
+  /* =========================================================================
+   * 🎛️ MASTER THEME CONTROL CENTER (Single File UI Configuration)
+   * Modify any value below to change the ENTIRE application UI globally!
+   * ========================================================================= */
   :root {
-    --color-brand: 99 102 241;
-    --radius: 0.5rem;
+    /* 🔤 Primary Font Family */
+    --font-primary: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* 🏛️ Layout Metrics & Global Workspace Padding (Change in 1 place to update all pages!) */
+    --radius: 0.75rem;
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 68px;
     --header-height: 56px;
-    --chart-tooltip-bg: #ffffff;
-    --chart-tooltip-border: #e5e7eb;
+    --page-padding-x: 2rem;        /* 32px Left & Right workspace padding */
+    --page-padding-y: 1.5rem;      /* 24px Top workspace padding */
+    --page-padding-bottom: 2.5rem; /* 40px Bottom workspace padding */
 
-    /* Zen Surface Variables - Simplified & Clean */
-    --zen-bg: #f8fafc;
-    --zen-surface: #ffffff;
-    --zen-card: #ffffff;
-    --zen-border: #e2e8f0;
+    /* 🏙️ Global Light Mode Backgrounds & Card Surfaces */
+    --zen-bg: #f8fafc;        /* Main page background */
+    --zen-surface: #ffffff;   /* Content containers & drawers */
+    --zen-card: #ffffff;      /* Cards, panels & table wrappers */
+    --zen-border: #e2e8f0;    /* Borders & dividers */
 
-    /* 🎨 Accent Color System (Royal Blue / Sapphire) — RGB triplets for Tailwind alpha support */
+    /* 🎨 Primary Brand Accent Palette (Royal Blue / Sapphire - RGB format) */
     --accent-50:  239 246 255;
     --accent-100: 219 234 254;
     --accent-200: 191 219 254;
     --accent-300: 147 197 253;
     --accent-400: 96 165 250;
     --accent-500: 59 130 246;
-    --accent-600: 37 99 235;
+    --accent-600: 37 99 235;    /* Primary Button & Main Brand Color */
     --accent-700: 29 78 216;
     --accent-800: 30 64 175;
     --accent-900: 30 58 138;
     --accent-950: 23 37 84;
+
+    /* 📊 Chart Tooltips */
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: #e5e7eb;
+    --color-brand: 99 102 241;
   }
 
+  /* 🌙 Global Dark Mode Theme Configuration */
   .dark {
+    /* Global Dark Mode Backgrounds & Card Surfaces */
+    --zen-bg: #030712;        /* Main dark page background (slate-950) */
+    --zen-surface: #030712;   /* Dark containers & drawers */
+    --zen-card: #111827;      /* Dark cards & panels (gray-900) */
+    --zen-border: #1f2937;    /* Dark borders & dividers (gray-800) */
+
     --chart-tooltip-bg: #1e293b;
     --chart-tooltip-border: #334155;
-
-    /* Zen Surface Variables (Dark) */
-    --zen-bg: #030712;    /* gray-950 */
-    --zen-surface: #030712;
-    --zen-card: #111827;   /* gray-900 */
-    --zen-border: #1f2937; /* gray-800 */
   }
 
   html {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   * {

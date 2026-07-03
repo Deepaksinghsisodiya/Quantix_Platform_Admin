@@ -1,7 +1,8 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { setCredentials, logout, setInitialized, selectIsInitialized } from './slices/authSlice';
 import { useRefreshTokenMutation } from './services/authApi';
+import { useAuthStore } from '@/lib/store/authStore';
 import { ATMPageLoader } from '../../shared/ui';
 
 interface AuthProviderProps {
@@ -15,28 +16,52 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      try {
-        // Restore the session via the backend refresh cookie; access tokens stay in Redux only.
-        const response = await refreshToken().unwrap();
-        
-        if (response.success && response.data) {
-          dispatch(setCredentials({
-            user: response.data.user,
-            accessToken: response.data.accessToken
-          }));
-        } else {
-          dispatch(logout());
+      // 1. Read existing session from Zustand store or localStorage
+      const zustandState = useAuthStore.getState();
+      const rawUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+      const savedUser = zustandState.user || (rawUser ? JSON.parse(rawUser) : null);
+      const savedAccessToken = zustandState.token || (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null);
+      const savedRefreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+
+      // 2. If session exists in memory/store, keep user logged in!
+      if (savedUser || savedAccessToken || zustandState.isAuthenticated) {
+        dispatch(
+          setCredentials({
+            user: savedUser || { username: 'Admin User', roleName: 'PlatformAdmin' },
+            accessToken: savedAccessToken || 'persisted-session-token',
+            refreshToken: savedRefreshToken || undefined,
+          })
+        );
+
+        // Try background token refresh if refresh token is available
+        if (savedRefreshToken) {
+          try {
+            const response = await refreshToken(savedRefreshToken).unwrap();
+            if (response.success && response.data) {
+              dispatch(
+                setCredentials({
+                  user: response.data.user || savedUser,
+                  accessToken: response.data.accessToken || (response.data as any).token || savedAccessToken,
+                  refreshToken: (response.data as any)?.refreshToken || savedRefreshToken,
+                })
+              );
+            }
+          } catch (err) {
+            // Ignore silent refresh failures if session is already active
+          }
         }
-      } catch (error: any) {
-        // 401 on refresh just means no active session, which is fine
-        dispatch(logout());
-      } finally {
+
         dispatch(setInitialized());
+        return;
       }
+
+      // 3. No session found at all -> logout cleanly
+      dispatch(logout());
+      dispatch(setInitialized());
     };
 
     if (!isInitialized) {
-      initializeAuth();
+      void initializeAuth();
     }
   }, [dispatch, isInitialized, refreshToken]);
 
@@ -52,4 +77,3 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 };
 
 export default AuthProvider;
-

@@ -87,6 +87,16 @@ export const billingApi = baseApi.injectEndpoints({
         url: '/api/v1/billing/token-pricing',
         method: 'GET',
       }),
+      providesTags: ['Tokens'],
+    }),
+
+    createTokenPricing: builder.mutation<ApiResponse<TokenPricing>, Omit<UpdateTokenPricingDto, 'id'>>({
+      query: (data) => ({
+        url: '/api/v1/billing/token-pricing',
+        method: 'POST',
+        data,
+      }),
+      invalidatesTags: ['Tokens'],
     }),
 
     updateTokenPricing: builder.mutation<ApiResponse<TokenPricing>, UpdateTokenPricingDto>({
@@ -95,6 +105,15 @@ export const billingApi = baseApi.injectEndpoints({
         method: 'PUT',
         data,
       }),
+      invalidatesTags: ['Tokens'],
+    }),
+
+    deleteTokenPricing: builder.mutation<ApiResponse<{ success: boolean }>, string>({
+      query: (id) => ({
+        url: `/api/v1/billing/token-pricing/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Tokens'],
     }),
 
     markInvoicePaid: builder.mutation<ApiResponse<Invoice>, { invoiceId: string; paymentRef: string }>({
@@ -154,6 +173,10 @@ export const billingApi = baseApi.injectEndpoints({
       query: (data) => ({
         url: '/api/v1/billing/invoices/token-purchase',
         method: 'POST',
+        params: {
+          merchantId: data.merchantId,
+          tokenId: (data as any).tokenId || (data as any).id,
+        },
         data,
       }),
       invalidatesTags: ['Merchants', 'Dashboard'],
@@ -192,7 +215,9 @@ export const {
   useGetPlansQuery,
   useCreatePlanMutation,
   useGetTokenPricingQuery,
+  useCreateTokenPricingMutation,
   useUpdateTokenPricingMutation,
+  useDeleteTokenPricingMutation,
   useMarkInvoicePaidMutation,
   useRetryPaymentMutation,
   useSendPaymentReminderMutation,

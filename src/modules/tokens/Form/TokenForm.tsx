@@ -128,13 +128,15 @@ export function TokenForm({
   const wildcardBinding = watch('wildcardBinding');
 
   const { data: merchantsResponse, isLoading: merchantsLoading } = useMerchants({
-    merchantType: 'Standalone',
     pageSize: 200,
   });
 
   const merchantOptions = useMemo(() => {
     const merchants = merchantsResponse?.data ?? [];
-    return merchants.map((t: any) => ({ label: t.businessName, value: t.id }));
+    return merchants.map((t: any) => ({
+      label: `${t.businessName || t.companyName || 'Unnamed Merchant'} (${t.merchantType || 'Merchant'})`,
+      value: t.id || t.merchantId,
+    }));
   }, [merchantsResponse]);
 
   const unitPrice = useMemo(() => {

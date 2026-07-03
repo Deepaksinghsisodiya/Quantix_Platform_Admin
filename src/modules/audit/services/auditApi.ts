@@ -21,6 +21,10 @@ export interface AuditLogParams extends Partial<PaginationParams> {
   readonly from?: string;
   readonly to?: string;
   readonly search?: string;
+  readonly entityType?: string;
+  readonly entityId?: string;
+  readonly fromDate?: string;
+  readonly toDate?: string;
 }
 
 export interface ExportAuditLogsDto {

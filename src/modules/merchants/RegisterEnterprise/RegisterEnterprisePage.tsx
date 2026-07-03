@@ -443,14 +443,14 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
 
       case 2:
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             <div>
               <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Business Details</h2>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400 font-medium">
                 Enter primary business information and billing preferences.
               </p>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6 w-full">
               <ATMInputField
                 label="Business Name"
                 name="businessName"
@@ -483,26 +483,50 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
                 options={COUNTRY_OPTIONS}
                 required
               />
-            </div>
-
-            <div className="border-t border-surface-200 dark:border-surface-800 pt-4">
-              <h3 className="mb-3 text-sm font-bold text-surface-900 dark:text-surface-100">
-                Billing Preferences
-              </h3>
-              <div className="space-y-4">
-                <ATMSelectField
-                  name="billingFrequency"
-                  label="Billing Cycle"
-                  options={BILLING_FREQUENCY_OPTIONS}
-                  required
-                />
-                <ATMSelectField
-                  name="preferredPaymentMethod"
-                  label="Preferred Payment Method"
-                  options={PAYMENT_METHOD_OPTIONS}
-                  required
-                />
-              </div>
+              <ATMInputField
+                label="Address Line 1"
+                name="addressLine1"
+                placeholder="Building, Street, Suite..."
+              />
+              <ATMInputField
+                label="City"
+                name="city"
+                placeholder="City name"
+              />
+              <ATMInputField
+                label="State / Province"
+                name="state"
+                placeholder="State or Province"
+              />
+              <ATMInputField
+                label="Postal / Zip Code"
+                name="postalCode"
+                placeholder="Postal code"
+              />
+              <ATMSelectField
+                name="dbEngine"
+                label="Database Engine"
+                options={DB_ENGINES.map((e) => ({ label: e.label, value: e.value }))}
+                required
+              />
+              <ATMSelectField
+                name="billingFrequency"
+                label="Billing Cycle"
+                options={BILLING_FREQUENCY_OPTIONS}
+                required
+              />
+              <ATMSelectField
+                name="preferredPaymentMethod"
+                label="Preferred Payment Method"
+                options={PAYMENT_METHOD_OPTIONS}
+                required
+              />
+              <ATMInputField
+                label="Business Nature"
+                name="businessNature"
+                placeholder="Restaurant, pharmacy, retail, services..."
+                hint="Free-text descriptor — optional"
+              />
             </div>
           </div>
         );
@@ -644,7 +668,19 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
   const planSelected = PLANS.find((p) => p.id === formik.values.selectedPlan);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 w-full bg-zen-surface animate-fade-in p-6 lg:p-8">
+    <div className="w-full bg-zen-surface animate-fade-in p-6 lg:p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => navigate('/merchants')}
+          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-accent-600 dark:text-gray-400 dark:hover:text-accent-400 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Merchant Directory
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 w-full">
       {/* Left Column: Form & Steps */}
       <div className="lg:col-span-2 space-y-6">
         <StepProgress currentStep={step} steps={STEPS} />
@@ -766,7 +802,8 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default RegisterEnterprisePage;

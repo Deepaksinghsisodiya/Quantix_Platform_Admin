@@ -74,18 +74,18 @@ function GrowthReportPage() {
   const exportMut = useExportReport();
 
   const growthData = useMemo<GrowthRow[]>(() => {
-    const items = growthQuery.data?.data ?? [];
-    if (items.length === 0) return [];
-    return items.map((d) => ({
+    const rawData = growthQuery.data?.data;
+    const items = Array.isArray(rawData) ? rawData : Array.isArray(growthQuery.data) ? (growthQuery.data as any[]) : [];
+    return items.map((d: any) => ({
       month: formatMonth(d.date),
-      signups: d.newMerchants,
-      churns: d.churnedMerchants,
-      netGrowth: d.netGrowth,
+      signups: d.newMerchants ?? 0,
+      churns: d.churnedMerchants ?? 0,
+      netGrowth: d.netGrowth ?? 0,
       // Backend doesn't break down by merchant type — split estimate
-      enterpriseSignups: Math.round(d.newMerchants * 0.63),
-      standaloneSignups: d.newMerchants - Math.round(d.newMerchants * 0.63),
-      enterpriseChurns: Math.round(d.churnedMerchants * 0.6),
-      standaloneChurns: d.churnedMerchants - Math.round(d.churnedMerchants * 0.6),
+      enterpriseSignups: Math.round((d.newMerchants ?? 0) * 0.63),
+      standaloneSignups: (d.newMerchants ?? 0) - Math.round((d.newMerchants ?? 0) * 0.63),
+      enterpriseChurns: Math.round((d.churnedMerchants ?? 0) * 0.6),
+      standaloneChurns: (d.churnedMerchants ?? 0) - Math.round((d.churnedMerchants ?? 0) * 0.6),
     }));
   }, [growthQuery.data]);
 
@@ -113,7 +113,7 @@ function GrowthReportPage() {
   const types: TypeFilter[] = ['All', 'Enterprise', 'Standalone'];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

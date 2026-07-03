@@ -39,8 +39,9 @@ export const TokenListWrapper: React.FC = () => {
   );
 
   const { data, isLoading, isFetching } = useTokenHistory(filterParams);
-  const tokens = data?.data?.items ?? [];
-  const totalCount = data?.data?.totalCount ?? 0;
+  const rawTokens = data?.data?.items ?? data?.data;
+  const tokens = Array.isArray(rawTokens) ? rawTokens : Array.isArray(data) ? (data as any[]) : [];
+  const totalCount = data?.data?.totalCount ?? tokens.length;
 
   const handleRevoke = useCallback(() => {
     if (!revokeTarget) return;

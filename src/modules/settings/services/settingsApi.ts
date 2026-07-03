@@ -133,6 +133,14 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       providesTags: ['Settings' as any],
     }),
+    updateTokenConfig: builder.mutation<ApiResponse<TokenGenerationConfig>, Partial<TokenGenerationConfig>>({
+      query: (data) => ({
+        url: '/api/v1/settings/token-config',
+        method: 'PUT',
+        data,
+      }),
+      invalidatesTags: ['Settings' as any],
+    }),
     getCommissionConfig: builder.query<ApiResponse<CommissionConfig>, void>({
       query: () => ({
         url: '/api/v1/settings/commission-config',
@@ -238,6 +246,7 @@ export const {
   useGetFeatureTogglesQuery,
   useGetEmailTemplatesQuery,
   useGetTokenConfigQuery,
+  useUpdateTokenConfigMutation,
   useGetCommissionConfigQuery,
   useGetGracePeriodConfigQuery,
   useGetTaxDefinitionsQuery,

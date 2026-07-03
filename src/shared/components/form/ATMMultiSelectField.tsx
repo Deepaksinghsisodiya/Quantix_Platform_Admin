@@ -29,7 +29,7 @@ const ATMMultiSelectField: React.FC<ATMMultiSelectFieldProps> = ({
     name,
     options,
     required,
-    placeholder = 'ATMSelect multiple',
+    placeholder = 'Select multiple',
     disabled,
     className,
 }) => {

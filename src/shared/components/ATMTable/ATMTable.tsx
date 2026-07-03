@@ -355,9 +355,9 @@ const ATMTableComponent = <T,>({
                   )}
                 </tr>
               ))
-            ) : (
-              data.map((row, idx) => {
-                const rowId = String((row as any).id || idx);
+                        ) : (
+              (Array.isArray(data) ? data : []).map((row, idx) => {
+                const rowId = String((row as any).id || (row as any)._id || idx);
                 const isExpanded = expandedRows.includes(rowId);
                 const totalColSpan = visibleCols.length + (selectable ? 1 : 0) + (rowActions ? 1 : 0);
 
@@ -419,7 +419,7 @@ const ATMTableComponent = <T,>({
                             {rowActions(row).filter(a => !a.hidden?.(row)).map((action, i) => {
                               const Icon = action.icon || MoreVertical;
                               return (
-                                <ATMTooltip key={i} content={action.label} position="top">
+                                <ATMTooltip key={`${action.label}-${i}`} content={action.label} position="top">
                                   <ATMIconButton
                                     onClick={() => action.onClick(row)}
                                     variant={action.variant === 'danger' ? 'danger' : action.variant === 'success' ? 'success' : 'ghost'}

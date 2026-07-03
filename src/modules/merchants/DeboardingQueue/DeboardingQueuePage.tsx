@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { ATMCard } from '@/shared/ui/ATMCard';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge, BadgeColor } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
@@ -88,12 +89,12 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
         renderCell: (val, row) => (
           <div>
             <Link
-              to={`/merchants/${row.merchantId}`}
+              to={`/merchants/${row.merchantId || (row as any).id || ''}`}
               className="font-bold text-accent-600 hover:underline dark:text-accent-400"
             >
-              {val}
+              {val || (row as any).businessName || 'Merchant'}
             </Link>
-            <div className="text-xs text-surface-400 font-mono mt-0.5">{row.merchantId.slice(0, 8)}...</div>
+            <div className="text-xs text-surface-400 font-mono mt-0.5">{(row.merchantId || (row as any).id || 'N/A').slice(0, 8)}...</div>
           </div>
         ),
       },
@@ -181,6 +182,28 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
           </div>
         }
       />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <ATMStatsCard
+          label="Active Workflows"
+          value={activeCount}
+          icon={Clock}
+          variant="amber"
+        />
+        <ATMStatsCard
+          label="Escalated"
+          value={escalatedCount}
+          icon={AlertTriangle}
+          variant="rose"
+        />
+        <ATMStatsCard
+          label="Closed"
+          value={closedCount}
+          icon={CheckCircle2}
+          variant="emerald"
+        />
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-surface-200 dark:border-surface-800">

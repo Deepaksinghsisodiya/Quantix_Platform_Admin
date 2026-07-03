@@ -28,8 +28,8 @@ export const SIDEBAR_NAVIGATION: readonly NavigationGroup[] = [
     icon: 'Building2',
     items: [
       { label: 'All Merchants', path: ROUTES.TENANTS.LIST, icon: 'Building2', requiredModule: 'merchants' },
-      { label: 'Register Enterprise', path: ROUTES.TENANTS.REGISTER_ENTERPRISE, icon: 'BuildingIcon', requiredModule: 'merchants' },
-      { label: 'Register Standalone', path: ROUTES.TENANTS.REGISTER_STANDALONE, icon: 'Store', requiredModule: 'merchants' },
+      { label: 'Signup Queue', path: '/merchants/signups', icon: 'UserCheck', requiredModule: 'merchants' },
+      { label: 'Deboarding Queue', path: '/merchants/deboardings', icon: 'LogOut', requiredModule: 'merchants' },
     ],
   },
   {

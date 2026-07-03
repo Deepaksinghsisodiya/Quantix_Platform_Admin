@@ -122,32 +122,37 @@ export const UserListWrapper: React.FC = () => {
         />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-          <ATMStatsCard
-            label="Total Users"
-            value={totalCount}
-            icon={UsersIcon}
-            variant="accent"
-          />
-          <ATMStatsCard
-            label="Active Users"
-            value={users.filter((u) => u.status === 'Active').length}
-            icon={UserCheck}
-            variant="emerald"
-          />
-          <ATMStatsCard
-            label="Locked Accounts"
-            value={users.filter((u) => u.status === 'Locked').length}
-            icon={ShieldAlert}
-            variant="rose"
-          />
-          <ATMStatsCard
-            label="Operators"
-            value={users.filter((u) => u.role === 'Operator').length}
-            icon={Shield}
-            variant="purple"
-          />
-        </div>
+        {(() => {
+          const safeUsers = Array.isArray(users) ? users : [];
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+              <ATMStatsCard
+                label="Total Users"
+                value={totalCount}
+                icon={UsersIcon}
+                variant="accent"
+              />
+              <ATMStatsCard
+                label="Active Users"
+                value={safeUsers.filter((u) => u.status === 'Active').length}
+                icon={UserCheck}
+                variant="emerald"
+              />
+              <ATMStatsCard
+                label="Locked Accounts"
+                value={safeUsers.filter((u) => u.status === 'Locked').length}
+                icon={ShieldAlert}
+                variant="rose"
+              />
+              <ATMStatsCard
+                label="Operators"
+                value={safeUsers.filter((u) => u.role === 'Operator').length}
+                icon={Shield}
+                variant="purple"
+              />
+            </div>
+          );
+        })()}
       </div>
 
       {/* Main Table view container */}

@@ -46,7 +46,8 @@ export default function MerchantTokensPage() {
   });
 
   const sub = subscription.data?.data as SubscriptionDto | undefined;
-  const rows = (tokens.data?.data as RechargeTokenDto[] | undefined) ?? [];
+  const rawRows = tokens.data?.data;
+  const rows = Array.isArray(rawRows) ? (rawRows as RechargeTokenDto[]) : [];
 
 
   return (

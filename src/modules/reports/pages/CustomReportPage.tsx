@@ -141,14 +141,14 @@ function CustomReportPage() {
   const exportMut = useExportReport();
 
   const results = useMemo<ResultRow[]>(() => {
-    const items = revenueQuery.data?.data ?? [];
-    if (items.length === 0) return [];
-    return items.map((r) => ({
+    const rawData = revenueQuery.data?.data;
+    const items = Array.isArray(rawData) ? rawData : Array.isArray(revenueQuery.data) ? (revenueQuery.data as any[]) : [];
+    return items.map((r: any) => ({
       label: new Date(r.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      revenue: r.totalRevenue,
+      revenue: r.totalRevenue ?? 0,
       tokenCount: 0,
       transactionCount: 0,
-      commission: r.commissionRevenue,
+      commission: r.commissionRevenue ?? 0,
     }));
   }, [revenueQuery.data]);
 
@@ -186,7 +186,7 @@ function CustomReportPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

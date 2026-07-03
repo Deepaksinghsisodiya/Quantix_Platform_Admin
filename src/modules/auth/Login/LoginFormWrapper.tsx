@@ -50,6 +50,7 @@ export const LoginFormWrapper: React.FC = () => {
 
   const finishLogin = (responseData: any) => {
     const accessToken = responseData?.token ?? responseData?.accessToken ?? '';
+    const refreshToken = responseData?.refreshToken ?? responseData?.refresh_token;
     const user = responseData?.user;
     if (!accessToken || !user) {
       throw new Error('Login response did not include a user session.');
@@ -58,6 +59,7 @@ export const LoginFormWrapper: React.FC = () => {
     completeLogin({
       user,
       accessToken,
+      refreshToken,
       mfaSetupRequired: responseData?.mfaSetupRequired ?? false,
       mustChangePassword: responseData?.mustChangePassword ?? false,
     });

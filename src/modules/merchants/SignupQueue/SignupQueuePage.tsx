@@ -14,7 +14,7 @@ import {
   Building2,
 } from 'lucide-react';
 
-import { ATMCard } from '@/shared/ui/ATMCard';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge, BadgeColor } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMModal } from '@/shared/ui/ATMModal';
@@ -108,7 +108,9 @@ export const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
         key: 'id',
         header: 'ID',
         renderCell: (val) => (
-          <span className="font-mono text-xs text-surface-500 dark:text-surface-400">{val}</span>
+          <span className="font-mono text-xs text-surface-500 dark:text-surface-400">
+            {val ? String(val).slice(0, 8) : '—'}
+          </span>
         ),
         width: '100px',
       },
@@ -209,30 +211,32 @@ export const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
         iconColor="theme"
       />
 
-      {/* Pipeline Visualization */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        {PIPELINE_STAGES.map((stage, idx) => (
-          <div key={stage.key} className="relative">
-            <ATMCard padding="md" className="glass-card">
-              <div className="flex items-center gap-3">
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl text-white', stage.color)}>
-                  {stage.icon}
-                </div>
-                <div>
-                  <p className="text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-100">
-                    {counts[stage.key] ?? 0}
-                  </p>
-                  <p className="text-xs font-semibold text-surface-500 dark:text-surface-400">{stage.label}</p>
-                </div>
-              </div>
-            </ATMCard>
-            {idx < PIPELINE_STAGES.length - 1 && (
-              <div className="absolute -right-2 top-1/2 z-10 hidden -translate-y-1/2 sm:block">
-                <ArrowRight className="h-4 w-4 text-surface-300 dark:text-surface-650" />
-              </div>
-            )}
-          </div>
-        ))}
+      {/* Pipeline Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <ATMStatsCard
+          label="Pending Verification"
+          value={counts['PendingVerification'] ?? 0}
+          icon={Mail}
+          variant="amber"
+        />
+        <ATMStatsCard
+          label="Pending Payment"
+          value={counts['PendingPayment'] ?? 0}
+          icon={Clock}
+          variant="accent"
+        />
+        <ATMStatsCard
+          label="Provisioning"
+          value={counts['Provisioning'] ?? 0}
+          icon={Cog}
+          variant="indigo"
+        />
+        <ATMStatsCard
+          label="Active"
+          value={counts['Active'] ?? 0}
+          icon={CheckCircle2}
+          variant="emerald"
+        />
       </div>
 
       {/* ATMTable integration */}

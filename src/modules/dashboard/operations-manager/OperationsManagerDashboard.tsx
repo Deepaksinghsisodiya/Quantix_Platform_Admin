@@ -21,11 +21,12 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
   isFetching,
   refetch,
 }) => {
-  const pendingAcceptance = queue?.filter(
-    (e) => e.status === 'Pending' || e.status === 'Verified',
-  ).length ?? 0;
-  const provisioning = queue?.filter((e) => e.status === 'Provisioning').length ?? 0;
-  const failed = queue?.filter((e) => e.status === 'Failed').length ?? 0;
+  const safeQueue = Array.isArray(queue) ? queue : [];
+  const pendingAcceptance = safeQueue.filter(
+    (e) => e?.status === 'Pending' || e?.status === 'Verified',
+  ).length;
+  const provisioning = safeQueue.filter((e) => e?.status === 'Provisioning').length;
+  const failed = safeQueue.filter((e) => e?.status === 'Failed').length;
 
   return (
     <div className="space-y-6 p-6">

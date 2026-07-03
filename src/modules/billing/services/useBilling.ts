@@ -9,7 +9,9 @@ import {
   useGetPlansQuery,
   useCreatePlanMutation,
   useGetTokenPricingQuery,
+  useCreateTokenPricingMutation,
   useUpdateTokenPricingMutation,
+  useDeleteTokenPricingMutation,
   useMarkInvoicePaidMutation,
   useRetryPaymentMutation,
   useSendPaymentReminderMutation,
@@ -65,8 +67,18 @@ export function useTokenPricing() {
   return useGetTokenPricingQuery();
 }
 
+export function useCreateTokenPricing() {
+  const [trigger, result] = useCreateTokenPricingMutation();
+  return wrapMutation(trigger, result);
+}
+
 export function useUpdateTokenPricing() {
   const [trigger, result] = useUpdateTokenPricingMutation();
+  return wrapMutation(trigger, result);
+}
+
+export function useDeleteTokenPricing() {
+  const [trigger, result] = useDeleteTokenPricingMutation();
   return wrapMutation(trigger, result);
 }
 

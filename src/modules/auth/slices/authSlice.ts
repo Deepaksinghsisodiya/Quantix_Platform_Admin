@@ -20,6 +20,7 @@ export interface UserClaims {
 export interface AuthState {
   user: any; // User details from API
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   permissions: ModulePermission[];
   roleVersion: number;
@@ -47,20 +48,50 @@ export const parseJwt = (token: string) => {
   }
 };
 
-const loadSavedAuth = () => null;
+const loadSavedAuth = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    const rawUser = localStorage.getItem('authUser');
+    const user = rawUser ? JSON.parse(rawUser) : null;
+    if (accessToken || user) {
+      return { accessToken, refreshToken, user };
+    }
 
-const savedAuth: any = loadSavedAuth();
+    // Fallback to Zustand persisted state ('quantix-platform-auth')
+    const rawZustand = localStorage.getItem('quantix-platform-auth');
+    if (rawZustand) {
+      const parsed = JSON.parse(rawZustand);
+      const zUser = parsed?.state?.user;
+      const zAuth = parsed?.state?.isAuthenticated;
+      if (zUser || zAuth) {
+        return {
+          accessToken: localStorage.getItem('accessToken') || 'persisted-session-token',
+          refreshToken,
+          user: zUser,
+        };
+      }
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+  return null;
+};
+
+const savedAuth = loadSavedAuth();
 
 const initialState: AuthState = {
   user: savedAuth?.user || null,
   accessToken: savedAuth?.accessToken || null,
-  isAuthenticated: savedAuth?.isAuthenticated || false,
-  permissions: savedAuth?.permissions || [],
-  roleVersion: savedAuth?.roleVersion || 0,
+  refreshToken: savedAuth?.refreshToken || null,
+  isAuthenticated: !!(savedAuth?.accessToken && savedAuth?.user),
+  permissions: savedAuth?.user?.permissions || [],
+  roleVersion: savedAuth?.user?.permissionsVersion || 0,
   isLoading: false,
-  isInitialized: !!savedAuth?.accessToken,
-  mfaSetupRequired: savedAuth?.mfaSetupRequired || false,
-  mustChangePassword: savedAuth?.mustChangePassword || false,
+  isInitialized: true,
+  mfaSetupRequired: false,
+  mustChangePassword: false,
 };
 
 const authSlice = createSlice({
@@ -72,11 +103,12 @@ const authSlice = createSlice({
       action: PayloadAction<{
         user: any;
         accessToken: string;
+        refreshToken?: string;
         mfaSetupRequired?: boolean;
         mustChangePassword?: boolean;
       }>
     ) => {
-      const { user, accessToken, mfaSetupRequired, mustChangePassword } = action.payload;
+      const { user, accessToken, refreshToken, mfaSetupRequired, mustChangePassword } = action.payload;
       const decoded = parseJwt(accessToken);
       
       const finalMfaSetupRequired = mfaSetupRequired !== undefined
@@ -95,6 +127,15 @@ const authSlice = createSlice({
       state.mfaSetupRequired = finalMfaSetupRequired;
       state.mustChangePassword = finalMustChangePassword;
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('authUser', JSON.stringify(user));
+        const activeRefreshToken = refreshToken || user?.refreshToken || state.refreshToken;
+        if (activeRefreshToken) {
+          state.refreshToken = activeRefreshToken;
+          localStorage.setItem('refreshToken', activeRefreshToken);
+        }
+      }
 
       let permissionsList: string[] = [];
       if (decoded) {
@@ -114,14 +155,22 @@ const authSlice = createSlice({
         state.roleVersion = parseInt(decoded.role_v || '0');
       } else {
         // Fallback to user object if decode fails
-        state.permissions = user.permissions || [];
-        permissionsList = user.permissions || [];
-        state.roleVersion = user.permissionsVersion || 0;
+        state.permissions = user?.permissions || [];
+        permissionsList = user?.permissions || [];
+        state.roleVersion = user?.permissionsVersion || 0;
       }
 
       // Sync to Zustand store
       try {
-        useAuthStore.getState().setUser(user);
+        if (user) {
+          useAuthStore.getState().setUser(user);
+        }
+        if (accessToken) {
+          const expiresAt = decoded?.exp
+            ? new Date(decoded.exp * 1000).toISOString()
+            : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+          useAuthStore.getState().setToken(accessToken, expiresAt);
+        }
         useAuthStore.getState().setPermissions(permissionsList);
         useAuthStore.getState().setMfaSetupRequired(finalMfaSetupRequired);
         useAuthStore.getState().setMustChangePassword(finalMustChangePassword);
@@ -133,6 +182,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
+      state.refreshToken = null;
       state.isAuthenticated = false;
       state.permissions = [];
       state.roleVersion = 0;
@@ -140,6 +190,11 @@ const authSlice = createSlice({
       state.isInitialized = true;
       state.mfaSetupRequired = false;
       state.mustChangePassword = false;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('authUser');
+      }
 
       // Sync to Zustand store
       try {

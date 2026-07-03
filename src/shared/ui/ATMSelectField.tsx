@@ -32,7 +32,7 @@ export const ATMSelectField: React.FC<Props> = ({
   options,
   value,
   onChange,
-  placeholder = 'ATMSelect option',
+  placeholder = 'Select',
   error,
   helperText,
   disabled,

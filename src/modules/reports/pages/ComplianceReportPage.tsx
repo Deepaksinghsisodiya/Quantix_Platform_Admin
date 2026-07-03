@@ -51,8 +51,9 @@ function ComplianceReportPage() {
   const dashboardQuery = useComplianceDashboard();
 
   const dataRequests = useMemo(() => {
-    const items = requestsQuery.data?.data?.items ?? [];
-    return items.map((r) => ({
+    const rawItems = requestsQuery.data?.data?.items ?? requestsQuery.data?.data;
+    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(requestsQuery.data) ? (requestsQuery.data as any[]) : [];
+    return items.map((r: any) => ({
       id: r.id,
       merchantName: r.merchantName,
       type: r.merchantType,

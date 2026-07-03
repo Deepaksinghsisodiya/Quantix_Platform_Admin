@@ -98,6 +98,7 @@ export interface BulkTokenRequest {
   readonly overrides?: {
     readonly validityDays?: number;
     readonly tier?: TokenTier;
+    readonly limitsPayload?: Record<string, number>;
   };
   /** FRS-SAP-1406: Invoice option for bulk generation. */
   readonly invoiceOption?: 'immediate' | 'next-billing';

@@ -40,8 +40,10 @@ export default function MerchantInvoicesPage() {
   const payments = useGetSelfPaymentsQuery();
 
 
-  const invoiceRows = (invoices.data?.data as InvoiceListDto[] | undefined) ?? [];
-  const paymentRows = (payments.data?.data as PaymentHistoryDto[] | undefined) ?? [];
+  const rawInvoices = invoices.data?.data;
+  const invoiceRows = Array.isArray(rawInvoices) ? (rawInvoices as InvoiceListDto[]) : [];
+  const rawPayments = payments.data?.data;
+  const paymentRows = Array.isArray(rawPayments) ? (rawPayments as PaymentHistoryDto[]) : [];
 
   async function handleDownload(id: string) {
     try {

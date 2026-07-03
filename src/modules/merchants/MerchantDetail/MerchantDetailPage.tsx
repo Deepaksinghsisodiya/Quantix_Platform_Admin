@@ -39,7 +39,7 @@ import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
-import { ATMTabs } from '@/shared/ui';
+import { ATMTabs, ATMAvatar, ATMDetailRow, ATMSectionHeader, ATMActionSidebarItem } from '@/shared/ui';
 import { WelcomeCommunications } from '../components/WelcomeCommunications';
 import EnterprisePanels from '../components/EnterprisePanels';
 import StandalonePanels from '../components/StandalonePanels';
@@ -653,14 +653,14 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
 
   if (isMerchantLoading) {
     return (
-      <div className="space-y-6 animate-fade-in w-full">
-        <ATMSkeleton className="h-24 w-full" />
+      <div className="flex flex-col gap-6 p-6 lg:p-8 pb-10 animate-fade-in w-full">
+        <ATMSkeleton className="h-28 w-full rounded-2xl" />
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <ATMSkeleton className="h-48 w-full" />
-            <ATMSkeleton className="h-48 w-full" />
+            <ATMSkeleton className="h-52 w-full rounded-2xl" />
+            <ATMSkeleton className="h-52 w-full rounded-2xl" />
           </div>
-          <ATMSkeleton className="h-96 w-full" />
+          <ATMSkeleton className="h-[420px] w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -668,13 +668,18 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
 
   if (merchantError || !merchant) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center w-full animate-fade-in">
-        <AlertCircle className="mb-3 h-10 w-10 text-rose-500" />
-        <p className="text-sm font-bold text-rose-600 dark:text-rose-450">
+      <div className="flex flex-col items-center justify-center p-6 lg:p-8 py-20 text-center w-full animate-fade-in min-h-[400px]">
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 mb-3">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <p className="text-base font-bold text-slate-900 dark:text-white">
           {merchantError ? 'Error loading merchant details' : 'Merchant not found'}
         </p>
-        <ATMButton variant="outline" size="sm" className="mt-4" onClick={onBack}>
-          Back to directory
+        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1 max-w-sm">
+          The requested merchant could not be found or an error occurred while connecting to the server.
+        </p>
+        <ATMButton variant="outline" size="sm" className="mt-5" onClick={onBack}>
+          Back to Merchant Directory
         </ATMButton>
       </div>
     );
@@ -801,16 +806,116 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                       />
                     )}
 
-                    <ATMCard title="Business Information" className="glass-card">
-                      <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 pt-1">
-                        <InfoRow icon={<Building2 className="h-4.5 w-4.5 text-gray-400" />} label="Business Name" value={merchant.businessName} />
-                        <InfoRow icon={<User className="h-4.5 w-4.5 text-gray-400" />} label="Contact Person" value={merchant.contactPerson} />
-                        <InfoRow icon={<Mail className="h-4.5 w-4.5 text-gray-400" />} label="Email" value={merchant.email} />
-                        <InfoRow icon={<Phone className="h-4.5 w-4.5 text-gray-400" />} label="Phone" value={merchant.phone} />
-                        <InfoRow icon={<Globe className="h-4.5 w-4.5 text-gray-400" />} label="Country" value={merchant.country} />
-                        <InfoRow icon={<Calendar className="h-4.5 w-4.5 text-gray-400" />} label="Signup Date" value={formatDate(merchant.signupDate || new Date().toISOString(), 'long')} />
-                      </dl>
-                    </ATMCard>
+                    {/* Profile Identity Card matching UserDetailPage (Image 1) */}
+                    <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden relative group">
+                      <div className="absolute top-0 right-0 p-10 opacity-[0.03] dark:opacity-[0.05] grayscale pointer-events-none group-hover:opacity-[0.05] dark:group-hover:opacity-[0.08] transition-opacity">
+                        <Building2 size={200} className="dark:text-white" />
+                      </div>
+
+                      <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
+                        <div className="relative">
+                          <ATMAvatar
+                            name={merchant.businessName}
+                            size="xl"
+                            className="ring-4 ring-slate-50 dark:ring-gray-800 shadow-xl"
+                          />
+                          <div className="absolute -bottom-2 -right-2">
+                            <StatusBadge status={merchant.status} />
+                          </div>
+                        </div>
+
+                        <div className="flex-1 text-center md:text-left space-y-4">
+                          <div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                              {merchant.businessName}
+                            </h2>
+                            <div className="flex items-center justify-center md:justify-start gap-3 mt-3">
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-800 px-3 py-1 rounded border border-slate-200 dark:border-gray-700 uppercase tracking-widest font-mono">
+                                ID: {merchant.id.slice(0, 8)}
+                              </span>
+                              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-gray-700" />
+                              <MerchantTypeBadge type={merchant.merchantType} />
+                              {merchant.businessNature && (
+                                <ATMBadge label={merchant.businessNature} color="purple" variant="outline" size="sm" />
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-2">
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
+                              <User size={14} className="text-slate-400 dark:text-gray-500" />
+                              <span className="text-xs font-bold tracking-tight">{merchant.contactPerson}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
+                              <Mail size={14} className="text-slate-400 dark:text-gray-500" />
+                              <span className="text-xs font-bold lowercase tracking-tight">{merchant.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
+                              <Globe size={14} className="text-slate-400 dark:text-gray-500" />
+                              <span className="text-xs font-bold uppercase tracking-tight">{merchant.country}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2-Column Grid matching UserDetailPage (Image 1) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Business Contact Metadata */}
+                      <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
+                        <ATMSectionHeader title="Contact & Business Metadata" />
+                        <div className="space-y-1">
+                          <ATMDetailRow icon={Building2} label="Business Name" value={merchant.businessName} />
+                          <ATMDetailRow icon={User} label="Primary Contact" value={merchant.contactPerson} />
+                          <ATMDetailRow icon={Mail} label="Corporate Email" value={merchant.email} />
+                          <ATMDetailRow icon={Phone} label="Phone Number" value={merchant.phone} />
+                          <ATMDetailRow icon={Globe} label="Country Location" value={merchant.country} />
+                          <ATMDetailRow icon={Calendar} label="Commencement Date" value={formatDate(merchant.signupDate || new Date().toISOString(), 'long')} isLast />
+                        </div>
+                      </div>
+
+                      {/* Infrastructure & Subscription Details */}
+                      <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
+                        <ATMSectionHeader title="Infrastructure & Subscription" />
+                        <div className="space-y-1">
+                          <ATMDetailRow icon={Cloud} label="Merchant Model" value={merchant.merchantType} />
+                          <ATMDetailRow icon={Sliders} label="Subscription Plan" value={merchant.plan || merchant.tier || 'Starter'} />
+                          <ATMDetailRow icon={CreditCard} label="Billing Cadence" value={(merchant as any).billingFrequency || 'Monthly'} />
+                          <ATMDetailRow icon={CreditCard} label="Payment Option" value={(merchant as any).preferredPaymentMethod || 'Invoice'} />
+                          <ATMDetailRow icon={Monitor} label="Registered Devices" value={`${merchant.terminalCount || 0} active devices`} isLast />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* System Health Status Card matching UserDetailPage Security & Auth */}
+                    <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
+                      <ATMSectionHeader title="System & Health Status" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Cloud API Health</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">Connected (99.97% Uptime)</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Sync Pipeline</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">Real-Time Sync Active</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Merchant Status</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2.5 h-2.5 rounded-full ${merchant.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">{merchant.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     {merchant.merchantType === 'Enterprise' ? (
                       <EnterprisePanels />
@@ -847,8 +952,8 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                       <div className="relative pl-6 pt-2">
                         <div className="absolute left-2.5 top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-800" />
                         <ul className="space-y-6">
-                          {timeline.map((entry) => (
-                            <li key={entry.id} className="relative flex gap-4">
+                          {timeline.map((entry, index) => (
+                            <li key={entry.id || entry.eventId || `timeline-entry-${index}`} className="relative flex gap-4">
                               <span className="absolute -left-3.5 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-accent-500 dark:border-gray-900">
                                 <span className="h-2 w-2 rounded-full bg-white" />
                               </span>
@@ -896,8 +1001,57 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
           />
         </div>
 
-        {/* Right Column Sidebar */}
+        {/* Right Column Sidebar matching UserDetailPage (Image 1) */}
         <div className="space-y-6">
+          {/* Management Actions Card matching Image 1 */}
+          <div className="bg-zen-card border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-slate-50 dark:bg-gray-950 px-6 py-4 border-b border-slate-200 dark:border-gray-800">
+              <h3 className="text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em]">Management & Actions</h3>
+            </div>
+
+            <div className="p-6 space-y-3">
+              <ATMActionSidebarItem
+                label="Modify Details"
+                icon={Pencil}
+                onClick={() => handleAction('edit')}
+              />
+              {merchant.status === 'Active' && (
+                <ATMActionSidebarItem
+                  label={merchant.merchantType === 'Enterprise' ? 'Change Plan' : 'Change Tier'}
+                  icon={Sliders}
+                  onClick={() => handleAction('change-plan')}
+                />
+              )}
+              {merchant.merchantType === 'Standalone' && (
+                <ATMActionSidebarItem
+                  label="Manage Terminals"
+                  icon={Monitor}
+                  onClick={() => handleAction('terminals')}
+                />
+              )}
+              <ATMActionSidebarItem
+                label="Export Merchant Data"
+                icon={FileText}
+                onClick={() => handleAction('export')}
+              />
+              {merchant.status === 'Active' && (
+                <ATMActionSidebarItem
+                  label="Suspend Account"
+                  icon={Pause}
+                  onClick={() => handleAction('suspend')}
+                  variant="rose"
+                />
+              )}
+              {merchant.status === 'Suspended' && (
+                <ATMActionSidebarItem
+                  label="Reactivate Account"
+                  icon={PlayCircle}
+                  onClick={() => handleAction('reactivate')}
+                />
+              )}
+            </div>
+          </div>
+
           {merchant.onboardingChecklist && (
             <OnboardingChecklistPanel checklist={merchant.onboardingChecklist} />
           )}

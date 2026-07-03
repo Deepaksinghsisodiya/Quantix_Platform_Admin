@@ -49,6 +49,12 @@ const AUTH_STORAGE_KEY = 'quantix-platform-auth';
 
 function getToken(): string | null {
   try {
+    const directToken = localStorage.getItem('accessToken');
+    if (directToken) return directToken;
+
+    const storeToken = useAuthStore.getState().token;
+    if (storeToken) return storeToken;
+
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
@@ -59,7 +65,7 @@ function getToken(): string | null {
       typeof (parsed as Record<string, unknown>)['state'] === 'object'
     ) {
       const state = (parsed as { state: Record<string, unknown> }).state;
-      if (typeof state['token'] === 'string') {
+      if (typeof state['token'] === 'string' && state['token']) {
         return state['token'];
       }
     }

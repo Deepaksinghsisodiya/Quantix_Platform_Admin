@@ -51,7 +51,15 @@ const AppShell: React.FC = () => {
           {/* Conditional Banner */}
           {!user?.isPasswordChanged && <PasswordWarningBanner />}
 
-          <div className="flex-1 flex flex-col overflow-y-auto relative z-10">
+          <div
+            className="flex-1 flex flex-col overflow-y-auto relative z-10"
+            style={{
+              paddingTop: 'var(--page-padding-y, 1.5rem)',
+              paddingLeft: 'var(--page-padding-x, 2rem)',
+              paddingRight: 'var(--page-padding-x, 2rem)',
+              paddingBottom: 'var(--page-padding-bottom, 2.5rem)',
+            }}
+          >
             <Suspense fallback={
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-600/20 overflow-hidden z-[100]">
                 <div className="h-full bg-accent-600 animate-[loading_1.5s_infinite_ease-in-out]" style={{ width: '30%' }}></div>

@@ -46,8 +46,9 @@ function HelpArticlesPage() {
   const articlesQuery = useHelpArticles({ page: 1, pageSize: 100 });
 
   const articles = useMemo<HelpArticleRow[]>(() => {
-    const items = articlesQuery.data?.data?.items ?? [];
-    return items.map((a) => ({
+    const rawItems = articlesQuery.data?.data?.items ?? articlesQuery.data?.data;
+    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(articlesQuery.data) ? (articlesQuery.data as any[]) : [];
+    return items.map((a: any) => ({
       id: a.id,
       title: a.title,
       category: a.category,

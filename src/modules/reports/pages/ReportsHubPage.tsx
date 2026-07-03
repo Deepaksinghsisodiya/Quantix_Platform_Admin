@@ -121,7 +121,12 @@ interface ScheduledReport {
 function ReportsHubPage() {
   const definitionsQuery = useReportDefinitions();
 
-  const allDefinitions = definitionsQuery.data?.data ?? [];
+  const rawDefinitions = definitionsQuery.data?.data;
+  const allDefinitions = Array.isArray(rawDefinitions)
+    ? rawDefinitions
+    : Array.isArray(definitionsQuery.data)
+      ? (definitionsQuery.data as any[])
+      : [];
 
   const savedReports = useMemo<SavedReport[]>(
     () =>
@@ -156,7 +161,7 @@ function ReportsHubPage() {
   const isError = definitionsQuery.isError;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
+    <div className="w-full space-y-8 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">

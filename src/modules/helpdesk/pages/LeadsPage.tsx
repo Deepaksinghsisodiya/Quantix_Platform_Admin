@@ -73,8 +73,9 @@ function LeadsPage() {
   const updateMut = useUpdateLead();
 
   const leads = useMemo<LeadVM[]>(() => {
-    const items = leadsQuery.data?.data?.items ?? [];
-    return items.map((l) => ({
+    const rawItems = leadsQuery.data?.data?.items ?? leadsQuery.data?.data;
+    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(leadsQuery.data) ? (leadsQuery.data as any[]) : [];
+    return items.map((l: any) => ({
       id: l.leadId,
       name: l.name || l.contactPerson || '(no name)',
       email: l.email,

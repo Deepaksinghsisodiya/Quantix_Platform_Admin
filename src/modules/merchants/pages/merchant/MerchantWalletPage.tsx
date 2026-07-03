@@ -70,7 +70,8 @@ export default function MerchantWalletPage() {
   }
 
   const w = wallet.data?.data as WalletDto | undefined;
-  const transactions = (txns.data?.data as WalletTransactionDto[] | undefined) ?? [];
+  const rawTxns = txns.data?.data;
+  const transactions = Array.isArray(rawTxns) ? (rawTxns as WalletTransactionDto[]) : [];
 
   return (
     <div className="space-y-6 p-6">

@@ -44,6 +44,7 @@ export const useAuth = () => {
   const completeLogin = useCallback((payload: {
     user: any;
     accessToken: string;
+    refreshToken?: string;
     mfaSetupRequired?: boolean;
     mustChangePassword?: boolean;
   }) => {

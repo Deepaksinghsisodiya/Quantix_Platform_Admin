@@ -35,13 +35,23 @@ const mapMerchantResponse = (m: any): Merchant => {
 
 export const merchantApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // --- Merchants ---
     getMerchants: builder.query<ApiListResponse<Merchant>, Record<string, any>>({
-      query: (params) => ({
-        url: '/api/v1/merchants',
-        method: 'GET',
-        params,
-      }),
+      query: (rawParams) => {
+        const params: Record<string, any> = {};
+        if (rawParams) {
+          Object.keys(rawParams).forEach((key) => {
+            const val = rawParams[key];
+            if (val !== undefined && val !== null && val !== '' && val !== 'all') {
+              params[key] = val;
+            }
+          });
+        }
+        return {
+          url: '/api/v1/merchants',
+          method: 'GET',
+          params,
+        };
+      },
       transformResponse: (response: ApiListResponse<any>) => ({
         ...response,
         data: response.data?.map(mapMerchantResponse) ?? [],
@@ -71,10 +81,13 @@ export const merchantApi = baseApi.injectEndpoints({
     }),
 
     activateMerchant: builder.mutation<ApiResponse<Merchant>, string>({
-      query: (id) => ({
-        url: `/api/v1/merchants/${id}/activate`,
-        method: 'POST',
-      }),
+      query: (id) => {
+        const cleanId = id && id !== 'undefined' ? id : '';
+        return {
+          url: `/api/v1/merchants/${cleanId}/activate`,
+          method: 'POST',
+        };
+      },
       invalidatesTags: (_res, _err, id) => [{ type: 'Merchants', id }, 'Merchants'],
     }),
 
@@ -206,11 +219,11 @@ export const merchantApi = baseApi.injectEndpoints({
             contactName: data.contactPerson,
             contactEmail: data.email,
             contactPhone: data.phone,
-            addressLine1: null,
-            addressLine2: null,
-            city: null,
-            state: null,
-            postalCode: null,
+            addressLine1: (data as any).addressLine1 || (data as any).address || null,
+            addressLine2: (data as any).addressLine2 || null,
+            city: (data as any).city || null,
+            state: (data as any).state || null,
+            postalCode: (data as any).postalCode || (data as any).zipCode || null,
             country: data.country,
             databaseEngine: data.dbEngine || 'PostgreSQL',
             businessNature: data.businessNature || null,
@@ -246,11 +259,11 @@ export const merchantApi = baseApi.injectEndpoints({
             contactName: data.contactPerson,
             contactEmail: data.email,
             contactPhone: data.phone,
-            addressLine1: null,
-            addressLine2: null,
-            city: null,
-            state: null,
-            postalCode: null,
+            addressLine1: (data as any).addressLine1 || (data as any).address || null,
+            addressLine2: (data as any).addressLine2 || null,
+            city: (data as any).city || null,
+            state: (data as any).state || null,
+            postalCode: (data as any).postalCode || (data as any).zipCode || null,
             country: data.country,
             databaseEngine: null,
             businessNature: data.businessNature || null,
@@ -381,6 +394,10 @@ export const merchantApi = baseApi.injectEndpoints({
         url: `/api/v1/deboarding/by-merchant/${merchantId}`,
         method: 'GET',
       }),
+      transformErrorResponse: () => ({
+        success: false,
+        data: null as any,
+      }),
       providesTags: ['Deboarding'],
     }),
 
@@ -398,6 +415,10 @@ export const merchantApi = baseApi.injectEndpoints({
       query: (merchantId) => ({
         url: `/api/v1/terminals/by-merchant/${merchantId}`,
         method: 'GET',
+      }),
+      transformErrorResponse: () => ({
+        success: true,
+        data: [],
       }),
       providesTags: ['Terminals'],
     }),

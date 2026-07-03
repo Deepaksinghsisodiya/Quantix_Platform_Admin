@@ -36,7 +36,7 @@ const ATMSelectField: React.FC<ATMSelectFieldProps> = ({
     name,
     options,
     required,
-    placeholder = 'ATMSelect option',
+    placeholder = 'Select',
     disabled,
     searchable = true,
     clearable = true,

@@ -425,14 +425,14 @@ export const RegisterStandalonePage: React.FC<RegisterStandalonePageProps> = ({
 
       case 2:
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             <div>
               <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Business Details</h2>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400 font-medium">
                 Enter primary business contact details.
               </p>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6 w-full">
               <ATMInputField
                 label="Business Name"
                 name="businessName"
@@ -464,6 +464,26 @@ export const RegisterStandalonePage: React.FC<RegisterStandalonePageProps> = ({
                 label="Country"
                 options={COUNTRY_OPTIONS}
                 required
+              />
+              <ATMInputField
+                label="Address Line 1"
+                name="addressLine1"
+                placeholder="Building, Street, Suite..."
+              />
+              <ATMInputField
+                label="City"
+                name="city"
+                placeholder="City name"
+              />
+              <ATMInputField
+                label="State / Province"
+                name="state"
+                placeholder="State or Province"
+              />
+              <ATMInputField
+                label="Postal / Zip Code"
+                name="postalCode"
+                placeholder="Postal code"
               />
             </div>
           </div>
@@ -550,7 +570,19 @@ export const RegisterStandalonePage: React.FC<RegisterStandalonePageProps> = ({
   const price = TOKEN_PRICING[activeTier]?.[activeDays] ?? 0;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 w-full bg-zen-surface animate-fade-in p-6 lg:p-8">
+    <div className="w-full bg-zen-surface animate-fade-in p-6 lg:p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => navigate('/merchants')}
+          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-accent-600 dark:text-gray-400 dark:hover:text-accent-400 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Merchant Directory
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 w-full">
       {/* Left Column: Form Steps */}
       <div className="lg:col-span-2 space-y-6">
         <StepProgress currentStep={step} steps={STEPS} />
@@ -650,7 +682,8 @@ export const RegisterStandalonePage: React.FC<RegisterStandalonePageProps> = ({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default RegisterStandalonePage;

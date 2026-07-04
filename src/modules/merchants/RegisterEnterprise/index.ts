@@ -1,3 +1,2 @@
-﻿export { default } from '../Add/EnterpriseRegisterWrapper';
-export * from '../Add/EnterpriseRegisterWrapper';
-
+export { default } from './RegisterEnterpriseWrapper';
+export * from './RegisterEnterpriseWrapper';

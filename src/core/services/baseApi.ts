@@ -53,7 +53,7 @@ export const baseApi = createApi({
     'ActiveTimer', 'TimeEntries', 'TeamLiveStatus', 'Profile',
     'AttendanceReport', 'TimeTrackingReport', 'ProjectHealthReport', 'LeaveReport', 'ProductivityReport',
     'Settings', 'Holidays', 'Expenses', 'Payroll', 'SalaryStructure', 'FileHub', 'Clients', 'Tickets',
-    'Merchants', 'Deboarding', 'Terminals', 'SignupQueue', 'Webhooks', 'Tokens'
+    'Merchants', 'Deboarding', 'Terminals', 'SignupQueue', 'Webhooks', 'Tokens', 'Plans'
   ],
   endpoints: () => ({}),
 });

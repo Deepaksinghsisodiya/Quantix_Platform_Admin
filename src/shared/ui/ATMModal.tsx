@@ -12,7 +12,7 @@ interface Props {
   description?: string; // added support for legacy description prop
   children: ReactNode;
   footer?: ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
   closeOnEsc?: boolean;
   closeOnOutsideClick?: boolean;
   showCloseButton?: boolean;
@@ -81,7 +81,8 @@ export const ATMModal: React.FC<Props> = ({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
-    '3xl': 'max-w-4xl'
+    '3xl': 'max-w-4xl',
+    '4xl': 'max-w-6xl'
   };
 
   return createPortal(
@@ -90,12 +91,12 @@ export const ATMModal: React.FC<Props> = ({
       isAnimating ? "bg-slate-900/40 backdrop-blur-[4px] opacity-100" : "bg-slate-900/0 backdrop-blur-none opacity-0"
     )}>
       {/* 🧼 Overlay - Logic controlled for strict modals */}
-      <div 
-        className="absolute inset-0 cursor-default" 
+      <div
+        className="absolute inset-0 cursor-default"
         onMouseDown={(e) => {
           e.stopPropagation();
           if (closeOnOutsideClick) onClose();
-        }} 
+        }}
       />
 
       {/* 🧼 Modal Architecture - Authentic WhatsApp Smoothness */}
@@ -106,8 +107,8 @@ export const ATMModal: React.FC<Props> = ({
           "border border-white/40 dark:border-gray-800/50",
           sizeClasses[size],
           "max-h-[85vh]",
-          isAnimating 
-            ? "translate-y-0 scale-100 opacity-100" 
+          isAnimating
+            ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-2 scale-[0.98] opacity-0"
         )}
         style={{

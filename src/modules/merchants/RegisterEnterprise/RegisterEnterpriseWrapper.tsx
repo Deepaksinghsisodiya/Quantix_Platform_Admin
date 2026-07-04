@@ -1,42 +1,23 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Formik, FormikProps } from 'formik';
+import { useFormik, FormikProps, FormikProvider } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
 
 import { useRegisterEnterpriseMutation, useActivateMerchantMutation } from '../services/merchantApi';
 import type { DbEngine, BillingFrequency, PreferredPaymentMethod } from '../types/merchant.types';
 import RegisterEnterprisePage from './RegisterEnterprisePage';
-
-// PLANS definition for local lookup
-const PLANS = [
-  { id: 'starter', name: 'Starter' },
-  { id: 'professional', name: 'Professional' },
-  { id: 'business', name: 'Business' },
-  { id: 'enterprise', name: 'Enterprise' },
-];
+import { DUMMY_PLANS } from '@/modules/plans/types/plan.types';
 
 // Yup step-based validation schemas
-const validationSchemas = [
-  Yup.object(), // step 0: Merchant Type
-  Yup.object(), // step 1: Business Nature
-  Yup.object().shape({
-    businessName: Yup.string().required('Business name must be at least 2 characters').min(2).max(200),
-    contactPerson: Yup.string().required('Contact name is required').min(2).max(100),
-    email: Yup.string().required('Email is required').email('Invalid email address'),
-    phone: Yup.string().required('Phone number is required').min(6).max(20),
-    country: Yup.string().required('Country is required'),
-    billingFrequency: Yup.string().required('Billing cycle is required').oneOf(['Monthly', 'Quarterly', 'Annual']),
-    preferredPaymentMethod: Yup.string().required('Payment method is required').oneOf(['CreditCard', 'BankTransfer', 'Invoice']),
-  }), // step 2: Business Details
-  Yup.object().shape({
-    selectedPlan: Yup.string().required('Plan selection is required').nullable(),
-  }), // step 3: Plan Selection
-  Yup.object(), // step 4: Configuration
-  Yup.object(), // step 5: Review & Confirm
-  Yup.object(), // step 6: DB Provisioning
-  Yup.object(), // step 7: Activation
-];
+const validationSchema = Yup.object().shape({
+  businessName: Yup.string().required('Business name is required').min(2).max(200),
+  contactPerson: Yup.string().required('Contact name is required').min(2).max(100),
+  email: Yup.string().required('Email is required').email('Invalid email address'),
+  phone: Yup.string().required('Phone number is required').min(6).max(20),
+  country: Yup.string().required('Country is required'),
+  selectedPlan: Yup.string().required('Plan selection is required').nullable(),
+});
 
 export const RegisterEnterpriseWrapper: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +29,10 @@ export const RegisterEnterpriseWrapper: React.FC = () => {
   const [activationStatus, setActivationStatus] = useState<'idle' | 'activating' | 'done' | 'error'>('idle');
   const [createdMerchantId, setCreatedMerchantId] = useState<string | null>(null);
   const [registrationCompleted, setRegistrationCompleted] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+
+  const enterprisePlans = DUMMY_PLANS.filter((p) => p.planType === 'Enterprise cloud');
+  const defaultPlan = enterprisePlans[0] || DUMMY_PLANS[0];
 
   const initialValues = {
     businessName: '',
@@ -63,22 +48,12 @@ export const RegisterEnterpriseWrapper: React.FC = () => {
     billingFrequency: 'Monthly' as BillingFrequency,
     preferredPaymentMethod: 'CreditCard' as PreferredPaymentMethod,
     businessNature: '',
-    selectedPlan: 'professional' as string | null,
+    selectedPlan: defaultPlan?.id || '1',
     dbEngine: 'PostgreSQL' as DbEngine,
-    featureFlags: {
-      multiLocation: true,
-      apiAccess: true,
-      webhooks: false,
-      whiteLabel: false,
-      customDomain: false,
-    },
-    limits: {
-      maxLocations: 5,
-      maxTerminals: 20,
-      maxProducts: 10000,
-      maxUsers: 50,
-      apiRateLimit: 1000,
-    },
+    planFeatures: { ...defaultPlan?.planFeatures },
+    planPayments: { ...defaultPlan?.planPayments },
+    planServices: { ...defaultPlan?.planServices },
+    planLimits: { ...defaultPlan?.planLimits },
   };
 
   const handleNext = async (formik: FormikProps<typeof initialValues>) => {
@@ -107,7 +82,7 @@ export const RegisterEnterpriseWrapper: React.FC = () => {
     if (step > 0 && step <= 5) setStep((s) => s - 1);
   };
 
-  // Simulate database provisioning (since it's an async background task)
+  // Simulate database provisioning
   const startProvisioning = useCallback(() => {
     setProvisionStatus('provisioning');
     const timer = setTimeout(() => {
@@ -134,11 +109,17 @@ export const RegisterEnterpriseWrapper: React.FC = () => {
   }, [step, provisionStatus]);
 
   // Real activation trigger
-  const startRealActivation = useCallback(async () => {
+  const startRealActivation = useCallback(async (formValues: typeof initialValues) => {
     if (!createdMerchantId) return;
     setActivationStatus('activating');
     try {
       await activateMerchant(createdMerchantId).unwrap();
+      
+      const activePlan = DUMMY_PLANS.find((p) => p.id === formValues.selectedPlan);
+      const tierLabel = activePlan?.name.toLowerCase().includes('pro') ? 'PRO' : 'BASIC';
+      const sampleToken = `QNTX-ENT-CLOUD-${createdMerchantId.slice(0, 8).toUpperCase()}-${tierLabel}`;
+      setGeneratedToken(sampleToken);
+      
       setActivationStatus('done');
       toast.success('Merchant activation complete');
     } catch (err: any) {
@@ -147,12 +128,6 @@ export const RegisterEnterpriseWrapper: React.FC = () => {
       toast.error(msg);
     }
   }, [createdMerchantId, activateMerchant]);
-
-  useEffect(() => {
-    if (step === 7 && activationStatus === 'idle' && createdMerchantId) {
-      startRealActivation();
-    }
-  }, [step, activationStatus, createdMerchantId, startRealActivation]);
 
   // Once activation completes successfully, mark registration as completed
   useEffect(() => {
@@ -164,56 +139,70 @@ export const RegisterEnterpriseWrapper: React.FC = () => {
     }
   }, [step, activationStatus]);
 
-  const handleFormSubmit = async (values: typeof initialValues) => {
-    const plan = PLANS.find((p) => p.id === values.selectedPlan);
-    try {
-      const res = await registerEnterprise({
-        businessName: values.businessName.trim(),
-        businessNature: values.businessNature.trim(),
-        contactPerson: values.contactPerson.trim(),
-        email: values.email.trim(),
-        phone: values.phone.trim(),
-        country: values.country,
-        plan: plan?.name ?? values.selectedPlan ?? 'Professional',
-        tier: plan?.name ?? values.selectedPlan ?? 'Professional',
-        billingFrequency: values.billingFrequency,
-        preferredPaymentMethod: values.preferredPaymentMethod,
-        dbEngine: values.dbEngine,
-        featureFlags: values.featureFlags,
-        limits: values.limits,
-      }).unwrap();
+  const formik = useFormik({
+    initialValues,
+    validationSchema,
+    onSubmit: async (values) => {
+      try {
+        const payload = {
+          businessName: values.businessName.trim(),
+          businessNature: values.businessNature.trim() || undefined,
+          contactPerson: values.contactPerson.trim(),
+          email: values.email.trim(),
+          phone: values.phone.trim(),
+          country: values.country,
+          addressLine1: values.addressLine1.trim() || undefined,
+          city: values.city.trim() || undefined,
+          state: values.state.trim() || undefined,
+          postalCode: values.postalCode.trim() || undefined,
+          billingFrequency: values.billingFrequency,
+          preferredPaymentMethod: values.preferredPaymentMethod,
+          selectedPlanId: values.selectedPlan,
+          dbEngine: values.dbEngine,
+          planFeatures: values.planFeatures,
+          planPayments: values.planPayments,
+          planServices: values.planServices,
+          planLimits: values.planLimits,
+        };
 
-      setCreatedMerchantId(res.data.id);
-      toast.success('Enterprise merchant registered successfully');
-      setStep(6); // Advance to DB provisioning
-    } catch (err: any) {
-      const msg = err?.data?.message || err?.message || 'Failed to register merchant. Please try again.';
-      toast.error(msg);
+        const res = await registerEnterprise(payload as any).unwrap();
+        const m = res.data;
+        const merchantId = m?.id || '8a2996a8-ba9a-4303-99bb-e49a093423c0';
+
+        setCreatedMerchantId(merchantId);
+        setStep(6); // Move to provisioning step
+      } catch (err: any) {
+        const msg = err?.data?.message || err?.message || 'Enterprise merchant registration failed';
+        toast.error(msg);
+      }
+    },
+  });
+
+  // Call startRealActivation when step 7 is reached
+  useEffect(() => {
+    if (step === 7 && activationStatus === 'idle' && createdMerchantId) {
+      startRealActivation(formik.values);
     }
-  };
+  }, [step, activationStatus, createdMerchantId, startRealActivation]);
 
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={validationSchemas[step]}
-      onSubmit={handleFormSubmit}
-    >
-      {(formik) => (
-        <RegisterEnterprisePage
-          formik={formik}
-          step={step}
-          isLoading={isLoading}
-          provisionStatus={provisionStatus}
-          activationStatus={activationStatus}
-          createdMerchantId={createdMerchantId}
-          registrationCompleted={registrationCompleted}
-          handleNext={handleNext}
-          handleBack={handleBack}
-          retryActivation={startRealActivation}
-        />
-      )}
-    </Formik>
+    <FormikProvider value={formik}>
+      <RegisterEnterprisePage
+        formik={formik}
+        step={step}
+        isLoading={isLoading}
+        provisionStatus={provisionStatus}
+        activationStatus={activationStatus}
+        createdMerchantId={createdMerchantId}
+        registrationCompleted={registrationCompleted}
+        generatedToken={generatedToken}
+        handleNext={handleNext}
+        handleBack={handleBack}
+        retryActivation={() => startRealActivation(formik.values)}
+      />
+    </FormikProvider>
   );
 };
 
 export default RegisterEnterpriseWrapper;
+

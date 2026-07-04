@@ -1,8 +1,8 @@
 import React from 'react';
-import { PlanManagementWrapper } from './PlanManagementWrapper';
+import { PlanListWrapper } from '@/modules/plans';
 
 export const PlanManagementPage: React.FC = () => {
-  return <PlanManagementWrapper />;
+  return <PlanListWrapper />;
 };
 
 export default PlanManagementPage;

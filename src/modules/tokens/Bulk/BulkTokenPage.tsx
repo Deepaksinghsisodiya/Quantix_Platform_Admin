@@ -238,8 +238,7 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = ({
 
       {/* Scrollable grid content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/10 dark:bg-gray-900/10">
-        <div className="grid gap-6 lg:grid-cols-3 items-start max-w-7xl mx-auto w-full">
-          {/* Main Controls */}
+        <div className="grid w-full gap-6 items-start lg:grid-cols-3">          {/* Main Controls */}
           <div className="space-y-6 lg:col-span-2">
             <ATMCard title="Merchant" padding="md" className="overflow-visible shadow-sm border border-gray-100 dark:border-gray-800">
               {merchantsLoading ? (

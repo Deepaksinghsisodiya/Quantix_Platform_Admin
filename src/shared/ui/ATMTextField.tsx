@@ -56,12 +56,12 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
         <div
           className={clsx(
-            'relative flex items-center w-full transition-all duration-200 border group shadow-sm',
+            'relative flex items-center w-full transition-all duration-300 border group shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]',
             containerSizeClasses[size],
             error
-              ? 'border-red-500 bg-red-50/30 dark:bg-red-950/10'
-              : 'border-gray-200 bg-zen-surface dark:border-gray-800 focus-within:border-accent-600 focus-within:bg-zen-surface',
-            'focus-within:ring-4 focus-within:ring-accent-600/5'
+              ? 'border-red-500 bg-red-50/10'
+              : 'border-slate-200 dark:border-slate-800 bg-[#fafafa] hover:border-slate-400 dark:hover:border-slate-650 focus-within:border-slate-950 focus-within:bg-white dark:focus-within:border-white dark:focus-within:bg-slate-950/20',
+            'focus-within:ring-4 focus-within:ring-slate-950/5 dark:focus-within:ring-white/5'
           )}
         >
           {effectivePrefix && (

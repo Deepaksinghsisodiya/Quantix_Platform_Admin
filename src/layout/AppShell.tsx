@@ -54,10 +54,10 @@ const AppShell: React.FC = () => {
           <div
             className="flex-1 flex flex-col overflow-y-auto relative z-10"
             style={{
-              paddingTop: 'var(--page-padding-y, 1.5rem)',
-              paddingLeft: 'var(--page-padding-x, 2rem)',
-              paddingRight: 'var(--page-padding-x, 2rem)',
-              paddingBottom: 'var(--page-padding-bottom, 2.5rem)',
+              paddingTop: 'var(--page-padding-y, 1.25rem)',
+              paddingLeft: 'var(--page-padding-x, 1.5rem)',
+              paddingRight: 'var(--page-padding-x, 1.5rem)',
+              paddingBottom: 'var(--page-padding-bottom, 2rem)',
             }}
           >
             <Suspense fallback={

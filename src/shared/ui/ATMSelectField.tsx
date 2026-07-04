@@ -42,7 +42,7 @@ export const ATMSelectField: React.FC<Props> = ({
   loading,
   className = '',
   prefix,
-  size = 'md',
+  size = 'lg',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,19 +50,19 @@ export const ATMSelectField: React.FC<Props> = ({
   
   const sizeMap = {
     sm: {
-      button: 'px-2.5 py-1.5 text-[12px] rounded-xl border-2',
+      button: 'px-3 py-1.5 text-xs rounded-lg border',
       icon: 14,
       gap: 'gap-2'
     },
     md: {
-      button: 'px-5 py-4 text-sm rounded-xl border-2',
-      icon: 18,
-      gap: 'gap-3'
+      button: 'px-4 py-2 text-sm rounded-xl border',
+      icon: 16,
+      gap: 'gap-2.5'
     },
     lg: {
-      button: 'px-6 py-5 text-base rounded-xl border-2',
-      icon: 20,
-      gap: 'gap-4'
+      button: 'px-4 py-3 text-sm rounded-xl border',
+      icon: 18,
+      gap: 'gap-3'
     }
   };
 
@@ -87,9 +87,9 @@ export const ATMSelectField: React.FC<Props> = ({
   return (
     <div className={`flex flex-col gap-2 ${className}`} ref={containerRef}>
       {label && (
-        <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] flex items-center gap-1.5 px-1">
+        <label className="text-[13px] font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1 px-0.5">
           {label}
-          {required && <span className="text-red-500 animate-pulse text-[14px] leading-none">*</span>}
+          {required && <span className="text-red-550 ml-0.5">*</span>}
         </label>
       )}
 
@@ -100,13 +100,13 @@ export const ATMSelectField: React.FC<Props> = ({
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={`
             w-full flex items-center justify-between ${currentSize.button} transition-all duration-300
-            ${disabled ? 'bg-gray-50 dark:bg-gray-900/50 cursor-not-allowed text-gray-400 dark:text-gray-600 opacity-60' : 'bg-zen-surface text-gray-900 dark:text-gray-100'}
+            ${disabled ? 'bg-gray-50 dark:bg-gray-900/50 cursor-not-allowed text-gray-400 dark:text-gray-650 opacity-60' : 'bg-zen-surface text-gray-900 dark:text-gray-100'}
             ${
               error
-                ? 'border-red-500/50 dark:border-red-900/50 ring-4 ring-red-500/5 dark:ring-red-900/10 shadow-sm'
+                ? 'border-red-500 bg-red-50/10 ring-4 ring-red-500/5 shadow-sm'
                 : isOpen
-                ? 'border-accent-600 dark:border-accent-500 ring-4 ring-accent-600/5 dark:ring-accent-500/10 shadow-md'
-                : 'border-gray-100 dark:border-gray-800/50 hover:border-accent-200 dark:hover:border-accent-800 shadow-sm'
+                ? 'border-slate-800 dark:border-slate-200 ring-4 ring-slate-800/5 shadow-md'
+                : 'border-gray-200 dark:border-gray-800 hover:border-slate-400 dark:hover:border-slate-650 shadow-sm'
             }
           `}
         >

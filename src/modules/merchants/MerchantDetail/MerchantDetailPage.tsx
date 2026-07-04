@@ -68,7 +68,7 @@ interface MerchantDetailPageProps {
   setMenuOpen: (open: boolean) => void;
   menuRef: React.RefObject<HTMLDivElement | null>;
   handleAction: (action: string) => Promise<void>;
-  
+
   suspendModal: boolean;
   setSuspendModal: (open: boolean) => void;
   suspendReason: string;
@@ -114,7 +114,7 @@ interface MerchantDetailPageProps {
 
   handleAddNote: (content: string) => Promise<void>;
   onBack: () => void;
-  
+
   deboarding: MerchantDeboarding | undefined;
   handleGiveConsent: (note?: string) => Promise<void>;
   handleDeactivateDeboarding: (deboardingId: string) => Promise<void>;
@@ -303,7 +303,7 @@ function DeboardingWorkflowCard({
             const isCompleted = step.status === 'Completed';
             const isInProgress = step.status === 'InProgress';
             const isNotApplicable = step.status === 'NotApplicable';
-            
+
             return (
               <div key={step.stepKey} className="relative flex gap-3 items-start animate-fade-in">
                 <span className={cn(
@@ -315,10 +315,10 @@ function DeboardingWorkflowCard({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold text-gray-900 dark:text-white">{step.stepLabel}</p>
-                    <ATMBadge 
-                      size="sm" 
-                      color={isCompleted ? 'success' : isInProgress ? 'warning' : isNotApplicable ? 'muted' : 'muted'} 
-                      label={step.status} 
+                    <ATMBadge
+                      size="sm"
+                      color={isCompleted ? 'success' : isInProgress ? 'warning' : isNotApplicable ? 'muted' : 'muted'}
+                      label={step.status}
                     />
                   </div>
                   {step.completedAt && (
@@ -331,14 +331,14 @@ function DeboardingWorkflowCard({
                       Note: {step.note}
                     </p>
                   )}
-                  
+
                   {/* Step Action Triggers */}
                   {isInProgress && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {step.stepKey === 'AccountDeactivated' && (
-                        <ATMButton 
-                          size="sm" 
-                          variant="primary" 
+                        <ATMButton
+                          size="sm"
+                          variant="primary"
                           onClick={async () => {
                             setSubmitting(true);
                             await onDeactivate(deboarding.deboardingId);
@@ -350,9 +350,9 @@ function DeboardingWorkflowCard({
                         </ATMButton>
                       )}
                       {step.stepKey === 'FinalInvoiceGenerated' && (
-                        <ATMButton 
-                          size="sm" 
-                          variant="primary" 
+                        <ATMButton
+                          size="sm"
+                          variant="primary"
                           onClick={async () => {
                             setSubmitting(true);
                             await onGenerateInvoice(deboarding.deboardingId);
@@ -365,9 +365,9 @@ function DeboardingWorkflowCard({
                       )}
                       {step.stepKey === 'BillingSettled' && (
                         <>
-                          <ATMButton 
-                            size="sm" 
-                            variant="primary" 
+                          <ATMButton
+                            size="sm"
+                            variant="primary"
                             onClick={async () => {
                               setSubmitting(true);
                               await onSettle(deboarding.deboardingId);
@@ -377,9 +377,9 @@ function DeboardingWorkflowCard({
                           >
                             Settle Billing
                           </ATMButton>
-                          <ATMButton 
-                            size="sm" 
-                            variant="outline" 
+                          <ATMButton
+                            size="sm"
+                            variant="outline"
                             onClick={() => setRechargeOpen(true)}
                           >
                             Request Recharge
@@ -387,9 +387,9 @@ function DeboardingWorkflowCard({
                         </>
                       )}
                       {step.stepKey === 'RefundIssued' && (
-                        <ATMButton 
-                          size="sm" 
-                          variant="primary" 
+                        <ATMButton
+                          size="sm"
+                          variant="primary"
                           onClick={() => setRefundOpen(true)}
                         >
                           Issue Refund
@@ -420,9 +420,9 @@ function DeboardingWorkflowCard({
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <ATMButton variant="secondary" size="sm" onClick={() => setCancelOpen(false)}>Cancel</ATMButton>
-          <ATMButton 
-            variant="danger" 
-            size="sm" 
+          <ATMButton
+            variant="danger"
+            size="sm"
             onClick={async () => {
               if (!cancelReason.trim()) return;
               setSubmitting(true);
@@ -456,9 +456,9 @@ function DeboardingWorkflowCard({
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <ATMButton variant="secondary" size="sm" onClick={() => setRechargeOpen(false)}>Cancel</ATMButton>
-          <ATMButton 
-            variant="primary" 
-            size="sm" 
+          <ATMButton
+            variant="primary"
+            size="sm"
             onClick={async () => {
               const amt = parseFloat(rechargeAmount);
               if (isNaN(amt) || amt <= 0) return;
@@ -499,9 +499,9 @@ function DeboardingWorkflowCard({
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <ATMButton variant="secondary" size="sm" onClick={() => setRefundOpen(false)}>Cancel</ATMButton>
-          <ATMButton 
-            variant="primary" 
-            size="sm" 
+          <ATMButton
+            variant="primary"
+            size="sm"
             onClick={async () => {
               setSubmitting(true);
               await onIssueRefund(deboarding.deboardingId, refundChannel, refundRef || undefined);
@@ -594,7 +594,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
   setMenuOpen,
   menuRef,
   handleAction,
-  
+
   suspendModal,
   setSuspendModal,
   suspendReason,
@@ -653,7 +653,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
 
   if (isMerchantLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6 lg:p-8 pb-10 animate-fade-in w-full">
+      <div className="flex flex-col space-y-5 animate-fade-in w-full">
         <ATMSkeleton className="h-28 w-full rounded-2xl" />
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
@@ -688,7 +688,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
   const TIER_ORDER = ['Basic', 'Standard', 'Advance', 'Premium'];
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-8 pb-10 animate-fade-in w-full">
+    <div className="flex flex-col space-y-5 animate-fade-in w-full">
       {/* Premium Unified Header */}
       <ATMPageHeader
         onBack={onBack}
@@ -716,8 +716,9 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
               size="md"
               onClick={() => setMenuOpen(!menuOpen)}
               disabled={actionLoading}
+              rightIcon={<MoreVertical className="h-4 w-4" />}
             >
-              Actions <MoreVertical className="h-4 w-4 ml-1.5 shrink-0" />
+              Actions
             </ATMButton>
             {menuOpen && (
               <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white/95 py-1.5 shadow-xl dark:border-gray-800 dark:bg-gray-950/95 backdrop-blur-xl">
@@ -782,8 +783,8 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                             This merchant's subscription was cancelled. You must record consent and initiate the deboarding workflow to deactivate access and settle outstanding invoices.
                           </p>
                           <div className="flex justify-end">
-                            <ATMButton 
-                              variant="primary" 
+                            <ATMButton
+                              variant="primary"
                               size="sm"
                               onClick={() => handleGiveConsent("Initiated automatically by admin.")}
                             >
@@ -1210,8 +1211,8 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                       selectedNewPlan === plan
                         ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
                         : merchant.plan === plan
-                        ? 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60'
-                        : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
+                          ? 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60'
+                          : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
                     )}
                   >
                     <span className="text-sm text-gray-900 dark:text-white">{plan}</span>
@@ -1236,8 +1237,8 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                       selectedNewTier === tier
                         ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
                         : merchant.tier === tier
-                        ? 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60'
-                        : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
+                          ? 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60'
+                          : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
                     )}
                   >
                     <span className="text-sm text-gray-900 dark:text-white">{tier}</span>

@@ -19,7 +19,7 @@ export const ATMSwitch: React.FC<Props> = ({
   className = '',
 }) => {
   const sizes = {
-    sm: { track: 'w-8 h-4.5', thumb: 'w-3.5 h-3.5', translate: 'translate-x-3.5' },
+    sm: { track: 'w-8 h-4', thumb: 'w-3 h-3', translate: 'translate-x-4' },
     md: { track: 'w-11 h-6', thumb: 'w-5 h-5', translate: 'translate-x-5' },
   };
 

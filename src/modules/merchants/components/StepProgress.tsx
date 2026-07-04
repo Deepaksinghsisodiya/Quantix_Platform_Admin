@@ -7,23 +7,23 @@ interface StepProgressProps {
 }
 
 /**
- * Reusable multi-step wizard progress bar used by Enterprise & Standalone
- * registration flows. Shows step count, current step name, and segmented
- * pill indicators matching the reference screenshots.
+ * StepProgress - Multi-step wizard progress bar used by Enterprise & Standalone
+ * registration flows. Features modern glassmorphic background, luxurious typeface,
+ * and glowing segmented active steps.
  */
 export function StepProgress({ currentStep, steps }: StepProgressProps) {
   return (
-    <div className="space-y-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+    <div className="space-y-4 bg-white/75 dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 rounded-3xl p-5 backdrop-blur-md shadow-sm">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-950 text-xs font-black text-accent-600 dark:text-accent-400">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-black text-white dark:bg-white dark:text-slate-900">
             {currentStep + 1}
           </span>
-          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+          <span className="text-xs font-bold text-slate-450 dark:text-slate-500">
             Step {currentStep + 1} of {steps.length}
           </span>
         </div>
-        <span className="text-xs font-extrabold text-accent-600 dark:text-accent-400 uppercase tracking-wider">
+        <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
           {steps[currentStep]}
         </span>
       </div>
@@ -33,10 +33,10 @@ export function StepProgress({ currentStep, steps }: StepProgressProps) {
             key={stepName}
             title={`${idx + 1}. ${stepName}`}
             className={cn(
-              'flex-1 rounded-full h-2 transition-all duration-500',
+              'flex-1 rounded-full h-1.5 transition-all duration-500',
               idx <= currentStep
-                ? 'bg-accent-600 dark:bg-accent-500 shadow-sm shadow-accent-500/20'
-                : 'bg-slate-100 dark:bg-slate-800',
+                ? 'bg-slate-900 dark:bg-white shadow-sm shadow-slate-900/20'
+                : 'bg-slate-100 dark:bg-slate-850',
             )}
           />
         ))}

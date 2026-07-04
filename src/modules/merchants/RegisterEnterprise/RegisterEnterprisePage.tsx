@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type FormikProps } from 'formik';
 import {
@@ -7,31 +7,34 @@ import {
   Building2,
   Check,
   CheckCircle2,
-  Clock,
   Database,
   Loader2,
   Mail,
-  Phone,
   Rocket,
   Shield,
   Store,
   User,
-  Zap,
   AlertTriangle,
+  Key,
+  ShieldCheck,
+  Copy,
+  Download,
 } from 'lucide-react';
 
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
-import { ATMInputField, ATMSelectField, ATMSwitchField, ATMPhoneInputField } from '@/shared/components/form';
+import { ATMSwitch } from '@/shared/ui/ATMSwitch';
+import { ATMInputField, ATMSelectField, ATMPhoneInputField } from '@/shared/components/form';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { WelcomeCommunications } from '../components/WelcomeCommunications';
 import { StepProgress } from '../components/StepProgress';
 import { TypeCard } from '../components/TypeCard';
 import { ReviewRow } from '../components/ReviewRow';
-import { ActivationStep } from '../components/ActivationStep';
 import { cn } from '@/lib/utils/cn';
 import type { DbEngine, BillingFrequency, PreferredPaymentMethod } from '../types/merchant.types';
+import { DUMMY_PLANS } from '@/modules/plans/types/plan.types';
+import { toast } from 'sonner';
 
 export const STEPS = [
   'Merchant Type',
@@ -69,47 +72,6 @@ const PAYMENT_METHOD_OPTIONS = [
   { label: 'Invoice', value: 'Invoice' },
 ];
 
-interface PlanDef {
-  id: string;
-  name: string;
-  price: number;
-  period: string;
-  features: string[];
-  popular?: boolean;
-}
-
-const PLANS: PlanDef[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 49,
-    period: '/mo',
-    features: ['1 Location', '2 Terminals', 'Basic Reports', 'Email Support'],
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    price: 129,
-    period: '/mo',
-    features: ['3 Locations', '10 Terminals', 'Advanced Reports', 'Priority Support', 'API Access'],
-    popular: true,
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    price: 299,
-    period: '/mo',
-    features: ['10 Locations', '50 Terminals', 'Custom Reports', 'Dedicated Support', 'Full API', 'Webhooks'],
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 0,
-    period: 'Custom',
-    features: ['Unlimited Locations', 'Unlimited Terminals', 'White Label', '24/7 Support', 'SLA', 'Custom Integrations'],
-  },
-];
-
 const DB_ENGINES: { value: DbEngine; label: string; description: string }[] = [
   { value: 'SQLite', label: 'SQLite', description: 'Lightweight, file-based. Great for single-location setups.' },
   { value: 'PostgreSQL', label: 'PostgreSQL', description: 'Enterprise-grade. Best for multi-location deployments.' },
@@ -117,21 +79,56 @@ const DB_ENGINES: { value: DbEngine; label: string; description: string }[] = [
   { value: 'SQLServer', label: 'SQL Server', description: 'Microsoft ecosystem. Ideal for Windows-centric environments.' },
 ];
 
-const FEATURE_FLAG_LABELS: Record<string, string> = {
-  multiLocation: 'Multi-Location Support',
-  apiAccess: 'API Access',
-  webhooks: 'Webhook Notifications',
-  whiteLabel: 'White Label Branding',
-  customDomain: 'Custom Domain',
-};
+// ─── Codes for Configuration lists ───
+const ALL_FEATURES = [
+  { key: 'INV', label: 'Inventory Management' },
+  { key: 'FIN', label: 'Finance / Accounting' },
+  { key: 'HRM', label: 'HR & Staff Management' },
+  { key: 'MKT', label: 'Marketing & Loyalty' },
+  { key: 'ANL', label: 'Analytics & Reports' },
+  { key: 'WTM', label: 'Workforce / Table-Turn' },
+];
 
-const LIMIT_LABELS: Record<string, string> = {
-  maxLocations: 'Max Locations',
-  maxTerminals: 'Max Terminals',
-  maxProducts: 'Max Products',
-  maxUsers: 'Max Users',
-  apiRateLimit: 'API Rate Limit (req/min)',
-};
+const ALL_PAYMENTS = [
+  { key: 'CSH', label: 'Cash' },
+  { key: 'CRD', label: 'Card (POS/EDC)' },
+  { key: 'EXT', label: 'UPI / QR / Online' },
+  { key: 'GFT', label: 'Gift Card' },
+  { key: 'STC', label: 'Store Credit' },
+  { key: 'WLT', label: 'In-app Wallet' },
+  { key: 'CSL', label: 'Credit Sale / Udhar' },
+];
+
+const ALL_SERVICES = [
+  { key: 'DIN', label: 'Dine-In' },
+  { key: 'CTR', label: 'Counter / Takeaway' },
+  { key: 'PUP', label: 'Pickup' },
+  { key: 'DLV', label: 'Delivery' },
+  { key: 'CTG', label: 'Catering / Bulk' },
+  { key: 'SNP', label: 'QR / Self-Order' },
+  { key: 'RSO', label: 'Reservation Order' },
+  { key: 'WOR', label: 'Web Ordering' },
+  { key: 'WRV', label: 'Waitlist / Reservation' },
+];
+
+const ALL_LIMITS = [
+  { key: 'MBU', label: 'Business Units' },
+  { key: 'MLO', label: 'Locations / Outlets' },
+  { key: 'MTM', label: 'POS Terminals' },
+  { key: 'MPR', label: 'Products' },
+  { key: 'MPG', label: 'Product Groups' },
+  { key: 'MGB', label: 'Storage (GB)' },
+  { key: 'MDP', label: 'Delivery Partners' },
+  { key: 'MKD', label: 'Kitchen Displays' },
+  { key: 'MDS', label: 'Dine-in Sections' },
+  { key: 'MIS', label: 'Integration Slots' },
+  { key: 'MPW', label: 'Payment Gateways' },
+  { key: 'MRS', label: 'Reservation Slots/day' },
+  { key: 'MAC', label: 'Active Campaigns' },
+  { key: 'MWR', label: 'Warehouses' },
+  { key: 'MWE', label: 'Staff Logins' },
+  { key: 'MBR', label: 'Branches' },
+];
 
 interface RegisterEnterprisePageProps {
   formik: FormikProps<any>;
@@ -141,17 +138,55 @@ interface RegisterEnterprisePageProps {
   activationStatus: 'idle' | 'activating' | 'done' | 'error';
   createdMerchantId: string | null;
   registrationCompleted: boolean;
+  generatedToken: string | null;
   handleNext: (formik: FormikProps<any>) => Promise<void>;
   handleBack: () => void;
   retryActivation: () => void;
 }
+
+// ─── Simple row toggle grid ───
+const ToggleGrid: React.FC<{
+  label: string;
+  count: string;
+  items: { key: string; label: string }[];
+  field: string;
+  formik: any;
+}> = ({ label, count, items, field, formik }) => (
+  <div className="space-y-1">
+    <div className="flex items-center justify-between px-1">
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
+      <span className="text-[10px] text-gray-400">{count}</span>
+    </div>
+    <div className="grid grid-cols-2 gap-x-4">
+      {items.map(({ key, label: name }) => {
+        const isOn = !!formik.values[field]?.[key];
+        return (
+          <div
+            key={key}
+            className="flex items-center justify-between py-1.5 px-1 border-b border-gray-100 dark:border-gray-800/40"
+          >
+            <span className={cn('text-xs', isOn ? 'text-gray-955 dark:text-white font-medium' : 'text-gray-400')}>
+              {name}
+            </span>
+            <ATMSwitch
+              name={`${field}.${key}`}
+              checked={isOn}
+              onChange={(c) => formik.setFieldValue(`${field}.${key}`, c)}
+              size="sm"
+            />
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
 
 function PlanCard({
   plan,
   selected,
   onSelect,
 }: {
-  plan: PlanDef;
+  plan: any;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -160,40 +195,37 @@ function PlanCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-300 w-full',
-        'focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-600/10',
+        'relative flex flex-col rounded-3xl border-2 p-6 text-left transition-all duration-300 w-full outline-none',
         selected
-          ? 'border-accent-600 bg-accent-50/50 shadow-md dark:border-accent-500 dark:bg-accent-950/20'
-          : 'border-surface-200 bg-zen-surface hover:border-accent-300 dark:border-surface-800 dark:hover:border-accent-800',
+          ? 'border-slate-950 bg-slate-50 dark:border-slate-100 dark:bg-slate-900/60 shadow-sm'
+          : 'border-slate-200/60 bg-white hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900/10 dark:hover:border-slate-650',
       )}
     >
-      {plan.popular && (
-        <span className="absolute -top-2.5 left-4">
-          <ATMBadge color="primary" size="sm" label="Most Popular" />
-        </span>
-      )}
       {selected && (
-        <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-accent-600 dark:text-accent-400" />
+        <CheckCircle2 className="absolute top-4 right-4 h-5 w-5 text-slate-900 dark:text-white" />
       )}
-      <h3 className="text-lg font-extrabold text-surface-900 dark:text-surface-100">{plan.name}</h3>
-      <div className="mt-2">
-        {plan.price > 0 ? (
-          <span className="text-3xl font-extrabold tabular-nums text-surface-900 dark:text-surface-100">
-            ${plan.price}
-            <span className="text-sm font-normal text-surface-500 dark:text-surface-400">{plan.period}</span>
-          </span>
-        ) : (
-          <span className="text-xl font-extrabold text-surface-900 dark:text-surface-100">{plan.period}</span>
-        )}
+      <div className={cn(
+        'inline-flex items-center gap-2 rounded-xl px-2.5 py-0.8 text-[10px] font-black uppercase tracking-wider',
+        'bg-purple-100/60 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400'
+      )}>
+        {plan.name}
       </div>
-      <ul className="mt-4 space-y-2 w-full">
-        {plan.features.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-xs font-semibold text-surface-600 dark:text-surface-400">
-            <Check className="h-3.5 w-3.5 shrink-0 text-success" />
-            {f}
-          </li>
+      
+      <div className="mt-3.5 flex items-baseline">
+        <span className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+          ${plan.monthlyPrice}
+        </span>
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 ml-1">/mo</span>
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-slate-100 dark:border-slate-800/40 pt-3.5 w-full">
+        {plan.features?.map((f: any, idx: number) => (
+          <p key={idx} className="text-[10.5px] text-slate-500 dark:text-slate-400 flex items-center gap-2 font-semibold leading-tight">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+            {f.text}
+          </p>
         ))}
-      </ul>
+      </div>
     </button>
   );
 }
@@ -295,6 +327,10 @@ function ProvisioningStep({
   );
 }
 
+import { Clock } from 'lucide-react';
+import { ActivationStep } from '../components/ActivationStep';
+
+
 export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
   formik,
   step,
@@ -303,11 +339,38 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
   activationStatus,
   createdMerchantId,
   registrationCompleted,
+  generatedToken,
   handleNext,
   handleBack,
   retryActivation,
 }) => {
   const navigate = useNavigate();
+  const enterprisePlans = DUMMY_PLANS.filter((p) => p.planType === 'Enterprise cloud');
+  const activePlan = DUMMY_PLANS.find((p) => p.id === formik.values.selectedPlan) || enterprisePlans[0];
+
+  // Auto-fill configuration when selected plan changes
+  useEffect(() => {
+    if (activePlan) {
+      formik.setFieldValue('planFeatures', activePlan.planFeatures);
+      formik.setFieldValue('planPayments', activePlan.planPayments);
+      formik.setFieldValue('planServices', activePlan.planServices);
+      formik.setFieldValue('planLimits', activePlan.planLimits);
+    }
+  }, [formik.values.selectedPlan]);
+
+  const featureOn = ALL_FEATURES.filter((f) => !!formik.values.planFeatures?.[f.key]).length;
+  const payOn = ALL_PAYMENTS.filter((p) => !!formik.values.planPayments?.[p.key]).length;
+  const svcOn = ALL_SERVICES.filter((s) => !!formik.values.planServices?.[s.key]).length;
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!generatedToken) return;
+    navigator.clipboard.writeText(generatedToken);
+    setCopied(true);
+    toast.success('Activation token copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Render Success / Provisioning states (Full screen)
   if (registrationCompleted && createdMerchantId) {
@@ -321,8 +384,47 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
       completedAt: null,
     };
 
+    const timestampStr = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+    const fVal = (key: string) => `${key}=${formik.values.planFeatures?.[key] ? 'ON ' : 'OFF'}`;
+    const pVal = (key: string) => `${key}=${formik.values.planPayments?.[key] ? 'ON ' : 'OFF'}`;
+    const sVal = (key: string) => `${key}=${formik.values.planServices?.[key] ? 'ON ' : 'OFF'}`;
+    const lVal = (key: string) => `${key}=${(formik.values.planLimits?.[key] ?? 0).toString().padEnd(8)}`;
+
+    const tokenBundlePrintout = `===============================================================================
+  Quantix POS — V3.5 Test Token Bundle
+===============================================================================
+
+  Generated: ${timestampStr}
+  Merchant : ${createdMerchantId}
+  License  : ${generatedToken ?? 'PENDING_ACTIVATION'}
+
+-------------------------------------------------------------------------------
+  Shared payload values
+-------------------------------------------------------------------------------
+
+  Plan      : ${activePlan?.name || 'Custom'}
+  Flavour   : Restaurant (RES)
+  Grace     : W=3 / R=1 / S=2 / L=3 (defaults)
+
+  Features  (6 Advance):
+    ${fVal('INV')}, ${fVal('FIN')}, ${fVal('HRM')}, ${fVal('MKT')}, ${fVal('ANL')}, ${fVal('WTM')}
+
+  Payments  (7):
+    ${pVal('CSH')}, ${pVal('CRD')}, ${pVal('EXT')}   |   ${pVal('GFT')}, ${pVal('STC')}, ${pVal('WLT')}, ${pVal('CSL')}
+
+  Services  (9):
+    ${sVal('DIN')}, ${sVal('CTR')}   |   ${sVal('PUP')}, ${sVal('DLV')}, ${sVal('CTG')}, ${sVal('SNP')},
+                          ${sVal('RSO')}, ${sVal('WOR')}, ${sVal('WRV')}
+
+  Limits (16):
+    MBU=${lVal('MBU')}MLO=${lVal('MLO')}MTM=${lVal('MTM')}MPR=${lVal('MPR')}MPG=${lVal('MPG')}MGB=${lVal('MGB')}
+    MDP=${lVal('MDP')}MKD=${lVal('MKD')}MDS=${lVal('MDS')}MIS=${lVal('MIS')}MPW=${lVal('MPW')}MRS=${lVal('MRS')}
+    MAC=${lVal('MAC')}MWR=${lVal('MWR')}MWE=${lVal('MWE')}MBR=${lVal('MBR')}  (0 = unlimited)
+
+===============================================================================`;
+
     return (
-      <div className="mx-auto max-w-2xl space-y-8 py-8 animate-fade-in">
+      <div className="mx-auto max-w-3xl space-y-8 py-8 animate-fade-in">
         <div className="text-center">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/20">
             <Rocket className="h-10 w-10 text-emerald-500" />
@@ -331,9 +433,28 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
             Merchant Registered Successfully
           </h2>
           <p className="mt-2 text-surface-500 dark:text-surface-400 text-sm font-medium">
-            The Enterprise merchant is now <ATMBadge color="success" size="sm" label="Active" />. Complete the onboarding checklist to unlock all features.
+            The Enterprise merchant is now <ATMBadge color="success" size="sm" label="Active" />.
           </p>
         </div>
+
+        {generatedToken && (
+          <div className="bg-slate-900 text-white rounded-3xl p-6 space-y-6 shadow-xl border border-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Enterprise Cloud Token</span>
+              <ATMButton variant="primary" size="sm" icon={copied ? Check : Copy} onClick={handleCopy}>
+                {copied ? 'Copied' : 'Copy'}
+              </ATMButton>
+            </div>
+            <input
+              readOnly
+              value={generatedToken}
+              className="w-full font-mono text-xs p-3 bg-slate-950 text-emerald-400 rounded-xl border border-slate-800"
+            />
+            <pre className="w-full font-mono text-[9px] p-3 bg-slate-955 text-slate-350 rounded-xl border border-slate-800 overflow-x-auto leading-relaxed">
+              {tokenBundlePrintout}
+            </pre>
+          </div>
+        )}
 
         <OnboardingChecklist merchantType="Enterprise" checklist={initialChecklist} />
 
@@ -365,7 +486,7 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
           <ActivationStep
             status={activationStatus}
             variant="enterprise"
-            planName={PLANS.find((p) => p.id === formik.values.selectedPlan)?.name ?? 'Professional'}
+            planName={activePlan?.name ?? 'Enterprise Basic'}
             billingFrequency={formik.values.billingFrequency || 'Monthly'}
           />
         )}
@@ -426,7 +547,6 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
               <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Business Nature</h2>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400 font-medium">
                 A short free-text descriptor of what this merchant does.
-                No taxonomy — write whatever fits ("Restaurant", "Pharmacy", etc.).
               </p>
             </div>
             <div className="space-y-2">
@@ -436,21 +556,20 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
                 placeholder="e.g. Restaurant, Pharmacy + Cafe, Auto-parts retail..."
                 maxLength={200}
               />
-              <p className="text-xs text-surface-400 font-medium px-1">Optional — leave blank to record nothing.</p>
             </div>
           </div>
         );
 
       case 2:
         return (
-          <div className="space-y-6 w-full">
+          <div className="space-y-4 w-full">
             <div>
               <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Business Details</h2>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400 font-medium">
                 Enter primary business information and billing preferences.
               </p>
             </div>
-            <div className="space-y-6 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full">
               <ATMInputField
                 label="Business Name"
                 name="businessName"
@@ -521,12 +640,6 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
                 options={PAYMENT_METHOD_OPTIONS}
                 required
               />
-              <ATMInputField
-                label="Business Nature"
-                name="businessNature"
-                placeholder="Restaurant, pharmacy, retail, services..."
-                hint="Free-text descriptor — optional"
-              />
             </div>
           </div>
         );
@@ -540,8 +653,8 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
                 Choose the subscription plan that best fits the merchant's needs.
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 w-full">
-              {PLANS.map((plan) => (
+            <div className="grid gap-4 sm:grid-cols-3 w-full font-medium">
+              {enterprisePlans.map((plan) => (
                 <PlanCard
                   key={plan.id}
                   plan={plan}
@@ -555,75 +668,62 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
 
       case 4:
         return (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div>
               <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Configuration</h2>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400 font-medium">
                 Configure feature flags, operational limits, and database engine.
               </p>
             </div>
-            <ATMCard title="Feature Flags" padding="md" className="glass-card">
-              <div className="space-y-3 font-medium">
-                {Object.entries(formik.values.featureFlags).map(([key]) => (
-                  <ATMSwitchField
-                    key={key}
-                    name={`featureFlags.${key}`}
-                    label={FEATURE_FLAG_LABELS[key] ?? key}
-                  />
-                ))}
-              </div>
-            </ATMCard>
 
-            <ATMCard title="Operational Limits" padding="md" className="glass-card">
-              <p className="mb-4 text-xs font-semibold text-surface-500 dark:text-surface-400">
-                Set limits for this merchant. These are fetched by Cloud API on first connect.
-              </p>
-              <div className="space-y-4">
-                {Object.entries(formik.values.limits).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between gap-3">
-                    <label className="text-sm font-semibold text-surface-700 dark:text-surface-300">{LIMIT_LABELS[key] ?? key}</label>
-                    <input
-                      type="number"
-                      name={`limits.${key}`}
-                      value={value as number}
-                      onChange={formik.handleChange}
-                      min={0}
-                      className="w-28 rounded-xl border border-surface-200 bg-zen-surface px-4 py-2.5 text-sm text-right font-bold tabular-nums dark:border-surface-800 dark:text-surface-100 focus:outline-none focus:ring-4 focus:ring-accent-600/5 focus:border-accent-600 transition-all duration-200"
-                    />
-                  </div>
-                ))}
-              </div>
-            </ATMCard>
+            <div className="space-y-4">
+              <ToggleGrid
+                label="Modules"
+                count={`${featureOn}/${ALL_FEATURES.length} ON`}
+                items={ALL_FEATURES}
+                field="planFeatures"
+                formik={formik}
+              />
+              <ToggleGrid
+                label="Payment Methods"
+                count={`${payOn}/${ALL_PAYMENTS.length} ON`}
+                items={ALL_PAYMENTS}
+                field="planPayments"
+                formik={formik}
+              />
+              <ToggleGrid
+                label="Order Types"
+                count={`${svcOn}/${ALL_SERVICES.length} ON`}
+                items={ALL_SERVICES}
+                field="planServices"
+                formik={formik}
+              />
 
-            <ATMCard title="Database Engine" padding="md" className="glass-card">
-              <div className="grid gap-3 sm:grid-cols-2 w-full mt-2">
-                {DB_ENGINES.map((eng) => (
-                  <button
-                    key={eng.value}
-                    type="button"
-                    onClick={() => formik.setFieldValue('dbEngine', eng.value)}
-                    className={cn(
-                      'flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all duration-350 w-full',
-                      'focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-600/10',
-                      formik.values.dbEngine === eng.value
-                        ? 'border-accent-600 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
-                        : 'border-surface-200 hover:border-accent-200 dark:border-surface-800 dark:hover:border-accent-800 bg-zen-surface',
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Database className="h-4 w-4 text-surface-600 dark:text-surface-400" />
-                      <span className="font-bold text-surface-900 dark:text-surface-100">{eng.label}</span>
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Limits</p>
+                  <span className="text-[10px] text-gray-400">0 = unlimited</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {ALL_LIMITS.map(({ key, label: name }) => (
+                    <div key={key} className="flex items-center justify-between gap-2 py-1 px-1">
+                      <span className="text-[11px] text-gray-600 dark:text-gray-400 truncate">{name}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={formik.values.planLimits?.[key] ?? 0}
+                        onChange={(e) => formik.setFieldValue(`planLimits.${key}`, Number(e.target.value) || 0)}
+                        className="w-16 text-right text-xs font-mono px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
                     </div>
-                    <p className="mt-1 text-xs font-semibold text-surface-500 dark:text-surface-400">{eng.description}</p>
-                  </button>
-                ))}
+                  ))}
+                </div>
               </div>
-            </ATMCard>
+            </div>
           </div>
         );
 
-      case 5: {
-        const plan = PLANS.find((p) => p.id === formik.values.selectedPlan);
+      case 5:
         return (
           <div className="space-y-6">
             <div>
@@ -641,169 +741,122 @@ export const RegisterEnterprisePage: React.FC<RegisterEnterprisePageProps> = ({
                 <ReviewRow label="Email" value={formik.values.email} />
                 <ReviewRow label="Phone" value={formik.values.phone} />
                 <ReviewRow label="Country" value={formik.values.country} />
-                <ReviewRow label="Plan" value={plan?.name ?? formik.values.selectedPlan ?? '--'} />
+                <ReviewRow label="Plan" value={activePlan?.name || '--'} />
                 <ReviewRow label="Billing Cycle" value={formik.values.billingFrequency || '--'} />
                 <ReviewRow label="Payment Method" value={formik.values.preferredPaymentMethod || '--'} />
                 <ReviewRow label="Database Engine" value={formik.values.dbEngine} />
-                <ReviewRow
-                  label="Features"
-                  value={
-                    Object.entries(formik.values.featureFlags)
-                      .filter(([, v]) => v)
-                      .map(([k]) => k)
-                      .join(', ') || 'None'
-                  }
-                />
+                <ReviewRow label="Modules Enabled" value={`${featureOn} Enabled`} />
+                <ReviewRow label="Payments Enabled" value={`${payOn} Enabled`} />
+                <ReviewRow label="Order Types Enabled" value={`${svcOn} Enabled`} />
               </dl>
             </ATMCard>
           </div>
         );
-      }
 
       default:
         return null;
     }
   };
 
-  const planSelected = PLANS.find((p) => p.id === formik.values.selectedPlan);
-
   return (
-    <div className="w-full bg-zen-surface animate-fade-in p-6 lg:p-8 space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => navigate('/merchants')}
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-accent-600 dark:text-gray-400 dark:hover:text-accent-400 transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           Back to Merchant Directory
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 w-full">
-      {/* Left Column: Form & Steps */}
-      <div className="lg:col-span-2 space-y-6">
-        <StepProgress currentStep={step} steps={STEPS} />
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 lg:p-8 shadow-sm">
-          {renderStepContent()}
+        {/* Left Column: Form & Steps */}
+        <div className="lg:col-span-2 space-y-6">
+          <StepProgress currentStep={step} steps={STEPS} />
+          <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 rounded-[32px] p-6 lg:p-9 backdrop-blur-md shadow-sm">
+            {renderStepContent()}
+          </div>
         </div>
-      </div>
 
-      {/* Right Column: Live Summary (TimeForge Style) */}
-      <div className="space-y-6 flex flex-col">
-        <ATMCard className="glass-card">
-          <h3 className="text-[11px] font-extrabold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-4">Registration Summary</h3>
-          <div className="space-y-3.5 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Merchant Type</span>
-              <ATMBadge color="purple" label="Enterprise" />
+        {/* Right Column: Live Summary */}
+        <div className="space-y-6 flex flex-col">
+          <ATMCard className="bg-[#fafafa] dark:bg-slate-955/20 border border-slate-150 dark:border-slate-850 rounded-[28px] p-6 shadow-sm">
+            <h3 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-800/60 pb-3">Registration Summary</h3>
+            <div className="space-y-3.5 text-xs">
+              <div className="flex justify-between items-center py-0.5">
+                <span className="text-slate-500 dark:text-slate-450 font-semibold">Merchant Type</span>
+                <ATMBadge color="purple" label="Enterprise" />
+              </div>
+              {formik.values.businessName && (
+                <div className="flex justify-between items-center py-0.5 animate-fade-in">
+                  <span className="text-slate-500 dark:text-slate-450 font-semibold">Business Name</span>
+                  <span className="font-extrabold text-slate-955 dark:text-white truncate max-w-[170px]">
+                    {formik.values.businessName}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-0.5">
+                <span className="text-slate-500 dark:text-slate-450 font-semibold">Plan</span>
+                <span className="font-extrabold text-slate-955 dark:text-white uppercase">
+                  {activePlan?.name || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-0.5">
+                <span className="text-slate-500 dark:text-slate-450 font-semibold">Billing Cycle</span>
+                <span className="font-extrabold text-slate-955 dark:text-white">
+                  {formik.values.billingFrequency || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-0.5">
+                <span className="text-slate-500 dark:text-slate-450 font-semibold">Database Engine</span>
+                <span className="font-extrabold text-slate-955 dark:text-white">{formik.values.dbEngine}</span>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Business Name</span>
-              <span className="font-extrabold text-gray-900 dark:text-white truncate max-w-[180px]">
-                {formik.values.businessName || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Contact Person</span>
-              <span className="font-extrabold text-gray-900 dark:text-white truncate max-w-[180px]">
-                {formik.values.contactPerson || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Email</span>
-              <span className="font-bold text-gray-900 dark:text-white truncate max-w-[180px]">
-                {formik.values.email || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Country</span>
-              <span className="font-extrabold text-gray-900 dark:text-white">
-                {formik.values.country || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Plan</span>
-              <span className="font-extrabold text-accent-600 dark:text-accent-400 uppercase">
-                {planSelected?.name || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Billing Cycle</span>
-              <span className="font-extrabold text-gray-900 dark:text-white">
-                {formik.values.billingFrequency || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Database Engine</span>
-              <span className="font-extrabold text-accent-600 dark:text-accent-400">{formik.values.dbEngine}</span>
-            </div>
-          </div>
-        </ATMCard>
+          </ATMCard>
 
-        <ATMCard className="glass-card">
-          <h3 className="text-[11px] font-extrabold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-4">Database Limits</h3>
-          <div className="space-y-2.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <div className="flex justify-between items-center">
-              <span>Max Locations</span>
-              <span className="text-gray-900 dark:text-white font-extrabold">{formik.values.limits.maxLocations}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Max Terminals</span>
-              <span className="text-gray-900 dark:text-white font-extrabold">{formik.values.limits.maxTerminals}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Max Products</span>
-              <span className="text-gray-900 dark:text-white font-extrabold">{formik.values.limits.maxProducts}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Max Users</span>
-              <span className="text-gray-900 dark:text-white font-extrabold">{formik.values.limits.maxUsers}</span>
-            </div>
-          </div>
-        </ATMCard>
+          <div className="space-y-3 pt-2">
+            {step < 5 ? (
+              <ATMButton
+                variant="primary"
+                size="md"
+                className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 shadow-sm border-none py-3"
+                icon={ArrowRight}
+                iconPosition="right"
+                onClick={() => handleNext(formik)}
+                disabled={!canNext()}
+              >
+                Next Step
+              </ATMButton>
+            ) : step === 5 ? (
+              <ATMButton
+                variant="primary"
+                size="md"
+                className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-955 dark:hover:bg-slate-100 shadow-sm border-none py-3 animate-pulse"
+                icon={Rocket}
+                isLoading={isLoading}
+                onClick={() => formik.submitForm()}
+              >
+                Register Merchant
+              </ATMButton>
+            ) : null}
 
-        <div className="space-y-3 pt-2">
-          {step < 5 ? (
             <ATMButton
-              variant="primary"
+              variant="outline"
               size="md"
-              className="w-full"
-              icon={ArrowRight}
-              iconPosition="right"
-              onClick={() => handleNext(formik)}
-              disabled={!canNext()}
+              className="w-full border-slate-200 hover:bg-slate-50 hover:border-slate-350 hover:text-slate-950 dark:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-white py-3"
+              icon={ArrowLeft}
+              onClick={handleBack}
+              disabled={step === 0 || isLoading}
             >
-              Next Step
+              Back
             </ATMButton>
-          ) : step === 5 ? (
-            <ATMButton
-              variant="primary"
-              size="md"
-              className="w-full animate-pulse"
-              icon={Rocket}
-              isLoading={isLoading}
-              onClick={() => formik.submitForm()}
-            >
-              Register Merchant
-            </ATMButton>
-          ) : null}
-
-          <ATMButton
-            variant="outline"
-            size="md"
-            className="w-full"
-            icon={ArrowLeft}
-            onClick={handleBack}
-            disabled={step === 0 || isLoading}
-          >
-            Back
-          </ATMButton>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default RegisterEnterprisePage;

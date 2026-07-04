@@ -154,7 +154,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
   );
 
   return (
-    <div className="space-y-6 p-6 lg:p-8 pb-10 animate-fade-in w-full flex flex-col h-full">
+    <div className="space-y-5 animate-fade-in w-full flex flex-col">
       {/* Premium Unified Header */}
       <ATMPageHeader
         title={

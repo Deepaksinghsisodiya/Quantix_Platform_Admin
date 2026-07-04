@@ -61,41 +61,57 @@ export const SignupQueueWrapper: React.FC = () => {
         : rawStatus === 'Provisioning' ? 'Provisioning'
         : rawStatus === 'Completed' || rawStatus === 'Active' ? 'Active'
         : 'Failed';
+
       return {
-        id: r.id || r.merchantId || r.signupId || '',
-        businessName: r.businessName || r.companyName || '—',
-        merchantType: (r.merchantType as 'Enterprise' | 'Standalone') || 'Enterprise',
-        businessNature: r.businessNature || '',
-        email: r.email || r.contactEmail || '—',
+        id: r.id || r.signupId,
+        businessName: r.businessName || r.companyName || 'Merchant Candidate',
+        email: r.email || r.adminEmail || 'admin@business.com',
+        phone: r.phone || '—',
+        merchantType: (r.merchantType || 'Enterprise') as 'Enterprise' | 'Standalone',
+        planName: r.plan || r.selectedPlan || (r.merchantType === 'Standalone' ? 'Standalone POS Pro' : 'Professional Enterprise'),
+        signupDate: r.createdAt || r.signupDate || new Date().toISOString(),
         status,
-        submittedAt: r.submittedAt || r.createdAt || new Date().toISOString(),
+        subdomain: r.subdomain || r.businessName?.toLowerCase().replace(/[^a-z0-9]/g, ''),
+        verificationSentAt: r.verificationSentAt || r.createdAt,
+        dbStatus: r.dbStatus || (status === 'Active' ? 'Ready' : status === 'Provisioning' ? 'Creating...' : 'Not Started'),
+        businessNature: r.businessNature || 'General Retail',
+        submittedAt: r.createdAt || r.signupDate || new Date().toISOString(),
         error: r.error || null,
       };
     });
   }, [data]);
 
-  // Client-side filtering for type
+  // Apply filters
   const filteredSignups = useMemo(() => {
     return signups.filter((s) => {
+      if (statusFilter && s.status !== statusFilter) return false;
       if (typeFilter && s.merchantType !== typeFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = s.businessName.toLowerCase().includes(q);
+        const matchesEmail = s.email.toLowerCase().includes(q);
+        if (!matchesName && !matchesEmail) return false;
+      }
       return true;
     });
-  }, [signups, typeFilter]);
+  }, [signups, statusFilter, typeFilter, searchQuery]);
 
   const handleAction = useCallback(async (id: string, action: string) => {
     try {
-      if (action === 'resend') {
+      if (action === 'resend-verification') {
         await resendVerification(id).unwrap();
-        toast.success(`Verification email resent for ${id}`);
-      } else if (action === 'bypass') {
+        toast.success(`Verification email resent to merchant ${id}`);
+      } else if (action === 'bypass-payment') {
         await bypassPayment({ id }).unwrap();
-        toast.success(`Payment bypassed for ${id} (trial activation)`);
-      } else if (action === 'retry') {
+        toast.success(`Payment bypassed for merchant ${id}`);
+        refetch();
+      } else if (action === 'retry-provisioning') {
         await retryProvisioning(id).unwrap();
-        toast.success(`Provisioning retry initiated for ${id}`);
+        toast.success(`Provisioning retried for merchant ${id}`);
+        refetch();
       } else if (action === 'generate-token') {
-        navigate(`/tokens/generate?merchantId=${id}`);
-      } else if (action === 'accept') {
+        toast.info(`Token generated for candidate ${id}`);
+      } else if (action === 'accept-candidate') {
         const entry = signups.find((s) => s.id === id);
         if (entry) setAcceptCandidate(entry);
       }

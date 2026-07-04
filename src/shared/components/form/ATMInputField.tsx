@@ -41,10 +41,10 @@ const ATMInputField: React.FC<ATMInputFieldProps> = ({
         <div className={cn("flex flex-col gap-1.5 w-full", className)}>
             <label 
                 htmlFor={props.name} 
-                className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-1 px-1"
+                className="text-[13px] font-semibold text-slate-700 dark:text-gray-300 flex items-center gap-1 px-0.5"
             >
                 {label}
-                {required && <span className="text-red-500 text-[14px] leading-none ml-0.5">*</span>}
+                {required && <span className="text-red-550 ml-0.5">*</span>}
             </label>
             
             <div className="relative group">
@@ -60,13 +60,13 @@ const ATMInputField: React.FC<ATMInputFieldProps> = ({
                     type={inputType}
                     id={props.name}
                     className={cn(
-                        "w-full h-10 px-3.5 bg-gray-50/30 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-800 rounded-lg text-sm font-medium transition-all duration-300 outline-none",
-                        "placeholder:text-gray-400 placeholder:font-normal",
-                        "hover:border-accent-300 dark:hover:border-accent-700/50 focus:border-accent-500 focus:bg-zen-surface focus:ring-4 focus:ring-accent-500/5",
+                        "w-full h-10 px-3.5 bg-[#fafafa] dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium transition-all duration-300 outline-none",
+                        "placeholder:text-slate-400 placeholder:font-normal",
+                        "hover:border-slate-400 dark:hover:border-slate-650 focus:border-slate-955 focus:bg-white dark:focus:border-white focus:ring-4 focus:ring-slate-950/5 dark:focus:ring-white/5",
                         icon && "pl-12",
                         (suffix || isPassword) && "pr-10",
                         isError && "border-rose-500/50 bg-rose-50/10 focus:border-rose-500 focus:ring-rose-500/10",
-                        props.disabled && "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                        props.disabled && "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800"
                     )}
                 />
                 {(suffix || isPassword) && (

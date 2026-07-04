@@ -161,6 +161,7 @@ const InvoiceListPage = React.lazy(() => import('@/modules/billing/pages/Invoice
 const InvoiceDetailPage = React.lazy(() => import('@/modules/billing/pages/InvoiceDetailPage'));
 const PlanManagementPage = React.lazy(() => import('@/modules/billing/pages/PlanManagementPage'));
 const TokenPricingPage = React.lazy(() => import('@/modules/billing/pages/TokenPricingPage'));
+const RateCardListPage = React.lazy(() => import('@/modules/rateCards/pages/RateCardListPage'));
 const WalletListPage = React.lazy(() => import('@/modules/billing/pages/WalletListPage'));
 
 // Commission (2026-05-18 Pass 36: CommissionRatesPage dropped — rate now lives on
@@ -297,6 +298,7 @@ export function AppRouter() {
             <Route path="billing/invoices/:id" element={<RoleGuard module="billing"><InvoiceDetailPage /></RoleGuard>} />
             <Route path="billing/plans" element={<RoleGuard module="billing"><PlanManagementPage /></RoleGuard>} />
             <Route path="billing/token-pricing" element={<RoleGuard module="billing"><TokenPricingPage /></RoleGuard>} />
+            <Route path="billing/rate-cards" element={<RoleGuard module="billing"><RateCardListPage /></RoleGuard>} />
             <Route path="billing/wallets" element={<RoleGuard module="billing"><WalletListPage /></RoleGuard>} />
 
             {/* Commission (Pass 35/36: ledger/settlement/disputes/rates routes removed; collections kept) */}

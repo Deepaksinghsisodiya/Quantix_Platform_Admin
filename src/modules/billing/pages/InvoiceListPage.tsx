@@ -113,11 +113,11 @@ export function InvoiceListPage() {
 
   const paginated = useMemo(() => {
     if (!search) return allRows;
-    const lower = search.toLowerCase();
+    const lower = (search || '').toLowerCase();
     return allRows.filter(
       (inv) =>
-        inv.merchantName.toLowerCase().includes(lower) ||
-        inv.invoiceNumber.toLowerCase().includes(lower),
+        (inv.merchantName || '').toLowerCase().includes(lower) ||
+        (inv.invoiceNumber || '').toLowerCase().includes(lower),
     );
   }, [allRows, search]);
 

@@ -98,6 +98,19 @@ export const FEATURE_FLAG_LABELS: Record<string, string> = {
   customDomain: 'Custom Domain',
 };
 
+export const MODULE_FEATURE_LABELS: Record<string, string> = {
+  pos: 'POS (Point of Sale)',
+  inventory: 'Inventory Management',
+  crm: 'CRM & Customers',
+  loyalty: 'Loyalty & Rewards',
+  reports: 'Analytics & Reports',
+  vendors: 'Vendor Management',
+  employees: 'Employee Management',
+  qrOrdering: 'QR Digital Ordering',
+  api: 'API & Integrations',
+};
+
+
 export const LIMIT_LABELS: Record<string, string> = {
   maxLocations: 'Max Locations',
   maxTerminals: 'Max Terminals',

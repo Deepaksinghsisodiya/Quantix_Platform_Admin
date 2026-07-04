@@ -202,7 +202,7 @@ export const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-8 pb-10 animate-fade-in w-full">
+    <div className="flex flex-col space-y-5 animate-fade-in w-full">
       {/* Premium Page Header */}
       <ATMPageHeader
         title="Signup Queue"

@@ -72,6 +72,7 @@ export const billingApi = baseApi.injectEndpoints({
         url: '/api/v1/billing/plans',
         method: 'GET',
       }),
+      providesTags: ['Plans'],
     }),
 
     createPlan: builder.mutation<ApiResponse<SubscriptionPlan>, CreatePlanDto>({
@@ -80,6 +81,24 @@ export const billingApi = baseApi.injectEndpoints({
         method: 'POST',
         data,
       }),
+      invalidatesTags: ['Plans'],
+    }),
+
+    updatePlan: builder.mutation<ApiResponse<SubscriptionPlan>, { id: string; data: Partial<CreatePlanDto> }>({
+      query: ({ id, data }) => ({
+        url: `/api/v1/billing/plans/${id}`,
+        method: 'PUT',
+        data,
+      }),
+      invalidatesTags: ['Plans'],
+    }),
+
+    deletePlan: builder.mutation<ApiResponse<{ success: boolean }>, string>({
+      query: (id) => ({
+        url: `/api/v1/billing/plans/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Plans'],
     }),
 
     getTokenPricing: builder.query<ApiResponse<readonly TokenPricing[]>, void>({
@@ -214,6 +233,8 @@ export const {
   useGetInvoiceQuery,
   useGetPlansQuery,
   useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useDeletePlanMutation,
   useGetTokenPricingQuery,
   useCreateTokenPricingMutation,
   useUpdateTokenPricingMutation,

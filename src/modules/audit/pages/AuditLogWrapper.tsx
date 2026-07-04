@@ -92,14 +92,17 @@ export const AuditLogWrapper: React.FC = () => {
 
   const onExport = async (format: 'CSV' | 'JSON') => {
     try {
+      const defaultFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
+      const defaultTo = new Date().toISOString().split('T')[0] || '';
       const res = await exportTrigger({
-        from: filterDateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        to: filterDateTo || new Date().toISOString().split('T')[0],
+        from: filterDateFrom || defaultFrom,
+        to: filterDateTo || defaultTo,
         format,
         action: filterAction || undefined,
         userId: filterUser || undefined,
         resource: filterEntity || undefined,
       }).unwrap();
+
 
       if (res.success && res.data?.downloadUrl) {
         window.open(res.data.downloadUrl, '_blank', 'noopener,noreferrer');

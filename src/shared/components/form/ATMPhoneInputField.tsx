@@ -105,17 +105,17 @@ const ATMPhoneInputField: React.FC<ATMPhoneInputFieldProps> = ({
         <div className={cn("flex flex-col gap-1.5 w-full", className)} ref={containerRef}>
             <label 
                 htmlFor={props.name} 
-                className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-1 px-1"
+                className="text-[13px] font-semibold text-slate-700 dark:text-gray-300 flex items-center gap-1 px-0.5"
             >
                 {label}
-                {required && <span className="text-red-500 text-[14px] leading-none ml-0.5">*</span>}
+                {required && <span className="text-red-550 ml-0.5">*</span>}
             </label>
             
             <div className={cn(
-                "relative flex items-center bg-gray-50/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-300",
-                isFocused && "border-accent-500 bg-zen-surface ring-4 ring-accent-500/5 shadow-sm",
-                isError && "border-rose-500/50 bg-rose-50/10 ring-rose-500/5",
-                props.disabled && "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                "flex items-center w-full h-10 border border-slate-200 dark:border-slate-800 rounded-lg bg-[#fafafa] dark:bg-slate-950/20 transition-all duration-300 hover:border-slate-400 dark:hover:border-slate-650",
+                isFocused && "border-slate-955 bg-white dark:border-white ring-4 ring-slate-950/5 dark:ring-white/5",
+                isError && "border-rose-500/50 bg-rose-50/10",
+                props.disabled && "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800"
             )}>
                 {/* Country Selector */}
                 <div className="relative flex shrink-0">

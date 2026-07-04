@@ -236,9 +236,9 @@ export const AllMerchantsWrapper: React.FC = () => {
   }, [params]);
 
   return (
-    <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
+    <div className="flex flex-col space-y-5 w-full">
       {/* Page header and Stats Cards */}
-      <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
+      <div className="flex-shrink-0">
         <ATMPageHeader
           title="Merchant Directory"
           subtitle="Manage all registered merchants on the Quantix platform."

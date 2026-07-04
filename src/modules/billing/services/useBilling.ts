@@ -8,6 +8,8 @@ import {
   useGetInvoiceQuery,
   useGetPlansQuery,
   useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useDeletePlanMutation,
   useGetTokenPricingQuery,
   useCreateTokenPricingMutation,
   useUpdateTokenPricingMutation,
@@ -60,6 +62,16 @@ export function usePlans() {
 
 export function useCreatePlan() {
   const [trigger, result] = useCreatePlanMutation();
+  return wrapMutation(trigger, result);
+}
+
+export function useUpdatePlan() {
+  const [trigger, result] = useUpdatePlanMutation();
+  return wrapMutation(trigger, result);
+}
+
+export function useDeletePlan() {
+  const [trigger, result] = useDeletePlanMutation();
   return wrapMutation(trigger, result);
 }
 

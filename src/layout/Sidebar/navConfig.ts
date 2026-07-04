@@ -62,6 +62,7 @@ export const navItems: NavItem[] = [
       { label: 'Invoices', icon: CreditCard, path: '/billing/invoices', permission: 'billing' },
       { label: 'Plans', icon: CreditCard, path: '/billing/plans', permission: 'billing' },
       { label: 'Token Pricing', icon: CreditCard, path: '/billing/token-pricing', permission: 'billing' },
+      { label: 'Rate Cards', icon: CreditCard, path: '/billing/rate-cards', permission: 'billing' },
       { label: 'Wallets', icon: CreditCard, path: '/billing/wallets', permission: 'billing' },
       { label: 'Commission Overview', icon: Percent, path: '/commission', permission: 'commission' },
       { label: 'Revenue Collections', icon: Percent, path: '/commission/collections', permission: 'commission' },

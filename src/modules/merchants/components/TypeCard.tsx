@@ -1,6 +1,4 @@
 import React from 'react';
-import { CheckCircle2 } from 'lucide-react';
-import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { cn } from '@/lib/utils/cn';
 
 interface TypeCardProps {
@@ -14,8 +12,8 @@ interface TypeCardProps {
 }
 
 /**
- * Reusable selectable card for choosing between merchant types
- * (Enterprise vs. Standalone). Used in both registration flows.
+ * TypeCard - Selectable card for choosing between merchant types.
+ * Upgraded with premium off-black active accents and refined typography.
  */
 export function TypeCard({
   selected,
@@ -31,38 +29,39 @@ export function TypeCard({
       disabled={disabled}
       onClick={onSelect}
       className={cn(
-        'relative flex flex-col items-center gap-4 rounded-2xl border-2 p-6 text-center transition-all duration-300 w-full',
-        'focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-600/10',
+        'relative flex flex-col items-center gap-5 rounded-3xl border-2 p-6 text-center transition-all duration-300 w-full outline-none',
         selected
-          ? 'border-accent-600 bg-accent-50/30 shadow-md dark:border-accent-500 dark:bg-accent-950/20'
-          : 'border-surface-200 bg-zen-surface hover:border-accent-300 hover:shadow-sm dark:border-surface-800 dark:hover:border-accent-800',
-        disabled && 'opacity-50 cursor-not-allowed',
+          ? 'border-slate-950 bg-slate-50 dark:border-slate-100 dark:bg-slate-900/60 shadow-sm'
+          : 'border-slate-200/60 bg-white hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900/10 dark:hover:border-slate-650',
+        disabled && 'opacity-40 cursor-not-allowed',
       )}
     >
       {selected && (
-        <div className="absolute -top-3 right-4 flex items-center gap-1 bg-white dark:bg-gray-900 border border-accent-600 dark:border-accent-500 rounded-full px-2.5 py-0.5 shadow-sm">
-          <span className="text-[9px] font-extrabold uppercase tracking-wider text-accent-600 dark:text-accent-400">
+        <div className="absolute -top-3 right-4 flex items-center gap-1.5 bg-slate-950 text-white dark:bg-white dark:text-slate-900 rounded-full px-2.5 py-0.5 shadow-md">
+          <span className="text-[9px] font-black uppercase tracking-wider">
             Selected
           </span>
-          <span className="flex h-3 w-3 items-center justify-center rounded-full bg-accent-600 text-white dark:bg-accent-500">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" className="h-1.5 w-1.5">
+          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white text-slate-950 dark:bg-slate-900 dark:text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" className="h-2 w-2">
               <path d="M20 6L9 17L4 12" />
             </svg>
           </span>
         </div>
       )}
       <div className={cn(
-        'flex h-14 w-14 items-center justify-center rounded-xl transition-colors duration-300',
+        'flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300',
         selected
-          ? 'bg-accent-100 text-accent-600 dark:bg-accent-900/40 dark:text-accent-400'
-          : 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-400',
+          ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+          : 'bg-slate-50 text-slate-400 dark:bg-slate-900 dark:text-slate-500',
       )}>
         {icon}
       </div>
       <div>
-        <p className="font-extrabold text-surface-900 dark:text-surface-100">{title}</p>
-        <p className="mt-1 text-xs font-semibold text-surface-500 dark:text-surface-400 leading-normal">{description}</p>
+        <p className="font-extrabold text-sm text-slate-900 dark:text-white">{title}</p>
+        <p className="mt-1.5 text-xs font-semibold text-slate-450 dark:text-slate-400 leading-relaxed max-w-[210px] mx-auto">{description}</p>
       </div>
     </button>
   );
 }
+
+export default TypeCard;

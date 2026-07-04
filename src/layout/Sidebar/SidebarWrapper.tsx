@@ -1,45 +1,60 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAppSelector } from '../../app/hooks';
 import { selectCurrentUser } from '../../modules/auth/slices/authSlice';
 import { usePermission } from '../../shared/hooks/usePermission';
 import { Sidebar } from './Sidebar';
 import { navItems, NavItem } from './navConfig';
 
-interface Props {
+interface SidebarWrapperProps {
   mobileOpen: boolean;
   onClose: () => void;
   isCollapsed: boolean;
   onCollapseToggle: () => void;
 }
 
-export const SidebarWrapper: React.FC<Props> = ({ mobileOpen, onClose, isCollapsed, onCollapseToggle }) => {
+export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
+  mobileOpen,
+  onClose,
+  isCollapsed,
+  onCollapseToggle,
+}) => {
   const user = useAppSelector(selectCurrentUser);
+
   const { hasPermission, isAdmin } = usePermission();
 
-  const filterItem = (item: NavItem): NavItem | null => {
-    const hasItemPermission = !item.permission || hasPermission(item.permission, 'view');
-    const isItemVisible = hasItemPermission && (
-      !item.adminOnly ||
-      isAdmin ||
-      user?.roleName?.toLowerCase() === 'hr'
-    );
+  const filteredItems = useMemo(() => {
+    const filterNavigation = (items: NavItem[]): NavItem[] => {
+      return items.reduce<NavItem[]>((result, item) => {
+        const hasAccess =
+          (!item.permission || hasPermission(item.permission, 'view')) &&
+          (!item.adminOnly ||
+            isAdmin ||
+            user?.roleName?.toLowerCase() === 'hr');
 
-    if (!item.children?.length) {
-      return isItemVisible ? item : null;
-    }
+        if (!hasAccess) {
+          return result;
+        }
 
-    const accessibleChildren = item.children
-      .map((child) => filterItem(child))
-      .filter((child): child is NavItem => child !== null);
+        if (!item.children?.length) {
+          result.push(item);
+          return result;
+        }
 
-    if (accessibleChildren.length === 0) return null;
+        const children = filterNavigation(item.children);
 
-    return { ...item, children: accessibleChildren };
-  };
+        if (children.length > 0) {
+          result.push({
+            ...item,
+            children,
+          });
+        }
 
-  const filteredItems = navItems
-    .map((item) => filterItem(item))
-    .filter((item): item is NavItem => item !== null);
+        return result;
+      }, []);
+    };
+
+    return filterNavigation(navItems);
+  }, [user?.roleName, hasPermission, isAdmin]);
 
   return (
     <Sidebar
@@ -51,3 +66,5 @@ export const SidebarWrapper: React.FC<Props> = ({ mobileOpen, onClose, isCollaps
     />
   );
 };
+
+export default SidebarWrapper;

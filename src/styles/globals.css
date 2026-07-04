@@ -361,3 +361,67 @@ input:-webkit-autofill:active {
 .animate-skeleton-pulse {
   animation: skeleton-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ═══════════════════════════════════════════════
+   🌌 ADVANCED AESTHETIC ENHANCEMENTS
+   ═══════════════════════════════════════════════ */
+
+/* 1. SaaS Radial Backdrop Gradients */
+.premium-mesh-bg {
+  background: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.03) 0px, transparent 50%),
+    #f8fafc;
+}
+.dark .premium-mesh-bg {
+  background: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.03) 0px, transparent 50%),
+    #0b0f19;
+}
+
+/* 2. Micro-Interaction scaling classes */
+.interactive-bounce {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.interactive-bounce:active {
+  transform: scale(0.97);
+}
+
+/* 3. Sleek Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1f2937;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* 4. Glassmorphism Card Hover effect */
+.premium-hover-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.premium-hover-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.03);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+.dark .premium-hover-card:hover {
+  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.4);
+  border-color: rgba(59, 130, 246, 0.15);
+}

@@ -36,8 +36,8 @@ export const ATMCard: React.FC<Props> = ({
   return (
     <div
       className={`
-        relative bg-zen-card border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden transition-all duration-300
-        ${shadow ? 'shadow-sm hover:shadow-lg hover:border-accent-500/20 dark:hover:border-accent-500/10' : ''}
+        relative bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-250/30 dark:border-slate-800/60 rounded-2xl overflow-hidden premium-hover-card
+        ${shadow ? 'shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.03)]' : ''}
         ${className}
       `}
     >

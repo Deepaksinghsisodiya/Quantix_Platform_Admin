@@ -93,7 +93,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
             className={clsx(
               'shrink-0 transition-all duration-300 group-hover/item:scale-110',
               isPillActive
-                ? 'text-slate-900 dark:text-white'
+                ? 'text-white'
                 : hasActiveChild
                   ? 'text-slate-800 dark:text-slate-200'
                   : 'text-slate-400 group-hover/item:text-slate-700 dark:text-slate-500 dark:group-hover/item:text-slate-350'
@@ -154,17 +154,17 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
     );
 
     const rowClasses = clsx(
-      'group/item peer relative flex items-center rounded-xl border transition-all duration-200 ease-out outline-none',
+      'group/item peer relative flex items-center rounded-xl border transition-all duration-200 ease-out outline-none interactive-bounce',
       isCollapsed
         ? 'mx-auto h-11 w-11 justify-center p-2.5'
         : nested
           ? 'my-0.5 ml-1 gap-3 py-2 pl-3.5 pr-3'
           : 'my-1.5 gap-3 py-2.5 pl-4 pr-3.5',
       isPillActive
-        ? 'bg-slate-900 border-slate-900 text-white shadow-sm dark:bg-white dark:border-white dark:text-slate-950'
+        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-[0_4px_12px_rgba(59,130,246,0.2)] dark:shadow-[0_4px_15px_rgba(59,130,246,0.35)]'
         : isChildActive
-          ? 'bg-slate-100/70 border-transparent dark:bg-slate-800/40'
-          : 'bg-transparent border-transparent hover:bg-slate-100/50 hover:text-slate-955 hover:translate-x-0.5 dark:hover:bg-slate-800/20 dark:hover:text-white',
+          ? 'bg-blue-50/60 border-transparent text-blue-600 dark:bg-blue-950/20 dark:text-blue-400 font-bold'
+          : 'bg-transparent border-transparent hover:bg-slate-100/60 hover:text-slate-900 hover:translate-x-1 dark:hover:bg-slate-800/40 dark:hover:text-white',
       restricted && 'cursor-not-allowed opacity-30'
     );
 
@@ -203,7 +203,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
       <aside
         className={clsx(
           'fixed inset-y-0 left-0 z-50 flex w-[270px] flex-col transition-[width,transform] duration-300 ease-in-out lg:z-30 lg:translate-x-0',
-          'border-r border-slate-150/80 bg-[#fafafa] text-slate-700 shadow-sm dark:border-slate-800/60 dark:bg-[#0b0f19] dark:text-slate-350',
+          'border-r border-slate-200/50 bg-white/80 backdrop-blur-xl text-slate-700 shadow-sm dark:border-slate-800/60 dark:bg-slate-950/80 dark:text-slate-350',
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
           isCollapsed ? 'lg:w-[76px]' : 'lg:w-[270px]'
         )}

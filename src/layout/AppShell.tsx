@@ -18,7 +18,7 @@ const AppShell: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-zen-bg flex flex-col transition-colors duration-300"
+      className="min-h-screen premium-mesh-bg flex flex-col transition-colors duration-300"
       data-sidebar-collapsed={isCollapsed}
     >
       {/* Global Logic Components */}
@@ -44,7 +44,7 @@ const AppShell: React.FC = () => {
         {/* Main Content Area */}
         <main
           className={`
-            flex-1 flex flex-col transition-all duration-300 ease-in-out mt-16 relative h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-[#0b0f19]
+            flex-1 flex flex-col transition-all duration-300 ease-in-out mt-16 relative h-[calc(100vh-64px)] overflow-hidden bg-transparent
             ${isCollapsed ? 'lg:ml-[76px]' : 'lg:ml-[270px]'}
           `}
         >

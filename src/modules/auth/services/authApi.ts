@@ -26,6 +26,14 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
+    register: builder.mutation<ApiResponse<any>, any>({
+      query: (user) => ({
+        url: '/api/v1/auth/register',
+        method: 'POST',
+        data: user,
+      }),
+    }),
+
     verifyMfa: builder.mutation<ApiResponse<MFAVerifyResponse>, { userId: string; totpCode: string }>({
       query: ({ userId, totpCode }) => ({
         url: '/api/v1/auth/mfa/verify',
@@ -141,6 +149,7 @@ export const authApi = baseApi.injectEndpoints({
 
 export const {
   useLoginMutation,
+  useRegisterMutation,
   useVerifyMfaMutation,
   useLogoutMutation,
   useRefreshTokenMutation,

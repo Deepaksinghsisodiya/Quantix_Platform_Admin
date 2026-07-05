@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import {
   LoginPage,
+  RegisterPage,
   ForgotPasswordPage,
   ResetPasswordPage,
   ChangePasswordPage,
@@ -236,6 +237,7 @@ export function AppRouter() {
         {/* ---- Public + first-login routes (outside ProtectedRoute) ---- */}
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>

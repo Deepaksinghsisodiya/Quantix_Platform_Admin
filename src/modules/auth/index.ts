@@ -1,5 +1,6 @@
 // Pages
 export { default as LoginPage } from './Login/LoginFormWrapper';
+export { default as RegisterPage } from './Register/RegisterFormWrapper';
 export { default as ForgotPasswordPage } from './ForgotPassword/ForgotPasswordWrapper';
 export { default as ResetPasswordPage } from './ResetPassword/ResetPasswordWrapper';
 export { default as ChangePasswordPage } from './ChangePassword/ChangePasswordWrapper';

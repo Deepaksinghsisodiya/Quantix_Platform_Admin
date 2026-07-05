@@ -1,5 +1,6 @@
 import React from 'react';
 import { Form, type FormikProps } from 'formik';
+import { Link } from 'react-router-dom';
 import { AtSign, Lock, ShieldCheck } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
@@ -98,6 +99,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 >
                   Sign In
                 </ATMButton>
+
+                {/* Registration Link */}
+                <div className="text-center mt-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Don't have an account?{' '}
+                    <Link
+                      to="/register"
+                      className="font-bold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 transition-colors"
+                    >
+                      Sign Up
+                    </Link>
+                  </span>
+                </div>
               </Form>
             ) : (
               <Form className="flex flex-col gap-6" noValidate>

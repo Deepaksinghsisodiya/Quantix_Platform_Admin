@@ -105,11 +105,11 @@ const ATMSelectField: React.FC<ATMSelectFieldProps> = ({
                     disabled={disabled}
                     onClick={handleToggle}
                     className={cn(
-                        "w-full h-10 px-3.5 flex items-center justify-between bg-[#fafafa] dark:bg-slate-955/20 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium transition-all duration-300 outline-none text-left",
-                        "hover:border-slate-400 dark:hover:border-slate-650 focus:border-slate-950 focus:bg-white dark:focus:border-white focus:ring-4 focus:ring-slate-950/5 dark:focus:ring-white/5",
-                        isOpen && "border-slate-955 bg-white dark:border-white ring-4 ring-slate-950/5 dark:ring-white/5",
+                        "w-full h-10 px-3.5 flex items-center justify-between bg-[var(--zen-surface)] dark:bg-zinc-950/50 border border-[var(--zen-border)] rounded-lg text-sm font-medium transition-all duration-300 outline-none text-left",
+                        "hover:border-slate-400 dark:hover:border-slate-600 focus:border-primary-500 focus:bg-white dark:focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 dark:focus:ring-primary-400/10",
+                        isOpen && "border-primary-500 bg-white dark:border-primary-400 ring-4 ring-primary-500/10 dark:ring-primary-400/10",
                         isError && "border-rose-500/50 bg-rose-50/10",
-                        disabled && "opacity-50 cursor-not-allowed bg-slate-105 dark:bg-slate-800"
+                        disabled && "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800"
                     )}
                 >
                     <span className={cn(
@@ -139,7 +139,7 @@ const ATMSelectField: React.FC<ATMSelectFieldProps> = ({
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-[100] w-full mt-1.5 bg-zen-surface border border-gray-200 dark:border-gray-800 rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute z-[100] w-full mt-1.5 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] border border-[var(--zen-border)] rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {searchable && (
                             <div className="p-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2 bg-gray-50/50 dark:bg-gray-900/50">
                                 <Search size={14} className="text-gray-400 ml-1" />

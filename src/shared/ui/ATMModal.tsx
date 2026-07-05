@@ -87,8 +87,8 @@ export const ATMModal: React.FC<Props> = ({
 
   return createPortal(
     <div className={clsx(
-      "fixed inset-0 z-[9999] flex items-center justify-center p-6 transition-all duration-500 ease-in-out",
-      isAnimating ? "bg-slate-900/40 backdrop-blur-[4px] opacity-100" : "bg-slate-900/0 backdrop-blur-none opacity-0"
+      "fixed inset-0 z-[9999] flex items-center justify-center p-6 transition-all duration-300 ease-in-out",
+      isAnimating ? "bg-slate-950/50 backdrop-blur-md opacity-100" : "bg-slate-950/0 backdrop-blur-none opacity-0"
     )}>
       {/* 🧼 Overlay - Logic controlled for strict modals */}
       <div
@@ -102,22 +102,22 @@ export const ATMModal: React.FC<Props> = ({
       {/* 🧼 Modal Architecture - Authentic WhatsApp Smoothness */}
       <div
         className={clsx(
-          "relative w-full bg-white dark:bg-gray-950 rounded-[1.5rem] flex flex-col overflow-hidden transition-all duration-500 transform",
+          "relative w-full bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] rounded-xl flex flex-col overflow-hidden transition-all duration-300 transform",
           "shadow-[0_20px_70px_-10px_rgba(0,0,0,0.15),0_10px_30px_-5px_rgba(0,0,0,0.08)]",
-          "border border-white/40 dark:border-gray-800/50",
+          "border border-[var(--zen-border)]",
           sizeClasses[size],
           "max-h-[85vh]",
           isAnimating
             ? "translate-y-0 scale-100 opacity-100"
-            : "translate-y-2 scale-[0.98] opacity-0"
+            : "translate-y-4 scale-[0.96] opacity-0"
         )}
         style={{
-          transitionTimingFunction: 'cubic-bezier(0.2, 0.8, 0.2, 1)' // Gentler WhatsApp easing
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' // Gentler WhatsApp easing
         }}
       >
         {/* Header - Not used in Confirm Modal but kept for others */}
         {(title || subtitle || description) && (
-          <div className="flex items-start justify-between px-6 pt-6 pb-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-20 shrink-0 border-b border-slate-100 dark:border-gray-800">
+          <div className="flex items-start justify-between px-6 pt-6 pb-4 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] z-20 shrink-0 border-b border-[var(--zen-border)]">
             <div className="flex flex-col gap-1">
               <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.1]">
                 {title}

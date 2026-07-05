@@ -114,7 +114,7 @@ function DownloadsPage() {
   const selected = PACKAGES.find((p) => p.id === selectedId) ?? null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-8 pb-10 animate-fade-in w-full">
+    <div className="flex flex-col gap-6 animate-fade-in w-full">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

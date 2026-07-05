@@ -91,7 +91,7 @@ export const ATMDatePicker: React.FC<Props> = ({
         </button>
 
         {isOpen && (
-          <div className="absolute z-[100] w-[300px] mt-2 bg-zen-card backdrop-blur-xl border-2 border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
+          <div className="absolute z-[100] w-[300px] mt-2 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] border border-[var(--zen-border)] rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
               <h4 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">
                 {format(viewDate, 'MMMM yyyy')}
@@ -131,9 +131,9 @@ export const ATMDatePicker: React.FC<Props> = ({
                     type="button"
                     onClick={() => handleDateClick(day)}
                     className={`
-                      h-9 text-[11px] font-black rounded-xl transition-all duration-300 relative group/day
+                      h-9 text-[11px] font-black rounded-lg transition-all duration-300 relative group/day
                       ${!isCurrentMonth ? 'text-gray-200 dark:text-gray-800 opacity-30 grayscale' : 'text-gray-700 dark:text-gray-300 hover:bg-accent-50/50 dark:hover:bg-accent-950/30 hover:text-accent-600 dark:hover:text-accent-400'}
-                      ${isSelected ? 'bg-accent-600 dark:bg-accent-500 text-white hover:bg-accent-700 dark:hover:bg-accent-600 hover:text-white shadow-lg shadow-accent-600/20 scale-110 z-10' : ''}
+                      ${isSelected ? 'bg-accent-600 dark:bg-accent-500 text-white hover:bg-accent-700 dark:hover:bg-accent-600 hover:text-white shadow-sm z-10' : ''}
                       ${isTodayDate && !isSelected ? 'ring-2 ring-accent-500/20 dark:ring-accent-500/30 bg-accent-50/30 dark:bg-accent-900/10' : ''}
                     `}
                   >

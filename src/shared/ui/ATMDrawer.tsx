@@ -57,8 +57,8 @@ export const ATMDrawer: React.FC<Props> = ({
   if (!mounted || !isOpen) return null;
 
   const positionClasses = {
-    right: 'right-0 animate-in slide-in-from-right duration-500',
-    left: 'left-0 animate-in slide-in-from-left duration-500',
+    right: 'right-0 animate-in slide-in-from-right duration-300',
+    left: 'left-0 animate-in slide-in-from-left duration-300',
   };
 
   const sizeClasses = {
@@ -73,25 +73,23 @@ export const ATMDrawer: React.FC<Props> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex overflow-hidden">
-      {/* Overlay - Strictly Non-Interactive for Clicks to close */}
+      {/* Overlay */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-[4px] animate-in fade-in duration-700"
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
+        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300 cursor-pointer"
+        onClick={onClose}
       />
 
       {/* Drawer Container - Zen Perfection Edition */}
       <div
         className={clsx(
-          "relative h-full bg-white dark:bg-gray-950 shadow-[-20px_0_50px_-10px_rgba(0,0,0,0.15)] dark:shadow-none flex flex-col overflow-hidden border-l border-white/40 dark:border-gray-800/50 transition-all duration-700",
-          position === 'right' ? 'rounded-l-[1.5rem]' : 'rounded-r-[1.5rem]',
+          "relative h-full bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] shadow-2xl flex flex-col overflow-hidden border-l border-[var(--zen-border)] transition-all duration-300",
+          position === 'right' ? 'rounded-l-xl' : 'rounded-r-xl',
           finalWidth,
           positionClasses[position]
         )}
       >
-        {/* Glassmorphic Header */}
-        <div className="px-8 pt-8 pb-5 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md flex items-start justify-between sticky top-0 z-20 border-b border-slate-100 dark:border-gray-800">
+        {/* Flat Header */}
+        <div className="px-8 pt-8 pb-5 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] flex items-start justify-between sticky top-0 z-20 border-b border-[var(--zen-border)]">
           <div className="flex flex-col gap-1">
             <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.1]">
               {title}
@@ -105,21 +103,21 @@ export const ATMDrawer: React.FC<Props> = ({
           <button
             onClick={onClose}
             aria-label="Close Drawer"
-            className="group p-2.5 -mr-2 -mt-2 text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-gray-800/40 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-500"
+            className="group p-2.5 -mr-2 -mt-2 text-slate-350 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all duration-300"
             title="Close Drawer"
           >
-            <X size={18} strokeWidth={3} className="group-hover:scale-110 transition-transform duration-500" />
+            <X size={18} strokeWidth={3} className="group-hover:scale-110 transition-transform duration-300" />
           </button>
         </div>
 
         {/* Content Body - Balanced Spacing */}
-        <div className="flex-1 overflow-y-auto px-8 py-4 relative z-10 custom-scrollbar text-[14px] text-slate-600 dark:text-gray-400 font-medium leading-[1.6]">
+        <div className="flex-1 overflow-y-auto px-8 py-4 relative z-10 custom-scrollbar text-[14px] text-slate-600 dark:text-slate-400 font-medium leading-[1.6]">
           {children}
         </div>
 
         {/* Strategic Footer - Ultra Clean Section */}
         {footer && (
-          <div className="px-8 py-5 bg-slate-50/40 dark:bg-gray-900/20 border-t border-slate-50/50 dark:border-gray-800/50 sticky bottom-0 z-20">
+          <div className="px-8 py-5 bg-slate-50/40 dark:bg-slate-900/10 border-t border-slate-200/50 dark:border-slate-850 sticky bottom-0 z-20">
             {footer}
           </div>
         )}

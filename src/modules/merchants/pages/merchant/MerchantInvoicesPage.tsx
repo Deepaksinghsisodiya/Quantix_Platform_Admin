@@ -54,7 +54,7 @@ export default function MerchantInvoicesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 w-full">
       <h1 className="text-2xl font-semibold">Invoices &amp; Payments</h1>
 
       <div className="rounded-xl bg-white dark:bg-surface-800 shadow-sm">

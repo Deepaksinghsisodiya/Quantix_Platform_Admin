@@ -172,7 +172,7 @@ const ATMTableComponent = <T,>({
         </div>
       )}
 
-      <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800 bg-zen-surface flex items-center justify-between gap-4 flex-shrink-0">
+      <div className="px-6 py-3 border-b border-[var(--zen-border)] bg-zen-surface flex items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-4 flex-1">
           {onSearchChange && (
             <div className="w-full max-w-[340px]">
@@ -212,7 +212,7 @@ const ATMTableComponent = <T,>({
 
         <div className="flex items-center gap-5">
           {pagination && pagination.totalCount > 0 && (
-            <div className="flex items-center gap-5 border-r border-slate-100 dark:border-gray-800 pr-5 mr-1">
+            <div className="flex items-center gap-5 border-r border-[var(--zen-border)] pr-5 mr-1">
               {pagination.onPageSizeChange && (
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-semibold text-slate-400 dark:text-gray-500 whitespace-nowrap">Show:</span>
@@ -244,7 +244,7 @@ const ATMTableComponent = <T,>({
       </div>
 
       {filterConfig && activeFiltersCount > 0 && (
-        <div className="px-8 py-2.5 bg-zen-surface border-b border-slate-50 dark:border-gray-800 flex items-center gap-3 animate-in fade-in duration-500">
+        <div className="px-8 py-2.5 bg-zen-surface border-b border-[var(--zen-border)] flex items-center gap-3 animate-in fade-in duration-500">
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(filterConfig.values).map(([key, value]) => {
               if (!value || value === 'all') return null;
@@ -281,7 +281,7 @@ const ATMTableComponent = <T,>({
           <thead className="sticky top-0 z-30 bg-zen-surface shadow-sm shadow-slate-100/20 dark:shadow-none" role="rowgroup">
             <tr role="row">
               {selectable && (
-                <th className={clsx("border-b border-slate-50 dark:border-gray-800 w-[60px] bg-zen-surface sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.th)} role="columnheader">
+                <th className={clsx("border-b border-[var(--zen-border)] w-[60px] bg-zen-surface sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.th)} role="columnheader">
                   <ATMCheckbox
                     name="select-all"
                     checked={selectedRows.length === data.length && data.length > 0}
@@ -293,7 +293,7 @@ const ATMTableComponent = <T,>({
                 <th
                   key={String(col.key)}
                    className={clsx(
-                    'border-b border-gray-100 dark:border-gray-800 bg-zen-surface text-[11px] font-black text-slate-900 dark:text-gray-100 uppercase tracking-widest transition-colors',
+                    'border-b border-[var(--zen-border)] bg-zen-surface text-[11px] font-black text-slate-900 dark:text-gray-100 uppercase tracking-widest transition-colors',
                     currentDensity.th,
                     col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
                     col.sortable && 'cursor-pointer hover:text-accent-600',
@@ -315,7 +315,7 @@ const ATMTableComponent = <T,>({
               ))}
               {rowActions && (
                 <th className={clsx(
-                  "bg-zen-surface font-black text-[10px] text-slate-900 dark:text-gray-100 uppercase tracking-widest text-center w-[160px] border-b border-slate-50 dark:border-gray-800 sticky right-0 z-40 shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
+                  "bg-zen-surface font-black text-[10px] text-slate-900 dark:text-gray-100 uppercase tracking-widest text-center w-[160px] border-b border-[var(--zen-border)] sticky right-0 z-40 shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
                   currentDensity.actionTh
                 )} role="columnheader">
                   Actions
@@ -326,9 +326,9 @@ const ATMTableComponent = <T,>({
           <tbody className="bg-zen-surface" role="rowgroup">
             {(isLoading || isFetching) && data.length === 0 ? (
               Array.from({ length: pagination?.pageSize || 8 }).map((_, r) => (
-                <tr key={`skeleton-${r}`} className="border-b border-slate-50/50 dark:border-gray-900/50">
+                <tr key={`skeleton-${r}`} className="border-b border-[var(--zen-border)]">
                   {selectable && (
-                    <td className="px-6 py-4 text-center border-b border-slate-100/60 dark:border-gray-800/40">
+                    <td className="px-6 py-4 text-center border-b border-[var(--zen-border)]">
                       <div className="w-5 h-5 bg-slate-100 dark:bg-gray-800/60 rounded-md mx-auto animate-skeleton-pulse" />
                     </td>
                   )}
@@ -336,7 +336,7 @@ const ATMTableComponent = <T,>({
                     <td 
                       key={`skeleton-${r}-${c}`} 
                       className={clsx(
-                        "border-b border-slate-100/60 dark:border-gray-800/40",
+                        "border-b border-[var(--zen-border)]",
                         currentDensity.td
                       )}
                     >
@@ -349,7 +349,7 @@ const ATMTableComponent = <T,>({
                     </td>
                   ))}
                   {rowActions && (
-                    <td className="px-6 py-4 text-center border-b border-slate-100/60 dark:border-gray-800/40">
+                    <td className="px-6 py-4 text-center border-b border-[var(--zen-border)]">
                       <div className="w-16 h-8 bg-slate-100 dark:bg-gray-800/60 rounded-lg mx-auto animate-skeleton-pulse" />
                     </td>
                   )}
@@ -365,7 +365,7 @@ const ATMTableComponent = <T,>({
                   <React.Fragment key={rowId}>
                     <tr
                       className={clsx(
-                        'transition-all duration-150 group cursor-pointer border-b border-slate-50 dark:border-gray-900',
+                        'transition-all duration-150 group cursor-pointer border-b border-[var(--zen-border)]',
                         'hover:bg-slate-50/40 dark:hover:bg-gray-900/45',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 dark:focus-visible:ring-indigo-500',
                         isExpanded && 'bg-slate-50/40 dark:bg-gray-900/45'
@@ -382,7 +382,7 @@ const ATMTableComponent = <T,>({
                       aria-expanded={renderExpandedRow ? isExpanded : undefined}
                     >
                       {selectable && (
-                        <td className={clsx("text-center border-b border-slate-100/60 dark:border-gray-800/40 bg-inherit sticky left-0 z-10 group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.td)} onClick={e => e.stopPropagation()} role="gridcell">
+                        <td className={clsx("text-center border-b border-[var(--zen-border)] bg-inherit sticky left-0 z-10 group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.td)} onClick={e => e.stopPropagation()} role="gridcell">
                           <ATMCheckbox
                             name={`select-row-${rowId}`}
                             checked={selectedRows.includes(rowId)}
@@ -394,7 +394,7 @@ const ATMTableComponent = <T,>({
                         <td
                           key={String(col.key)}
                           className={clsx(
-                            'text-[13px] font-medium text-slate-600 dark:text-gray-300 tracking-tight border-b border-slate-100/60 dark:border-gray-800/40 transition-all group-hover:text-slate-900 dark:group-hover:text-white bg-inherit',
+                            'text-[13px] font-medium text-slate-600 dark:text-gray-300 tracking-tight border-b border-[var(--zen-border)] transition-all group-hover:text-slate-900 dark:group-hover:text-white bg-inherit',
                             currentDensity.td,
                             col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
                             col.sticky === 'left' && 'sticky left-0 z-10 hover:z-30 shadow-[2px_0_5px_rgba(0,0,0,0.02)] group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45',
@@ -412,7 +412,7 @@ const ATMTableComponent = <T,>({
                       ))}
                       {rowActions && (
                         <td className={clsx(
-                          "border-b border-slate-100/60 dark:border-gray-800/40 bg-inherit sticky right-0 z-10 hover:z-50 group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45 transition-colors shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
+                          "border-b border-[var(--zen-border)] bg-inherit sticky right-0 z-10 hover:z-50 group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45 transition-colors shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
                           currentDensity.actionTd
                         )} onClick={e => e.stopPropagation()} role="gridcell">
                           <div className="flex items-center justify-center gap-1.5">

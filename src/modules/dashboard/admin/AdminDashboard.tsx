@@ -1100,7 +1100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .filter((w) => w.visible);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
         <div>

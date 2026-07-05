@@ -28,7 +28,7 @@ export const Breadcrumb: React.FC = () => {
 
   return (
     <nav className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-      <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1">
+      <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-1">
         <Home size={14} />
       </Link>
  
@@ -43,13 +43,13 @@ export const Breadcrumb: React.FC = () => {
  
         return (
           <React.Fragment key={routeTo}>
-            <ChevronRight size={12} className="text-slate-350 dark:text-slate-700" />
+            <span className="text-slate-300 dark:text-slate-800 text-[11px] font-light">/</span>
             {isLast ? (
               <span className="text-gray-900 dark:text-white font-semibold tracking-tight">
                 {displayName}
               </span>
             ) : (
-              <Link to={routeTo} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <Link to={routeTo} className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                 {displayName}
               </Link>
             )}

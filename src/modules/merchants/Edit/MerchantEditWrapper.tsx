@@ -55,7 +55,7 @@ export const MerchantEditWrapper: React.FC = () => {
 
   if (isMerchantLoading) {
     return (
-      <div className="flex flex-1 flex-col gap-6 p-6 animate-fade-in w-full">
+      <div className="flex flex-1 flex-col gap-6 animate-fade-in w-full">
         {/* Simple skeleton header */}
         <div className="flex items-center gap-4 py-4">
           <ATMIconButton

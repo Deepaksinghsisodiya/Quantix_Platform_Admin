@@ -34,7 +34,7 @@ export default function MerchantDashboardPage() {
 
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 w-full">
       <div>
         <h1 className="text-2xl font-semibold text-surface-900 dark:text-surface-100">
           Welcome back{user?.name ? `, ${user.name}` : ''}

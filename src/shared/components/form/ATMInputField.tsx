@@ -60,9 +60,9 @@ const ATMInputField: React.FC<ATMInputFieldProps> = ({
                     type={inputType}
                     id={props.name}
                     className={cn(
-                        "w-full h-10 px-3.5 bg-[#fafafa] dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium transition-all duration-300 outline-none",
+                        "w-full h-10 px-3.5 bg-[var(--zen-surface)] dark:bg-zinc-950/50 border border-[var(--zen-border)] rounded-lg text-sm font-medium transition-all duration-300 outline-none",
                         "placeholder:text-slate-400 placeholder:font-normal",
-                        "hover:border-slate-400 dark:hover:border-slate-650 focus:border-slate-955 focus:bg-white dark:focus:border-white focus:ring-4 focus:ring-slate-950/5 dark:focus:ring-white/5",
+                        "hover:border-slate-400 dark:hover:border-slate-600 focus:border-primary-500 focus:bg-white dark:focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 dark:focus:ring-primary-400/10",
                         icon && "pl-12",
                         (suffix || isPassword) && "pr-10",
                         isError && "border-rose-500/50 bg-rose-50/10 focus:border-rose-500 focus:ring-rose-500/10",

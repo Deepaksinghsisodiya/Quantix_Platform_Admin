@@ -27,44 +27,44 @@ export const ATMStatsCard: React.FC<ATMStatsCardProps> = ({
 }) => {
   const variants = {
     accent: {
-      bg: 'bg-blue-50/50 dark:bg-blue-500/5',
-      border: 'border-blue-100/50 dark:border-blue-900/20',
-      text: 'text-blue-600 dark:text-blue-400',
-      iconBg: 'bg-blue-100/50 dark:bg-blue-500/20',
+      bg: 'bg-primary-50/20 dark:bg-primary-500/5',
+      border: 'border-[var(--zen-border)]',
+      text: 'text-primary-600 dark:text-primary-400',
+      iconBg: 'bg-primary-100/50 dark:bg-primary-500/20',
     },
     emerald: {
-      bg: 'bg-emerald-50/50 dark:bg-emerald-500/5',
-      border: 'border-emerald-100/50 dark:border-emerald-900/20',
+      bg: 'bg-emerald-50/20 dark:bg-emerald-500/5',
+      border: 'border-[var(--zen-border)]',
       text: 'text-emerald-600 dark:text-emerald-400',
       iconBg: 'bg-emerald-100/50 dark:bg-emerald-500/20',
     },
     amber: {
-      bg: 'bg-amber-50/50 dark:bg-amber-500/5',
-      border: 'border-amber-100/50 dark:border-amber-900/20',
+      bg: 'bg-amber-50/20 dark:bg-amber-500/5',
+      border: 'border-[var(--zen-border)]',
       text: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100/50 dark:bg-amber-500/20',
     },
     rose: {
-      bg: 'bg-rose-50/50 dark:bg-rose-500/5',
-      border: 'border-rose-100/50 dark:border-rose-900/20',
+      bg: 'bg-rose-50/20 dark:bg-rose-500/5',
+      border: 'border-[var(--zen-border)]',
       text: 'text-rose-600 dark:text-rose-400',
       iconBg: 'bg-rose-100/50 dark:bg-rose-500/20',
     },
     indigo: {
-      bg: 'bg-indigo-50/50 dark:bg-indigo-500/5',
-      border: 'border-indigo-100/50 dark:border-indigo-900/20',
-      text: 'text-indigo-600 dark:text-indigo-400',
-      iconBg: 'bg-indigo-100/50 dark:bg-indigo-500/20',
+      bg: 'bg-primary-50/20 dark:bg-primary-500/5',
+      border: 'border-[var(--zen-border)]',
+      text: 'text-primary-600 dark:text-primary-400',
+      iconBg: 'bg-primary-100/50 dark:bg-primary-500/20',
     },
     purple: {
-      bg: 'bg-purple-50/50 dark:bg-purple-500/5',
-      border: 'border-purple-100/50 dark:border-purple-900/20',
-      text: 'text-purple-600 dark:text-purple-400',
-      iconBg: 'bg-purple-100/50 dark:bg-purple-500/20',
+      bg: 'bg-violet-50/20 dark:bg-violet-500/5',
+      border: 'border-[var(--zen-border)]',
+      text: 'text-violet-600 dark:text-violet-400',
+      iconBg: 'bg-violet-100/50 dark:bg-violet-500/20',
     },
     slate: {
-      bg: 'bg-slate-50/50 dark:bg-slate-500/5',
-      border: 'border-slate-100/50 dark:border-slate-900/20',
+      bg: 'bg-slate-50/20 dark:bg-slate-500/5',
+      border: 'border-[var(--zen-border)]',
       text: 'text-slate-600 dark:text-slate-400',
       iconBg: 'bg-slate-100/50 dark:bg-slate-500/20',
     },
@@ -76,7 +76,7 @@ export const ATMStatsCard: React.FC<ATMStatsCardProps> = ({
     <div 
       onClick={onClick}
       className={clsx(
-        "relative p-5 rounded-2xl border overflow-hidden transition-all duration-500 group hover:shadow-lg hover:shadow-slate-200/30 dark:hover:shadow-none hover:-translate-y-0.5",
+        "relative p-5 rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] overflow-hidden transition-all duration-300 group shadow-sm shadow-black/5 hover:shadow-md hover:shadow-black/5 hover:-translate-y-0.5",
         onClick && "cursor-pointer",
         style.bg,
         style.border,

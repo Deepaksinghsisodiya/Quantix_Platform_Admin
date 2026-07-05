@@ -60,7 +60,7 @@ export default function MerchantDownloadsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 w-full">
       <header>
         <h1 className="text-2xl font-semibold">Downloads</h1>
         <p className="mt-1 text-sm text-surface-500">

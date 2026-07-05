@@ -55,12 +55,12 @@ export const ATMSelectField: React.FC<Props> = ({
       gap: 'gap-2'
     },
     md: {
-      button: 'px-4 py-2 text-sm rounded-xl border',
+      button: 'px-4 py-2 text-sm rounded-lg border',
       icon: 16,
       gap: 'gap-2.5'
     },
     lg: {
-      button: 'px-4 py-3 text-sm rounded-xl border',
+      button: 'px-4 py-3 text-sm rounded-lg border',
       icon: 18,
       gap: 'gap-3'
     }
@@ -99,14 +99,14 @@ export const ATMSelectField: React.FC<Props> = ({
           disabled={disabled}
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={`
-            w-full flex items-center justify-between ${currentSize.button} transition-all duration-300
-            ${disabled ? 'bg-gray-50 dark:bg-gray-900/50 cursor-not-allowed text-gray-400 dark:text-gray-650 opacity-60' : 'bg-zen-surface text-gray-900 dark:text-gray-100'}
+            w-full flex items-center justify-between ${currentSize.button} transition-all duration-200
+            ${disabled ? 'bg-gray-50 dark:bg-slate-900/50 cursor-not-allowed text-gray-400 dark:text-slate-600 opacity-60' : 'bg-[var(--zen-surface)] dark:bg-zinc-950/50 text-slate-800 dark:text-slate-200'}
             ${
               error
-                ? 'border-red-500 bg-red-50/10 ring-4 ring-red-500/5 shadow-sm'
+                ? 'border-red-500 bg-red-50/10'
                 : isOpen
-                ? 'border-slate-800 dark:border-slate-200 ring-4 ring-slate-800/5 shadow-md'
-                : 'border-gray-200 dark:border-gray-800 hover:border-slate-400 dark:hover:border-slate-650 shadow-sm'
+                ? 'border-primary-500 dark:border-primary-400 ring-4 ring-primary-500/10 dark:ring-primary-400/10'
+                : 'border-[var(--zen-border)] hover:border-slate-400 dark:hover:border-slate-600 shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)]'
             }
           `}
         >
@@ -135,7 +135,7 @@ export const ATMSelectField: React.FC<Props> = ({
         </button>
 
         {isOpen && (
-          <div className="absolute z-[100] w-full mt-2 bg-zen-card backdrop-blur-xl border-2 border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
+          <div className="absolute z-[100] w-full mt-2 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] border border-[var(--zen-border)] rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {searchable && (
               <div className="p-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 bg-gray-50/50 dark:bg-gray-800/50">
                 <Search size={16} className="text-gray-400 dark:text-gray-600 ml-1" />

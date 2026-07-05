@@ -29,7 +29,7 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
   const failed = safeQueue.filter((e) => e?.status === 'Failed').length;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 w-full">
       <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
         <div>
           <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Operations Manager</h1>

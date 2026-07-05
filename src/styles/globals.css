@@ -10,44 +10,44 @@
    * ========================================================================= */
   :root {
     /* 🔤 Primary Font Family */
-    --font-primary: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    --font-primary: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
     /* 🏛️ Layout Metrics & Global Workspace Padding (Change in 1 place to update all pages!) */
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 68px;
     --header-height: 56px;
-    --page-padding-x: 2rem;
-    /* 32px Left & Right workspace padding */
-    --page-padding-y: 1.5rem;
-    /* 24px Top workspace padding */
-    --page-padding-bottom: 2.5rem;
-    /* 40px Bottom workspace padding */
+    --page-padding-x: 1.25rem;
+    /* 20px Left & Right workspace padding */
+    --page-padding-y: 1rem;
+    /* 16px Top workspace padding */
+    --page-padding-bottom: 1.5rem;
+    /* 24px Bottom workspace padding */
 
     /* 🏙️ Global Light Mode Backgrounds & Card Surfaces */
-    --zen-bg: #f8fafc;
+    --zen-bg: #fafafa;
     /* Main page background */
     --zen-surface: #ffffff;
     /* Content containers & drawers */
     --zen-card: #ffffff;
     /* Cards, panels & table wrappers */
-    --zen-border: #e2e8f0;
+    --zen-border: #eaeaea;
     /* Borders & dividers */
 
-    /* 🎨 Primary Brand Accent Palette (Royal Blue / Sapphire - RGB format) */
-    --accent-50: 239 246 255;
-    --accent-100: 219 234 254;
-    --accent-200: 191 219 254;
-    --accent-300: 147 197 253;
-    --accent-400: 96 165 250;
-    --accent-500: 59 130 246;
-    --accent-600: 37 99 235;
+    /* 🎨 Primary Brand Accent Palette (Indigo/Violet Vercel theme - RGB format) */
+    --accent-50: 245 243 255;
+    --accent-100: 237 233 254;
+    --accent-200: 221 214 254;
+    --accent-300: 196 181 253;
+    --accent-400: 167 139 250;
+    --accent-500: 99 102 241;
+    --accent-600: 79 70 229;
     /* Primary Button & Main Brand Color */
-    --accent-700: 29 78 216;
-    --accent-800: 30 64 175;
-    --accent-900: 30 58 138;
-    --accent-950: 23 37 84;
+    --accent-700: 67 56 202;
+    --accent-800: 55 48 163;
+    --accent-900: 49 46 129;
+    --accent-950: 30 27 75;
 
     /* 📊 Chart Tooltips */
     --chart-tooltip-bg: #ffffff;
@@ -58,17 +58,17 @@
   /* 🌙 Global Dark Mode Theme Configuration */
   .dark {
     /* Global Dark Mode Backgrounds & Card Surfaces */
-    --zen-bg: #030712;
-    /* Main dark page background (slate-950) */
-    --zen-surface: #030712;
+    --zen-bg: #000000;
+    /* Main dark page background */
+    --zen-surface: #0a0a0a;
     /* Dark containers & drawers */
-    --zen-card: #111827;
-    /* Dark cards & panels (gray-900) */
-    --zen-border: #1f2937;
-    /* Dark borders & dividers (gray-800) */
+    --zen-card: #111111;
+    /* Dark cards & panels */
+    --zen-border: #1f1f1f;
+    /* Dark borders & dividers */
 
-    --chart-tooltip-bg: #1e293b;
-    --chart-tooltip-border: #334155;
+    --chart-tooltip-bg: #0a0a0a;
+    --chart-tooltip-border: #1f1f1f;
   }
 
   html {
@@ -97,11 +97,11 @@
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-white/60 bg-white/70 p-5 shadow-lg backdrop-blur-md transition-all duration-300 hover:shadow-xl dark:border-surface-800/40 dark:bg-surface-900/80;
+    @apply rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] p-5 shadow-sm shadow-black/5 transition-all duration-300 hover:shadow-md hover:shadow-black/5 dark:bg-[var(--zen-card)];
   }
 
   .card-flat {
-    @apply rounded-2xl border border-white/60 bg-white/70 p-5 backdrop-blur-md dark:border-surface-800/40 dark:bg-surface-900/80;
+    @apply rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] p-5 shadow-sm shadow-black/5 dark:bg-[var(--zen-card)];
   }
 
   .kpi-card {
@@ -194,7 +194,7 @@
   @apply bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors;
 }
 
-/* Outfit/Inter Font Override */
+/* Clean Sans-serif Font Override */
 h1,
 h2,
 h3,
@@ -204,7 +204,7 @@ h6,
 .font-bold,
 .font-black,
 .font-semibold {
-  font-family: 'Outfit', sans-serif !important;
+  font-family: var(--font-primary), sans-serif !important;
 }
 
 /* 🌗 Intelligent Dark Mode Global Overrides */
@@ -325,8 +325,10 @@ input:-webkit-autofill:active {
 /* 🧼 Restrict rounded corners globally to keep layout sleek and compact */
 [class*="rounded-[2.5rem]"],
 [class*="rounded-[2rem]"],
-[class*="rounded-[3rem]"] {
-  border-radius: 1rem !important;
+[class*="rounded-[3rem]"],
+[class*="rounded-2xl"],
+[class*="rounded-3xl"] {
+  border-radius: var(--radius) !important;
 }
 
 /* 🚀 Premium Page Transition Animation */
@@ -369,17 +371,17 @@ input:-webkit-autofill:active {
 /* 1. SaaS Radial Backdrop Gradients */
 .premium-mesh-bg {
   background: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.03) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.03) 0px, transparent 50%),
-    #f8fafc;
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.03) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.02) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.02) 0px, transparent 50%),
+    #fafafa;
 }
 .dark .premium-mesh-bg {
   background: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.03) 0px, transparent 50%),
-    #0b0f19;
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.02) 0px, transparent 50%),
+    #000000;
 }
 
 /* 2. Micro-Interaction scaling classes */

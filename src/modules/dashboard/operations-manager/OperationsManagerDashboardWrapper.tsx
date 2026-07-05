@@ -25,7 +25,7 @@ export const OperationsManagerDashboardWrapper: React.FC = () => {
 
   if (isInitialLoading) {
     return (
-      <div className="flex flex-1 flex-col gap-6 p-6 animate-fade-in w-full">
+      <div className="flex flex-1 flex-col gap-6 animate-fade-in w-full">
         <div className="flex justify-between items-baseline pb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="space-y-2">
             <ATMSkeleton width="200px" height="24px" />

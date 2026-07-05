@@ -128,7 +128,7 @@ export const ATMMultiSelectField: React.FC<Props> = ({
         </div>
 
         {isOpen && (
-          <div className="absolute z-[100] w-full mt-2 bg-zen-card backdrop-blur-xl border-2 border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
+          <div className="absolute z-[100] w-full mt-2 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] border border-[var(--zen-border)] rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
             {searchable && (
               <div className="p-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 bg-gray-50/50 dark:bg-gray-800/50">
                 <Search size={16} className="text-gray-400 dark:text-gray-600 ml-1" />

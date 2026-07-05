@@ -91,7 +91,7 @@ export const ATMBadge: React.FC<ATMBadgeProps> = ({
   return (
     <span
       className={`
-        inline-flex items-center gap-1.5 font-bold uppercase rounded-md border transition-all duration-200
+        inline-flex items-center gap-1 font-extrabold uppercase rounded-full border transition-all duration-200
         ${selectedColor[variant]}
         ${sizes[size]}
         ${className}

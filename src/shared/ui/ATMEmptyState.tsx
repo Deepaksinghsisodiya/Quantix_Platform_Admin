@@ -31,7 +31,7 @@ export const ATMEmptyState: React.FC<Props> = ({
       
       {/* 🧼 Clean Minimalist Icon */}
       <div className="mb-6">
-        <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-gray-900 border border-slate-100 dark:border-gray-800 flex items-center justify-center text-slate-300 dark:text-gray-600">
+        <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 flex items-center justify-center text-slate-300 dark:text-slate-650">
            {Icon ? (
              React.isValidElement(Icon) ? (
                Icon
@@ -47,11 +47,11 @@ export const ATMEmptyState: React.FC<Props> = ({
 
       {/* 🧼 Simple Typography */}
       <div className="space-y-1.5 max-w-sm">
-        <h3 className="text-base font-bold text-slate-800 dark:text-gray-100 tracking-tight">
+        <h3 className="text-base font-bold text-slate-800 dark:text-gray-150 tracking-tight">
           {title}
         </h3>
         {description && (
-          <p className="text-[13px] font-medium text-slate-400 dark:text-gray-500 leading-relaxed">
+          <p className="text-[13px] font-medium text-slate-400 dark:text-slate-500 leading-relaxed">
             {description}
           </p>
         )}
@@ -67,7 +67,7 @@ export const ATMEmptyState: React.FC<Props> = ({
           <ATMButton 
             onClick={onAction} 
             icon={Plus}
-            className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-accent-600 hover:bg-accent-600 dark:hover:bg-accent-700 text-white shadow-lg shadow-slate-100 dark:shadow-none transition-all active:scale-[0.98]"
+            variant="primary"
           >
             <span className="font-bold text-[13px]">
                {actionLabel || 'Create New'}

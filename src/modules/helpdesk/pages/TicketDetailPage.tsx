@@ -104,7 +104,7 @@ function TicketDetailPage() {
   /* ---- Loading state ---- */
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6 w-full">
         <ATMSkeleton variant="text" width="40%" height="32px" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
           <ATMSkeleton variant="card" height="600px" />
@@ -185,7 +185,7 @@ function TicketDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 w-full">
       {/* Header */}
       <div className="flex flex-col gap-3">
         <button

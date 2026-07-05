@@ -36,15 +36,15 @@ export const ATMCard: React.FC<Props> = ({
   return (
     <div
       className={`
-        relative bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-250/30 dark:border-slate-800/60 rounded-2xl overflow-hidden premium-hover-card
-        ${shadow ? 'shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.03)]' : ''}
+        relative bg-[var(--zen-surface)] border border-[var(--zen-border)] rounded-xl overflow-hidden dark:bg-[var(--zen-card)]
+        ${shadow ? 'shadow-sm shadow-black/5 hover:shadow-md hover:shadow-black/5 transition-all duration-300' : ''}
         ${className}
       `}
     >
       {header ? (
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">{header}</div>
+        <div className="px-6 py-4 border-b border-[var(--zen-border)]">{header}</div>
       ) : (title || effectiveSubtitle || action || extra) ? (
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-4">
+        <div className="px-6 py-5 border-b border-[var(--zen-border)] flex items-center justify-between gap-4">
           <div className="min-w-0">
             {title && (
               <h3 className="text-base font-bold text-gray-900 dark:text-white tracking-tight truncate">{title}</h3>

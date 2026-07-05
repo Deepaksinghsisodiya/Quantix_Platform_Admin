@@ -59,7 +59,7 @@ export default function MerchantWalletPage() {
 
   if (m && !isEnterprise) {
     return (
-      <div className="p-6">
+      <div className="w-full">
         <h1 className="text-xl font-semibold">Wallet not applicable</h1>
         <p className="mt-2 text-sm text-surface-500">
           Standalone merchants don't use a wallet. License tokens are purchased per period via{' '}
@@ -74,7 +74,7 @@ export default function MerchantWalletPage() {
   const transactions = Array.isArray(rawTxns) ? (rawTxns as WalletTransactionDto[]) : [];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 w-full">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Wallet</h1>

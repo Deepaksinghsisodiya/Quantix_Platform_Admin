@@ -129,7 +129,7 @@ export const Topbar: React.FC<Props> = ({
 
   return (
     <header
-      className={`fixed top-0 right-0 h-16 bg-white/70 dark:bg-[#0b0f19]/70 backdrop-blur-md border-b border-slate-150/80 dark:border-slate-800/60 z-40 px-4 md:px-6 flex items-center justify-between transition-[left] duration-300 ease-in-out left-0 ${
+      className={`fixed top-0 right-0 h-16 bg-white/70 dark:bg-black/70 backdrop-blur-md border-b border-slate-150/80 dark:border-slate-800/60 z-40 px-4 md:px-6 flex items-center justify-between transition-[left] duration-300 ease-in-out left-0 ${
         isCollapsed ? 'lg:left-[76px]' : 'lg:left-[270px]'
       }`}
     >
@@ -157,24 +157,24 @@ export const Topbar: React.FC<Props> = ({
       </div>
 
       {/* Middle Section: Global Search with premium outline wrapper */}
-      <div className="hidden md:flex flex-1 max-w-sm px-6 relative" ref={searchRef}>
+      <div className="hidden md:flex flex-1 max-w-sm relative" ref={searchRef}>
         <div className="relative w-full group">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors duration-300">
-            {isFetching ? <Loader2 size={16} className="animate-spin text-slate-900 dark:text-white" /> : <Search size={16} />}
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 dark:group-focus-within:text-brand-400 transition-colors duration-300">
+            {isFetching ? <Loader2 size={16} className="animate-spin text-brand-500 dark:text-brand-400" /> : <Search size={16} />}
           </div>
           <input
             ref={inputRef}
             type="text"
             role="searchbox"
             aria-label="Global search"
-            className="block w-full pl-9 pr-12 py-2.2 bg-slate-100/50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800/80 focus:border-slate-400 dark:focus:border-slate-650 focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-slate-950/5 dark:focus:ring-white/5 rounded-xl text-xs transition-all duration-300 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold"
-            placeholder="Search dashboard pages..."
+            className="block w-full pl-9 pr-12 py-2 bg-slate-100/50 dark:bg-slate-900/30 border border-[var(--zen-border)] focus:border-primary-500 dark:focus:border-primary-400 focus:bg-white dark:focus:bg-zinc-950 focus:ring-4 focus:ring-primary-500/10 dark:focus:ring-primary-400/10 rounded-lg text-xs transition-all duration-300 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
+            placeholder="Search pages, merchants, tickets..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onFocus={() => searchValue.trim().length >= 2 && setShowResults(true)}
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <kbd className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-black text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-sm">
+            <kbd className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-black text-slate-400 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-750 rounded-md shadow-sm">
               <Command size={9} /> K
             </kbd>
           </div>
@@ -182,7 +182,7 @@ export const Topbar: React.FC<Props> = ({
 
         {/* Search Results Dropdown */}
         {showResults && (
-          <div className="absolute top-full left-6 right-6 mt-2 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-150 dark:border-slate-800/85 py-3 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] rounded-xl shadow-2xl border border-[var(--zen-border)] py-3 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
             <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/80 mb-2 flex items-center justify-between">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Global Results</span>
               {isFetching && <Loader2 size={12} className="animate-spin text-slate-900" />}
@@ -202,7 +202,7 @@ export const Topbar: React.FC<Props> = ({
                       setShowResults(false);
                       setSearchValue('');
                     }}
-                    className="w-full flex items-center gap-3.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl transition-all duration-300 group text-left border-l-2 border-transparent hover:border-slate-900 dark:hover:border-white"
+                    className="w-full flex items-center gap-3.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-lg transition-all duration-300 group text-left border-l-2 border-transparent hover:border-primary-600 dark:hover:border-primary-400"
                   >
                     <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-850 flex items-center justify-center group-hover:bg-white dark:group-hover:bg-slate-900 transition-all duration-300 border border-slate-200/50 dark:border-slate-800 shrink-0">
                       {getIcon(res.type)}

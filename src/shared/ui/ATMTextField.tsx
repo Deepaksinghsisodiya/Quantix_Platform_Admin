@@ -41,8 +41,8 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
     const containerSizeClasses = {
       sm: 'rounded-lg',
-      md: 'rounded-xl',
-      lg: 'rounded-xl',
+      md: 'rounded-lg',
+      lg: 'rounded-lg',
     };
 
     return (
@@ -56,12 +56,12 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
         <div
           className={clsx(
-            'relative flex items-center w-full transition-all duration-300 border group shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]',
+            'relative flex items-center w-full transition-all duration-200 border group shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)] border-[var(--zen-border)] bg-[var(--zen-surface)] dark:bg-zinc-950/50',
             containerSizeClasses[size],
             error
               ? 'border-red-500 bg-red-50/10'
-              : 'border-slate-200 dark:border-slate-800 bg-[#fafafa] hover:border-slate-400 dark:hover:border-slate-650 focus-within:border-slate-950 focus-within:bg-white dark:focus-within:border-white dark:focus-within:bg-slate-950/20',
-            'focus-within:ring-4 focus-within:ring-slate-950/5 dark:focus-within:ring-white/5'
+              : 'hover:border-slate-400 dark:hover:border-slate-600 focus-within:border-primary-500 focus-within:bg-white dark:focus-within:border-primary-400 dark:focus-within:bg-zinc-950/70',
+            'focus-within:ring-4 focus-within:ring-primary-500/10 dark:focus-within:ring-primary-400/10'
           )}
         >
           {effectivePrefix && (

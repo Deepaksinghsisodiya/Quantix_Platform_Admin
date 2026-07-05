@@ -100,7 +100,7 @@ const ToggleGrid: React.FC<{
         return (
           <div
             key={key}
-            className="flex items-center justify-between py-1.5 px-2 rounded-xl bg-gray-50/50 dark:bg-gray-900 border border-gray-150/40 dark:border-gray-800"
+            className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-955/20"
           >
             <span className={cn('text-xs font-semibold', isOn ? 'text-gray-900 dark:text-white' : 'text-gray-400')}>
               {name}
@@ -109,7 +109,7 @@ const ToggleGrid: React.FC<{
               name={`${field}.${key}`}
               checked={isOn}
               onChange={(c) => formik.setFieldValue(`${field}.${key}`, c)}
-              size="sm"
+              size="md"
             />
           </div>
         );
@@ -131,7 +131,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({
 
   const rateCards = useAppSelector((state) => state.rateCards.rateCards);
   const activeRateCard = rateCards.find((c) => c.isDefault) || rateCards[0];
-  const [autoCalculate, setAutoCalculate] = useState(true);
+  const [autoCalculate, setAutoCalculate] = useState(!formik.values.isManualPrice);
+
+  // Sync state if formik values change (e.g. during reinitialization on Edit)
+  useEffect(() => {
+    setAutoCalculate(!formik.values.isManualPrice);
+  }, [formik.values.isManualPrice]);
 
   // Dynamic formula calculation hook
   useEffect(() => {
@@ -143,19 +148,27 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         planLimits: formik.values.planLimits,
       }, activeRateCard);
 
-      formik.setFieldValue('dailyPrice', calc.dailyPrice);
-      formik.setFieldValue('weeklyPrice', calc.weeklyPrice);
-      formik.setFieldValue('monthlyPrice', calc.monthlyPrice);
-      formik.setFieldValue('yearlyPrice', calc.yearlyPrice);
+      const variation = Number(formik.values.priceVariation || 0);
+      const finalDaily = Number(Math.max(0, calc.dailyPrice + variation).toFixed(2));
+      formik.setFieldValue('dailyPrice', finalDaily);
     }
   }, [
     formik.values.planFeatures,
     formik.values.planPayments,
     formik.values.planServices,
     formik.values.planLimits,
+    formik.values.priceVariation,
     activeRateCard,
     autoCalculate,
   ]);
+
+  // Keep weekly, monthly, and yearly prices in sync with dailyPrice for API compatibility
+  useEffect(() => {
+    const daily = Number(formik.values.dailyPrice || 0);
+    formik.setFieldValue('weeklyPrice', Number((daily * 7).toFixed(2)));
+    formik.setFieldValue('monthlyPrice', Number((daily * 30).toFixed(2)));
+    formik.setFieldValue('yearlyPrice', Number((daily * 365).toFixed(2)));
+  }, [formik.values.dailyPrice]);
 
   const lastPlanTypeRef = React.useRef(formik.values.planType);
   useEffect(() => {
@@ -198,7 +211,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           />
           <ATMTextField
             name="priority"
-            label="Priority Rank"
+            label="Display Priority"
             type="number"
             value={formik.values.priority}
             onChange={formik.handleChange}
@@ -208,7 +221,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         </div>
 
         {/* ── Auto-Calculate Price Toggle ── */}
-        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 flex items-center justify-between">
+        <div className="p-3.5 rounded-lg border border-[var(--zen-border)] bg-[var(--zen-surface)] flex items-center justify-between">
           <div>
             <p className="text-xs font-extrabold text-slate-900 dark:text-white">Auto-calculate from Rate Card</p>
             <p className="text-[10px] text-gray-400 font-bold">Use active Rate Card formulas to calculate prices</p>
@@ -222,12 +235,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                 formik.setFieldValue('isManualPrice', false);
               }
             }}
-            size="sm"
+            size="md"
           />
         </div>
 
         {/* ── Manual Override Section ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl border border-amber-250/20 dark:border-amber-900/30 bg-amber-50/10 dark:bg-amber-950/10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg border border-amber-250/20 dark:border-amber-900/30 bg-amber-50/10 dark:bg-amber-955/10">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-extrabold text-amber-700 dark:text-amber-500">Enable Manual Price Override</p>
@@ -242,7 +255,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                   setAutoCalculate(false);
                 }
               }}
-              size="sm"
+              size="md"
             />
           </div>
           {formik.values.isManualPrice && (
@@ -258,52 +271,50 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           )}
         </div>
 
-        {/* ── Pricing Cycles ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* ── Pricing Configuration (Daily Price & Price Variation) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ATMTextField
             name="dailyPrice"
-            label="Daily ($)"
+            label="Daily Base Price ($)"
             type="number"
             value={formik.values.dailyPrice}
             onChange={(e) => {
               formik.handleChange(e);
               setAutoCalculate(false);
             }}
+            disabled={autoCalculate}
             required
+            className="bg-slate-50/50 dark:bg-zinc-950/20 font-semibold"
           />
           <ATMTextField
-            name="weeklyPrice"
-            label="Weekly ($)"
+            name="priceVariation"
+            label="Price Variation ($)"
             type="number"
-            value={formik.values.weeklyPrice}
-            onChange={(e) => {
-              formik.handleChange(e);
-              setAutoCalculate(false);
-            }}
-            required
+            placeholder="e.g. +5.00 or -3.00"
+            value={formik.values.priceVariation}
+            onChange={formik.handleChange}
+            disabled={!autoCalculate}
+            className="bg-slate-50/50 dark:bg-zinc-950/20 font-semibold"
           />
-          <ATMTextField
-            name="monthlyPrice"
-            label="Monthly ($)"
-            type="number"
-            value={formik.values.monthlyPrice}
-            onChange={(e) => {
-              formik.handleChange(e);
-              setAutoCalculate(false);
-            }}
-            required
-          />
-          <ATMTextField
-            name="yearlyPrice"
-            label="Yearly ($)"
-            type="number"
-            value={formik.values.yearlyPrice}
-            onChange={(e) => {
-              formik.handleChange(e);
-              setAutoCalculate(false);
-            }}
-            required
-          />
+        </div>
+
+        {/* Background Billing Summary Box */}
+        <div className="p-3.5 rounded-lg border border-[var(--zen-border)] bg-slate-50/10 dark:bg-zinc-950/15">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Cycle Calculation Sync (Background API)</p>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Weekly Price</span>
+              <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5 inline-block">${formik.values.weeklyPrice} /wk</span>
+            </div>
+            <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25 ring-1 ring-primary-500/10">
+              <span className="text-[9px] font-bold text-primary-500 uppercase tracking-wider block font-semibold">Monthly Price</span>
+              <span className="text-xs font-black text-primary-600 dark:text-primary-400 mt-0.5 inline-block">${formik.values.monthlyPrice} /mo</span>
+            </div>
+            <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Yearly Price</span>
+              <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5 inline-block">${formik.values.yearlyPrice} /yr</span>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -314,13 +325,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             value={formik.values.trialPeriod}
             onChange={formik.handleChange}
           />
-          <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)]">
             <p className="text-xs font-semibold text-gray-800 dark:text-gray-250">Active — Available for signups</p>
             <ATMSwitch
               name="statusSwitch"
               checked={formik.values.status === 'Active'}
               onChange={(c) => formik.setFieldValue('status', c ? 'Active' : 'Inactive')}
-              size="sm"
+              size="md"
             />
           </div>
         </div>
@@ -367,9 +378,9 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             {ALL_LIMITS.map(({ key, label: name }) => (
               <div
                 key={key}
-                className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-gray-50/50 dark:bg-gray-900 border border-gray-150/40 dark:border-gray-800"
+                className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-955/20"
               >
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 truncate max-w-[140px]">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate flex-1">
                   {name}
                 </span>
                 <input
@@ -377,7 +388,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                   min={0}
                   value={formik.values.planLimits?.[key] ?? 0}
                   onChange={(e) => formik.setFieldValue(`planLimits.${key}`, Number(e.target.value) || 0)}
-                  className="w-14 text-right text-xs font-mono font-bold px-1.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-950 dark:text-white focus:outline-none"
+                  className="w-20 h-8 text-center text-xs font-mono font-bold px-2 py-1 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all ml-2"
                 />
               </div>
             ))}

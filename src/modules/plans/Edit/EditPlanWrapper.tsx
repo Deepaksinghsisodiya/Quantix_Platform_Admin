@@ -8,6 +8,8 @@ import { Pencil } from 'lucide-react';
 import { PlanForm } from '../Form/PlanForm';
 import { useUpdatePlanHook } from '../services/usePlans';
 import type { Plan, PlanType, PlanStatus } from '../types/plan.types';
+import { useAppSelector } from '@/app/hooks';
+import { calculatePlanPrice } from '@/modules/rateCards/utils/priceCalculator';
 import {
   DEFAULT_ENT_MODULES,
   DEFAULT_ENT_PAYMENTS,
@@ -47,6 +49,7 @@ const planValidationSchema = Yup.object().shape({
   popular: Yup.boolean().default(false),
   isManualPrice: Yup.boolean().default(false),
   manualPrice: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative'),
+  priceVariation: Yup.number().typeError('Must be a number'),
 });
 
 export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
@@ -56,6 +59,17 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
   onSuccess,
 }) => {
   const updatePlanMutation = useUpdatePlanHook();
+  const rateCards = useAppSelector((state) => state.rateCards.rateCards);
+  const activeRateCard = rateCards.find((c) => c.isDefault) || rateCards[0];
+
+  const calcBase = plan && activeRateCard ? calculatePlanPrice({
+    planFeatures: plan.planFeatures as any,
+    planPayments: plan.planPayments as any,
+    planServices: plan.planServices as any,
+    planLimits: plan.planLimits as any,
+  }, activeRateCard).dailyPrice : 0;
+  
+  const initialVariation = plan ? Number((plan.dailyPrice - calcBase).toFixed(2)) : 0;
 
   const formik = useFormik({
     initialValues: {
@@ -67,6 +81,7 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
       weeklyPrice: plan?.weeklyPrice ? String(plan.weeklyPrice) : '',
       monthlyPrice: plan?.monthlyPrice ? String(plan.monthlyPrice) : '',
       yearlyPrice: plan?.yearlyPrice ? String(plan.yearlyPrice) : '',
+      priceVariation: initialVariation,
       trialPeriod: plan?.trialPeriod ?? 14,
       maxLocations: plan?.maxLocations ?? 1,
       maxTerminals: plan?.maxTerminals ?? 1,

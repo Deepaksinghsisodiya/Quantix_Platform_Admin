@@ -42,6 +42,7 @@ const planValidationSchema = Yup.object().shape({
   popular: Yup.boolean().default(false),
   isManualPrice: Yup.boolean().default(false),
   manualPrice: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative'),
+  priceVariation: Yup.number().typeError('Must be a number'),
 });
 
 export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
@@ -61,6 +62,7 @@ export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
       weeklyPrice: '',
       monthlyPrice: '',
       yearlyPrice: '',
+      priceVariation: 0,
       trialPeriod: 14,
       maxLocations: 3,
       maxTerminals: 6,

@@ -161,7 +161,7 @@ const InvoiceListPage = React.lazy(() => import('@/modules/billing/pages/Invoice
 const InvoiceDetailPage = React.lazy(() => import('@/modules/billing/pages/InvoiceDetailPage'));
 const PlanManagementPage = React.lazy(() => import('@/modules/billing/pages/PlanManagementPage'));
 const TokenPricingPage = React.lazy(() => import('@/modules/billing/pages/TokenPricingPage'));
-const RateCardListPage = React.lazy(() => import('@/modules/rateCards/pages/RateCardListPage'));
+const RateCardListPage = React.lazy(() => import('@/modules/rateCards/list/RateCardListPageWrapper'));
 const WalletListPage = React.lazy(() => import('@/modules/billing/pages/WalletListPage'));
 
 // Commission (2026-05-18 Pass 36: CommissionRatesPage dropped — rate now lives on

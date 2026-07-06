@@ -87,10 +87,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
     const content = (
       <>
         {isPillActive && !isCollapsed && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r bg-primary-600 dark:bg-primary-500" />
-        )}
-        {isChildActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3.5 rounded-r bg-primary-600 dark:bg-primary-400" />
+          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-[4px] h-6 rounded-full bg-primary-600 dark:bg-primary-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
         )}
         {!nested ? (
           <item.icon
@@ -102,24 +99,36 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
                 ? 'text-primary-600 dark:text-primary-400'
                 : hasActiveChild
                   ? 'text-slate-800 dark:text-slate-200'
-                  : 'text-slate-400 group-hover/item:text-slate-700 dark:text-slate-500 dark:group-hover/item:text-slate-350'
+                  : 'text-slate-400 group-hover/item:text-slate-750 dark:text-slate-500 dark:group-hover/item:text-slate-350'
             )}
           />
         ) : (
-          <span
-            className={clsx(
-              'ml-1.5 mr-2.5 h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-300',
-              isChildActive
-                ? 'scale-125 bg-primary-600 dark:bg-primary-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]'
-                : 'bg-slate-300 group-hover/item:bg-slate-500 dark:bg-slate-600 dark:group-hover/item:bg-slate-400'
-            )}
-          />
+          <div className="relative shrink-0 w-3.5 h-3.5 mr-1 flex items-center justify-center">
+            {/* Horizontal branch line connecting to the parent's vertical line */}
+            <span
+              className={clsx(
+                "absolute left-[-16px] w-[14px] h-[1.5px] transition-colors duration-205",
+                isChildActive
+                  ? "bg-primary-500 dark:bg-primary-400"
+                  : "bg-slate-200 dark:bg-slate-850 group-hover/item:bg-slate-450 dark:group-hover/item:bg-slate-650"
+              )}
+            />
+            {/* Elegant Inner Dot */}
+            <span
+              className={clsx(
+                "w-1.5 h-1.5 rounded-full transition-all duration-350",
+                isChildActive
+                  ? "bg-primary-600 dark:bg-primary-400 scale-125 shadow-[0_0_8px_rgba(99,102,241,0.5)]"
+                  : "bg-slate-300 dark:bg-slate-700 group-hover/item:bg-slate-500 dark:group-hover/item:bg-slate-500"
+              )}
+            />
+          </div>
         )}
 
         {!isCollapsed && (
           <span
             className={clsx(
-              'truncate tracking-tight leading-none transition-colors duration-200',
+              'truncate tracking-normal leading-normal py-0.5 transition-colors duration-250',
               nested ? 'text-[12.5px]' : 'text-sm font-semibold',
               isPillActive || isChildActive
                 ? 'font-bold text-slate-950 dark:text-white'
@@ -160,17 +169,17 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
     );
 
     const rowClasses = clsx(
-      'group/item peer relative flex items-center rounded-xl border transition-all duration-200 ease-out outline-none interactive-bounce',
+      'group/item peer relative flex items-center rounded-xl border transition-all duration-200 ease-out outline-none',
       isCollapsed
         ? 'mx-auto h-11 w-11 justify-center p-2.5'
         : nested
-          ? 'my-0.5 ml-1 gap-3 py-2 pl-3.5 pr-3'
+          ? 'my-1.5 ml-1 gap-3 py-2.5 pl-4.5 pr-3'
           : 'my-1.5 gap-3 py-2.5 pl-4 pr-3.5',
       isPillActive
-        ? 'bg-slate-100 dark:bg-slate-900/80 border-transparent text-slate-950 dark:text-white font-medium'
+        ? 'bg-primary-50/50 dark:bg-primary-950/10 border-primary-100/10 dark:border-primary-900/5 text-primary-650 dark:text-primary-400 font-bold shadow-[0_1px_3px_rgba(99,102,241,0.04)]'
         : isChildActive
-          ? 'bg-slate-100/50 dark:bg-slate-900/40 border-transparent text-primary-600 dark:text-primary-400 font-semibold'
-          : 'bg-transparent border-transparent hover:bg-slate-100/60 hover:text-slate-900 hover:translate-x-1 dark:hover:bg-slate-800/40 dark:hover:text-white',
+          ? 'bg-primary-50/30 dark:bg-primary-950/5 border-transparent text-primary-600 dark:text-primary-400 font-bold'
+          : 'bg-transparent border-transparent hover:bg-slate-50/80 hover:text-slate-900 hover:translate-x-0.5 dark:hover:bg-slate-900/50 dark:hover:text-white',
       restricted && 'cursor-not-allowed opacity-30'
     );
 
@@ -228,7 +237,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
                 <AppWindow className="h-4.5 w-4.5" />
               </div>
             )}
-            <span className="truncate font-black tracking-tight text-slate-950 dark:text-white">{appName}</span>
+            <span className="truncate font-black tracking-normal py-0.5 text-slate-950 dark:text-white">{appName}</span>
           </div>
           <button
             onClick={onClose}
@@ -259,7 +268,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
               </div>
             )}
             {!isCollapsed && (
-              <span className="truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-white">
+              <span className="truncate text-sm font-semibold tracking-normal py-0.5 text-slate-900 dark:text-white">
                 {appName}
               </span>
             )}
@@ -290,7 +299,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
                       )}
                     >
                       <div className="overflow-hidden">
-                        <div className="ml-6 mt-1 space-y-0.5 border-l border-[var(--zen-border)] pl-3">
+                        <div className="ml-6 mt-1.5 space-y-1.5 border-l border-dashed border-slate-200 dark:border-slate-800/80 pl-3">
                           {item.children!.map((child) => (
                             <div key={child.path}>{renderLink(child, { nested: true })}</div>
                           ))}
@@ -314,11 +323,13 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
         </nav>
 
         {/* Footer / user card */}
-        <div className="shrink-0 border-t border-[var(--zen-border)] bg-[var(--zen-bg)] p-3 transition-all duration-300">
+        <div className="shrink-0 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-black/20 p-4 transition-all duration-300">
           <div
             className={clsx(
-              'flex items-center gap-3 rounded-lg border transition-all duration-300',
-              isCollapsed ? 'justify-center border-transparent bg-transparent p-0' : 'border-[var(--zen-border)] bg-[var(--zen-surface)] p-2.5 dark:bg-zinc-950/20'
+              'flex items-center gap-3 rounded-xl border transition-all duration-300',
+              isCollapsed
+                ? 'justify-center border-transparent bg-transparent p-0'
+                : 'border-slate-150 dark:border-slate-800/60 bg-white dark:bg-zinc-900/40 p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.02)]'
             )}
           >
             <ATMAvatar
@@ -330,7 +341,7 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
 
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <p className="mb-0.5 truncate text-xs font-semibold tracking-tight text-slate-900 dark:text-white">
+                <p className="mb-0.5 truncate text-xs font-semibold tracking-normal py-0.5 text-slate-900 dark:text-white">
                   {fullName}
                 </p>
                 <div className="flex items-center gap-1.5">

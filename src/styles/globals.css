@@ -35,12 +35,12 @@
     --zen-border: #eaeaea;
     /* Borders & dividers */
 
-    /* 🎨 Primary Brand Accent Palette (Indigo/Violet Vercel theme - RGB format) */
-    --accent-50: 245 243 255;
-    --accent-100: 237 233 254;
-    --accent-200: 221 214 254;
-    --accent-300: 196 181 253;
-    --accent-400: 167 139 250;
+    /* 🎨 Primary Brand Accent Palette (Pure Indigo theme - RGB format) */
+    --accent-50: 238 242 255;
+    --accent-100: 224 231 255;
+    --accent-200: 199 210 254;
+    --accent-300: 165 180 252;
+    --accent-400: 129 140 248;
     --accent-500: 99 102 241;
     --accent-600: 79 70 229;
     /* Primary Button & Main Brand Color */
@@ -72,14 +72,18 @@
   }
 
   html {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
   }
 
   * {

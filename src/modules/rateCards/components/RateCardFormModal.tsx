@@ -406,6 +406,33 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
                     value={formik.values.servicePrices.WOR}
                     onChange={formik.handleChange}
                   />
+                  <ATMTextField
+                    name="servicePrices.CTG"
+                    label="Catering & Events"
+                    type="number"
+                    prefix={DollarPrefix}
+                    suffix={MoSuffix}
+                    value={formik.values.servicePrices.CTG}
+                    onChange={formik.handleChange}
+                  />
+                  <ATMTextField
+                    name="servicePrices.RSO"
+                    label="Table Reservation"
+                    type="number"
+                    prefix={DollarPrefix}
+                    suffix={MoSuffix}
+                    value={formik.values.servicePrices.RSO}
+                    onChange={formik.handleChange}
+                  />
+                  <ATMTextField
+                    name="servicePrices.WRV"
+                    label="Waitlist Management"
+                    type="number"
+                    prefix={DollarPrefix}
+                    suffix={MoSuffix}
+                    value={formik.values.servicePrices.WRV}
+                    onChange={formik.handleChange}
+                  />
                 </div>
               </div>
             </div>

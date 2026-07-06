@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../../app/store';
-import { useAuthStore } from '@/lib/store/authStore';
 
 export interface ModulePermission {
   module: string;
@@ -23,11 +22,15 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   permissions: ModulePermission[];
+  permissionCodes: string[]; // Seeded permission codes (strings) for compatibility
   roleVersion: number;
   isLoading: boolean;
   isInitialized: boolean;
   mfaSetupRequired: boolean;
   mustChangePassword: boolean;
+  mfaPending: boolean;
+  mfaChallengeToken: string | null;
+  tokenExpiresAt: string | null;
 }
 
 export const parseJwt = (token: string) => {
@@ -55,23 +58,29 @@ const loadSavedAuth = () => {
     const refreshToken = localStorage.getItem('refreshToken');
     const rawUser = localStorage.getItem('authUser');
     const user = rawUser ? JSON.parse(rawUser) : null;
-    if (accessToken || user) {
-      return { accessToken, refreshToken, user };
-    }
-
-    // Fallback to Zustand persisted state ('quantix-platform-auth')
+    
+    // Check if there are saved token details from old Zustand store
     const rawZustand = localStorage.getItem('quantix-platform-auth');
     if (rawZustand) {
       const parsed = JSON.parse(rawZustand);
       const zUser = parsed?.state?.user;
       const zAuth = parsed?.state?.isAuthenticated;
+      const zToken = parsed?.state?.token;
+      const zExpiresAt = parsed?.state?.tokenExpiresAt;
+      const zPermissions = parsed?.state?.permissions;
       if (zUser || zAuth) {
         return {
-          accessToken: localStorage.getItem('accessToken') || 'persisted-session-token',
+          accessToken: accessToken || zToken || 'persisted-session-token',
           refreshToken,
-          user: zUser,
+          user: user || zUser,
+          tokenExpiresAt: zExpiresAt || null,
+          permissionCodes: zPermissions || [],
         };
       }
+    }
+
+    if (accessToken || user) {
+      return { accessToken, refreshToken, user, tokenExpiresAt: null, permissionCodes: [] };
     }
   } catch (e) {
     // Ignore parse errors
@@ -87,11 +96,15 @@ const initialState: AuthState = {
   refreshToken: savedAuth?.refreshToken || null,
   isAuthenticated: !!(savedAuth?.accessToken && savedAuth?.user),
   permissions: savedAuth?.user?.permissions || [],
+  permissionCodes: (savedAuth as any)?.permissionCodes || [],
   roleVersion: savedAuth?.user?.permissionsVersion || 0,
   isLoading: false,
   isInitialized: true,
   mfaSetupRequired: false,
   mustChangePassword: false,
+  mfaPending: false,
+  mfaChallengeToken: null,
+  tokenExpiresAt: savedAuth?.tokenExpiresAt || null,
 };
 
 const authSlice = createSlice({
@@ -126,6 +139,14 @@ const authSlice = createSlice({
       state.isInitialized = true;
       state.mfaSetupRequired = finalMfaSetupRequired;
       state.mustChangePassword = finalMustChangePassword;
+      state.mfaPending = false;
+      state.mfaChallengeToken = null;
+
+      if (decoded?.exp) {
+        state.tokenExpiresAt = new Date(decoded.exp * 1000).toISOString();
+      } else {
+        state.tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      }
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('accessToken', accessToken);
@@ -159,24 +180,7 @@ const authSlice = createSlice({
         permissionsList = user?.permissions || [];
         state.roleVersion = user?.permissionsVersion || 0;
       }
-
-      // Sync to Zustand store
-      try {
-        if (user) {
-          useAuthStore.getState().setUser(user);
-        }
-        if (accessToken) {
-          const expiresAt = decoded?.exp
-            ? new Date(decoded.exp * 1000).toISOString()
-            : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-          useAuthStore.getState().setToken(accessToken, expiresAt);
-        }
-        useAuthStore.getState().setPermissions(permissionsList);
-        useAuthStore.getState().setMfaSetupRequired(finalMfaSetupRequired);
-        useAuthStore.getState().setMustChangePassword(finalMustChangePassword);
-      } catch (e) {
-        console.error('Error syncing credentials to Zustand:', e);
-      }
+      state.permissionCodes = permissionsList;
     },
 
     logout: (state) => {
@@ -185,22 +189,19 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.isAuthenticated = false;
       state.permissions = [];
+      state.permissionCodes = [];
       state.roleVersion = 0;
       state.isLoading = false;
       state.isInitialized = true;
       state.mfaSetupRequired = false;
       state.mustChangePassword = false;
+      state.mfaPending = false;
+      state.mfaChallengeToken = null;
+      state.tokenExpiresAt = null;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('authUser');
-      }
-
-      // Sync to Zustand store
-      try {
-        useAuthStore.getState().logout();
-      } catch (e) {
-        console.error('Error syncing logout to Zustand:', e);
       }
     },
 
@@ -208,20 +209,14 @@ const authSlice = createSlice({
       state.permissions = action.payload.permissions;
       state.roleVersion = action.payload.roleVersion;
 
-      // Sync to Zustand store
-      try {
-        const mapped = action.payload.permissions.flatMap((p: any) => {
-          const list = [];
-          if (p.canView) list.push(`${p.module}.view`);
-          if (p.canAdd) list.push(`${p.module}.create`, `${p.module}.add`);
-          if (p.canEdit) list.push(`${p.module}.edit`);
-          if (p.canDelete) list.push(`${p.module}.delete`);
-          return list;
-        });
-        useAuthStore.getState().setPermissions(mapped);
-      } catch (e) {
-        console.error('Error syncing permissions to Zustand:', e);
-      }
+      state.permissionCodes = action.payload.permissions.flatMap((p: any) => {
+        const list = [];
+        if (p.canView) list.push(`${p.module}.view`);
+        if (p.canAdd) list.push(`${p.module}.create`, `${p.module}.add`);
+        if (p.canEdit) list.push(`${p.module}.edit`);
+        if (p.canDelete) list.push(`${p.module}.delete`);
+        return list;
+      });
     },
 
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -238,27 +233,10 @@ const authSlice = createSlice({
         state.user.mustChangePassword = false;
       }
       state.mustChangePassword = false;
-
-      // Sync to Zustand store
-      try {
-        useAuthStore.getState().clearMustChangePassword();
-        if (state.user) {
-          useAuthStore.getState().setUser(JSON.parse(JSON.stringify(state.user)));
-        }
-      } catch (e) {
-        console.error('Error syncing password change to Zustand:', e);
-      }
     },
 
     updateUser: (state, action: PayloadAction<any>) => {
       state.user = { ...state.user, ...action.payload };
-
-      // Sync to Zustand store
-      try {
-        useAuthStore.getState().setUser(JSON.parse(JSON.stringify(state.user)));
-      } catch (e) {
-        console.error('Error syncing user update to Zustand:', e);
-      }
     },
 
     updateProfilePicture: (state, action: PayloadAction<string>) => {
@@ -266,36 +244,49 @@ const authSlice = createSlice({
         state.user.profilePictureUrl = action.payload;
         state.user.profilePicture = action.payload;  // keep both in sync so sidebar & topbar update instantly
       }
-
-      // Sync to Zustand store
-      try {
-        if (state.user) {
-          useAuthStore.getState().setUser(JSON.parse(JSON.stringify(state.user)));
-        }
-      } catch (e) {
-        console.error('Error syncing profile picture to Zustand:', e);
-      }
     },
 
     setMfaSetupRequired: (state, action: PayloadAction<boolean>) => {
       state.mfaSetupRequired = action.payload;
- 
-      // Sync to Zustand store
-      try {
-        useAuthStore.getState().setMfaSetupRequired(action.payload);
-      } catch (e) {
-        console.error('Error syncing mfa setup requirement to Zustand:', e);
-      }
     },
  
     setMustChangePassword: (state, action: PayloadAction<boolean>) => {
       state.mustChangePassword = action.payload;
- 
-      // Sync to Zustand store
-      try {
-        useAuthStore.getState().setMustChangePassword(action.payload);
-      } catch (e) {
-        console.error('Error syncing must change password flag to Zustand:', e);
+    },
+
+    setMfaPending: (state, action: PayloadAction<string>) => {
+      state.mfaPending = true;
+      state.mfaChallengeToken = action.payload;
+    },
+
+    clearMfaPending: (state) => {
+      state.mfaPending = false;
+      state.mfaChallengeToken = null;
+    },
+
+    setToken: (state, action: PayloadAction<{ token: string, expiresAt: string }>) => {
+      state.accessToken = action.payload.token;
+      state.tokenExpiresAt = action.payload.expiresAt;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', action.payload.token);
+      }
+    },
+
+    setPermissions: (state, action: PayloadAction<readonly string[]>) => {
+      state.permissionCodes = [...action.payload];
+    },
+
+    markMfaEnabled: (state) => {
+      state.mfaSetupRequired = false;
+      if (state.user) {
+        state.user.mfaEnabled = true;
+      }
+    },
+
+    clearMustChangePassword: (state) => {
+      state.mustChangePassword = false;
+      if (state.user) {
+        state.user.mustChangePassword = false;
       }
     },
   },
@@ -312,6 +303,12 @@ export const {
   updateProfilePicture,
   setMfaSetupRequired,
   setMustChangePassword,
+  setMfaPending,
+  clearMfaPending,
+  setToken,
+  setPermissions,
+  markMfaEnabled,
+  clearMustChangePassword,
 } = authSlice.actions;
 
 export const selectCurrentUser = (state: RootState) => state.auth.user;
@@ -322,6 +319,10 @@ export const selectRoleVersion = (state: RootState) => state.auth.roleVersion;
 export const selectIsInitialized = (state: RootState) => state.auth.isInitialized;
 export const selectMfaSetupRequired = (state: RootState) => state.auth.mfaSetupRequired;
 export const selectMustChangePassword = (state: RootState) => state.auth.mustChangePassword;
+export const selectMfaPending = (state: RootState) => state.auth.mfaPending;
+export const selectMfaChallengeToken = (state: RootState) => state.auth.mfaChallengeToken;
+export const selectTokenExpiresAt = (state: RootState) => state.auth.tokenExpiresAt;
+export const selectPermissionCodes = (state: RootState) => state.auth.permissionCodes;
 export const selectIsAdmin = (state: RootState) => {
   const role = state.auth.user?.roleName?.toLowerCase() || state.auth.user?.role?.toLowerCase();
   return role === 'admin' || role === 'superadmin' || role === 'administrator' || role === 'opsmanager';
@@ -329,4 +330,3 @@ export const selectIsAdmin = (state: RootState) => {
 export const selectIsLoading = (state: RootState) => state.auth.isLoading;
 
 export default authSlice.reducer;
-

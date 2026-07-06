@@ -1,43 +1,45 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { MerchantType, BusinessType } from '@/lib/types';
+import { useSelector, useDispatch } from 'react-redux';
+import { store } from '@/app/store';
+import * as actions from './filterSlice';
+import type { MerchantTypeFilter, BusinessTypeFilter } from './filterSlice';
 
-type MerchantTypeFilter = 'All' | MerchantType;
-type BusinessTypeFilter = 'All' | BusinessType;
+export function useFilterStore<T = any>(selector?: (state: any) => T): T {
+  const dispatch = useDispatch();
+  const filters = useSelector((state: any) => state.filters);
 
-interface FilterState {
-  merchantTypeFilter: MerchantTypeFilter;
-  businessTypeFilter: BusinessTypeFilter;
+  const combined = {
+    merchantTypeFilter: filters.merchantTypeFilter,
+    businessTypeFilter: filters.businessTypeFilter,
+    setMerchantType: (type: MerchantTypeFilter) => dispatch(actions.setMerchantType(type)),
+    setBusinessType: (type: BusinessTypeFilter) => dispatch(actions.setBusinessType(type)),
+    resetFilters: () => dispatch(actions.resetFilters()),
+  };
 
-  setMerchantType: (type: MerchantTypeFilter) => void;
-  setBusinessType: (type: BusinessTypeFilter) => void;
-  resetFilters: () => void;
+  if (selector) {
+    return selector(combined);
+  }
+  return combined as any;
 }
 
-const INITIAL_STATE: Pick<FilterState, 'merchantTypeFilter' | 'businessTypeFilter'> = {
-  merchantTypeFilter: 'All',
-  businessTypeFilter: 'All',
+// Support vanilla JS calls (e.g. useFilterStore.getState().merchantTypeFilter)
+useFilterStore.getState = () => {
+  const filters = store.getState().filters;
+  return {
+    merchantTypeFilter: filters.merchantTypeFilter,
+    businessTypeFilter: filters.businessTypeFilter,
+    setMerchantType: (type: MerchantTypeFilter) => store.dispatch(actions.setMerchantType(type)),
+    setBusinessType: (type: BusinessTypeFilter) => store.dispatch(actions.setBusinessType(type)),
+    resetFilters: () => store.dispatch(actions.resetFilters()),
+  };
 };
 
-export const useFilterStore = create<FilterState>()(
-  persist(
-    (set) => ({
-      ...INITIAL_STATE,
-
-      setMerchantType: (type: MerchantTypeFilter) => {
-        set({ merchantTypeFilter: type });
-      },
-
-      setBusinessType: (type: BusinessTypeFilter) => {
-        set({ businessTypeFilter: type });
-      },
-
-      resetFilters: () => {
-        set(INITIAL_STATE);
-      },
-    }),
-    {
-      name: 'quantix-platform-filters',
-    },
-  ),
-);
+useFilterStore.setState = (update: any) => {
+  if (typeof update === 'function') {
+    const nextState = update(useFilterStore.getState());
+    if (nextState.merchantTypeFilter !== undefined) store.dispatch(actions.setMerchantType(nextState.merchantTypeFilter));
+    if (nextState.businessTypeFilter !== undefined) store.dispatch(actions.setBusinessType(nextState.businessTypeFilter));
+  } else {
+    if (update.merchantTypeFilter !== undefined) store.dispatch(actions.setMerchantType(update.merchantTypeFilter));
+    if (update.businessTypeFilter !== undefined) store.dispatch(actions.setBusinessType(update.businessTypeFilter));
+  }
+};

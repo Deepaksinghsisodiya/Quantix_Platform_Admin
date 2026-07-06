@@ -1,9 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-// ---------------------------------------------------------------------------
-// FRS-SAP-108: Configurable Dashboard Widgets
-// ---------------------------------------------------------------------------
+import { useSelector, useDispatch } from 'react-redux';
+import { store } from '@/app/store';
+import * as actions from './dashboardWidgetSlice';
 
 export type DashboardViewPreset = 'Default' | 'Enterprise Focus' | 'Standalone Focus' | 'Revenue' | 'Support';
 
@@ -14,103 +11,38 @@ export interface WidgetConfig {
   readonly order: number;
 }
 
-interface DashboardWidgetState {
-  activePreset: DashboardViewPreset;
-  widgets: WidgetConfig[];
+export function useDashboardWidgetStore<T = any>(selector?: (state: any) => T): T {
+  const dispatch = useDispatch();
+  const dbWidgets = useSelector((state: any) => state.dashboardWidgets);
 
-  setPreset: (preset: DashboardViewPreset) => void;
-  toggleWidget: (widgetId: string) => void;
-  reorderWidget: (widgetId: string, newOrder: number) => void;
-  resetToDefault: () => void;
+  const combined = {
+    activePreset: dbWidgets.activePreset,
+    widgets: dbWidgets.widgets,
+    setPreset: (preset: DashboardViewPreset) => dispatch(actions.setPreset(preset)),
+    toggleWidget: (widgetId: string) => dispatch(actions.toggleWidget(widgetId)),
+    reorderWidget: (widgetId: string, newOrder: number) => dispatch(actions.reorderWidget({ widgetId, newOrder })),
+    resetToDefault: () => dispatch(actions.resetToDefault()),
+  };
+
+  if (selector) {
+    return selector(combined);
+  }
+  return combined as any;
 }
 
-// All possible dashboard widgets
-const ALL_WIDGETS: WidgetConfig[] = [
-  { id: 'kpi-cards', label: 'KPI Cards', visible: true, order: 0 },
-  { id: 'revenue-chart', label: 'Revenue Trend', visible: true, order: 1 },
-  { id: 'growth-chart', label: 'Merchant Growth', visible: true, order: 2 },
-  { id: 'source-attribution', label: 'Source Attribution', visible: true, order: 3 },
-  { id: 'active-users', label: 'Active Users & Usage', visible: true, order: 4 },
-  { id: 'merchant-heatmap', label: 'Merchant Health Heatmap', visible: true, order: 5 },
-  { id: 'token-metrics', label: 'Token Metrics', visible: true, order: 6 },
-  { id: 'commission-overview', label: 'Commission Overview', visible: true, order: 7 },
-  { id: 'quick-actions', label: 'Quick Actions', visible: true, order: 8 },
-  { id: 'system-health', label: 'System Health', visible: true, order: 9 },
-  { id: 'revenue-breakdown', label: 'Revenue Breakdown', visible: true, order: 10 },
-  { id: 'cohort-retention', label: 'Cohort Retention', visible: true, order: 11 },
-];
-
-const PRESET_CONFIGS: Record<DashboardViewPreset, string[]> = {
-  Default: ALL_WIDGETS.map((w) => w.id),
-  'Enterprise Focus': [
-    'kpi-cards', 'revenue-chart', 'growth-chart', 'active-users',
-    'merchant-heatmap', 'commission-overview', 'revenue-breakdown', 'system-health',
-  ],
-  'Standalone Focus': [
-    'kpi-cards', 'token-metrics', 'growth-chart', 'merchant-heatmap',
-    'quick-actions', 'system-health',
-  ],
-  Revenue: [
-    'kpi-cards', 'revenue-chart', 'revenue-breakdown', 'commission-overview',
-    'token-metrics', 'cohort-retention',
-  ],
-  Support: [
-    'kpi-cards', 'merchant-heatmap', 'active-users', 'quick-actions', 'system-health',
-  ],
+// Support vanilla JS calls (e.g. useDashboardWidgetStore.getState().widgets)
+useDashboardWidgetStore.getState = () => {
+  const dbWidgets = store.getState().dashboardWidgets;
+  return {
+    activePreset: dbWidgets.activePreset,
+    widgets: dbWidgets.widgets,
+    setPreset: (preset: DashboardViewPreset) => store.dispatch(actions.setPreset(preset)),
+    toggleWidget: (widgetId: string) => store.dispatch(actions.toggleWidget(widgetId)),
+    reorderWidget: (widgetId: string, newOrder: number) => store.dispatch(actions.reorderWidget({ widgetId, newOrder })),
+    resetToDefault: () => store.dispatch(actions.resetToDefault()),
+  };
 };
 
-function applyPreset(preset: DashboardViewPreset): WidgetConfig[] {
-  const visibleIds = new Set(PRESET_CONFIGS[preset]);
-  return ALL_WIDGETS.map((w) => ({
-    ...w,
-    visible: visibleIds.has(w.id),
-  }));
-}
-
-export const useDashboardWidgetStore = create<DashboardWidgetState>()(
-  persist(
-    (set) => ({
-      activePreset: 'Default',
-      widgets: [...ALL_WIDGETS],
-
-      setPreset: (preset) => {
-        set({
-          activePreset: preset,
-          widgets: applyPreset(preset),
-        });
-      },
-
-      toggleWidget: (widgetId) => {
-        set((state) => ({
-          activePreset: 'Default' as DashboardViewPreset,
-          widgets: state.widgets.map((w) =>
-            w.id === widgetId ? { ...w, visible: !w.visible } : w,
-          ),
-        }));
-      },
-
-      reorderWidget: (widgetId, newOrder) => {
-        set((state) => {
-          const widgets = [...state.widgets];
-          const idx = widgets.findIndex((w) => w.id === widgetId);
-          if (idx === -1) return state;
-          const [item] = widgets.splice(idx, 1);
-          widgets.splice(newOrder, 0, item!);
-          return {
-            widgets: widgets.map((w, i) => ({ ...w, order: i })),
-          };
-        });
-      },
-
-      resetToDefault: () => {
-        set({
-          activePreset: 'Default',
-          widgets: [...ALL_WIDGETS],
-        });
-      },
-    }),
-    {
-      name: 'quantix-dashboard-widgets',
-    },
-  ),
-);
+useDashboardWidgetStore.setState = (update: any) => {
+  // Not used in components, but implemented for completeness
+};

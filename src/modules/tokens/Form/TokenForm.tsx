@@ -1,19 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod';
+import { useFormik } from 'formik';
+import * as yup from 'yup';
 import { cn } from '@/lib/utils/cn';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
-import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { TokenTemplateSelector, TIER_TEMPLATES } from './TokenTemplateSelector';
 import type { TierTemplate } from './TokenTemplateSelector';
 import { GRACE_PHASES } from '@/lib/utils/constants';
 import { useMerchants } from '@/lib/hooks/useMerchants';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import type { TokenTier, TokenGenerateRequest } from '@/lib/types';
-import { CreditCard, Landmark, Wallet, CheckCircle2, Utensils, ShoppingBag, Store } from 'lucide-react';
+import { CreditCard, Landmark, Wallet, Utensils, ShoppingBag, Store } from 'lucide-react';
 
 export type PaymentMethod = 'online' | 'manual' | 'prepaid';
 
@@ -29,32 +28,27 @@ const BUSINESS_TYPES = [
   { id: 'Both', label: 'Restaurant + Retail', description: 'All-in-one features for hybrid retail-dining businesses', icon: Store },
 ];
 
-
-const tokenFormSchema = z.object({
-  merchantId: z.string().min(1, 'Merchant is required'),
-  businessNature: z.enum(['Restaurant', 'Retail', 'Both'] as const, {
-    message: 'Please select a business type',
-  }),
-  tier: z.enum(['Basic', 'Standard', 'Advance', 'Premium'] as const, {
-    message: 'Please select a tier',
-  }),
-  validityDays: z.number().int().min(1, 'Validity is required').max(365),
-  maxLocations: z.number().int().min(1).max(999),
-  maxTerminals: z.number().int().min(1).max(999),
-  maxUsers: z.number().int().min(1).max(999),
-  maxProducts: z.number().int().min(1).max(999999),
-  graceWarningDays: z.number().int().min(0).max(90),
-  graceDegradedDays: z.number().int().min(0).max(90),
-  graceRestrictedDays: z.number().int().min(0).max(90),
-  graceSuspendedDays: z.number().int().min(0).max(90),
-  businessId: z.string().min(1, 'Business ID is required'),
-  locationId: z.string().optional(),
-  terminalId: z.string().optional(),
-  wildcardBinding: z.boolean(),
-  billingMode: z.enum(['invoice_now', 'next_bill'] as const),
+const tokenFormSchema = yup.object().shape({
+  merchantId: yup.string().required('Merchant is required'),
+  businessNature: yup.mixed().oneOf(['Restaurant', 'Retail', 'Both'] as const).required('Please select a business type'),
+  tier: yup.mixed().oneOf(['Basic', 'Standard', 'Advance', 'Premium'] as const).required('Please select a tier'),
+  validityDays: yup.number().integer().required('Validity is required').min(1).max(365),
+  maxLocations: yup.number().integer().required().min(1).max(999),
+  maxTerminals: yup.number().integer().required().min(1).max(999),
+  maxUsers: yup.number().integer().required().min(1).max(999),
+  maxProducts: yup.number().integer().required().min(1).max(999999),
+  graceWarningDays: yup.number().integer().required().min(0).max(90),
+  graceDegradedDays: yup.number().integer().required().min(0).max(90),
+  graceRestrictedDays: yup.number().integer().required().min(0).max(90),
+  graceSuspendedDays: yup.number().integer().required().min(0).max(90),
+  businessId: yup.string().required('Business ID is required'),
+  locationId: yup.string().optional(),
+  terminalId: yup.string().optional(),
+  wildcardBinding: yup.boolean().required(),
+  billingMode: yup.mixed().oneOf(['invoice_now', 'next_bill'] as const).required(),
 });
 
-export type TokenFormValues = z.infer<typeof tokenFormSchema>;
+export type TokenFormValues = yup.InferType<typeof tokenFormSchema>;
 
 export interface TokenFormProps {
   onSubmit: (request: TokenGenerateRequest) => void;
@@ -94,93 +88,11 @@ export function TokenForm({
 }: TokenFormProps) {
   const [selectedTier, setSelectedTier] = useState<TokenTier | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<TokenFormValues>({
-    defaultValues: {
-      merchantId: '',
-      businessNature: 'Restaurant' as const,
-      tier: undefined as unknown as TokenTier,
-      validityDays: 90,
-      maxLocations: 1,
-      maxTerminals: 2,
-      maxUsers: 5,
-      maxProducts: 500,
-      graceWarningDays: 7,
-      graceDegradedDays: 14,
-      graceRestrictedDays: 21,
-      graceSuspendedDays: 30,
-      businessId: '',
-      locationId: '',
-      terminalId: '',
-      wildcardBinding: false,
-      billingMode: 'invoice_now',
-    },
-  });
-
-  const tier = watch('tier');
-  const validityDays = watch('validityDays');
-  const wildcardBinding = watch('wildcardBinding');
-
-  const { data: merchantsResponse, isLoading: merchantsLoading } = useMerchants({
-    pageSize: 200,
-  });
-
-  const merchantOptions = useMemo(() => {
-    const merchants = merchantsResponse?.data ?? [];
-    return merchants.map((t: any) => ({
-      label: `${t.businessName || t.companyName || 'Unnamed Merchant'} (${t.merchantType || 'Merchant'})`,
-      value: t.id || t.merchantId,
-    }));
-  }, [merchantsResponse]);
-
-  const unitPrice = useMemo(() => {
-    if (!tier) return 0;
-    const base = TIER_BASE_PRICE[tier] ?? 0;
-    const multiplier = VALIDITY_MULTIPLIER[validityDays] ?? 1;
-    return Math.round(base * multiplier * 100) / 100;
-  }, [tier, validityDays]);
-
-  const handleTierSelect = (t: TokenTier, template: TierTemplate) => {
-    setSelectedTier(t);
-    setValue('tier', t, { shouldValidate: true });
-    setValue('maxLocations', template.limits.maxLocations);
-    setValue('maxTerminals', template.limits.maxTerminals);
-    setValue('maxUsers', template.limits.maxUsers);
-    setValue('maxProducts', template.limits.maxProducts);
-  };
-
-  useEffect(() => {
-    if (prefillMerchantId) {
-      setValue('merchantId', prefillMerchantId, { shouldValidate: true });
-      setValue('businessId', prefillMerchantId);
-    }
-    if (prefillTier) {
-      const tier = prefillTier as TokenTier;
-      const template = TIER_TEMPLATES.find((t) => t.tier === tier);
-      if (template) {
-        handleTierSelect(tier, template);
-      }
-    }
-  }, [prefillMerchantId, prefillTier, setValue]);
-
-  const merchantId = watch('merchantId');
-  useEffect(() => {
-    if (merchantId) {
-      setValue('businessId', merchantId);
-    }
-  }, [merchantId, setValue]);
-
   const handleFormSubmit = (values: TokenFormValues) => {
     const request: TokenGenerateRequest = {
       merchantId: values.merchantId,
-      tier: values.tier,
-      businessNature: values.businessNature,
+      tier: values.tier as TokenTier,
+      businessNature: values.businessNature as 'Restaurant' | 'Retail' | 'Both',
       validityDays: values.validityDays,
       binding: {
         merchantId: values.merchantId,
@@ -207,9 +119,86 @@ export function TokenForm({
     onSubmit(request);
   };
 
+  const formik = useFormik<TokenFormValues>({
+    initialValues: {
+      merchantId: '',
+      businessNature: 'Restaurant',
+      tier: undefined as unknown as TokenTier,
+      validityDays: 90,
+      maxLocations: 1,
+      maxTerminals: 2,
+      maxUsers: 5,
+      maxProducts: 500,
+      graceWarningDays: 7,
+      graceDegradedDays: 14,
+      graceRestrictedDays: 21,
+      graceSuspendedDays: 30,
+      businessId: '',
+      locationId: '',
+      terminalId: '',
+      wildcardBinding: false,
+      billingMode: 'invoice_now',
+    },
+    validationSchema: tokenFormSchema,
+    onSubmit: handleFormSubmit,
+  });
+
+  const tier = formik.values.tier;
+  const validityDays = formik.values.validityDays;
+  const wildcardBinding = formik.values.wildcardBinding;
+
+  const { data: merchantsResponse, isLoading: merchantsLoading } = useMerchants({
+    pageSize: 200,
+  });
+
+  const merchantOptions = useMemo(() => {
+    const merchants = merchantsResponse?.data ?? [];
+    return merchants.map((t: any) => ({
+      label: `${t.businessName || t.companyName || 'Unnamed Merchant'} (${t.merchantType || 'Merchant'})`,
+      value: t.id || t.merchantId,
+    }));
+  }, [merchantsResponse]);
+
+  const unitPrice = useMemo(() => {
+    if (!tier) return 0;
+    const base = TIER_BASE_PRICE[tier as TokenTier] ?? 0;
+    const multiplier = VALIDITY_MULTIPLIER[validityDays] ?? 1;
+    return Math.round(base * multiplier * 100) / 100;
+  }, [tier, validityDays]);
+
+  const handleTierSelect = (t: TokenTier, template: TierTemplate) => {
+    setSelectedTier(t);
+    formik.setFieldValue('tier', t);
+    formik.setFieldValue('maxLocations', template.limits.maxLocations);
+    formik.setFieldValue('maxTerminals', template.limits.maxTerminals);
+    formik.setFieldValue('maxUsers', template.limits.maxUsers);
+    formik.setFieldValue('maxProducts', template.limits.maxProducts);
+  };
+
+  useEffect(() => {
+    if (prefillMerchantId) {
+      formik.setFieldValue('merchantId', prefillMerchantId);
+      formik.setFieldValue('businessId', prefillMerchantId);
+    }
+    if (prefillTier) {
+      const tier = prefillTier as TokenTier;
+      const template = TIER_TEMPLATES.find((t) => t.tier === tier);
+      if (template) {
+        handleTierSelect(tier, template);
+      }
+    }
+  }, [prefillMerchantId, prefillTier]);
+
+  const merchantId = formik.values.merchantId;
+  useEffect(() => {
+    if (merchantId) {
+      formik.setFieldValue('businessId', merchantId);
+    }
+  }, [merchantId]);
+
   return (
     <form
-      onSubmit={handleSubmit(handleFormSubmit)}
+      onSubmit={formik.handleSubmit}
       className={cn('space-y-6', className)}
     >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.75fr_0.9fr] items-start">
@@ -217,27 +206,20 @@ export function TokenForm({
         <div className="space-y-6 lg:col-span-1">
           {/* Merchant Selector */}
           <ATMCard title="Merchant" padding="md" className="overflow-visible shadow-sm border border-gray-100 dark:border-gray-800">
-            <Controller
+            <ATMSelectField
               name="merchantId"
-              control={control}
-              rules={{ required: 'Merchant is required' }}
-              render={({ field, fieldState: { error } }) => (
-                <ATMSelectField
-                  name="merchantId"
-                  label="Select Standalone Merchant"
-                  placeholder={merchantsLoading ? 'Loading merchants...' : 'Choose a merchant'}
-                  options={merchantOptions}
-                  error={error?.message}
-                  disabled={merchantsLoading}
-                  value={field.value || null}
-                  onChange={(val) => {
-                    field.onChange(val);
-                  }}
-                  searchable
-                  clearable
-                  size="lg"
-                />
-              )}
+              label="Select Standalone Merchant"
+              placeholder={merchantsLoading ? 'Loading merchants...' : 'Choose a merchant'}
+              options={merchantOptions}
+              error={formik.errors.merchantId as string}
+              disabled={merchantsLoading}
+              value={formik.values.merchantId || null}
+              onChange={(val) => {
+                formik.setFieldValue('merchantId', val);
+              }}
+              searchable
+              clearable
+              size="lg"
             />
           </ATMCard>
 
@@ -293,16 +275,15 @@ export function TokenForm({
             </div>
           </ATMCard>
 
-
           {/* Tier Selection */}
           <ATMCard title="Tier Selection" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
             <TokenTemplateSelector
               selectedTier={selectedTier}
               onSelect={handleTierSelect}
             />
-            {errors.tier && (
+            {formik.errors.tier && (
               <p className="mt-2 text-xs font-bold text-red-600 dark:text-red-400" role="alert">
-                {errors.tier.message}
+                {formik.errors.tier as string}
               </p>
             )}
           </ATMCard>
@@ -311,21 +292,15 @@ export function TokenForm({
           <ATMCard title="Validity Period" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
             <div className="flex flex-wrap gap-3">
               {VALIDITY_DAYS_OPTIONS.map((days) => (
-                <Controller
+                <ATMButton
                   key={days}
-                  name="validityDays"
-                  control={control}
-                  render={({ field }) => (
-                    <ATMButton
-                      type="button"
-                      variant={field.value === days ? 'primary' : 'outline'}
-                      onClick={() => field.onChange(days)}
-                      className="hover:scale-[1.02] active:scale-[0.98] transition-transform duration-150 font-bold"
-                    >
-                      {days} days
-                    </ATMButton>
-                  )}
-                />
+                  type="button"
+                  variant={validityDays === days ? 'primary' : 'outline'}
+                  onClick={() => formik.setFieldValue('validityDays', days)}
+                  className="hover:scale-[1.02] active:scale-[0.98] transition-transform duration-150 font-bold"
+                >
+                  {days} days
+                </ATMButton>
               ))}
             </div>
           </ATMCard>
@@ -338,32 +313,40 @@ export function TokenForm({
                 type="number"
                 min={1}
                 max={999}
-                error={errors.maxLocations?.message}
-                {...register('maxLocations', { valueAsNumber: true })}
+                name="maxLocations"
+                value={formik.values.maxLocations}
+                onChange={(e) => formik.setFieldValue('maxLocations', parseInt(e.target.value) || 0)}
+                error={formik.errors.maxLocations}
               />
               <ATMTextField
                 label="Max Terminals"
                 type="number"
                 min={1}
                 max={999}
-                error={errors.maxTerminals?.message}
-                {...register('maxTerminals', { valueAsNumber: true })}
+                name="maxTerminals"
+                value={formik.values.maxTerminals}
+                onChange={(e) => formik.setFieldValue('maxTerminals', parseInt(e.target.value) || 0)}
+                error={formik.errors.maxTerminals}
               />
               <ATMTextField
                 label="Max Users"
                 type="number"
                 min={1}
                 max={999}
-                error={errors.maxUsers?.message}
-                {...register('maxUsers', { valueAsNumber: true })}
+                name="maxUsers"
+                value={formik.values.maxUsers}
+                onChange={(e) => formik.setFieldValue('maxUsers', parseInt(e.target.value) || 0)}
+                error={formik.errors.maxUsers}
               />
               <ATMTextField
                 label="Max Products"
                 type="number"
                 min={1}
                 max={999999}
-                error={errors.maxProducts?.message}
-                {...register('maxProducts', { valueAsNumber: true })}
+                name="maxProducts"
+                value={formik.values.maxProducts}
+                onChange={(e) => formik.setFieldValue('maxProducts', parseInt(e.target.value) || 0)}
+                error={formik.errors.maxProducts}
               />
             </div>
           </ATMCard>
@@ -389,7 +372,10 @@ export function TokenForm({
                     type="number"
                     min={0}
                     max={90}
-                    {...register(fieldName, { valueAsNumber: true })}
+                    name={fieldName}
+                    value={formik.values[fieldName] as number}
+                    onChange={(e) => formik.setFieldValue(fieldName, parseInt(e.target.value) || 0)}
+                    error={formik.errors[fieldName] as string}
                   />
                 );
               })}
@@ -413,45 +399,39 @@ export function TokenForm({
                 </div>
                 {tier ? (
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {tier} tier, {validityDays} days validity
+                    {String(tier)} tier, {validityDays} days validity
                   </p>
                 ) : (
                   <p className="text-xs font-semibold text-gray-400">Select a tier to calculate price</p>
                 )}
               </div>
 
-              <Controller
-                name="billingMode"
-                control={control}
-                render={({ field }) => (
-                  <div className="flex w-full rounded-xl border border-gray-250 bg-zen-surface overflow-hidden dark:border-gray-800">
-                    <button
-                      type="button"
-                      onClick={() => field.onChange('invoice_now')}
-                      className={cn(
-                        'flex-1 py-2 text-xs font-bold transition-all duration-300',
-                        field.value === 'invoice_now'
-                          ? 'bg-accent-600 text-white dark:bg-accent-600 shadow-sm'
-                          : 'text-gray-750 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800',
-                      )}
-                    >
-                      Invoice Now
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => field.onChange('next_bill')}
-                      className={cn(
-                        'flex-1 py-2 text-xs font-bold transition-all duration-300',
-                        field.value === 'next_bill'
-                          ? 'bg-accent-600 text-white dark:bg-accent-600 shadow-sm'
-                          : 'text-gray-750 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800',
-                      )}
-                    >
-                      Next Bill
-                    </button>
-                  </div>
-                )}
-              />
+              <div className="flex w-full rounded-xl border border-gray-250 bg-zen-surface overflow-hidden dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => formik.setFieldValue('billingMode', 'invoice_now')}
+                  className={cn(
+                    'flex-1 py-2 text-xs font-bold transition-all duration-300',
+                    formik.values.billingMode === 'invoice_now'
+                      ? 'bg-accent-600 text-white dark:bg-accent-600 shadow-sm'
+                      : 'text-gray-750 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800',
+                  )}
+                >
+                  Invoice Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => formik.setFieldValue('billingMode', 'next_bill')}
+                  className={cn(
+                    'flex-1 py-2 text-xs font-bold transition-all duration-300',
+                    formik.values.billingMode === 'next_bill'
+                      ? 'bg-accent-600 text-white dark:bg-accent-600 shadow-sm'
+                      : 'text-gray-750 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800',
+                  )}
+                >
+                  Next Bill
+                </button>
+              </div>
 
               <ATMButton
                 type="submit"
@@ -471,57 +451,51 @@ export function TokenForm({
             <p className="mb-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
               Determines POS features included in token.
             </p>
-            <Controller
-              name="businessNature"
-              control={control}
-              render={({ field }) => (
-                <div className="flex flex-col gap-4">
-                  {BUSINESS_TYPES.map((bt) => {
-                    const selected = field.value === bt.id;
-                    const IconComponent = bt.icon;
-                    return (
-                      <button
-                        key={bt.id}
-                        type="button"
-                        onClick={() => field.onChange(bt.id)}
-                        className={cn(
-                          'relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all duration-300 w-full hover:scale-[1.01] active:scale-[0.99]',
-                          'focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-600/10',
-                          selected
-                            ? 'border-accent-600 bg-accent-50/30 shadow-md dark:border-accent-500 dark:bg-accent-950/20'
-                            : 'border-surface-200 bg-zen-surface hover:border-accent-300 dark:border-surface-800 dark:hover:border-accent-800',
-                        )}
-                      >
-                        {selected && (
-                          <div className="absolute -top-3 right-4 flex items-center gap-1 bg-white dark:bg-gray-900 border border-accent-600 dark:border-accent-500 rounded-full px-2.5 py-0.5 shadow-sm animate-in zoom-in duration-300">
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-accent-600 dark:text-accent-400">
-                              Selected
-                            </span>
-                            <span className="flex h-3 w-3 items-center justify-center rounded-full bg-accent-600 text-white dark:bg-accent-500">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" className="h-1.5 w-1.5">
-                                <path d="M20 6L9 17L4 12" />
-                              </svg>
-                            </span>
-                          </div>
-                        )}
-                        <div className={cn(
-                          'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300',
-                          selected
-                            ? 'bg-accent-100 text-accent-600 dark:bg-accent-900/40 dark:text-accent-400'
-                            : 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-400',
-                        )}>
-                          <IconComponent className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-extrabold text-xs text-surface-900 dark:text-surface-100">{bt.label}</p>
-                          <p className="mt-0.5 text-[10px] font-semibold text-surface-500 dark:text-surface-400 leading-normal">{bt.description}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            />
+            <div className="flex flex-col gap-4">
+              {BUSINESS_TYPES.map((bt) => {
+                const selected = formik.values.businessNature === bt.id;
+                const IconComponent = bt.icon;
+                return (
+                  <button
+                    key={bt.id}
+                    type="button"
+                    onClick={() => formik.setFieldValue('businessNature', bt.id)}
+                    className={cn(
+                      'relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all duration-300 w-full hover:scale-[1.01] active:scale-[0.99]',
+                      'focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-600/10',
+                      selected
+                        ? 'border-accent-600 bg-accent-50/30 shadow-md dark:border-accent-500 dark:bg-accent-950/20'
+                        : 'border-surface-200 bg-zen-surface hover:border-accent-300 dark:border-surface-800 dark:hover:border-accent-800',
+                    )}
+                  >
+                    {selected && (
+                      <div className="absolute -top-3 right-4 flex items-center gap-1 bg-white dark:bg-gray-900 border border-accent-600 dark:border-accent-500 rounded-full px-2.5 py-0.5 shadow-sm animate-in zoom-in duration-300">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-accent-600 dark:text-accent-400">
+                          Selected
+                        </span>
+                        <span className="flex h-3 w-3 items-center justify-center rounded-full bg-accent-600 text-white dark:bg-accent-500">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" className="h-1.5 w-1.5">
+                            <path d="M20 6L9 17L4 12" />
+                          </svg>
+                        </span>
+                      </div>
+                    )}
+                    <div className={cn(
+                      'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300',
+                      selected
+                        ? 'bg-accent-100 text-accent-600 dark:bg-accent-900/40 dark:text-accent-400'
+                        : 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-400',
+                    )}>
+                      <IconComponent className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold text-xs text-surface-900 dark:text-surface-100">{bt.label}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-surface-500 dark:text-surface-400 leading-normal">{bt.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </ATMCard>
 
           {/* Binding */}
@@ -536,8 +510,10 @@ export function TokenForm({
               />
               <ATMTextField
                 label="Business ID"
-                error={errors.businessId?.message}
-                {...register('businessId')}
+                name="businessId"
+                value={formik.values.businessId}
+                onChange={formik.handleChange}
+                error={formik.errors.businessId}
               />
 
               <div className="flex items-center gap-3 py-1">
@@ -545,7 +521,9 @@ export function TokenForm({
                   <input
                     type="checkbox"
                     className="h-4.5 w-4.5 rounded-lg border-gray-200 text-accent-600 focus:ring-accent-500/10 dark:border-gray-800 dark:bg-gray-905"
-                    {...register('wildcardBinding')}
+                    name="wildcardBinding"
+                    checked={formik.values.wildcardBinding}
+                    onChange={formik.handleChange}
                   />
                   <span>Wildcard binding (any location/terminal)</span>
                 </label>
@@ -556,12 +534,18 @@ export function TokenForm({
                   <ATMTextField
                     label="Location ID"
                     placeholder="Leave blank for wildcard"
-                    {...register('locationId')}
+                    name="locationId"
+                    value={formik.values.locationId || ''}
+                    onChange={formik.handleChange}
+                    error={formik.errors.locationId}
                   />
                   <ATMTextField
                     label="Terminal ID"
                     placeholder="Leave blank for wildcard"
-                    {...register('terminalId')}
+                    name="terminalId"
+                    value={formik.values.terminalId || ''}
+                    onChange={formik.handleChange}
+                    error={formik.errors.terminalId}
                   />
                 </div>
               )}

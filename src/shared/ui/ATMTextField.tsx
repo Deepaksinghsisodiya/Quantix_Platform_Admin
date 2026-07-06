@@ -26,6 +26,7 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
       className,
       required,
       size = 'lg',
+      disabled,
       ...rest
     },
     ref
@@ -56,12 +57,13 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
         <div
           className={clsx(
-            'relative flex items-center w-full transition-all duration-200 border group shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)] border-[var(--zen-border)] bg-[var(--zen-surface)] dark:bg-zinc-950/50',
+            'relative flex items-center w-full transition-all duration-200 border group shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)]',
             containerSizeClasses[size],
-            error
-              ? 'border-red-500 bg-red-50/10'
-              : 'hover:border-slate-400 dark:hover:border-slate-600 focus-within:border-primary-500 focus-within:bg-white dark:focus-within:border-primary-400 dark:focus-within:bg-zinc-950/70',
-            'focus-within:ring-4 focus-within:ring-primary-500/10 dark:focus-within:ring-primary-400/10'
+            disabled
+              ? 'border-[var(--zen-border)] bg-gray-50/50 dark:bg-zinc-950/10 opacity-60 cursor-not-allowed'
+              : error
+                ? 'border-red-500 bg-red-50/10'
+                : 'hover:border-slate-400 dark:hover:border-slate-600 focus-within:border-primary-500 focus-within:bg-white dark:focus-within:border-primary-400 dark:focus-within:bg-zinc-950/70 focus-within:ring-4 focus-within:ring-primary-500/10 dark:focus-within:ring-primary-400/10 border-[var(--zen-border)] bg-[var(--zen-surface)] dark:bg-zinc-950/50'
           )}
         >
           {effectivePrefix && (
@@ -72,10 +74,13 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
           <input
             ref={ref}
+            disabled={disabled}
             {...rest}
             className={clsx(
               'flex-1 w-full bg-transparent font-medium outline-none transition-all',
-              'text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600',
+              disabled
+                ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600',
               inputSizeClasses[size],
               effectivePrefix && 'pl-2'
             )}

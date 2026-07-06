@@ -299,7 +299,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         </div>
 
         {/* Background Billing Summary Box */}
-        <div className="p-3.5 rounded-lg border border-[var(--zen-border)] bg-slate-50/10 dark:bg-zinc-950/15">
+        {/* <div className="p-3.5 rounded-lg border border-[var(--zen-border)] bg-slate-50/10 dark:bg-zinc-950/15">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Cycle Calculation Sync (Background API)</p>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25">
@@ -315,7 +315,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
               <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5 inline-block">${formik.values.yearlyPrice} /yr</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ATMTextField

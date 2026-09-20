@@ -30,7 +30,6 @@ export interface PlatformUser {
   readonly name: string;
   readonly email: string;
   readonly role: PlatformRole;
-  readonly department: string;
   readonly status: UserStatus;
   readonly lastLogin: string | null;
   readonly mfaEnabled: boolean;
@@ -63,7 +62,6 @@ export interface CreateUserDto {
   readonly lastName?: string | null;
   readonly displayName?: string | null;
   readonly roleId: string;
-  readonly department?: string | null;
   readonly merchantId?: string | null;
 }
 
@@ -75,6 +73,5 @@ export interface UpdateUserDto {
   readonly displayName?: string | null;
   readonly roleId: string;
   readonly isActive?: boolean;
-  readonly department?: string | null;
   readonly ipAllowlist?: string | null;
 }

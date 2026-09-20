@@ -1,27 +1,45 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useGetDashboardSummaryQuery, useGetMerchantGrowthQuery } from '../services/dashboardApi';
-import { useGetSignupQueueQuery } from '@/modules/merchants/services/merchantApi';
+import { useGetSignupQueueQuery, useGetDeboardingQueueQuery } from '@/modules/merchants/services/merchantApi';
+import { useGetTicketsQuery } from '@/modules/helpdesk/services/helpdeskApi';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import OperationsManagerDashboard from './OperationsManagerDashboard';
 
 export const OperationsManagerDashboardWrapper: React.FC = () => {
   const summaryQuery = useGetDashboardSummaryQuery(undefined);
-  const growthQuery = useGetMerchantGrowthQuery({
-    fromDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    toDate: new Date().toISOString(),
-  });
-  
+  // 2026-09-04: the 30-day window is fixed for the life of the desk. It used to be rebuilt
+  // with a fresh millisecond timestamp on every render, which RTK Query saw as a brand-new
+  // query each time — an endless refetch loop (never noticed because the role dispatch
+  // never actually rendered this desk).
+  const growthWindow = useMemo(
+    () => ({
+      fromDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      toDate: new Date().toISOString(),
+    }),
+    [],
+  );
+  const growthQuery = useGetMerchantGrowthQuery(growthWindow);
   const queueQuery = useGetSignupQueueQuery({ page: 1, pageSize: 100 });
+  // 2026-09-04: the deboarding card said "Pending Terminations: Action Required" with no
+  // number behind it. It now counts the real queue.
+  const deboardingQuery = useGetDeboardingQueueQuery({ page: 1, pageSize: 100 });
+  // 2026-09-04 (user directive): escalated tickets are handed to the Operations Managers —
+  // the count comes from the queue's own escalated filter (open escalations only).
+  const escalatedQuery = useGetTicketsQuery({ escalated: true, page: 1, pageSize: 1 });
 
-  const isInitialLoading = summaryQuery.isLoading || growthQuery.isLoading || queueQuery.isLoading;
-  const isError = summaryQuery.isError || growthQuery.isError || queueQuery.isError;
+  const isInitialLoading =
+    summaryQuery.isLoading || growthQuery.isLoading || queueQuery.isLoading || deboardingQuery.isLoading || escalatedQuery.isLoading;
+  const isError =
+    summaryQuery.isError || growthQuery.isError || queueQuery.isError || deboardingQuery.isError || escalatedQuery.isError;
 
   const handleRetry = useCallback(() => {
     void summaryQuery.refetch();
     void growthQuery.refetch();
     void queueQuery.refetch();
-  }, [summaryQuery, growthQuery, queueQuery]);
+    void deboardingQuery.refetch();
+    void escalatedQuery.refetch();
+  }, [summaryQuery, growthQuery, queueQuery, deboardingQuery, escalatedQuery]);
 
   if (isInitialLoading) {
     return (
@@ -71,13 +89,18 @@ export const OperationsManagerDashboardWrapper: React.FC = () => {
     );
   }
 
+  const deboardingRows = deboardingQuery.data?.data;
+
   return (
     <OperationsManagerDashboard
       summary={summaryQuery.data?.data}
       growth={growthQuery.data?.data}
       queue={(queueQuery.data?.data as any) ?? []}
-      isFetching={summaryQuery.isFetching || growthQuery.isFetching || queueQuery.isFetching}
-      refetch={handleRetry}
+      deboardingCount={Array.isArray(deboardingRows) ? deboardingRows.length : 0}
+      escalatedTickets={escalatedQuery.data?.totalCount ?? 0}
+      isFetching={
+        summaryQuery.isFetching || growthQuery.isFetching || queueQuery.isFetching || deboardingQuery.isFetching || escalatedQuery.isFetching
+      }
     />
   );
 };

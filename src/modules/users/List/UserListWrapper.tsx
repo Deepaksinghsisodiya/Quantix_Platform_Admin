@@ -34,7 +34,6 @@ export const UserListWrapper: React.FC = () => {
     sortDescending: false,
     role: 'all',
     status: 'all',
-    department: 'all',
   });
 
   // Intercept and translate query parameters for the backend API
@@ -74,7 +73,6 @@ export const UserListWrapper: React.FC = () => {
   const onResetFilters = () => {
     onFilterChange('role', 'all');
     onFilterChange('status', 'all');
-    onFilterChange('department', 'all');
     onSearchChange('');
   };
 
@@ -99,7 +97,6 @@ export const UserListWrapper: React.FC = () => {
     return {
       role: params.role || 'all',
       status: params.status || 'all',
-      department: params.department || 'all',
     };
   }, [params]);
 

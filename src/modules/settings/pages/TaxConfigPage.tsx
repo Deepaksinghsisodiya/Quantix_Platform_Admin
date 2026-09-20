@@ -322,146 +322,139 @@ function GroupsTab() {
   );
 }
 
+/**
+ * 2026-08-08 (user-locked tax model): the Platform sells exactly THREE taxable natures —
+ * Daily Subscription, Commission, Token Purchase. This tab maps each nature to a tax group.
+ * Every nature inherits the seeded All-sales default (Standard Tax Group) until a specific
+ * group is chosen; picking the default group again reverts the nature to inherited.
+ * Merchant-specific tax (exemption certificates) is a FUTURE concept — the backend keeps
+ * merchant/plan targeting for it, but this screen deliberately does not expose it.
+ */
+const SALE_NATURES: ReadonlyArray<{ scope: 'Subscription' | 'Commission' | 'LicenseTokenSale' | 'ServiceTokenRecharge'; label: string; hint: string }> = [
+  { scope: 'Subscription', label: 'Daily Subscription', hint: 'Daily plan charge billed to Enterprise merchants (taxed on the periodic invoice under the Settlement tax point)' },
+  { scope: 'Commission', label: 'Commission', hint: 'Commission on Enterprise merchant billing revenue (taxed on the periodic invoice under the Settlement tax point)' },
+  { scope: 'LicenseTokenSale', label: 'License Token Sale', hint: 'Outright license token sales to Standalone merchants — always taxed at purchase' },
+  { scope: 'ServiceTokenRecharge', label: 'Service Token Recharge', hint: 'Enterprise wallet recharges — taxed only when the Enterprise tax point (Billing Cycle screen) is set to Recharge' },
+];
+
 function AssociationsTab() {
   const { data: assocData, isLoading } = useGetTaxAssociationsQuery();
   const { data: groupsData } = useGetTaxGroupsQuery();
-  const [createAssoc, { isLoading: isCreating }] = useCreateTaxAssociationMutation();
+  const [createAssoc] = useCreateTaxAssociationMutation();
   const [deleteAssoc] = useDeleteTaxAssociationMutation();
 
-  const [form, setForm] = useState<CreateTaxAssociationInput>({
-    taxGroupId: '', scope: 'Both', effectiveFromDate: new Date().toISOString().slice(0, 10),
-  });
-  const [target, setTarget] = useState<'default' | 'plan' | 'merchant'>('default');
-  const [targetId, setTargetId] = useState('');
-
-  const handleCreate = async () => {
-    try {
-      await createAssoc({
-        ...form,
-        planId: target === 'plan' ? targetId : null,
-        merchantId: target === 'merchant' ? targetId : null,
-      }).unwrap();
-      toast.success('Association created');
-    } catch (e: any) {
-      toast.error(e?.data?.message || e?.message || 'Create failed');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteAssoc(id).unwrap();
-      toast.success('Association deleted');
-    } catch (e: any) {
-      toast.error(e?.data?.message || e?.message || 'Delete failed');
-    }
-  };
-
   const groups = groupsData?.data ?? [];
-  const assocs = assocData?.data ?? [];
+  // Deployment-level rows only — merchant/plan targeting is reserved for the future
+  // tax-exemption concept and never shown here.
+  const defaults = (assocData?.data ?? []).filter((a: PlatformTaxAssociation) => !a.planId && !a.merchantId);
+  const allAssoc = defaults.find((a: PlatformTaxAssociation) => a.scope === 'All');
+  const exactFor = (scope: string) => defaults.find((a: PlatformTaxAssociation) => a.scope === scope);
+  const effectiveGroupId = (scope: string) => exactFor(scope)?.taxGroupId ?? allAssoc?.taxGroupId ?? '';
+
+  const [pending, setPending] = useState<Record<string, string>>({});
+  const [savingScope, setSavingScope] = useState<string | null>(null);
+
+  const groupName = (id: string) => groups.find((g: PlatformTaxGroup) => g.taxGroupId === id)?.groupName ?? '—';
+
+  const handleSave = async (scope: 'Subscription' | 'Commission' | 'LicenseTokenSale' | 'ServiceTokenRecharge', label: string) => {
+    const selected = pending[scope];
+    if (!selected || selected === effectiveGroupId(scope)) return;
+    setSavingScope(scope);
+    try {
+      const exact = exactFor(scope);
+      if (exact) await deleteAssoc(exact.associationId).unwrap();
+      if (selected !== allAssoc?.taxGroupId) {
+        await createAssoc({
+          taxGroupId: selected,
+          scope,
+          planId: null,
+          merchantId: null,
+          effectiveFromDate: new Date().toISOString().slice(0, 10),
+        }).unwrap();
+        toast.success(`${label} now uses "${groupName(selected)}".`);
+      } else {
+        toast.success(`${label} reverted to the all-sales default ("${groupName(selected)}").`);
+      }
+      setPending((p) => { const { [scope]: _drop, ...rest } = p; return rest; });
+    } catch (e: any) {
+      toast.error(e?.data?.message || e?.message || `Failed to update tax for ${label}.`);
+    } finally {
+      setSavingScope(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 pt-2">
+        <ATMSkeleton className="h-16 w-full" />
+        <ATMSkeleton className="h-16 w-full" />
+        <ATMSkeleton className="h-16 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <ATMCard title="New Association" className="glass-card">
-        <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-4">
-          Priority: Merchant override → Plan → Default. Leave PlanId + MerchantId blank for default.
-        </p>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-2">
-          <ATMSelectField
-            name="taxGroupId"
-            label="Tax Group"
-            value={form.taxGroupId}
-            onChange={(val) => setForm({ ...form, taxGroupId: val ? String(val) : '' })}
-            options={[{ label: '— ATMSelect group —', value: '' }, ...groups.map((g: PlatformTaxGroup) => ({ label: g.groupName, value: g.taxGroupId }))]}
-          />
-          <ATMSelectField
-            name="scope"
-            label="Scope"
-            value={form.scope}
-            onChange={(val) => setForm({ ...form, scope: (val ? String(val) : 'Both') as CreateTaxAssociationInput['scope'] })}
-            options={[
-              { label: 'Both', value: 'Both' },
-              { label: 'Commission', value: 'Commission' },
-              { label: 'Subscription', value: 'Subscription' },
-            ]}
-          />
-          <ATMSelectField
-            name="target"
-            label="Target Scope"
-            value={target}
-            onChange={(val) => { setTarget((val ? String(val) : 'default') as typeof target); setTargetId(''); }}
-            options={[
-              { label: 'Default (all merchants)', value: 'default' },
-              { label: 'Plan', value: 'plan' },
-              { label: 'Merchant', value: 'merchant' },
-            ]}
-          />
-          {target !== 'default' && (
-            <ATMTextField
-              name="targetId"
-              label={`${target === 'plan' ? 'Plan' : 'Merchant'} ID`}
-              placeholder={`${target === 'plan' ? 'Plan' : 'Merchant'} ID`}
-              value={targetId}
-              onChange={(e) => setTargetId(e.target.value)}
-            />
-          )}
-          <div className="flex items-end lg:col-start-4">
-            <ATMButton
-              variant="primary"
-              size="md"
-              icon={Plus}
-              className="w-full"
-              disabled={isCreating || !form.taxGroupId}
-              onClick={handleCreate}
-            >
-              Add Association
-            </ATMButton>
-          </div>
+      {/* Inherited default */}
+      <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+        <div className="text-sm text-blue-800 dark:text-blue-300 font-semibold">
+          <p className="font-black">
+            All-sales default: {allAssoc ? groupName(allAssoc.taxGroupId) : 'not configured'}
+          </p>
+          <p className="mt-0.5 font-medium">
+            Every sale nature below inherits this group unless you point it at a specific one.
+            Selecting the default group again reverts a nature to inherited.
+          </p>
+        </div>
+      </div>
+
+      <ATMCard title="Tax group per sale nature" className="glass-card">
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          {SALE_NATURES.map(({ scope, label, hint }) => {
+            const exact = exactFor(scope);
+            const effective = effectiveGroupId(scope);
+            const selected = pending[scope] ?? effective;
+            const dirty = selected !== effective;
+            return (
+              <div key={scope} className="flex flex-col sm:flex-row sm:items-center gap-3 py-4 first:pt-2 last:pb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-gray-900 dark:text-white">{label}</span>
+                    <ATMBadge
+                      size="sm"
+                      color={exact ? 'primary' : 'default'}
+                      label={exact ? 'Specific' : 'Inherits default'}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{hint}</p>
+                </div>
+                <div className="w-full sm:w-64">
+                  <ATMSelectField
+                    name={`assoc-${scope}`}
+                    label=""
+                    value={selected}
+                    onChange={(val) => setPending((p) => ({ ...p, [scope]: val ? String(val) : '' }))}
+                    options={groups.map((g: PlatformTaxGroup) => ({ label: g.groupName, value: g.taxGroupId }))}
+                  />
+                </div>
+                <ATMButton
+                  variant="primary"
+                  size="sm"
+                  disabled={!dirty || savingScope === scope}
+                  isLoading={savingScope === scope}
+                  onClick={() => handleSave(scope, label)}
+                >
+                  Apply
+                </ATMButton>
+              </div>
+            );
+          })}
         </div>
       </ATMCard>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          <ATMSkeleton className="h-10 w-full" />
-          <ATMSkeleton className="h-10 w-full" />
-        </div>
-      ) : (
-        <ATMCard padding="none" className="glass-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-250 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-800/30 text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  <th className="px-4 py-3.5">Group</th>
-                  <th className="px-4 py-3.5">Scope</th>
-                  <th className="px-4 py-3.5">Target</th>
-                  <th className="px-4 py-3.5">Effective</th>
-                  <th className="px-4 py-3.5 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-semibold">
-                {assocs.map((a: PlatformTaxAssociation) => (
-                  <tr key={a.associationId} className="transition-colors hover:bg-gray-55/40 dark:hover:bg-gray-800/10">
-                    <td className="px-4 py-3 text-gray-900 dark:text-white font-bold">{a.taxGroupName}</td>
-                    <td className="px-4 py-3">
-                      <ATMBadge color="primary" size="sm" label={a.scope} />
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-650 dark:text-gray-300">
-                      {a.merchantId ? `Merchant: ${a.merchantName ?? a.merchantId.slice(0, 8)}` : a.planId ? `Plan: ${a.planName ?? a.planId.slice(0, 8)}` : 'Default'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-550 dark:text-gray-400">
-                      {new Date(a.effectiveFromDate).toLocaleDateString()} – {a.effectiveToDate ? new Date(a.effectiveToDate).toLocaleDateString() : '∞'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <ATMButton variant="ghost" size="sm" onClick={() => handleDelete(a.associationId)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </ATMButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ATMCard>
-      )}
+      <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold px-1">
+        Merchant-specific tax exemptions (with certificate upload) are planned for a future release.
+      </p>
     </div>
   );
 }
@@ -470,9 +463,10 @@ export function TaxConfigPage() {
   return (
     <div className="flex flex-col gap-6 animate-page-enter">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Platform Tax</h1>
+        {/* 2026-08-08: page titles match the sidebar label (user rule — applies everywhere). */}
+        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Tax Settings</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-          Define taxes, group them, and associate them with plans / merchants. Drives invoicing of commission and subscription charges.
+          Define taxes, group them, and map each sale nature — daily subscription, commission, token purchase — to a tax group.
         </p>
       </div>
 

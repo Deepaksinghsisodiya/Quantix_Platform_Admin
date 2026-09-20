@@ -1,27 +1,43 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { DollarSign, FileText, Wallet, ArrowRight, CreditCard, Clock } from 'lucide-react';
+import type { BillingDashboard } from '@/modules/billing/services/billingApi';
+import type { CommissionDashboardDto } from '@/lib/api/dashboard';
+import { DollarSign, FileText, Wallet, ArrowRight, CreditCard, Clock, AlertTriangle, Percent, Hourglass } from 'lucide-react';
 
 interface FinanceManagerDashboardProps {
-  summary: any;
-  revenue: any;
-  commission: any;
+  billing: BillingDashboard | undefined;
+  commission: CommissionDashboardDto | undefined;
+  /** Enterprise wallets, from the paged envelope's total; undefined while unknown. */
+  walletCount: number | undefined;
   isFetching: boolean;
-  refetch: () => void;
 }
 
+/** "+12.5% vs last month" or, with no prior-month baseline, an honest "no prior month". */
+function changeNote(percent: number | null | undefined, fallback: string): string {
+  if (percent === null || percent === undefined) return fallback;
+  const sign = percent > 0 ? '+' : '';
+  return `${sign}${percent.toFixed(1)}% vs last month`;
+}
+
+/**
+ * 2026-09-04: every tile is now a real figure in the deployment currency. The previous
+ * version showed "Pending Invoices —", counted active merchants as "Active Wallets", and
+ * fell back to a hardcoded 'USD'.
+ */
 export const FinanceManagerDashboard: React.FC<FinanceManagerDashboardProps> = ({
-  summary,
-  revenue,
+  billing,
   commission,
+  walletCount,
   isFetching,
-  refetch,
 }) => {
-  const currency = summary?.revenueCurrency || 'USD';
+  // Every amount on this desk is in the platform's single deployment currency, which the
+  // billing dashboard carries; nothing is rendered as money until it is known.
+  const currency = billing?.currencyCode;
+  const money = (amount: number | undefined) =>
+    amount === undefined || !currency ? '—' : formatCurrency(amount, currency);
 
   return (
     <div className="space-y-6 w-full">
@@ -40,32 +56,56 @@ export const FinanceManagerDashboard: React.FC<FinanceManagerDashboardProps> = (
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ATMStatsCard
-          label="MRR (30 days)"
-          value={revenue?.mrr ? formatCurrency(revenue.mrr, currency) : '—'}
+          label="Invoiced This Month"
+          value={money(billing?.totalInvoiced)}
+          icon={FileText}
+          variant="indigo"
+          description={changeNote(billing?.totalInvoicedChangePercent, 'No prior month to compare')}
+        />
+        <ATMStatsCard
+          label="Collected This Month"
+          value={money(billing?.collected)}
           icon={DollarSign}
           variant="emerald"
-          description="Monthly recurring revenue"
+          description={changeNote(billing?.collectedChangePercent, 'No prior month to compare')}
         />
         <ATMStatsCard
-          label="Commission Collected"
-          value={commission?.totalCollected ? formatCurrency(commission.totalCollected, currency) : '—'}
-          icon={CreditCard}
-          variant="indigo"
-          description="Total commission volume"
+          label="Outstanding"
+          value={money(billing?.outstanding)}
+          icon={Hourglass}
+          variant="amber"
+          description={`${(billing?.outstandingCount ?? 0).toLocaleString()} invoices awaiting payment`}
         />
         <ATMStatsCard
-          label="Active Wallets"
-          value={(summary?.activeMerchants ?? 0).toLocaleString()}
-          icon={Wallet}
+          label="Overdue"
+          value={money(billing?.overdue)}
+          icon={AlertTriangle}
+          variant="rose"
+          description={`${(billing?.overdueCount ?? 0).toLocaleString()} invoices past due`}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <ATMStatsCard
+          label="Commission This Month"
+          value={money(commission?.totalEarnedThisMonth)}
+          icon={Percent}
           variant="accent"
-          description="Enterprise merchant wallets"
+          description={`${money(commission?.totalEarned)} earned to date`}
         />
         <ATMStatsCard
-          label="Pending Invoices"
-          value="—"
-          icon={FileText}
+          label="Pending Settlement"
+          value={money(commission?.pendingSettlement)}
+          icon={CreditCard}
           variant="slate"
-          description="Requires verification"
+          description="Collected commission not yet settled"
+        />
+        <ATMStatsCard
+          label="Merchant Wallets"
+          value={walletCount === undefined ? '—' : walletCount.toLocaleString()}
+          icon={Wallet}
+          variant="purple"
+          description="Enterprise token wallets"
         />
       </div>
 

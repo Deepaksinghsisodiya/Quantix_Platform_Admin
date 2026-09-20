@@ -11,7 +11,7 @@
  * now mirrors the server response shapes 1:1.
  */
 
-import { get, post, put } from './client';
+import { get, post } from './client';
 import type { ApiResponse } from '@/lib/types/common';
 
 // ---------------------------------------------------------------------------
@@ -187,11 +187,21 @@ export interface TokenMetricsDashboardDto {
 // are surfaced here; the full DTO is consumed by the Commission detail page.)
 // ---------------------------------------------------------------------------
 
+/**
+ * 2026-08-30: realigned to the server's CommissionDashboardDto. Three of the six field
+ * names here never existed on the wire — `totalEarnedCurrentMonth` (server:
+ * totalEarnedThisMonth), `topMerchants` (server: byMerchant) and `currencyCode` (not on
+ * this DTO at all) — so the Commission panel silently rendered $0.00 and "No commission
+ * earned yet" while the server had real figures, and `rateDistribution[].bucket`
+ * (server: rateBucket) resolved to undefined, which is what produced React's
+ * "unique key" warning on the whole Dashboard.
+ */
 export interface CommissionDashboardDto {
-  readonly totalEarnedCurrentMonth: number;
+  readonly totalEarnedThisMonth: number;
+  readonly totalEarned: number;
+  readonly pendingCommission: number;
   readonly pendingSettlement: number;
-  readonly currencyCode: string;
-  readonly topMerchants: readonly CommissionByMerchantDto[];
+  readonly byMerchant: readonly CommissionByMerchantDto[];
   readonly trend: readonly CommissionTrendDto[];
   readonly rateDistribution: readonly RateDistributionDto[];
 }
@@ -199,45 +209,33 @@ export interface CommissionDashboardDto {
 export interface CommissionByMerchantDto {
   readonly merchantId: string;
   readonly companyName: string;
-  readonly amount: number;
+  /** 2026-08-30: was `amount` — the wire field is totalCommission. */
+  readonly totalCommission: number;
   readonly transactionCount: number;
 }
 
+/** 2026-08-30: the wire carries a period range + amount + volume, not month/amount. */
 export interface CommissionTrendDto {
-  readonly month: string;
-  readonly amount: number;
+  readonly periodStart: string;
+  readonly periodEnd: string;
+  readonly commissionAmount: number;
+  readonly transactionCount: number;
 }
 
 export interface RateDistributionDto {
-  readonly bucket: string;
+  /** 2026-08-30: was `bucket` — the wire field is rateBucket. */
+  readonly rateBucket: string;
   readonly merchantCount: number;
+  readonly totalCommission: number;
 }
 
 // ---------------------------------------------------------------------------
-// FRS-SAP-108: Configurable Dashboard Widgets (server-side stubs; layout
-// persistence currently returns 501 — Zustand-persist localStorage is the
-// transient store. Full server persistence is deferred to a follow-up pass.)
+// FRS-SAP-108: Configurable Dashboard Widgets — 2026-09-04: the DashboardWidget /
+// DashboardLayout / DashboardWidgetPosition mirrors and the widgets/layouts fetchers
+// are REMOVED. They described server stubs (empty arrays and a 501) that nothing called.
+// The real per-user layout lives in modules/dashboard/services/dashboardApi.ts
+// (GET/PUT /api/v1/dashboard/layout) and is synced by lib/store/useDashboardLayoutSync.
 // ---------------------------------------------------------------------------
-
-export interface DashboardWidget {
-  readonly id: string;
-  readonly type: 'chart' | 'stat' | 'table' | 'list';
-  readonly title: string;
-  readonly data: Record<string, unknown>;
-  readonly config: Record<string, unknown>;
-}
-
-export interface DashboardLayout {
-  readonly id: string;
-  readonly name: string;
-  readonly widgets: readonly DashboardWidgetPosition[];
-}
-
-export interface DashboardWidgetPosition {
-  readonly widgetId: string;
-  readonly visible: boolean;
-  readonly order: number;
-}
 
 // ---------------------------------------------------------------------------
 // Endpoints (paths verified against
@@ -315,20 +313,4 @@ export function getTokenMetrics(): Promise<ApiResponse<TokenMetricsDashboardDto>
 export function getCommissionSummary(): Promise<ApiResponse<CommissionDashboardDto>> {
   // 2026-05-06 fix: was hitting `/commission` which 404s; correct path is `/commission-summary`.
   return get<ApiResponse<CommissionDashboardDto>>('/api/v1/dashboard/commission-summary');
-}
-
-export function getDashboardWidgets(): Promise<ApiResponse<readonly DashboardWidget[]>> {
-  return get<ApiResponse<readonly DashboardWidget[]>>('/api/v1/dashboard/widgets');
-}
-
-export function getDashboardLayouts(): Promise<ApiResponse<readonly DashboardLayout[]>> {
-  return get<ApiResponse<readonly DashboardLayout[]>>('/api/v1/dashboard/layouts');
-}
-
-export function saveDashboardLayout(
-  layout: DashboardLayout,
-): Promise<ApiResponse<DashboardLayout>> {
-  // Server currently returns 501 — see DashboardController.SaveLayout.
-  // The hook that consumes this should treat 501 as "fall back to local persistence".
-  return put<ApiResponse<DashboardLayout>>(`/api/v1/dashboard/layouts/${layout.id}`, layout);
 }

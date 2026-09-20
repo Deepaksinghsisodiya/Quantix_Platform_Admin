@@ -37,12 +37,7 @@ export interface StandaloneTokenEntry {
   totalSpent: number;
 }
 
-export const MOCK_STANDALONE_TOKENS: StandaloneTokenEntry[] = [
-  { merchantName: 'Metro Mart',    activeTokenId: 'tok-a1b2', tier: 'Standard', validFrom: '2026-01-15', validTo: '2026-04-15', daysRemaining: 15,  status: 'Active',  totalPurchased: 12, totalSpent: 1440 },
-  { merchantName: 'Pixel Shop',    activeTokenId: 'tok-c3d4', tier: 'Advance',  validFrom: '2026-02-01', validTo: '2026-07-30', daysRemaining: 121, status: 'Active',  totalPurchased: 8,  totalSpent: 1920 },
-  { merchantName: 'QuickServe',    activeTokenId: 'tok-e5f6', tier: 'Basic',    validFrom: '2026-03-10', validTo: '2026-06-08', daysRemaining: 69,  status: 'Active',  totalPurchased: 15, totalSpent: 1350 },
-  { merchantName: 'Game Haven',    activeTokenId: null,        tier: 'Standard', validFrom: '2025-10-01', validTo: '2025-12-30', daysRemaining: null, status: 'Expired', totalPurchased: 4,  totalSpent: 480 },
-];
+// 2026-08-13: MOCK_STANDALONE_TOKENS removed with the fictional Standalone Tokens tab.
 
 const dialogValidationSchema = Yup.object().shape({
   amount: Yup.number().positive('Amount must be positive').required('Amount is required'),
@@ -79,7 +74,7 @@ export const WalletListWrapper: React.FC = () => {
   const onlineMutation = useRechargeOnline();
   const offlineMutation = useRechargeOffline();
 
-  const [activeTab, setActiveTab] = useState<'enterprise' | 'recharges' | 'standalone'>('enterprise');
+  const [activeTab, setActiveTab] = useState<'enterprise' | 'recharges'>('enterprise');
   const [dialog, setDialog] = useState<ActionDialogState | null>(null);
 
   const { user, permissions } = useAuthStore();

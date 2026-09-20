@@ -80,7 +80,7 @@ export interface RechargeOnline {
   readonly merchantId: string;
   readonly tokenAmount: number;
   readonly currencyAmount: number;
-  readonly currencyCode?: string;
+  // 2026-09-05: `currencyCode` REMOVED — the API resolves the deployment currency itself.
   /** Gateway-issued tokenised payment method (we never see the PAN). */
   readonly paymentToken: string;
   readonly description?: string;
@@ -90,7 +90,7 @@ export interface RechargeOffline {
   readonly merchantId: string;
   readonly tokenAmount: number;
   readonly currencyAmount?: number;
-  readonly currencyCode?: string;
+  // 2026-09-05: `currencyCode` REMOVED — the API resolves the deployment currency itself.
   /** "Cash" | "Wire" | "Check" | etc. */
   readonly channelLabel: string;
   readonly evidenceNote?: string;

@@ -13,42 +13,24 @@ const DEFAULT_RATE_CARD: RateCard = {
   baseWeeklyPrice: 7.00,
   baseMonthlyPrice: 29.00,
   baseYearlyPrice: 290.00,
-  modulePrices: {
-    INV: 10,
-    FIN: 10,
-    HRM: 10,
-    MKT: 10,
-    ANL: 10,
-    WTM: 10,
+  // 2026-08-08 (user-approved split): fully-loaded total ≈ $22.50/day.
+  // Philosophy: walk-in basics free (DIN/CTR/INS, cash); premium modules are the
+  // money-makers; infra-heavy limits cost more per unit. MBR = hard cap, never billed.
+  modulePrices: {                                    // subtotal 6.00
+    INV: 1.25, FIN: 1.25, HRM: 1.0, MKT: 1.0, ANL: 1.0, WTM: 0.5,
   },
-  paymentPrices: {
-    CSH: 0,
-    CRD: 0,
-    EXT: 0,
-    GFT: 3,
-    STC: 3,
-    WLT: 3,
-    CSL: 3,
+  paymentPrices: {                                   // subtotal 3.50 (cash free)
+    CSH: 0, CRD: 0.75, GFT: 0.5, STC: 0.5, WLT: 0.5, EXT: 0.25, CSL: 1.0,
   },
-  servicePrices: {
-    DIN: 0,
-    CTR: 0,
-    PUP: 5,
-    DLV: 5,
-    CTG: 5,
-    SNP: 5,
-    RSO: 5,
-    WOR: 5,
-    WRV: 5,
+  servicePrices: {                                   // subtotal 5.00 (walk-in basics free)
+    DIN: 0, CTR: 0, INS: 0,
+    PUP: 0.5, DLV: 0.75, CTG: 0.75, SNP: 0.5, RSO: 1.0, SHP: 0.75, WRV: 0.75,
   },
-  limitPrices: {
-    MBU: 20,
-    MLO: 15,
-    MTM: 5,
-    MPR: 1, // per 100 products above 500
-    MPG: 1, // per 5 product groups above 15
-    MGB: 2, // per GB above 2
-    OTH: 2, // per other limits
+  limitPrices: {                                     // subtotal 8.00 at 1 unit each
+    MBU: 1.0, MLO: 1.0, MTM: 0.75, MPR: 0.25,        // MPR is per block of 100
+    MDP: 0.25, MKD: 0.5, MDS: 0.5, MIS: 0.5, MPW: 0.5,
+    MGB: 0.25, MPG: 0.5, MRS: 0.5, MAC: 0.5, MWR: 0.5, MWE: 0.5,
+    MBR: 0, // hard cap — not billed
   },
 };
 
@@ -56,15 +38,55 @@ const initialState: RateCardsState = {
   rateCards: [DEFAULT_RATE_CARD],
 };
 
-// Check if rate cards are in localStorage to persist between reloads
+// 2026-07-19: schema-version-aware localStorage loader. When the persisted shape predates the
+// 16-code limitPrices expansion (or lacks any of the new codes), we backfill every missing
+// key from the DEFAULT_RATE_CARD so consumers never see `undefined` at rateCard.limitPrices.MDP.
+// v3 (2026-08-08): user-approved pricing split (~$22.50/day fully loaded) — on upgrade,
+// the SEEDED default card is refreshed to the new rates; admin-created cards are preserved.
+const CURRENT_SCHEMA_VERSION = 3;
+const SCHEMA_KEY = 'quantix_rate_cards_schema';
+
+const migrateCard = (card: any): RateCard => ({
+  ...card,
+  limitPrices: {
+    ...DEFAULT_RATE_CARD.limitPrices,
+    ...(card.limitPrices ?? {}),
+  },
+  // 2026-07-25: WOR → SHP swap + INS (Retail In-Store) added. Preserve any explicit price
+  // the admin set for WOR by moving it to SHP; otherwise fall back to the seeded default.
+  // INS is backfilled from the seeded default if missing.
+  servicePrices: (() => {
+    const { WOR, ...rest } = (card.servicePrices ?? {}) as any;
+    return {
+      ...DEFAULT_RATE_CARD.servicePrices,
+      ...rest,
+      SHP: rest.SHP ?? WOR ?? DEFAULT_RATE_CARD.servicePrices.SHP,
+      INS: rest.INS ?? DEFAULT_RATE_CARD.servicePrices.INS,
+    };
+  })(),
+});
+
 const getPersistedState = (): RateCardsState => {
   try {
     const saved = localStorage.getItem('quantix_rate_cards');
     if (saved) {
-      return { rateCards: JSON.parse(saved) };
+      const storedVersion = Number(localStorage.getItem(SCHEMA_KEY) ?? '0');
+      const parsedCards = JSON.parse(saved) as any[];
+      let migrated = parsedCards.map(migrateCard);
+      // Strip the retired OTH field if present on old cards.
+      migrated.forEach((c) => { if (c.limitPrices && 'OTH' in c.limitPrices) delete c.limitPrices.OTH; });
+      // v3: refresh the SEEDED default card to the approved pricing split; leave any
+      // admin-created cards untouched.
+      if (storedVersion < 3) {
+        migrated = migrated.map((c) =>
+          c.id === 'default-rate-card' ? { ...DEFAULT_RATE_CARD, isDefault: c.isDefault } : c);
+      }
+      localStorage.setItem(SCHEMA_KEY, String(CURRENT_SCHEMA_VERSION));
+      localStorage.setItem('quantix_rate_cards', JSON.stringify(migrated));
+      return { rateCards: migrated };
     }
   } catch (e) {
-    // Fallback
+    // Fall through to default
   }
   return initialState;
 };

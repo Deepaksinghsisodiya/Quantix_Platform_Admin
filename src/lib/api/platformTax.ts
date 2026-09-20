@@ -126,6 +126,6 @@ export function deleteTaxAssociation(id: string): Promise<ApiResponse<{ deleted:
 
 // ── Resolution preview ─────────────────────────────────────────────────────
 
-export function resolveTaxesForMerchant(merchantId: string, scope: PlatformTaxScope = 'Both'): Promise<ApiResponse<ResolvedTaxes>> {
+export function resolveTaxesForMerchant(merchantId: string, scope: PlatformTaxScope = 'All'): Promise<ApiResponse<ResolvedTaxes>> {
   return get<ApiResponse<ResolvedTaxes>>(`/api/v1/tax/resolve/merchant/${merchantId}`, { scope });
 }

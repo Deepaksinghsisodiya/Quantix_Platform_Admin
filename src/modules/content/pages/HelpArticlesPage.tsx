@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState } from 'react';
 import { ATMBadge, ATMButton } from '@/shared/ui';
 import { Plus, BookOpen, Eye, ThumbsUp, ThumbsDown, Pencil, AlertTriangle, Loader2 } from 'lucide-react';
@@ -13,16 +14,19 @@ type ArticleStatus = 'Published' | 'Draft' | 'Review';
 
 interface HelpArticleRow {
   id: string;
+  slug: string;
   title: string;
   category: string;
   status: ArticleStatus;
   lastUpdated: string;
-  views: number;
+  // 2026-09-05 (Phase 2): `views` removed. It was hardcoded 0 for every article because no view
+  // count exists on the server, so the eye icon reported a number nobody measures.
   helpful: number;
   notHelpful: number;
 }
 
-const CATEGORIES = ['Getting Started', 'Billing', 'Technical', 'FAQ'];
+// 2026-09-05 (Phase 2): the hardcoded four are gone. Categories are derived from the articles
+// themselves, so an article filed under anything else is no longer invisible and unreachable.
 
 const STATUS_VARIANT: Record<ArticleStatus, 'success' | 'default' | 'warning'> = {
   Published: 'success',
@@ -41,22 +45,25 @@ function mapStatus(status: string): ArticleStatus {
 /* -------------------------------------------------------------------------- */
 
 function HelpArticlesPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('Getting Started');
+  const navigate = useNavigate();
+  // 2026-09-05: no default category. It used to open on "Getting Started" and filter to an exact
+  // match, so on a deployment without that exact category the page looked empty.
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const articlesQuery = useHelpArticles({ page: 1, pageSize: 100 });
 
   const articles = useMemo<HelpArticleRow[]>(() => {
-    const rawItems = articlesQuery.data?.data?.items ?? articlesQuery.data?.data;
-    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(articlesQuery.data) ? (articlesQuery.data as any[]) : [];
+    const items = articlesQuery.data?.data ?? [];
     return items.map((a: any) => ({
-      id: a.id,
+      id: a.articleId ?? a.id,
+      slug: a.slug ?? '',
       title: a.title,
-      category: a.category,
+      category: a.categoryName ?? a.category ?? '',
       status: mapStatus(a.status),
-      lastUpdated: a.updatedAt.slice(0, 10),
-      views: 0,
-      helpful: a.helpfulCount,
-      notHelpful: a.notHelpfulCount,
+      // Was `a.updatedAt.slice(0,10)`, which threw outright when the API omitted the field.
+      lastUpdated: a.updatedAt ? String(a.updatedAt).slice(0, 10) : '--',
+      helpful: a.helpfulCount ?? 0,
+      notHelpful: a.notHelpfulCount ?? 0,
     }));
   }, [articlesQuery.data]);
 
@@ -64,8 +71,14 @@ function HelpArticlesPage() {
   const isError = articlesQuery.isError;
 
   const filteredArticles = useMemo(
-    () => articles.filter((a) => a.category === selectedCategory),
+    () => (selectedCategory ? articles.filter((a) => a.category === selectedCategory) : articles),
     [articles, selectedCategory],
+  );
+
+  // Categories are whatever the articles actually use.
+  const CATEGORIES = useMemo(
+    () => Array.from(new Set(articles.map((a) => a.category).filter(Boolean))).sort(),
+    [articles],
   );
 
   const categoryCounts = useMemo(() => {
@@ -88,7 +101,7 @@ function HelpArticlesPage() {
             Manage help and documentation articles for the knowledge base.
           </p>
         </div>
-        <ATMButton variant="primary" size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={() => toast('New article editor coming soon')}>
+        <ATMButton variant="primary" size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/content/help/new')}>
           New Article
         </ATMButton>
       </div>
@@ -168,10 +181,6 @@ function HelpArticlesPage() {
                 </div>
 
                 <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center gap-1" title="Views">
-                    <Eye className="h-3.5 w-3.5" />
-                    <span className="tabular-nums">{article.views.toLocaleString()}</span>
-                  </div>
                   <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Helpful">
                     <ThumbsUp className="h-3.5 w-3.5" />
                     <span className="tabular-nums">{article.helpful}</span>
@@ -180,7 +189,7 @@ function HelpArticlesPage() {
                     <ThumbsDown className="h-3.5 w-3.5" />
                     <span className="tabular-nums">{article.notHelpful}</span>
                   </div>
-                  <ATMButton variant="ghost" size="sm" onClick={() => toast('Article editor coming soon')}>
+                  <ATMButton variant="ghost" size="sm" onClick={() => navigate(`/content/help/${article.slug}/edit`)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </ATMButton>
                 </div>

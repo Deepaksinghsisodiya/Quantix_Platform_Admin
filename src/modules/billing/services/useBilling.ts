@@ -10,10 +10,6 @@ import {
   useCreatePlanMutation,
   useUpdatePlanMutation,
   useDeletePlanMutation,
-  useGetTokenPricingQuery,
-  useCreateTokenPricingMutation,
-  useUpdateTokenPricingMutation,
-  useDeleteTokenPricingMutation,
   useMarkInvoicePaidMutation,
   useRetryPaymentMutation,
   useSendPaymentReminderMutation,
@@ -24,9 +20,8 @@ import {
   type BillingDashboard,
   type InvoiceListParams,
   type CreatePlanDto,
-  type UpdateTokenPricingDto,
 } from './billingApi';
-import type { Invoice, SubscriptionPlan, TokenPricing } from '@/lib/types';
+import type { Invoice, SubscriptionPlan } from '@/lib/types';
 import { useFilterStore } from '@/lib/store/filterStore';
 import { wrapMutation } from '@/lib/utils/rtkQueryHelpers';
 
@@ -75,24 +70,6 @@ export function useDeletePlan() {
   return wrapMutation(trigger, result);
 }
 
-export function useTokenPricing() {
-  return useGetTokenPricingQuery();
-}
-
-export function useCreateTokenPricing() {
-  const [trigger, result] = useCreateTokenPricingMutation();
-  return wrapMutation(trigger, result);
-}
-
-export function useUpdateTokenPricing() {
-  const [trigger, result] = useUpdateTokenPricingMutation();
-  return wrapMutation(trigger, result);
-}
-
-export function useDeleteTokenPricing() {
-  const [trigger, result] = useDeleteTokenPricingMutation();
-  return wrapMutation(trigger, result);
-}
 
 // ---------------------------------------------------------------------------
 // PF-06: Enterprise Billing Cycle hooks

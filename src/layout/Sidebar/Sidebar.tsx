@@ -21,7 +21,8 @@ export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollaps
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
   const config = useAppSelector((state) => state.settings.config);
-  const appName = config.AppName || 'Quantix Platform';
+  // 2026-08-08 (branding): AppName = operator's DBA name from public settings; product default "Quantix".
+  const appName = config.AppName || 'Quantix';
   const logoUrl = config.CompanyLogo || config.AppLogo;
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';

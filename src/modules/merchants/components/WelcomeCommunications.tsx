@@ -1,201 +1,182 @@
-import React, { useState } from 'react';
-import {
-  Mail,
-  Send,
-  Download,
-  FileText,
-  User,
-  Key,
-  CheckCircle2,
-  Clock,
-  BookOpen,
-  Headphones,
-} from 'lucide-react';
+import React, { useCallback } from 'react';
+import { Mail, Send, User, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMCard } from '@/shared/ui/ATMCard';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { cn } from '@/lib/utils/cn';
-import type { MerchantType } from '@/lib/types';
+import {
+  useGetMerchantCommunicationsQuery,
+  useResendWelcomeEmailMutation,
+} from '../services/merchantApi';
+import type { MerchantCommunication, MerchantCommunicationStatus } from '../types/merchant.types';
 
 /* -------------------------------------------------------------------------- */
-/*  FRS-SAP-307: Welcome Communications                                      */
+/*  FRS-SAP-307: Welcome Communications                                       */
 /*                                                                            */
-/*  Enterprise: welcome email with login credentials, getting-started guide, */
-/*              assigned support contact                                      */
-/*  Standalone: welcome email with recharge token, installation guide        */
-/*              download link, offline setup instructions, support contact    */
+/*  2026-08-31 (de-fictioned): this panel used to be entirely invented. It     */
+/*  rendered a hardcoded log — two rows stamped "Sent" at 2026-03-28T10:00:00Z */
+/*  for EVERY merchant regardless of what happened, plus rows for a            */
+/*  getting-started guide, an installation-guide link, an offline-setup PDF    */
+/*  and a "Support Contact Assignment" that the platform never sends as        */
+/*  separate messages — and named a support contact ("Li Wei") that does not   */
+/*  exist. The Send and "Resend All" buttons never contacted the server: they  */
+/*  slept 800/1200 ms and flipped local state to Sent, so an operator could    */
+/*  "deliver" a welcome email to a merchant who received nothing.              */
+/*                                                                            */
+/*  It now reads GET /merchants/{id}/communications, which derives each row    */
+/*  from the ActivityLog entries the send paths actually write, and Resend     */
+/*  really re-sends and reports the server's outcome.                          */
 /* -------------------------------------------------------------------------- */
-
-interface CommunicationLog {
-  id: string;
-  type: string;
-  recipient: string;
-  sentAt: string | null;
-  status: 'Sent' | 'Pending' | 'Failed';
-}
 
 export interface WelcomeCommunicationsProps {
-  merchantType: MerchantType;
   merchantId: string;
-  email: string;
-  contactPerson: string;
 }
 
-const STATUS_CONFIG = {
-  Sent: { variant: 'success' as const, icon: CheckCircle2 },
-  Pending: { variant: 'warning' as const, icon: Clock },
-  Failed: { variant: 'danger' as const, icon: Clock },
+const STATUS_META: Record<
+  MerchantCommunicationStatus,
+  { icon: typeof CheckCircle2; className: string; label: string; badge: 'success' | 'warning' | 'danger' }
+> = {
+  Sent: { icon: CheckCircle2, className: 'text-emerald-500', label: 'Sent', badge: 'success' },
+  NotSent: { icon: Clock, className: 'text-amber-500', label: 'Not sent', badge: 'warning' },
+  Failed: { icon: AlertTriangle, className: 'text-red-500', label: 'Failed', badge: 'danger' },
 };
 
-export function WelcomeCommunications({
-  merchantType,
-  merchantId,
-  email,
-  contactPerson,
-}: WelcomeCommunicationsProps) {
-  const [sending, setSending] = useState<string | null>(null);
-
-  // Mock communication log based on merchant type
-  const [communications, setCommunications] = useState<CommunicationLog[]>(() => {
-    if (merchantType === 'Enterprise') {
-      return [
-        { id: 'wc-1', type: 'Welcome Email + Login Credentials', recipient: email, sentAt: '2026-03-28T10:00:00Z', status: 'Sent' },
-        { id: 'wc-2', type: 'Getting Started Guide', recipient: email, sentAt: '2026-03-28T10:00:00Z', status: 'Sent' },
-        { id: 'wc-3', type: 'Support Contact Assignment', recipient: email, sentAt: null, status: 'Pending' },
-      ];
-    }
-    return [
-      { id: 'wc-1', type: 'Welcome Email + Recharge Token', recipient: email, sentAt: '2026-03-28T10:00:00Z', status: 'Sent' },
-      { id: 'wc-2', type: 'Installation Guide Download Link', recipient: email, sentAt: '2026-03-28T10:00:00Z', status: 'Sent' },
-      { id: 'wc-3', type: 'Offline Setup Instructions', recipient: email, sentAt: null, status: 'Pending' },
-      { id: 'wc-4', type: 'Support Contact Details', recipient: email, sentAt: null, status: 'Pending' },
-    ];
+function formatTime(ts: string | null | undefined): string | null {
+  if (!ts) return null;
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
+}
 
-  const handleSend = async (commId: string) => {
-    setSending(commId);
-    await new Promise((r) => setTimeout(r, 800));
-    setCommunications((prev) =>
-      prev.map((c) =>
-        c.id === commId
-          ? { ...c, status: 'Sent' as const, sentAt: new Date().toISOString() }
-          : c,
-      ),
+export function WelcomeCommunications({ merchantId }: WelcomeCommunicationsProps) {
+  const { data, isLoading, isError, error, refetch } = useGetMerchantCommunicationsQuery(merchantId, {
+    skip: !merchantId,
+  });
+  const [resendWelcomeEmail, resendState] = useResendWelcomeEmailMutation();
+
+  const payload = data?.data;
+
+  const handleResend = useCallback(
+    async (comm: MerchantCommunication) => {
+      try {
+        await resendWelcomeEmail(merchantId).unwrap();
+        toast.success(`${comm.title} re-sent to ${comm.recipient}`);
+        refetch();
+      } catch (err: any) {
+        // No silent failure: the server's reason is what the operator sees.
+        toast.error(err?.data?.message || err?.message || `Could not re-send the ${comm.title.toLowerCase()}`);
+      }
+    },
+    [merchantId, resendWelcomeEmail, refetch],
+  );
+
+  if (isLoading) {
+    return (
+      <ATMCard title="Welcome Communications" padding="md">
+        <div className="space-y-2.5 pt-1">
+          <ATMSkeleton className="h-11 w-full rounded-xl" />
+          <ATMSkeleton className="h-16 w-full rounded-xl" />
+          <ATMSkeleton className="h-16 w-full rounded-xl" />
+        </div>
+      </ATMCard>
     );
-    setSending(null);
-  };
+  }
 
-  const handleResendAll = async () => {
-    setSending('all');
-    await new Promise((r) => setTimeout(r, 1200));
-    setCommunications((prev) =>
-      prev.map((c) => ({ ...c, status: 'Sent' as const, sentAt: new Date().toISOString() })),
+  if (isError || !payload) {
+    const message =
+      (error as any)?.data?.message ||
+      (error as any)?.message ||
+      'The communications record could not be loaded.';
+    return (
+      <ATMCard title="Welcome Communications" padding="md">
+        <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50/60 px-3.5 py-3 dark:border-red-900/50 dark:bg-red-950/20">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-red-700 dark:text-red-300">{message}</p>
+            <ATMButton variant="ghost" size="sm" onClick={() => refetch()} className="mt-1.5 px-0">
+              Retry
+            </ATMButton>
+          </div>
+        </div>
+      </ATMCard>
     );
-    setSending(null);
-  };
+  }
 
-  const formatTime = (ts: string | null) => {
-    if (!ts) return 'Pending send';
-    return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
+  const { contactName, contactEmail, communications } = payload;
 
   return (
     <ATMCard title="Welcome Communications" padding="md">
       <div className="space-y-4 pt-1">
-        {/* Recipient info */}
+        {/* Recipient */}
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 px-3.5 py-2.5">
           <User className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
           <div className="text-xs flex items-center gap-2 flex-wrap font-semibold text-gray-600 dark:text-gray-300">
-            <span className="font-bold text-gray-900 dark:text-white">{contactPerson}</span>
+            <span className="font-bold text-gray-900 dark:text-white">{contactName || '—'}</span>
             <span className="text-gray-400 dark:text-gray-600">&middot;</span>
-            <span className="font-mono text-gray-550 dark:text-gray-400">{email}</span>
+            <span className="font-mono text-gray-550 dark:text-gray-400">
+              {contactEmail || 'no contact email on file'}
+            </span>
           </div>
         </div>
 
-        {/* Communication items */}
-        <div className="space-y-2.5">
-          {communications.map((comm) => {
-            const cfg = STATUS_CONFIG[comm.status];
-            const StatusIcon = cfg.icon;
-            return (
-              <div
-                key={comm.id}
-                className="flex items-center justify-between rounded-xl border border-gray-100 bg-zen-surface px-4 py-3 dark:border-gray-800/80 shadow-sm transition-all duration-200 hover:border-gray-200 dark:hover:border-gray-700"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <StatusIcon className={cn('h-4.5 w-4.5 shrink-0', comm.status === 'Sent' ? 'text-emerald-500' : comm.status === 'Failed' ? 'text-red-500' : 'text-amber-500')} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{comm.type}</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mt-0.5">{formatTime(comm.sentAt)}</p>
+        {communications.length === 0 ? (
+          <p className="px-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            No merchant-facing messages apply to this merchant yet.
+          </p>
+        ) : (
+          <div className="space-y-2.5">
+            {communications.map((comm) => {
+              const meta = STATUS_META[comm.status];
+              const StatusIcon = meta.icon;
+              const when = formatTime(comm.occurredAt);
+              return (
+                <div
+                  key={comm.kind}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-zen-surface px-4 py-3 dark:border-gray-800/80 shadow-sm transition-all duration-200 hover:border-gray-200 dark:hover:border-gray-700"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <StatusIcon className={cn('mt-0.5 h-4.5 w-4.5 shrink-0', meta.className)} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{comm.title}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                        {when ? `${meta.label} · ${when}` : meta.label}
+                      </p>
+                      {comm.detail && (
+                        <p className="mt-1 text-[10px] leading-relaxed text-gray-500 dark:text-gray-400 break-words">
+                          {comm.detail}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {comm.canResend ? (
+                      <ATMButton
+                        variant="ghost"
+                        size="sm"
+                        icon={comm.status === 'Sent' ? Mail : Send}
+                        isLoading={resendState.isLoading}
+                        onClick={() => handleResend(comm)}
+                        className="whitespace-nowrap"
+                      >
+                        {comm.status === 'Sent' ? 'Resend' : 'Send'}
+                      </ATMButton>
+                    ) : (
+                      <ATMBadge label={meta.label} color={meta.badge} size="sm" />
+                    )}
                   </div>
                 </div>
-                {comm.status !== 'Sent' && (
-                  <ATMButton
-                    variant="ghost"
-                    size="sm"
-                    isLoading={sending === comm.id}
-                    onClick={() => handleSend(comm.id)}
-                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-                  >
-                    <Send className="h-3.5 w-3.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white" />
-                  </ATMButton>
-                )}
-                {comm.status === 'Sent' && (
-                  <ATMBadge label="Sent" color="success" size="sm" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Type-specific actions */}
-        <div className="space-y-2.5 py-1">
-          {merchantType === 'Enterprise' && (
-            <>
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <BookOpen className="h-4.5 w-4.5 text-accent-500/80 shrink-0" />
-                <span>Getting-started guide included in welcome email</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <Headphones className="h-4.5 w-4.5 text-accent-500/80 shrink-0" />
-                <span>Assigned support contact: <strong className="text-gray-700 dark:text-gray-300 font-bold">Li Wei</strong></span>
-              </div>
-            </>
-          )}
-          {merchantType === 'Standalone' && (
-            <>
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <Key className="h-4.5 w-4.5 text-accent-500/80 shrink-0" />
-                <span>Recharge token attached to welcome email</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <Download className="h-4.5 w-4.5 text-accent-500/80 shrink-0" />
-                <span>Installation guide download link included</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <FileText className="h-4.5 w-4.5 text-accent-500/80 shrink-0" />
-                <span>Offline setup instructions PDF attached</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <Headphones className="h-4.5 w-4.5 text-accent-500/80 shrink-0" />
-                <span>Support contact: <strong className="text-gray-700 dark:text-gray-300 font-bold">Li Wei</strong></span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Resend all */}
-        <ATMButton
-          variant="secondary"
-          size="sm"
-          fullWidth
-          icon={Mail}
-          isLoading={sending === 'all'}
-          onClick={handleResendAll}
-          className="mt-2"
-        >
-          Resend All Communications
-        </ATMButton>
+              );
+            })}
+          </div>
+        )}
       </div>
     </ATMCard>
   );

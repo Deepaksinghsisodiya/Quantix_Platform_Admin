@@ -2,7 +2,16 @@ import React from 'react';
 import { Check, CheckCircle2 } from 'lucide-react';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { cn } from '@/lib/utils/cn';
-import type { PlanDef } from '@/modules/merchants/Register/constants';
+// 2026-08-12: PlanDef inlined — it lived in the retired register wizard's constants file
+// (deleted with the Register flow; its PLANS array was fictional $49-tier mock data).
+export interface PlanDef {
+  id: string;
+  name: string;
+  price: number;
+  period: string;
+  features: string[];
+  popular?: boolean;
+}
 
 interface PlanCardProps {
   plan: PlanDef;

@@ -32,8 +32,15 @@ import {
 /*  Row adapter                                                                */
 /* -------------------------------------------------------------------------- */
 
-// Extend for view count (not yet in API; computed locally)
-type BlogPostRow = BlogPost & { views: number; category: string };
+/**
+ * 2026-09-05 (content Phase 2): `views` removed and `category` is now the real one.
+ *
+ * The Views column rendered a hardcoded 0 for every post, forever — no view count exists on the
+ * server, so the column reported a number the platform does not measure. The Category column
+ * showed `tags[0]`, which is a tag, not a category; with the API sending tags as a
+ * comma-separated string (or null), that also crashed this page on the first real post.
+ */
+type BlogPostRow = BlogPost & { categoryName: string; authorName: string };
 
 /* -------------------------------------------------------------------------- */
 /*  Filter pills                                                               */
@@ -58,18 +65,21 @@ function BlogListPage() {
     pageSize: 100,
     status: statusFilter === 'All' ? undefined : statusFilter,
     search: search.trim() || undefined,
+    // 2026-09-05 (Phase 0): this is the authoring list — it must see drafts. The API grants
+    // that only to a caller who passes the ContentManager policy, which this portal session
+    // does; a public caller sending the same flag still gets published posts only.
+    publishedOnly: false,
   });
   const deleteMut = useDeleteBlogPost();
   const unpublishMut = useUnpublishBlogPost();
   const approveMut = useApproveReview();
 
   const posts = useMemo<BlogPostRow[]>(() => {
-    const rawItems = postsQuery.data?.data?.items ?? postsQuery.data?.data;
-    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(postsQuery.data) ? (postsQuery.data as any[]) : [];
+    const items = postsQuery.data?.data ?? [];
     return items.map((p: any) => ({
       ...p,
-      views: 0,
-      category: p.tags[0] ?? 'General',
+      categoryName: (p as any).categoryName ?? '',
+      authorName: (p as any).authorName ?? (p as any).author ?? '',
     }));
   }, [postsQuery.data]);
 
@@ -124,27 +134,21 @@ function BlogListPage() {
               {formatDate(row.publishDate, 'short')}
             </span>
           ) : (
-            <span className="text-xs text-gray-400 dark:text-gray-555">--</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">--</span>
           );
         },
       },
       {
-        key: 'category',
+        key: 'categoryName',
         header: 'Category',
-        renderCell: (val, row) => (
-          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 capitalize dark:bg-gray-800 dark:text-gray-300">
-            {row.category}
-          </span>
-        ),
-      },
-      {
-        key: 'views',
-        header: 'Views',
-        renderCell: (val, row) => (
-          <span className="text-sm tabular-nums text-gray-700 dark:text-gray-300">
-            {row.views.toLocaleString()}
-          </span>
-        ),
+        renderCell: (val, row) =>
+          row.categoryName ? (
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              {row.categoryName}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400">--</span>
+          ),
       },
     ],
     [navigate],
@@ -200,7 +204,7 @@ function BlogListPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-55">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-500">
             Blog
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">

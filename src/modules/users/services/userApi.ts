@@ -1,6 +1,8 @@
 import { baseApi } from '../../../core/services/baseApi';
 import type { RoleDefinition } from '@/lib/api/users';
 import type {
+  PermissionCatalogItem,
+  UserGrants,
   PlatformUser,
   CreateUserDto,
   UpdateUserDto,
@@ -27,7 +29,6 @@ const mapUserResponse = (u: any): PlatformUser => {
     name: u.name ?? u.displayName ?? `${u.firstName || ''} ${u.lastName || ''}`.trim() ?? u.username,
     email: u.email,
     role: u.role ?? u.roleName,
-    department: u.department || '',
     status: status,
     lastLogin: u.lastLogin ?? u.lastLoginAt,
     mfaEnabled: u.mfaEnabled ?? false,
@@ -161,6 +162,38 @@ export const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Settings'],
     }),
+
+    // 2026-08-11: additive per-user permission grants (Admin-only) + the real permission
+    // catalog that feeds the Additional Permissions section of the user form.
+    getPermissionCatalog: builder.query<ApiResponse<readonly PermissionCatalogItem[]>, void>({
+      query: () => ({
+        url: '/api/v1/roles/permissions',
+        method: 'GET',
+      }),
+      providesTags: ['Roles' as any],
+    }),
+    getRolePermissions: builder.query<ApiResponse<readonly PermissionCatalogItem[]>, string>({
+      query: (roleId) => ({
+        url: `/api/v1/roles/${roleId}/permissions`,
+        method: 'GET',
+      }),
+      providesTags: ['Roles' as any],
+    }),
+    getUserGrants: builder.query<ApiResponse<UserGrants>, string>({
+      query: (id) => ({
+        url: `/api/v1/users/${id}/grants`,
+        method: 'GET',
+      }),
+      providesTags: (_r, _e, id) => [{ type: 'Users', id }],
+    }),
+    setUserGrants: builder.mutation<ApiResponse<UserGrants>, { id: string; permissionCodes: string[] }>({
+      query: ({ id, permissionCodes }) => ({
+        url: `/api/v1/users/${id}/grants`,
+        method: 'PUT',
+        data: { permissionCodes },
+      }),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Users', id }, 'Users'],
+    }),
   }),
 });
 
@@ -178,4 +211,8 @@ export const {
   useTerminateAllSessionsForUserMutation,
   useGetSessionPolicyQuery,
   useUpdateSessionPolicyMutation,
+  useGetPermissionCatalogQuery,
+  useGetRolePermissionsQuery,
+  useGetUserGrantsQuery,
+  useSetUserGrantsMutation,
 } = userApi;

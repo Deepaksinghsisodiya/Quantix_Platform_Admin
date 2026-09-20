@@ -2,7 +2,7 @@ import React from 'react';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
 import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatTokens } from '@/lib/utils/formatCurrency';
 import { formatDate } from '@/lib/utils/formatDate';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard } from '@/shared/ui/ATMCard';
@@ -30,11 +30,10 @@ import {
 } from 'lucide-react';
 import type { Wallet, WalletRecharge } from '@/lib/api/wallet';
 import type { ActionMode, ActionDialogState, StandaloneTokenEntry } from './WalletListWrapper';
-import { MOCK_STANDALONE_TOKENS } from './WalletListWrapper';
 
 interface WalletListViewProps {
-  activeTab: 'enterprise' | 'recharges' | 'standalone';
-  setActiveTab: (tab: 'enterprise' | 'recharges' | 'standalone') => void;
+  activeTab: 'enterprise' | 'recharges';
+  setActiveTab: (tab: 'enterprise' | 'recharges') => void;
   dialog: ActionDialogState | null;
   wallets: readonly Wallet[];
   recharges: readonly WalletRecharge[];
@@ -100,7 +99,6 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
         {[
           { key: 'enterprise' as const, label: 'Enterprise Wallets', icon: <TrendingDown className="h-3.5 w-3.5" /> },
           { key: 'recharges' as const, label: 'Recharge History', icon: <CreditCard className="h-3.5 w-3.5" /> },
-          { key: 'standalone' as const, label: 'Standalone Tokens', icon: <Key className="h-3.5 w-3.5" /> },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -151,7 +149,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                   align: 'right',
                   renderCell: (_val, row) => (
                     <span className="font-mono font-bold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(row.tokenBalance)}
+                      {formatTokens(row.tokenBalance)}
                     </span>
                   ),
                   width: '120px',
@@ -239,7 +237,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                 align: 'right',
                 renderCell: (_val, row) => (
                   <span className="font-mono font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrency(row.tokenAmount)}
+                    {formatTokens(row.tokenAmount)}
                   </span>
                 ),
                 width: '110px',
@@ -278,69 +276,9 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
         </ATMCard>
       )}
 
-      {/* Standalone Tokens */}
-      {activeTab === 'standalone' && (
-        <ATMCard padding="none" className="overflow-hidden">
-          <div className="px-6 py-3 border-b border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-950/10">
-            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 font-semibold">
-              <Bell className="inline h-3.5 w-3.5" />
-              <span>Sample data — per-merchant standalone token balance API pending.</span>
-            </p>
-          </div>
-          <ATMTable<StandaloneTokenEntry>
-            columns={[
-              {
-                key: 'merchantName',
-                header: 'Merchant',
-                renderCell: (_val, row) => (
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">{row.merchantName}</span>
-                ),
-              },
-              {
-                key: 'activeTokenId',
-                header: 'Active Token',
-                renderCell: (_val, row) => (
-                  <span className="font-mono text-xs text-gray-500">{row.activeTokenId ?? '—'}</span>
-                ),
-              },
-              {
-                key: 'tier',
-                header: 'Tier',
-                renderCell: (_val, row) => (
-                  <span className="text-gray-900 dark:text-gray-200">{row.tier}</span>
-                ),
-                width: '100px',
-              },
-              {
-                key: 'validFrom',
-                header: 'Validity',
-                renderCell: (_val, row) => (
-                  <span className="text-gray-500">
-                    {row.validFrom && row.validTo ? `${row.validFrom} → ${row.validTo}` : '—'}
-                  </span>
-                ),
-                width: '200px',
-              },
-              {
-                key: 'daysRemaining',
-                header: 'Days Left',
-                renderCell: (_val, row) => (
-                  <span className="font-bold text-gray-900 dark:text-gray-200">{row.daysRemaining ?? '—'}</span>
-                ),
-                width: '90px',
-              },
-              {
-                key: 'status',
-                header: 'Status',
-                renderCell: (_val, row) => <StatusBadge status={row.status} />,
-                width: '100px',
-              },
-            ]}
-            data={MOCK_STANDALONE_TOKENS}
-            emptyMessage="No standalone token data available."
-          />
-        </ATMCard>
-      )}
+      {/* 2026-08-13: the "Standalone Tokens" tab REMOVED — its rows came from a hardcoded
+          MOCK_STANDALONE_TOKENS array. Wallets are an Enterprise-only concept; real token
+          data for Standalone merchants lives in the Tokens module. */}
 
       {/* Action dialog */}
       <ATMModal

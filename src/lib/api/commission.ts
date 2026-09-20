@@ -11,7 +11,6 @@ import type { ApiResponse } from '@/lib/types/common';
 import type {
   CommissionSummary,
   CommissionRate,
-  CommissionExemption,
 } from '@/lib/types/commission';
 
 // ---------------------------------------------------------------------------
@@ -30,13 +29,6 @@ export interface CommissionRateCreate {
 export interface CommissionRateUpdate {
   readonly rate?: number;
   readonly minTransactionValue?: number;
-  readonly effectiveTo?: string | null;
-}
-
-export interface ExemptionCreate {
-  readonly merchantId: string;
-  readonly reason: string;
-  readonly effectiveFrom: string;
   readonly effectiveTo?: string | null;
 }
 
@@ -60,14 +52,5 @@ export function updateCommissionRate(id: string, data: CommissionRateUpdate): Pr
   return put<ApiResponse<CommissionRate>>(`/api/v1/commission/rates/${id}`, data);
 }
 
-export function getCommissionExemptions(): Promise<ApiResponse<readonly CommissionExemption[]>> {
-  return get<ApiResponse<readonly CommissionExemption[]>>('/api/v1/commission/exemptions');
-}
 
-export function createExemption(data: ExemptionCreate): Promise<ApiResponse<CommissionExemption>> {
-  return post<ApiResponse<CommissionExemption>>('/api/v1/commission/exemptions', data);
-}
 
-export function removeExemption(id: string): Promise<ApiResponse<{ deleted: boolean }>> {
-  return del<ApiResponse<{ deleted: boolean }>>(`/api/v1/commission/exemptions/${id}`);
-}

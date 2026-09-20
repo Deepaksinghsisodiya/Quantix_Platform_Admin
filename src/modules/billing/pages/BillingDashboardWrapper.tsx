@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { retryPayment, sendPaymentReminder } from '@/lib/api/billing';
 import { useBillingDashboard, useInvoices } from '../services/useBilling';
+import { useGetEscalationSummaryQuery } from '../services/billingApi';
 import { BillingDashboardView } from './BillingDashboardView';
 import {
   CheckCircle2,
@@ -50,12 +51,24 @@ export interface KpiData {
   title: string;
   value: string;
   icon: React.ReactNode;
-  trend: { value: number; direction: 'up' | 'down' };
+  /** 2026-08-30: OPTIONAL — the four hardcoded deltas (+8.2% / +12.1% / -3.4% / +5.7%)
+   *  were invented. A delta is shown only when the server computed a real month-over-month
+   *  change; balance tiles (Outstanding / Overdue) have no prior-period snapshot, so they
+   *  carry no badge at all rather than a fabricated one. */
+  trend?: { value: number; direction: 'up' | 'down' };
+  /** Sub-label shown when there is no delta (e.g. "3 invoices"). */
+  subLabel?: string;
   color: string;
   accent: string;
 }
 
-export interface EscalationStep { day: number; action: string; count: number }
+export interface EscalationStep {
+  stage: string;
+  dayThreshold: number;
+  action: string;
+  invoiceCount: number;
+  totalAmount: number;
+}
 
 const REVENUE_TYPE_COLORS: Record<string, string> = {
   Subscription: '#8b5cf6',
@@ -67,22 +80,12 @@ const REVENUE_TYPE_COLORS: Record<string, string> = {
   AddOn: '#ec4899',
 };
 
-export const MOCK_REVENUE_BY_MERCHANT_TYPE = {
-  enterprise: { subscription: 188100, usageOverage: 17100, commission: 51300, total: 256500, merchantCount: 834 },
-  standalone: { tokenSales: 85500, total: 85500, merchantCount: 413 },
-};
-
-export const MOCK_BILLING_CYCLES = {
-  enterprise: { monthlyCycles: 712, annualCycles: 122, anniversaryBilling: 584, fixedDateBilling: 250, gracePeriodDays: 7, proRataEnabled: true, nextBatchRun: '2026-04-01T00:00:00Z' },
-  standalone: { description: 'No recurring cycle — billed per token purchase (on-demand)', totalTokenInvoicesThisMonth: 1043 },
-};
-
-export const MOCK_ESCALATION: EscalationStep[] = [
-  { day: 1, action: 'Payment reminder email sent', count: 12 },
-  { day: 7, action: 'Second reminder + API rate throttled', count: 8 },
-  { day: 14, action: 'Final notice + feature restrictions', count: 4 },
-  { day: 30, action: 'Account suspended', count: 1 },
-];
+// 2026-08-13: MOCK_REVENUE_BY_MERCHANT_TYPE / MOCK_BILLING_CYCLES / MOCK_ESCALATION
+// REMOVED. The first two invented revenue figures and merchant counts, and described a
+// billing model this platform does not have (anniversary / annual cycles / pro-rata — our
+// model is daily subscription with an operator-configured cadence on Settings → Billing
+// Cycle). Escalation is real (Invoice.EscalationStage) and now loads live counts from
+// GET /billing/invoices/escalation-summary.
 
 // ---------------------------------------------------------------------------
 // Wrapper
@@ -94,50 +97,37 @@ export const BillingDashboardWrapper: React.FC = () => {
   const overdueInvoicesQuery = useInvoices({ status: 'Overdue', page: 1, pageSize: 5 });
   const recentInvoicesQuery = useInvoices({ page: 1, pageSize: 8 });
 
-  interface ExtendedBillingDashboard {
-    readonly totalRevenue: number;
-    readonly monthlyRevenue: number;
-    readonly outstandingAmount: number;
-    readonly overdueAmount?: number;
-    readonly overdueInvoices?: number;
-    readonly activeSubscriptions?: number;
-    readonly revenueByMonth?: readonly { readonly month: string; readonly amount: number }[];
-    readonly revenueByType?: Record<string, number>;
-  }
-  const dashboard = dashboardQuery.data?.data as ExtendedBillingDashboard | undefined;
+  // 2026-08-13: real escalation counts (was a hardcoded array of invented merchant counts).
+  const escalationQuery = useGetEscalationSummaryQuery();
+  const escalation: EscalationStep[] = (escalationQuery.data?.data ?? []) as EscalationStep[];
 
+  // 2026-08-30: mirrors the real BillingDashboardDto. The previous shape guessed field
+  // names the server never sent (outstandingAmount / overdueAmount / totalRevenue against
+  // a zeros stub), which is exactly how "Collected" became 0 − undefined = $NaN.
+  // 2026-09-04: that mirror now lives on billingApi's `BillingDashboard` itself (shared
+  // with the Finance desktop), so the local re-declaration and cast are gone.
+  const dashboard = dashboardQuery.data?.data;
+  const currency = dashboard?.currencyCode || undefined;
+
+  // 2026-08-30: mock revenue mix (188100/85500/51300/17100) removed — an empty month now
+  // renders the chart's own empty state instead of inventing a revenue split.
   const revenueByType: RevenueByType[] = useMemo(() => {
-    if (!dashboard?.revenueByType) {
-      return [
-        { name: 'Subscriptions', value: 188100, color: '#8b5cf6', percent: 55 },
-        { name: 'Token Sales', value: 85500, color: '#22c55e', percent: 25 },
-        { name: 'Commission', value: 51300, color: '#f59e0b', percent: 15 },
-        { name: 'Usage', value: 17100, color: '#06b6d4', percent: 5 },
-      ];
-    }
-    const entries = Object.entries(dashboard.revenueByType as Record<string, number>);
-    const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
-    return entries.map(([name, value]) => ({
-      name,
-      value,
-      color: REVENUE_TYPE_COLORS[name] ?? '#94a3b8',
-      percent: Math.round((value / total) * 100),
+    const rows = dashboard?.revenueByType ?? [];
+    const total = rows.reduce((s, r) => s + r.amount, 0) || 1;
+    return rows.map((r) => ({
+      name: r.name,
+      value: r.amount,
+      color: REVENUE_TYPE_COLORS[r.name] ?? '#94a3b8',
+      percent: Math.round((r.amount / total) * 100),
     }));
   }, [dashboard?.revenueByType]);
 
-  const revenueTrend: RevenueTrend[] = useMemo(() => {
-    if (!dashboard?.revenueByMonth || dashboard.revenueByMonth.length === 0) {
-      return [
-        { month: 'Apr', revenue: 248000 }, { month: 'May', revenue: 261000 },
-        { month: 'Jun', revenue: 274000 }, { month: 'Jul', revenue: 283000 },
-        { month: 'Aug', revenue: 295000 }, { month: 'Sep', revenue: 301000 },
-        { month: 'Oct', revenue: 312000 }, { month: 'Nov', revenue: 318000 },
-        { month: 'Dec', revenue: 305000 }, { month: 'Jan', revenue: 328000 },
-        { month: 'Feb', revenue: 335000 }, { month: 'Mar', revenue: 342000 },
-      ];
-    }
-    return dashboard.revenueByMonth.map((m) => ({ month: m.month, revenue: m.amount }));
-  }, [dashboard?.revenueByMonth]);
+  // 2026-08-30: the 12-month mock series (248000 … 342000) removed; the server returns a
+  // real rolling 12 months of invoiced revenue (zero-filled for months with no invoices).
+  const revenueTrend: RevenueTrend[] = useMemo(
+    () => (dashboard?.revenueByMonth ?? []).map((m) => ({ month: m.month, revenue: m.amount })),
+    [dashboard?.revenueByMonth],
+  );
 
   const overdueInvoices: OverdueInvoice[] = useMemo(() => {
     const items = overdueInvoicesQuery.data?.data?.items ?? [];
@@ -162,17 +152,51 @@ export const BillingDashboardWrapper: React.FC = () => {
     }));
   }, [recentInvoicesQuery.data]);
 
-  const totalInvoiced = dashboard?.totalRevenue ?? 342000;
-  const collected = dashboard ? dashboard.totalRevenue - dashboard.outstandingAmount : 298000;
-  const outstanding = dashboard?.outstandingAmount ?? 31000;
-  const overdueAmount = dashboard?.overdueAmount ?? 13000;
+  // 2026-08-30: every mock fallback removed (342000 / 298000 / 31000 / 13000 — the last
+  // two are what the operator actually saw on screen). Money renders only from the
+  // server payload; while it loads the tiles show an em-dash, never an invented number.
+  const money = (v: number | undefined) => formatCurrencyOrDash(v, currency);
+  const delta = (pct: number | null | undefined): KpiData['trend'] =>
+    pct == null ? undefined : { value: Math.abs(pct), direction: pct >= 0 ? 'up' : 'down' };
 
   const kpiCards: KpiData[] = useMemo(() => [
-    { title: 'Total Invoiced', value: formatCurrency(totalInvoiced), icon: <FileText className="h-4 w-4" />, trend: { value: 8.2, direction: 'up' }, color: 'text-blue-600 dark:text-blue-400', accent: '#3b82f6' },
-    { title: 'Collected', value: formatCurrency(collected), icon: <CheckCircle2 className="h-4 w-4" />, trend: { value: 12.1, direction: 'up' }, color: 'text-emerald-600 dark:text-emerald-400', accent: '#22c55e' },
-    { title: 'Outstanding', value: formatCurrency(outstanding), icon: <Clock className="h-4 w-4" />, trend: { value: 3.4, direction: 'down' }, color: 'text-amber-600 dark:text-amber-400', accent: '#f59e0b' },
-    { title: 'Overdue', value: formatCurrency(overdueAmount), icon: <AlertTriangle className="h-4 w-4" />, trend: { value: 5.7, direction: 'up' }, color: 'text-red-600 dark:text-red-400', accent: '#ef4444' },
-  ], [totalInvoiced, collected, outstanding, overdueAmount]);
+    {
+      title: 'Total Invoiced',
+      value: money(dashboard?.totalInvoiced),
+      icon: <FileText className="h-4 w-4" />,
+      trend: delta(dashboard?.totalInvoicedChangePercent),
+      subLabel: 'This month',
+      color: 'text-blue-600 dark:text-blue-400',
+      accent: '#3b82f6',
+    },
+    {
+      title: 'Collected',
+      value: money(dashboard?.collected),
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      trend: delta(dashboard?.collectedChangePercent),
+      subLabel: 'This month',
+      color: 'text-emerald-600 dark:text-emerald-400',
+      accent: '#22c55e',
+    },
+    {
+      // Balances carry no month-over-month delta — there is no historical snapshot to
+      // compare against, so the tile states the invoice count instead of a fake trend.
+      title: 'Outstanding',
+      value: money(dashboard?.outstanding),
+      icon: <Clock className="h-4 w-4" />,
+      subLabel: dashboard ? `${dashboard.outstandingCount} unpaid invoice${dashboard.outstandingCount === 1 ? '' : 's'}` : undefined,
+      color: 'text-amber-600 dark:text-amber-400',
+      accent: '#f59e0b',
+    },
+    {
+      title: 'Overdue',
+      value: money(dashboard?.overdue),
+      icon: <AlertTriangle className="h-4 w-4" />,
+      subLabel: dashboard ? `${dashboard.overdueCount} overdue invoice${dashboard.overdueCount === 1 ? '' : 's'}` : undefined,
+      color: 'text-red-600 dark:text-red-400',
+      accent: '#ef4444',
+    },
+  ], [dashboard, currency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRetryPayment = async (invoiceId: string) => {
     try {
@@ -194,6 +218,7 @@ export const BillingDashboardWrapper: React.FC = () => {
 
   return (
     <BillingDashboardView
+      currency={currency}
       isLoading={dashboardQuery.isLoading}
       isError={dashboardQuery.isError}
       refetch={dashboardQuery.refetch}
@@ -202,6 +227,7 @@ export const BillingDashboardWrapper: React.FC = () => {
       revenueTrend={revenueTrend}
       overdueInvoices={overdueInvoices}
       recentTransactions={recentTransactions}
+      escalation={escalation}
       onRetryPayment={handleRetryPayment}
       onSendReminder={handleSendReminder}
       onNavigate={navigate}

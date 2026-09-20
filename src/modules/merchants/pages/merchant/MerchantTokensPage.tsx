@@ -8,9 +8,9 @@ import { useState } from 'react';
 import {
   useGetSelfProfileQuery,
   useGetSelfTokensQuery,
-  useGetSelfSubscriptionQuery,
 } from '@/modules/merchants/services/merchantSelfApi';
 import type { MerchantSelfProfile } from '@/lib/api/merchantSelf';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 import TokenPurchaseDialog from './components/TokenPurchaseDialog';
 
 interface RechargeTokenDto {
@@ -25,27 +25,21 @@ interface RechargeTokenDto {
   createdAt: string;
 }
 
-interface SubscriptionDto {
-  dailySubscriptionPrice?: number;
-  baseDailyPrice?: number;
-  currencyCode?: string;
-}
-
 export default function MerchantTokensPage() {
   const [purchaseOpen, setPurchaseOpen] = useState(false);
+  // 2026-09-04: the Enterprise subtitle named "the Quantix Operations team" regardless of DBA.
+  const brandName = useBrandName();
 
   const profile = useGetSelfProfileQuery();
   const tokens = useGetSelfTokensQuery(undefined);
   const m = (profile.data?.data ?? null) as MerchantSelfProfile | null;
   const isStandalone = m?.merchantType === 'Standalone';
 
-  // For Standalone we need the daily price to pre-fill the purchase dialog estimate;
-  // the dialog also shows a fallback message when null.
-  const subscription = useGetSelfSubscriptionQuery(undefined, {
-    skip: true,  // Standalone has no /subscription endpoint exposed; we leave dailyPrice null
-  });
-
-  const sub = subscription.data?.data as SubscriptionDto | undefined;
+  // 2026-09-02: the permanently-skipped subscription query is gone. It existed to feed a
+  // `dailyPrice` into the purchase dialog, but it was hard-skipped (Standalone merchants
+  // cannot call /merchant-self/subscription), so the dialog always received null, computed
+  // a charge of 0, and every purchase failed server-side with INVALID_PRICE. The dialog now
+  // asks GET /merchant-self/tokens/quote for the real price itself.
   const rawRows = tokens.data?.data;
   const rows = Array.isArray(rawRows) ? (rawRows as RechargeTokenDto[]) : [];
 
@@ -58,7 +52,7 @@ export default function MerchantTokensPage() {
           <p className="mt-1 text-sm text-surface-500">
             {isStandalone
               ? 'Purchase a new license token whenever you need to extend or renew your terminal.'
-              : 'Tokens issued to your account by the Quantix Operations team.'}
+              : `Tokens issued to your account by the ${brandName} operations team.`}
           </p>
         </div>
         {isStandalone && (
@@ -136,8 +130,7 @@ export default function MerchantTokensPage() {
       <TokenPurchaseDialog
         open={purchaseOpen}
         onClose={() => setPurchaseOpen(false)}
-        dailyPrice={sub?.dailySubscriptionPrice ?? sub?.baseDailyPrice ?? null}
-        currency={sub?.currencyCode ?? 'USD'}
+        onPurchased={() => void tokens.refetch()}
       />
     </div>
   );

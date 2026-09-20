@@ -6,13 +6,12 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { ATMErrorState } from '@/shared/ui';
 import { UserForm } from '../Form/UserForm';
-import { useGetUserByIdQuery, useUpdateUserMutation } from '../services/userApi';
-import type { PlatformRole, UserStatus } from '../types/user.types';
+import { useGetUserByIdQuery, useUpdateUserMutation, useGetUserGrantsQuery, useSetUserGrantsMutation } from '../services/userApi';
+import { ROLE_ID_MAP, type PlatformRole, type UserStatus } from '../types/user.types';
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is required').min(2, 'Name too short'),
   email: Yup.string().required('Email is required').email('Enter a valid email address'),
-  department: Yup.string().required('Department is required'),
   role: Yup.string().required('Role is required'),
   status: Yup.string().required('Status is required'),
   ipAllowlist: Yup.string().nullable(),
@@ -24,6 +23,9 @@ export const UserEditWrapper: React.FC = () => {
 
   const { data: userResponse, isLoading: isUserLoading, isError: isUserError } = useGetUserByIdQuery(id ?? '', { skip: !id });
   const [updateUser] = useUpdateUserMutation();
+  const [setUserGrants] = useSetUserGrantsMutation();
+  // 2026-08-11: the user's current ADDITIVE grants (extras above role).
+  const { data: grantsResponse } = useGetUserGrantsQuery(id ?? '', { skip: !id });
 
   const user = userResponse?.data;
 
@@ -33,49 +35,21 @@ export const UserEditWrapper: React.FC = () => {
         name: '',
         email: '',
         role: 'Operator' as PlatformRole,
-        department: '',
         status: 'Active' as UserStatus,
         ipAllowlist: '',
-        overrides: {} as Record<string, string[]>,
+        extraGrants: [] as string[],
       };
     }
-
-    const overrides: Record<string, string[]> = {};
-    if (user.permissions) {
-      user.permissions.forEach((perm: any) => {
-        if (perm && typeof perm === 'object') {
-          const mod = perm.resource?.toLowerCase();
-          let act = perm.action?.toLowerCase();
-          if (act === 'read') act = 'view';
-          if (act === 'write') act = 'edit';
-          if (mod && act && perm.granted) {
-            if (!overrides[mod]) overrides[mod] = [];
-            overrides[mod].push(act);
-          }
-        } else if (typeof perm === 'string') {
-          const parts = perm.split('.');
-          if (parts.length === 2) {
-            const mod = parts[0];
-            const act = parts[1];
-            if (mod && act) {
-              if (!overrides[mod]) overrides[mod] = [];
-              overrides[mod].push(act);
-            }
-          }
-        }
-      });
-    }
-
     return {
       name: user.name || '',
       email: user.email || '',
       role: user.role || 'Operator',
-      department: user.department || '',
       status: user.status || 'Active',
       ipAllowlist: user.ipAllowlist || '',
-      overrides,
+      // Extras only — role permissions render locked in the form.
+      extraGrants: [...(grantsResponse?.data?.extraGrants ?? [])],
     };
-  }, [user]);
+  }, [user, grantsResponse]);
 
   const handleFormSubmit = async (values: typeof initialValues, { setSubmitting }: FormikHelpers<typeof initialValues>) => {
     if (!id) return;
@@ -85,15 +59,7 @@ export const UserEditWrapper: React.FC = () => {
     const firstName = spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
     const lastName = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx + 1);
 
-    const roleIdMap: Record<PlatformRole, string> = {
-      Admin: '30000003-0000-0000-0000-000000000002',
-      Operator: '30000003-0000-0000-0000-000000000003',
-      FinanceManager: '30000003-0000-0000-0000-000000000004',
-      ContentManager: '30000003-0000-0000-0000-000000000007',
-      OperationsManager: '30000003-0000-0000-0000-000000000008',
-      Merchant: '30000003-0000-0000-0000-000000000009',
-    };
-    const mappedRoleId = roleIdMap[values.role];
+    const mappedRoleId = ROLE_ID_MAP[values.role];
     const isActive = values.status === 'Active';
 
     try {
@@ -106,10 +72,12 @@ export const UserEditWrapper: React.FC = () => {
           displayName: trimmed,
           roleId: mappedRoleId,
           isActive,
-          department: values.department,
           ipAllowlist: values.ipAllowlist?.trim() || null,
-        },
+        } as any,
       }).unwrap();
+
+      // 2026-08-11: replace-semantics write of the additive grants.
+      await setUserGrants({ id, permissionCodes: values.extraGrants ?? [] }).unwrap();
 
       toast.success('User updated successfully');
       navigate(`/users/${id}`);

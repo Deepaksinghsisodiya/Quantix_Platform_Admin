@@ -1,39 +1,35 @@
+/**
+ * Generated-token panel — 2026-08-29 rebuild. Shows the real RechargeTokenDetail
+ * (encodedToken is the string the merchant applies). The former Tier badge and the
+ * "Email to Merchant" / "Download as PDF" buttons are gone — the email one toasted
+ * success from a stub that never sent anything.
+ */
 import React, { useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
+import { Copy, Printer } from 'lucide-react';
+
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
-import { toast } from 'sonner';
 import { ATMButton } from '@/shared/ui/ATMButton';
-import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
-import type { RechargeToken } from '@/lib/types';
-import { Copy, Mail, Download, Printer } from 'lucide-react';
+import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { TokenStatusBadge } from '../components/TokenStatusBadge';
+import { PLAN_TYPE_LABEL } from '@/lib/types/platform-enums';
+import type { RechargeTokenDetail } from '@/lib/types';
+import { TokenBreakdown } from '../components/TokenBreakdown';
 
 export interface TokenDisplayProps {
-  token: RechargeToken;
-  onEmail?: (token: RechargeToken) => void;
-  onDownloadPdf?: (token: RechargeToken) => void;
+  token: RechargeTokenDetail;
   className?: string;
 }
 
-const TIER_BADGE_VARIANT: Record<string, 'gray' | 'primary' | 'purple' | 'warning'> = {
-  Basic: 'gray',
-  Standard: 'primary',
-  Advance: 'purple',
-  Premium: 'warning',
-};
-
-export function TokenDisplay({
-  token,
-  onEmail,
-  onDownloadPdf,
-  className,
-}: TokenDisplayProps) {
+export function TokenDisplay({ token, className }: TokenDisplayProps) {
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(token.tokenString).then(
+    navigator.clipboard.writeText(token.encodedToken).then(
       () => toast.success('Token copied to clipboard'),
       () => toast.error('Failed to copy token'),
     );
-  }, [token.tokenString]);
+  }, [token.encodedToken]);
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -47,25 +43,18 @@ export function TokenDisplay({
       )}
     >
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-          Generated Token
-        </h3>
-        <StatusBadge status={token.status} />
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Generated Token</h3>
+        <TokenStatusBadge status={token.status} />
       </div>
 
       <div className="p-5">
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex shrink-0 flex-col items-center gap-3">
             <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-white shadow-md">
-              <QRCodeSVG
-                value={token.qrCodeData || token.tokenString}
-                size={160}
-                level="H"
-                includeMargin={false}
-              />
+              <QRCodeSVG value={token.encodedToken} size={160} level="H" includeMargin={false} />
             </div>
             <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
-              Scan to activate
+              Scan to apply
             </span>
           </div>
 
@@ -82,7 +71,7 @@ export function TokenDisplay({
                     'select-all break-all',
                   )}
                 >
-                  {token.tokenString}
+                  {token.encodedToken}
                 </code>
                 <ATMButton
                   variant="secondary"
@@ -100,63 +89,62 @@ export function TokenDisplay({
                   Token ID
                 </span>
                 <span className="mt-1 block truncate font-mono text-xs font-bold text-gray-900 dark:text-gray-100">
-                  {token.id}
+                  {token.tokenId}
                 </span>
               </div>
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Merchant
+                  Plan
+                </span>
+                <ATMBadge color="primary" label={token.planName || (PLAN_TYPE_LABEL[token.plan] ?? token.plan)} className="mt-1" />
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  Sequence
+                </span>
+                <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">#{token.sequence}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  Validity
                 </span>
                 <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">
-                  {token.merchantName}
+                  {token.validityDays} days from activation
                 </span>
               </div>
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Tier
-                </span>
-                <ATMBadge color={TIER_BADGE_VARIANT[token.tier] ?? 'gray'} label={token.tier} className="mt-1" />
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Valid From
+                  Generated
                 </span>
                 <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">
-                  {formatDate(token.validFrom, 'short')}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Valid To
-                </span>
-                <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">
-                  {formatDate(token.validTo, 'short')}
+                  {formatDate(token.createdAt, 'short')}
                 </span>
               </div>
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                   Status
                 </span>
-                <StatusBadge status={token.status} className="mt-1" />
+                <TokenStatusBadge status={token.status} className="mt-1" />
               </div>
             </div>
           </div>
+        </div>
+
+        {/* 2026-08-29 (user-locked): the complete token in human-readable form — every
+            limit count, enabled features and grace phases the merchant is getting. */}
+        <div className="mt-6 border-t border-gray-100 pt-5 dark:border-gray-800">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">What this token grants</h3>
+          <TokenBreakdown
+            limitsPayload={token.limitsPayload}
+            featurePayload={token.featurePayload}
+            gracePolicyDays={token.gracePolicyDays}
+          />
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
           <ATMButton variant="secondary" size="sm" icon={Copy} onClick={handleCopy}>
             Copy to Clipboard
           </ATMButton>
-          {onEmail && (
-            <ATMButton variant="secondary" size="sm" icon={Mail} onClick={() => onEmail(token)}>
-              Email to Merchant
-            </ATMButton>
-          )}
-          {onDownloadPdf && (
-            <ATMButton variant="secondary" size="sm" icon={Download} onClick={() => onDownloadPdf(token)}>
-              Download as PDF
-            </ATMButton>
-          )}
           <ATMButton variant="secondary" size="sm" icon={Printer} onClick={handlePrint}>
             Print
           </ATMButton>

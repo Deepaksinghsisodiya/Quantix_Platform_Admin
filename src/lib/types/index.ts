@@ -2,6 +2,7 @@ export type {
   PaginationParams,
   PaginatedResult,
   ApiResponse,
+  PagedResponse,
   ErrorResponse,
   SortDirection,
   DateRange,
@@ -41,22 +42,22 @@ export type {
   Invoice,
   InvoiceItem,
   SubscriptionPlan,
-  TokenPricing,
-  BulkDiscount,
   PaymentRecord,
   BillingCycle,
   RefundRequest,
 } from './billing';
 
+// 2026-08-29: TokenTier/TokenBinding/TokenGracePolicy/TokenGenerateRequest removed —
+// they were fictional (no C# counterpart). Tokens derive from the merchant's subscribed plan.
 export type {
   TokenStatus,
-  TokenTier,
-  TokenBinding,
   RechargeToken,
-  TokenGracePolicy,
-  TokenTemplate,
-  TokenGenerateRequest,
+  RechargeTokenDetail,
+  TokenListItem,
+  TokenIssueResult,
+  IssueTokenRequest,
   BulkTokenRequest,
+  BulkTokenResult,
   TokenFilter,
 } from './token';
 
@@ -64,29 +65,32 @@ export type {
   CommissionSummary,
   MerchantCommissionSummary,
   CommissionRate,
-  CommissionExemption,
 } from './commission';
 
+// 2026-09-04: `Ticket` / `TicketMessage` / `AgentMetric` REMOVED — portal inventions the API
+// never sent. The wire shapes are TicketListItem / TicketDetail / TicketComment.
 export type {
   TicketStatus,
   TicketPriority,
   TicketCategory,
-  Ticket,
-  TicketMessage,
+  CommentAuthorType,
+  TicketListItem,
+  TicketComment,
+  TicketDetail,
   TicketFilter,
   TicketMetrics,
-  AgentMetric,
   Lead,
   CannedResponse,
 } from './helpdesk';
 
 export type {
-  DataRequestType,
-  DataRequestStatus,
-  DataRequest,
+  ComplianceRequestType,
+  ComplianceStatus,
+  ComplianceDataScope,
+  ComplianceRequest,
+  CreateComplianceRequest,
+  ComplianceDashboard,
   ConsentRecord,
-  RetentionPolicy,
-  ComplianceMetrics,
 } from './compliance';
 
 export type {
@@ -113,11 +117,9 @@ export type {
 export type {
   GlobalSettings,
   PasswordPolicy,
-  FeatureToggle,
   MaintenanceWindow,
   EmailTemplate,
   IntegrationConfig,
-  TokenGenerationConfig,
   CommissionConfig,
   GracePeriodConfig,
 } from './settings';
@@ -165,13 +167,5 @@ export type {
   RejectMerchantApplicationRequest,
 } from './merchant-api';
 
-export type {
-  RechargeTokenApi,
-  RechargeTokenDetailApi,
-  GenerateRechargeTokenPayload,
-  BulkTokenGenerationPayload,
-  BulkTokenResult,
-  TokenPricing as TokenPricingApi,
-  LimitEnforcementApi,
-  RevokeTokenRequest,
-} from './token-api';
+// 2026-08-29: token-api.ts mirrors removed — lib/types/token.ts is now the canonical
+// mirror of the C# token DTOs (exported above).

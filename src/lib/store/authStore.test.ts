@@ -7,7 +7,6 @@ const mockUser: PlatformUser = {
   name: 'Test User',
   email: 'test@example.com',
   role: 'Admin',
-  department: 'Engineering',
   status: 'Active',
   lastLogin: null,
   mfaEnabled: false,
@@ -56,7 +55,8 @@ describe('authStore', () => {
     it('sets the user and marks authenticated', () => {
       useAuthStore.getState().setUser(mockUser);
       const state = useAuthStore.getState();
-      expect(state.user).toEqual(mockUser);
+      // toMatchObject: the store normalizes role/roleName onto the stored user.
+      expect(state.user).toMatchObject(mockUser);
       expect(state.isAuthenticated).toBe(true);
       expect(state.mfaPending).toBe(false);
     });

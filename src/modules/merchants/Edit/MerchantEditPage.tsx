@@ -1,7 +1,8 @@
 import React from 'react';
 import { Form, FormikProps } from 'formik';
 import { Save, ArrowLeft, AlertCircle } from 'lucide-react';
-import { ATMInputField, ATMSelectField, ATMPhoneInputField } from '@/shared/components/form';
+import { ATMInputField, ATMPhoneInputField } from '@/shared/components/form';
+import { countryName } from '@/lib/utils/countryName';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMIconButton } from '@/shared/ui/ATMIconButton';
 
@@ -13,18 +14,9 @@ export interface MerchantFormValues {
   country: string;
 }
 
-const COUNTRY_OPTIONS = [
-  { label: 'United States', value: 'US' },
-  { label: 'United Kingdom', value: 'GB' },
-  { label: 'Canada', value: 'CA' },
-  { label: 'Australia', value: 'AU' },
-  { label: 'Germany', value: 'DE' },
-  { label: 'France', value: 'FR' },
-  { label: 'India', value: 'IN' },
-  { label: 'UAE', value: 'AE' },
-  { label: 'Saudi Arabia', value: 'SA' },
-  { label: 'Singapore', value: 'SG' },
-];
+// 2026-08-30 (user directive): hardcoded COUNTRY_OPTIONS removed — single-country
+// deployment: the merchant's country IS platform.country (frozen at setup) and is
+// displayed read-only; names come from Intl, never a hand-picked list.
 
 interface MerchantEditPageProps {
   title: string;
@@ -133,12 +125,15 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
                 required
               />
               <div className="md:col-span-2">
-                <ATMSelectField
-                  name="country"
-                  label="Country"
-                  options={COUNTRY_OPTIONS}
-                  required
-                />
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Country
+                </label>
+                <p className="text-sm font-bold text-slate-900 dark:text-gray-100">
+                  {countryName(formikProps.values.country) || '—'}
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-slate-400 dark:text-gray-500">
+                  Single-country deployment — fixed by platform setup, not editable per merchant.
+                </p>
               </div>
             </div>
           </div>

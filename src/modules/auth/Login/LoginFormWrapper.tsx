@@ -95,7 +95,10 @@ export const LoginFormWrapper: React.FC = () => {
           rememberMe: false,
         }).unwrap();
 
-        console.log("Login Response Payload:", JSON.stringify(res));
+        // 2026-08-30: removed a debug console.log that dumped the ENTIRE login payload —
+        // JWT, refresh token and the full permission list — into the browser console on
+        // every sign-in (readable by anyone with the devtools open, and captured by any
+        // console-forwarding extension).
 
         const resAny = res as any;
         const data = res.data;

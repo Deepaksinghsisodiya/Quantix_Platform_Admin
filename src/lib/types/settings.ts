@@ -24,18 +24,6 @@ export interface PasswordPolicy {
 }
 
 /** Feature flag with scoped targeting. FRS-SAP-802 */
-export interface FeatureToggle {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly scope: 'Global' | 'Plan' | 'Tier' | 'Merchant';
-  readonly enabled: boolean;
-  /** IDs of plans, tiers, or merchants this toggle targets (empty for Global scope). */
-  readonly targets: readonly string[];
-  readonly createdAt: string;
-  readonly updatedAt: string;
-}
-
 /** Scheduled maintenance window. FRS-SAP-803 */
 export interface MaintenanceWindow {
   readonly id: string;
@@ -73,38 +61,8 @@ export interface IntegrationConfig {
   readonly status: 'Active' | 'Inactive' | 'Error';
 }
 
-/** Configuration for token generation defaults. FRS-SAP-808 */
-export interface TokenGenerationConfig {
-  readonly defaultValidityDays: number;
-  readonly maxValidityDays: number;
-  readonly defaultGracePeriodDays: number;
-  readonly autoRenewalEnabled: boolean;
-  readonly notifyDaysBeforeExpiry: readonly number[];
-  readonly qrCodeSize: number;
-  /** Encryption algorithm used for token payload. */
-  readonly encryptionAlgorithm: string;
-  /** Signing key rotation interval in days. */
-  readonly signingKeyRotationDays: number;
-  /** Timestamp of next scheduled key rotation. */
-  readonly nextKeyRotation: string;
-  /** Active signing key ID. */
-  readonly activeKeyId: string;
-  /** Ordered list of payload fields included in token. */
-  readonly payloadFields: readonly string[];
-  /** Token templates per tier. */
-  readonly tierTemplates: readonly TokenTierTemplate[];
-}
-
-/** Per-tier token template configuration. FRS-SAP-808 */
-export interface TokenTierTemplate {
-  readonly tier: string;
-  readonly maxTokensPerMerchant: number;
-  readonly maxDevicesPerToken: number;
-  readonly defaultExpiryDays: number;
-  readonly gracePolicyDays: number;
-  readonly features: readonly string[];
-  readonly limits: Record<string, number>;
-}
+// 2026-08-29: TokenTierTemplate removed — token tiers never existed; templates are keyed
+// on PlanType (see modules/tokens/services/tokenApi TokenTemplate).
 
 /** Platform-wide commission configuration. FRS-SAP-809 */
 export interface CommissionConfig {

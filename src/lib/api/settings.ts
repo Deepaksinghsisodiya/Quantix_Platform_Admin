@@ -20,40 +20,8 @@ export interface GlobalSettings {
   readonly defaultTrialDays: number;
 }
 
-export interface FeatureToggle {
-  readonly id: string;
-  readonly name: string;
-  readonly key: string;
-  readonly description: string;
-  readonly enabled: boolean;
-  readonly scope: 'Global' | 'Plan' | 'Merchant';
-  readonly updatedAt: string;
-  readonly updatedBy: string;
-}
-
-export interface FeatureToggleUpdate {
-  readonly enabled: boolean;
-}
-
-export interface MaintenanceWindow {
-  readonly id: string;
-  readonly title: string;
-  readonly description: string;
-  readonly scheduledStart: string;
-  readonly scheduledEnd: string;
-  readonly status: 'Scheduled' | 'InProgress' | 'Completed' | 'Cancelled';
-  readonly affectedServices: readonly string[];
-  readonly notifyMerchants: boolean;
-}
-
-export interface MaintenanceWindowCreate {
-  readonly title: string;
-  readonly description: string;
-  readonly scheduledStart: string;
-  readonly scheduledEnd: string;
-  readonly affectedServices: readonly string[];
-  readonly notifyMerchants: boolean;
-}
+// MaintenanceWindow interfaces REMOVED 2026-08-10 — invented shapes (scheduledStart /
+// affectedServices) that never matched the real MaintenanceWindowDto; nothing imported them.
 
 export interface EmailTemplate {
   readonly id: string;
@@ -86,14 +54,6 @@ export interface IntegrationUpdate {
   readonly config?: Record<string, string>;
 }
 
-export interface TokenConfig {
-  readonly defaultValidityDays: number;
-  readonly maxValidityDays: number;
-  readonly gracePeriodDays: number;
-  readonly autoRenewEnabled: boolean;
-  readonly notifyDaysBeforeExpiry: readonly number[];
-}
-
 export interface CommissionConfig {
   readonly defaultRate: number;
   readonly minimumTransactionValue: number;
@@ -120,21 +80,9 @@ export function updateGlobalSettings(data: Partial<GlobalSettings>): Promise<Api
   return put<ApiResponse<GlobalSettings>>('/api/v1/settings', data);
 }
 
-export function getFeatureToggles(): Promise<ApiResponse<readonly FeatureToggle[]>> {
-  return get<ApiResponse<readonly FeatureToggle[]>>('/api/v1/settings/feature-toggles');
-}
-
-export function updateFeatureToggle(id: string, data: FeatureToggleUpdate): Promise<ApiResponse<FeatureToggle>> {
-  return put<ApiResponse<FeatureToggle>>(`/api/v1/settings/feature-toggles/${id}`, data);
-}
-
-export function getMaintenanceWindows(): Promise<ApiResponse<readonly MaintenanceWindow[]>> {
-  return get<ApiResponse<readonly MaintenanceWindow[]>>('/api/v1/settings/maintenance-windows');
-}
-
-export function scheduleMaintenanceWindow(data: MaintenanceWindowCreate): Promise<ApiResponse<MaintenanceWindow>> {
-  return post<ApiResponse<MaintenanceWindow>>('/api/v1/settings/maintenance-windows', data);
-}
+// getMaintenanceWindows/scheduleMaintenanceWindow REMOVED 2026-08-10 — they targeted
+// /settings/maintenance-windows, an endpoint that never existed, and nothing imported them.
+// The Maintenance page talks to the real /settings/maintenance/windows endpoints directly.
 
 export function getEmailTemplates(): Promise<ApiResponse<readonly EmailTemplate[]>> {
   return get<ApiResponse<readonly EmailTemplate[]>>('/api/v1/settings/email-templates');
@@ -150,14 +98,6 @@ export function getIntegrations(): Promise<ApiResponse<readonly Integration[]>> 
 
 export function updateIntegration(id: string, data: IntegrationUpdate): Promise<ApiResponse<Integration>> {
   return put<ApiResponse<Integration>>(`/api/v1/settings/integrations/${id}`, data);
-}
-
-export function getTokenConfig(): Promise<ApiResponse<TokenConfig>> {
-  return get<ApiResponse<TokenConfig>>('/api/v1/settings/token-config');
-}
-
-export function updateTokenConfig(data: Partial<TokenConfig>): Promise<ApiResponse<TokenConfig>> {
-  return put<ApiResponse<TokenConfig>>('/api/v1/settings/token-config', data);
 }
 
 export function getCommissionConfig(): Promise<ApiResponse<CommissionConfig>> {

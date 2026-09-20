@@ -5,7 +5,7 @@
 
 export type TaxCalculationMethod = 'Inclusive' | 'Exclusive';
 export type TaxJurisdiction = 'Federal' | 'State' | 'County' | 'City';
-export type PlatformTaxScope = 'Commission' | 'Subscription' | 'Both';
+export type PlatformTaxScope = 'Subscription' | 'Commission' | 'LicenseTokenSale' | 'ServiceTokenRecharge' | 'All';
 
 export interface PlatformTaxDefinition {
   readonly taxDefinitionId: string;

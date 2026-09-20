@@ -1,365 +1,408 @@
-import React, { useMemo } from 'react';
+/**
+ * Signup Queue page — 2026-08-12 rework: the enquiry inbox. See SignupQueueWrapper for
+ * the model. Row click → enquiry details; decisions: Onboard (wizard) / Reject (reason).
+ */
+
+import React, { useState } from 'react';
 import {
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  Clock,
-  Cog,
-  Key,
-  Loader2,
-  Mail,
-  RefreshCw,
-  RotateCw,
-  Zap,
-  Building2,
+  Building2, Globe, UserCog, Search, RefreshCw, Plus, ArrowRight, X,
 } from 'lucide-react';
 
-import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
-import { ATMBadge, BadgeColor } from '@/shared/ui/ATMBadge';
+import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
-import { ATMModal } from '@/shared/ui/ATMModal';
+import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
-import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
-import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
-import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMModal } from '@/shared/ui/ATMModal';
+import { ATMTextArea } from '@/shared/ui/ATMTextArea';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
+import type { WizardState, WizardStepKey } from '../OnboardingWizard/wizard.types';
 
-export type SignupStatus = 'PendingVerification' | 'PendingPayment' | 'Provisioning' | 'Active' | 'Failed';
+// ---------------------------------------------------------------------------
 
-export interface SignupEntry {
-  id: string;
-  businessName: string;
-  merchantType: 'Enterprise' | 'Standalone';
-  businessNature: string;
-  email: string;
-  status: SignupStatus;
-  submittedAt: string;
-  error: string | null;
+// 2026-08-30: the local STEP_ORDER mirror is gone — the server's `steps` array is the
+// single source for both the step number and the total (the label said "of 7" while the
+// wizard has 8 steps, producing "Step 8 of 7").
+const STEP_LABEL: Record<WizardStepKey, string> = {
+  basic_info: 'Basic Info',
+  type_plan: 'Type & Plan',
+  kyc: 'KYC',
+  payment: 'Payment',
+  terminals: 'Terminals',
+  fund: 'Fund',
+  provision: 'Provision',
+  activate: 'Ready to Activate',
+};
+
+/** Awaiting the onboard/reject decision = no onboarding progress beyond signup yet. */
+export function isAwaitingDecision(s: WizardState): boolean {
+  return s.currentStep === 'basic_info' || s.currentStep === 'type_plan';
 }
+
+function stepNumber(s: WizardState): number {
+  const idx = (s.steps ?? []).findIndex((st) => st.key === s.currentStep);
+  return idx < 0 ? 1 : idx + 1;
+}
+
+function stepTotal(s: WizardState): number {
+  return s.steps?.length || 8;
+}
+
+function isWebsite(s: WizardState): boolean {
+  return !(s.signupSource ?? '').startsWith('admin');
+}
+
+function withinDays(iso: string | undefined, days: number): boolean {
+  if (!iso) return false;
+  const d = new Date(/Z|[+-]\d\d:\d\d$/.test(iso) ? iso : iso + 'Z');
+  return Date.now() - d.getTime() < days * 24 * 3600 * 1000;
+}
+
+function SourceBadge({ source }: { source: string | null }) {
+  const isAdmin = (source ?? '').startsWith('admin');
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider',
+      isAdmin
+        ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+        : 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+    )}>
+      {isAdmin ? <UserCog size={10} /> : <Globe size={10} />}
+      {isAdmin ? 'Admin' : 'Website'}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 interface SignupQueuePageProps {
   isLoading: boolean;
   isFetching: boolean;
   refetch: () => void;
-  signups: SignupEntry[];
-  filteredSignups: SignupEntry[];
+  signups: WizardState[];
+  filteredSignups: WizardState[];
   autoRefresh: boolean;
-  setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
-  statusFilter: string;
-  setStatusFilter: (status: string) => void;
-  typeFilter: string;
-  setTypeFilter: (type: string) => void;
+  setAutoRefresh: (v: boolean) => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  acceptCandidate: SignupEntry | null;
-  setAcceptCandidate: (candidate: SignupEntry | null) => void;
-  accepting: boolean;
-  confirmAccept: () => Promise<void>;
-  handleAction: (id: string, action: string) => Promise<void>;
+  setSearchQuery: (v: string) => void;
+  sourceFilter: 'all' | 'website' | 'admin';
+  setSourceFilter: (v: 'all' | 'website' | 'admin') => void;
+  stageFilter: 'all' | 'awaiting' | 'onboarding';
+  setStageFilter: (v: 'all' | 'awaiting' | 'onboarding') => void;
+  isRejecting: boolean;
+  onNewSignup: () => void;
+  onContinue: (merchantId: string) => void;
+  onReject: (merchantId: string, reason: string) => Promise<boolean>;
 }
 
-const STATUS_CONFIG: Record<SignupStatus, { label: string; color: BadgeColor }> = {
-  PendingVerification: { label: 'Pending Verification', color: 'warning' },
-  PendingPayment: { label: 'Pending Payment', color: 'primary' },
-  Provisioning: { label: 'Provisioning', color: 'purple' },
-  Active: { label: 'Active', color: 'success' },
-  Failed: { label: 'Failed', color: 'danger' },
-};
-
-const PIPELINE_STAGES: { key: SignupStatus; label: string; icon: React.ReactNode; color: string }[] = [
-  { key: 'PendingVerification', label: 'Pending Verification', icon: <Mail className="h-5 w-5" />, color: 'bg-amber-500' },
-  { key: 'PendingPayment', label: 'Pending Payment', icon: <Clock className="h-5 w-5" />, color: 'bg-blue-500' },
-  { key: 'Provisioning', label: 'Provisioning', icon: <Cog className="h-5 w-5" />, color: 'bg-indigo-500' },
-  { key: 'Active', label: 'Active', icon: <CheckCircle2 className="h-5 w-5" />, color: 'bg-emerald-500' },
-];
-
-export const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
-  isLoading,
-  isFetching,
-  refetch,
-  signups,
-  filteredSignups,
-  autoRefresh,
-  setAutoRefresh,
-  statusFilter,
-  setStatusFilter,
-  typeFilter,
-  setTypeFilter,
-  searchQuery,
-  setSearchQuery,
-  acceptCandidate,
-  setAcceptCandidate,
-  accepting,
-  confirmAccept,
-  handleAction,
+const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
+  isLoading, isFetching, refetch,
+  signups, filteredSignups,
+  autoRefresh, setAutoRefresh,
+  searchQuery, setSearchQuery,
+  sourceFilter, setSourceFilter,
+  stageFilter, setStageFilter,
+  isRejecting,
+  onNewSignup, onContinue, onReject,
 }) => {
-  const counts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const s of signups) {
-      map[s.status] = (map[s.status] ?? 0) + 1;
-    }
-    return map;
-  }, [signups]);
+  const [selected, setSelected] = useState<WizardState | null>(null);
+  const [rejecting, setRejecting] = useState<WizardState | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
-  const columns = useMemo<ATMTableColumn<SignupEntry>[]>(
-    () => [
-      {
-        key: 'id',
-        header: 'ID',
-        renderCell: (val) => (
-          <span className="font-mono text-xs text-surface-500 dark:text-surface-400">
-            {val ? String(val).slice(0, 8) : '—'}
-          </span>
-        ),
-        width: '100px',
-      },
-      {
-        key: 'businessName',
-        header: 'Business Name',
-        renderCell: (val) => (
-          <span className="font-bold text-surface-900 dark:text-surface-100">{val}</span>
-        ),
-      },
-      {
-        key: 'merchantType',
-        header: 'Type',
-        renderCell: (val) => (
-          <ATMBadge color={val === 'Enterprise' ? 'purple' : 'primary'} label={val} size="sm" />
-        ),
-        width: '120px',
-      },
-      {
-        key: 'status',
-        header: 'Status',
-        renderCell: (val) => {
-          const cfg = STATUS_CONFIG[val as SignupStatus];
-          return <ATMBadge color={cfg.color} dot label={cfg.label} size="sm" />;
-        },
-        width: '160px',
-      },
-      {
-        key: 'submittedAt',
-        header: 'Submitted',
-        renderCell: (val) => (
-          <span className="text-sm font-semibold text-surface-500 dark:text-surface-400">
-            {formatDate(val, 'short')}
-          </span>
-        ),
-        width: '120px',
-      },
-      {
-        key: 'actions',
-        header: 'Actions',
-        align: 'right',
-        renderCell: (_, row) => {
-          const { id, status, merchantType } = row;
-          return (
-            <div className="flex gap-1.5 justify-end">
-              {status === 'PendingVerification' && (
-                <ATMButton size="sm" variant="secondary" onClick={() => handleAction(id, 'resend')}>
-                  <Mail className="mr-1 h-3.5 w-3.5" />
-                  Resend
-                </ATMButton>
-              )}
-              {status === 'PendingPayment' && (
-                <ATMButton size="sm" variant="secondary" onClick={() => handleAction(id, 'bypass')}>
-                  <Zap className="mr-1 h-3.5 w-3.5 animate-pulse" />
-                  Bypass
-                </ATMButton>
-              )}
-              {status !== 'Active' && (
-                <ATMButton size="sm" variant="primary" onClick={() => handleAction(id, 'accept')}>
-                  <Check className="mr-1 h-3.5 w-3.5" />
-                  Accept
-                </ATMButton>
-              )}
-              {(status === 'Provisioning' || status === 'Failed') && merchantType === 'Enterprise' && (
-                <ATMButton size="sm" variant="secondary" onClick={() => handleAction(id, 'retry')}>
-                  <RotateCw className="mr-1 h-3.5 w-3.5" />
-                  Retry
-                </ATMButton>
-              )}
-              {(status === 'Provisioning' || status === 'Failed') && merchantType === 'Standalone' && (
-                <ATMButton size="sm" variant="secondary" onClick={() => handleAction(id, 'generate-token')}>
-                  <Key className="mr-1 h-3.5 w-3.5" />
-                  Generate Token
-                </ATMButton>
-              )}
-              {status === 'Active' && (
-                <span className="inline-flex items-center gap-1 text-xs text-success-600 dark:text-success-400 font-bold uppercase">
-                  <Check className="h-3.5 w-3.5" />
-                  Complete
-                </span>
-              )}
-            </div>
-          );
-        },
-        width: '240px',
-      },
-    ],
-    [handleAction]
-  );
+  const stats = {
+    newThisWeek: signups.filter((s) => withinDays((s as any).createdAt, 7)).length,
+    website: signups.filter(isWebsite).length,
+    admin: signups.filter((s) => !isWebsite(s)).length,
+    onboarding: signups.filter((s) => !isAwaitingDecision(s)).length,
+  };
+
+  const openReject = (s: WizardState) => {
+    setRejectReason('');
+    setRejecting(s);
+  };
+
+  const submitReject = async () => {
+    if (!rejecting) return;
+    if (!rejectReason.trim()) return;
+    const ok = await onReject(rejecting.merchantId, rejectReason.trim());
+    if (ok) {
+      setRejecting(null);
+      setSelected(null);
+    }
+  };
+
+  const tiles: { label: string; value: number; accent: string }[] = [
+    { label: 'New this week', value: stats.newThisWeek, accent: 'text-sky-600 dark:text-sky-400' },
+    { label: 'From website', value: stats.website, accent: 'text-emerald-600 dark:text-emerald-400' },
+    { label: 'Admin-entered', value: stats.admin, accent: 'text-slate-600 dark:text-slate-300' },
+    { label: 'In onboarding', value: stats.onboarding, accent: 'text-violet-600 dark:text-violet-400' },
+  ];
 
   return (
-    <div className="flex flex-col space-y-5 animate-fade-in w-full">
-      {/* Premium Page Header */}
-      <ATMPageHeader
-        title="Signup Queue"
-        subtitle="Monitor and manage self-service merchant registration workflows."
-        icon={Building2}
-        iconColor="theme"
-      />
-
-      {/* Pipeline Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <ATMStatsCard
-          label="Pending Verification"
-          value={counts['PendingVerification'] ?? 0}
-          icon={Mail}
-          variant="amber"
-        />
-        <ATMStatsCard
-          label="Pending Payment"
-          value={counts['PendingPayment'] ?? 0}
-          icon={Clock}
-          variant="accent"
-        />
-        <ATMStatsCard
-          label="Provisioning"
-          value={counts['Provisioning'] ?? 0}
-          icon={Cog}
-          variant="indigo"
-        />
-        <ATMStatsCard
-          label="Active"
-          value={counts['Active'] ?? 0}
-          icon={CheckCircle2}
-          variant="emerald"
-        />
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 shadow-lg shadow-primary-500/20">
+            <Building2 className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Signup Queue</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              New merchant enquiries. Review the details, then decide — onboard or reject.
+              Onboarded merchants appear in All Merchants once activated.
+            </p>
+          </div>
+        </div>
+        <ATMButton variant="primary" icon={Plus} onClick={onNewSignup}>
+          New Signup
+        </ATMButton>
       </div>
 
-      {/* ATMTable integration */}
-      <div className="flex-1 overflow-hidden w-full bg-zen-surface rounded-2xl border border-gray-100 dark:border-gray-800">
-        <ATMTable<SignupEntry>
-          columns={columns}
-          data={filteredSignups}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          density="compact"
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="Search signups by business name or email..."
-          extraHeaderActions={
-            <div className="flex items-center gap-4">
-              <ATMSwitch
-                name="autoRefresh"
-                label="Auto-refresh"
-                checked={autoRefresh}
-                onChange={(checked) => setAutoRefresh(checked)}
-                size="sm"
-              />
-              <ATMButton
-                variant="secondary"
-                size="sm"
-                icon={isFetching ? Loader2 : RefreshCw}
-                onClick={refetch}
-                disabled={isLoading || isFetching}
+      {/* Triage stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {tiles.map((t) => (
+          <div key={t.label} className="p-4 rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)]">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
+              {t.label}
+            </span>
+            <span className={cn('text-xl font-black mt-1 inline-block', t.accent)}>{t.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <ATMCard className="glass-card" padding="md">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-950 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
+              placeholder="Search by business name, email, or nature…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Stage filter */}
+          <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-zinc-950">
+            {([['all', 'All'], ['awaiting', 'Awaiting decision'], ['onboarding', 'In onboarding']] as const).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setStageFilter(v)}
+                className={cn(
+                  'px-3 py-1.5 rounded-md text-[11px] font-bold transition-all',
+                  stageFilter === v
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                )}
               >
-                Refresh
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Source filter */}
+          <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-zinc-950">
+            {(['all', 'website', 'admin'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSourceFilter(s)}
+                className={cn(
+                  'px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-all',
+                  sourceFilter === s
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2">
+              <ATMSwitch name="autoRefresh" checked={autoRefresh} onChange={setAutoRefresh} size="sm" />
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Auto-refresh</span>
+            </div>
+            <ATMButton variant="outline" size="sm" icon={RefreshCw} onClick={refetch} isLoading={isFetching}>
+              Refresh
+            </ATMButton>
+          </div>
+        </div>
+      </ATMCard>
+
+      {/* List */}
+      <ATMCard className="glass-card" padding="none">
+        {isLoading ? (
+          <div className="flex h-48 items-center justify-center">
+            <RefreshCw className="h-5 w-5 animate-spin text-slate-400" />
+          </div>
+        ) : filteredSignups.length === 0 ? (
+          <div className="text-center py-16">
+            <Building2 className="mx-auto h-10 w-10 text-slate-200 dark:text-slate-700" />
+            <p className="mt-3 text-sm font-bold text-slate-500 dark:text-slate-400">
+              {signups.length === 0 ? 'No signups in the queue.' : 'No signups match the current filters.'}
+            </p>
+            {signups.length === 0 && (
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                Start one with "New Signup" — or wait for website self-signups to land here.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800/60">
+                  {['Business', 'Source', 'Business Nature', 'Status', 'Submitted', 'Actions'].map((h) => (
+                    <th key={h} className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
+                {filteredSignups.map((s) => {
+                  const awaiting = isAwaitingDecision(s);
+                  return (
+                    <tr
+                      key={s.merchantId}
+                      className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/40 transition-colors cursor-pointer"
+                      onClick={() => setSelected(s)}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">{s.companyName}</p>
+                        <p className="text-[11px] text-slate-400">{s.basicInfo?.contactEmail}</p>
+                      </td>
+                      <td className="px-4 py-3"><SourceBadge source={s.signupSource} /></td>
+                      <td className="px-4 py-3">
+                        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                          {s.basicInfo?.businessNature || '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {awaiting ? (
+                          <ATMBadge variant="warning" size="sm">Awaiting decision</ATMBadge>
+                        ) : (
+                          <span className="text-[11px] font-bold text-violet-600 dark:text-violet-400">
+                            Onboarding — Step {stepNumber(s)} of {stepTotal(s)} ({STEP_LABEL[s.currentStep]})
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        {formatDate((s as any).createdAt ?? '', 'short') || '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <ATMButton
+                            variant="outline" size="sm" icon={ArrowRight}
+                            onClick={() => onContinue(s.merchantId)}
+                          >
+                            {awaiting ? 'Onboard' : 'Continue'}
+                          </ATMButton>
+                          <button
+                            type="button"
+                            title="Reject signup"
+                            onClick={() => openReject(s)}
+                            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ATMCard>
+
+      {/* Enquiry details */}
+      <ATMModal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title={selected?.companyName ?? 'Enquiry'}
+        subtitle="Signup enquiry details"
+        size="lg"
+      >
+        {selected && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              {[
+                ['Company / Individual', selected.companyName],
+                ['Contact person', selected.basicInfo?.contactName],
+                ['Email', selected.basicInfo?.contactEmail],
+                ['Phone', selected.basicInfo?.contactPhone || '—'],
+                ['Business nature', selected.basicInfo?.businessNature || '—'],
+                ['Country', selected.basicInfo?.country],
+                ['Submitted', formatDate((selected as any).createdAt ?? '', 'long') || '—'],
+              ].map(([label, value]) => (
+                <div key={label as string}>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                  <p className="mt-0.5 font-semibold text-slate-800 dark:text-slate-200">{value}</p>
+                </div>
+              ))}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Source</p>
+                <p className="mt-0.5"><SourceBadge source={selected.signupSource} /></p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</p>
+                <p className="mt-0.5 font-semibold text-slate-800 dark:text-slate-200">
+                  {isAwaitingDecision(selected)
+                    ? 'Awaiting decision'
+                    : `Onboarding — Step ${stepNumber(selected)} of ${stepTotal(selected)} (${STEP_LABEL[selected.currentStep]})`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-4">
+              <ATMButton variant="outline" size="sm" onClick={() => openReject(selected)}>
+                Reject
+              </ATMButton>
+              <ATMButton
+                variant="primary" size="sm" icon={ArrowRight}
+                onClick={() => onContinue(selected.merchantId)}
+              >
+                {isAwaitingDecision(selected) ? 'Onboard' : 'Continue Onboarding'}
               </ATMButton>
             </div>
-          }
-          filterConfig={{
-            fields: [
-              {
-                key: 'status',
-                label: 'Status',
-                type: 'select',
-                options: [
-                  { label: 'All Statuses', value: '' },
-                  { label: 'Pending Verification', value: 'PendingVerification' },
-                  { label: 'Pending Payment', value: 'PendingPayment' },
-                  { label: 'Provisioning', value: 'Provisioning' },
-                  { label: 'Active', value: 'Active' },
-                  { label: 'Failed', value: 'Failed' },
-                ],
-              },
-              {
-                key: 'merchantType',
-                label: 'Merchant Type',
-                type: 'select',
-                options: [
-                  { label: 'All Types', value: '' },
-                  { label: 'Enterprise', value: 'Enterprise' },
-                  { label: 'Standalone', value: 'Standalone' },
-                ],
-              },
-            ],
-            values: {
-              status: statusFilter,
-              merchantType: typeFilter,
-            },
-            onChange: (key, val) => {
-              if (key === 'status') setStatusFilter(val ? String(val) : '');
-              if (key === 'merchantType') setTypeFilter(val ? String(val) : '');
-            },
-            onReset: () => {
-              setStatusFilter('');
-              setTypeFilter('');
-            },
-          }}
-          emptyMessage="No signups match the current filters."
-        />
-      </div>
+          </div>
+        )}
+      </ATMModal>
 
-      {/* Accept Confirmation Modal */}
+      {/* Reject dialog */}
       <ATMModal
-        isOpen={!!acceptCandidate}
-        onClose={() => !accepting && setAcceptCandidate(null)}
-        title="Accept Merchant Signup"
-        footer={
+        open={!!rejecting}
+        onClose={() => setRejecting(null)}
+        title={`Reject "${rejecting?.companyName ?? ''}"?`}
+        subtitle="The signup is removed from the queue permanently (audit-logged)."
+        size="md"
+      >
+        <div className="space-y-4">
+          <ATMTextArea
+            name="rejectReason"
+            label="Reason (required)"
+            placeholder="e.g. Duplicate enquiry, spam signup, business type not supported…"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+          />
           <div className="flex justify-end gap-2">
-            <ATMButton
-              variant="secondary"
-              size="sm"
-              onClick={() => setAcceptCandidate(null)}
-              disabled={accepting}
-            >
+            <ATMButton variant="outline" size="sm" onClick={() => setRejecting(null)}>
               Cancel
             </ATMButton>
             <ATMButton
-              variant="primary"
-              size="sm"
-              onClick={confirmAccept}
-              isLoading={accepting}
+              variant="primary" size="sm" icon={X}
+              isLoading={isRejecting}
+              disabled={!rejectReason.trim()}
+              onClick={submitReject}
             >
-              Accept & Email Credentials
+              Reject Signup
             </ATMButton>
           </div>
-        }
-      >
-        {acceptCandidate && (
-          <div className="space-y-4 font-medium text-surface-600 dark:text-surface-400">
-            <p>
-              Accepting <strong>{acceptCandidate.businessName}</strong> will:
-            </p>
-            <ul className="list-inside list-disc space-y-1 text-sm pl-2">
-              <li>Activate the merchant for token issuance + service access.</li>
-              <li>Provision a single-use merchant-self login.</li>
-              <li>
-                Email a temporary password to{' '}
-                <code className="rounded bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 text-xs text-primary-600 dark:text-accent-400 font-mono">
-                  {acceptCandidate.email}
-                </code>
-                .
-              </li>
-            </ul>
-            <p className="text-xs text-surface-500 italic mt-2">
-              The temporary password is single-use; the merchant will be required to set a new one on first login.
-            </p>
-          </div>
-        )}
+        </div>
       </ATMModal>
     </div>
   );

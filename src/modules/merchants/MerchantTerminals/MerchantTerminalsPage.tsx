@@ -14,6 +14,7 @@ import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMIconButton } from '@/shared/ui/ATMIconButton';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
+import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
 import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
@@ -29,6 +30,8 @@ interface FormState {
 interface MerchantTerminalsProps {
   merchantId: string;
   terminals: MerchantTerminal[];
+  /** Plan-derived type options (Restaurant/Retail/Inventory subset). Single option ⇒ preselected + disabled. */
+  allowedTypes: string[];
   isLoading: boolean;
   terminalsError: any;
   onBackClick: () => void;
@@ -56,6 +59,7 @@ interface MerchantTerminalsProps {
 
 export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
   terminals,
+  allowedTypes,
   isLoading,
   terminalsError,
   onBackClick,
@@ -117,16 +121,21 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
         width: '140px',
       },
       {
+        // Registered = a PosTerminal installer redeemed this terminal's 6-digit pairing
+        // code; until then it awaits pairing. (2026-08-30: label was 'Pending' — vague.)
         key: 'isRegistered',
         header: 'Status',
         renderCell: (val) => (
-          <ATMBadge color={val ? 'success' : 'warning'} size="sm" label={val ? 'Registered' : 'Pending'} />
+          <ATMBadge color={val ? 'success' : 'warning'} size="sm" label={val ? 'Registered' : 'Awaiting Pairing'} />
         ),
-        width: '140px',
+        width: '150px',
       },
       {
-        key: 'lastSeenAt',
-        header: 'Last Seen',
+        // 2026-08-30: replaced the 'Last Seen' column — that field had no writer and
+        // Standalone Local-Only terminals never sync to Platform (tokens are the only
+        // channel), so it could never show anything. Pairing time is the honest fact.
+        key: 'registeredAt',
+        header: 'Paired On',
         renderCell: (val) => (val ? formatDate(val, 'datetime') : '—'),
         width: '180px',
       },
@@ -198,7 +207,8 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
               size="sm"
               icon={Plus}
               onClick={() => {
-                setForm({ terminalCode: '', terminalName: '', terminalType: 'POS-REST' });
+                // Single allowed type ⇒ preselect it (the field renders disabled).
+                setForm({ terminalCode: '', terminalName: '', terminalType: (allowedTypes.length === 1 ? allowedTypes[0] : '') ?? '' });
                 setCreateOpen(true);
               }}
             >
@@ -215,7 +225,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
         onClose={() => {
           setCreateOpen(false);
           setEditTarget(null);
-          setForm({ terminalCode: '', terminalName: '', terminalType: 'POS-REST' });
+          setForm({ terminalCode: '', terminalName: '', terminalType: '' });
         }}
         title={editTarget ? 'Edit Terminal' : 'Add Terminal'}
         footer={
@@ -226,7 +236,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
               onClick={() => {
                 setCreateOpen(false);
                 setEditTarget(null);
-                setForm({ terminalCode: '', terminalName: '', terminalType: 'POS-REST' });
+                setForm({ terminalCode: '', terminalName: '', terminalType: '' });
               }}
               disabled={submitting}
             >
@@ -236,7 +246,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
               variant="primary"
               size="sm"
               onClick={editTarget ? handleUpdate : handleCreate}
-              disabled={submitting || !form.terminalCode.trim() || !form.terminalName.trim()}
+              disabled={submitting || !form.terminalCode.trim() || !form.terminalName.trim() || !form.terminalType}
               isLoading={submitting}
             >
               {editTarget ? 'Update' : 'Create'}
@@ -259,11 +269,22 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
             onChange={(e) => setForm({ ...form, terminalName: e.target.value })}
             required
           />
-          <ATMTextField
+          {/* 2026-08-30: type is a plan-derived taxonomy, not free text — tokens bound to
+              this terminal are flavoured by it. One allowed option ⇒ locked in. */}
+          <ATMSelectField
+            name="terminalType"
             label="Terminal Type"
-            placeholder="POS-REST"
-            value={form.terminalType}
-            onChange={(e) => setForm({ ...form, terminalType: e.target.value })}
+            placeholder={allowedTypes.length === 0 ? 'No types available for this plan' : 'Select type…'}
+            options={allowedTypes.map((t) => ({ value: t, label: t }))}
+            value={form.terminalType || null}
+            onChange={(v) => setForm({ ...form, terminalType: (v as string) ?? '' })}
+            disabled={allowedTypes.length <= 1}
+            required
+            helperText={
+              allowedTypes.length === 1
+                ? `This merchant's plan supports ${allowedTypes[0]} terminals only.`
+                : 'Determines what the terminal-bound tokens grant (restaurant vs retail vs inventory-station).'
+            }
           />
         </div>
       </ATMModal>

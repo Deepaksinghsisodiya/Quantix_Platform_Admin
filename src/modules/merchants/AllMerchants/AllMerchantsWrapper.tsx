@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronDown, Building2, Store, Users, UserCheck, CheckCircle2, Eye, Pencil } from 'lucide-react';
+import { Plus, Building2, Store, Users, UserCheck, CheckCircle2, Eye, Pencil } from 'lucide-react';
 import { useGetMerchantsQuery } from '../services/merchantApi';
 import type { Merchant } from '../types/merchant.types';
 import AllMerchantsPage from './AllMerchantsPage';
@@ -15,22 +15,13 @@ import { useGetAll } from '@/shared/hooks/useGetAll';
 import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
 import { formatDate } from '@/lib/utils/formatDate';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 export const AllMerchantsWrapper: React.FC = () => {
   const navigate = useNavigate();
-  const [regDropdownOpen, setRegDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // 2026-09-04: the subtitle named "the Quantix platform" regardless of the operator's DBA.
+  const brandName = useBrandName();
 
-  // Click outside to close dropdown
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setRegDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // 1. Manage State & URL using TimeForge's usePagination hook
   const {
@@ -48,7 +39,6 @@ export const AllMerchantsWrapper: React.FC = () => {
     merchantType: 'all',
     businessNature: 'all',
     status: 'all',
-    country: 'all',
     plan: 'all',
   });
 
@@ -86,24 +76,22 @@ export const AllMerchantsWrapper: React.FC = () => {
     onFilterChange('merchantType', 'all');
     onFilterChange('businessNature', 'all');
     onFilterChange('status', 'all');
-    onFilterChange('country', 'all');
     onFilterChange('plan', 'all');
     onSearchChange('');
   };
 
   const handleExportCsv = () => {
     const headers = [
-      'Business Name', 'Type', 'Business Type', 'Plan', 'Tier',
-      'Status', 'Signup Date', 'Locations', 'Terminals', 'MRR', 'Token Balance',
+      'Business Name', 'Type', 'Business Type', 'Plan',
+      'Status', 'Onboarded', 'Locations', 'Terminals', 'MRR', 'Token Balance',
     ];
     const rows = merchants.map((t) => [
       t.businessName || (t as any).companyName,
-      t.merchantType,
+      (t as any).planType || t.merchantType,
       t.businessNature,
-      t.plan,
-      t.tier,
+      (t as any).planName || t.plan || '',
       t.status || (t as any).merchantStatus,
-      t.signupDate || (t as any).createdAt,
+      (t as any).activatedAt || t.signupDate || (t as any).createdAt,
       t.locationCount,
       t.terminalCount,
       t.mrr ?? '',
@@ -158,24 +146,36 @@ export const AllMerchantsWrapper: React.FC = () => {
       {
         key: 'merchantType',
         header: 'Type',
-        renderCell: (_val, row) => (
-          <ATMBadge
-            label={row.merchantType}
-            color={row.merchantType === 'Enterprise' ? 'purple' : 'muted'}
-            size="sm"
-          />
-        ),
-        width: '130px',
+        // 2026-08-13: MerchantType alone cannot distinguish Standalone POS from Standalone
+        // Cloud — the active plan's type can; fall back to MerchantType when plan-less.
+        renderCell: (_val, row) => {
+          const pt = (row as any).planType as string | undefined;
+          const label = pt === 'StandalonePos' ? 'Standalone POS'
+            : pt === 'StandaloneCloud' ? 'Standalone Cloud'
+              : pt === 'EnterpriseCloud' ? 'Enterprise'
+                : row.merchantType;
+          return (
+            <ATMBadge
+              label={label}
+              color={pt === 'EnterpriseCloud' || row.merchantType === 'Enterprise' ? 'purple'
+                : pt === 'StandaloneCloud' ? 'info' : 'muted'}
+              size="sm"
+            />
+          );
+        },
+        width: '150px',
       },
       {
         key: 'plan',
-        header: 'Plan / Tier',
+        header: 'Plan',
+        // 2026-08-13: real plan display name — the old "Standard" fallback was a plan that
+        // never existed.
         renderCell: (_val, row) => (
           <span className="text-gray-700 dark:text-gray-300 font-semibold text-xs">
-            {row.plan || 'Standard'} {row.tier ? `(${row.tier})` : ''}
+            {(row as any).planName || row.plan || '—'}
           </span>
         ),
-        width: '160px',
+        width: '120px',
       },
       {
         key: 'status',
@@ -188,14 +188,16 @@ export const AllMerchantsWrapper: React.FC = () => {
         width: '130px',
       },
       {
-        key: 'signupDate',
-        header: 'Signup Date',
+        // 2026-08-13 (user-locked): the directory shows when they BECAME a merchant
+        // (onboarding completed), not when the enquiry arrived — that's queue business.
+        key: 'activatedAt',
+        header: 'Onboarded',
         sortable: true,
         renderCell: (_val, row) => {
-          const sDate = row.signupDate || (row as any).createdAt || (row as any).createdOn;
+          const d = (row as any).activatedAt || row.signupDate || (row as any).createdAt;
           return (
             <span className="text-gray-500 dark:text-gray-400 font-semibold tabular-nums text-xs">
-              {sDate ? formatDate(sDate, 'short') : 'Recently'}
+              {d ? formatDate(d, 'short') : '—'}
             </span>
           );
         },
@@ -230,7 +232,6 @@ export const AllMerchantsWrapper: React.FC = () => {
       merchantType: params.merchantType || 'all',
       businessNature: params.businessNature || 'all',
       status: params.status || 'all',
-      country: params.country || 'all',
       plan: params.plan || 'all',
     };
   }, [params]);
@@ -240,56 +241,9 @@ export const AllMerchantsWrapper: React.FC = () => {
       {/* Page header and Stats Cards */}
       <div className="flex-shrink-0">
         <ATMPageHeader
-          title="Merchant Directory"
-          subtitle="Manage all registered merchants on the Quantix platform."
+          title="All Merchants"
+          subtitle={`Manage all registered merchants on the ${brandName} platform.`}
           icon={Store}
-          extraActions={
-            <div ref={dropdownRef} className="relative shrink-0">
-              <ATMButton
-                variant="primary"
-                size="md"
-                onClick={() => setRegDropdownOpen(!regDropdownOpen)}
-                icon={ChevronDown}
-                iconPosition="right"
-              >
-                Register
-              </ATMButton>
-              {regDropdownOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2.5 w-64 origin-top-right overflow-hidden rounded-2xl border border-gray-150/80 bg-white/95 p-1.5 shadow-xl dark:border-gray-800/80 dark:bg-gray-950/95 backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150 flex flex-col gap-0.5">
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all duration-200 group"
-                    onClick={() => { setRegDropdownOpen(false); navigate(ROUTES.TENANTS.REGISTER_ENTERPRISE); }}
-                  >
-                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:scale-105 transition-transform duration-200">
-                      <Building2 className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-gray-800 dark:text-gray-100 text-[13px] leading-tight">Enterprise</div>
-                      <div className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5 truncate">
-                        Cloud-connected SaaS model
-                      </div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all duration-200 group"
-                    onClick={() => { setRegDropdownOpen(false); navigate(ROUTES.TENANTS.REGISTER_STANDALONE); }}
-                  >
-                    <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 shrink-0 group-hover:scale-105 transition-transform duration-200">
-                      <Store className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-gray-800 dark:text-gray-100 text-[13px] leading-tight">Standalone</div>
-                      <div className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5 truncate">
-                        Token-based offline model
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
-          }
         />
 
         {/* Stats Grid */}
@@ -316,7 +270,7 @@ export const AllMerchantsWrapper: React.FC = () => {
                 variant="purple"
               />
               <ATMStatsCard
-                label="Standalone Offline"
+                label="Standalone"
                 value={safeMerchants.filter((m) => m.merchantType === 'Standalone').length}
                 icon={CheckCircle2}
                 variant="amber"
@@ -349,14 +303,18 @@ export const AllMerchantsWrapper: React.FC = () => {
           onFilterChange={onFilterChange}
           onResetFilters={onResetFilters}
           extraHeaderActions={
-            <ATMButton
-              variant="outline"
-              size="sm"
-              onClick={handleExportCsv}
-              disabled={merchants.length === 0}
-            >
-              Export CSV
-            </ATMButton>
+            <>
+              <ATMButton
+                variant="outline"
+                size="sm"
+                onClick={handleExportCsv}
+                disabled={merchants.length === 0}
+              >
+                Export CSV
+              </ATMButton>
+              {/* New Signup removed 2026-08-13 — the directory lists activated merchants;
+                  creation belongs to the Signup Queue. */}
+            </>
           }
         />
       </div>

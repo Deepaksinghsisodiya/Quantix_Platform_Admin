@@ -9,8 +9,6 @@ export { useAuth } from './useAuth';
 export {
   useMerchants,
   useMerchant,
-  useCreateEnterpriseMerchant,
-  useCreateStandaloneMerchant,
   useActivateMerchant,
   useSuspendMerchant,
   useMerchantTimeline,
@@ -22,8 +20,6 @@ export {
 export {
   useCommissionDashboard,
   useCommissionRates,
-  useCommissionExemptions,
-  useCreateExemption,
 } from './useCommission';
 
 // Domain â€” Helpdesk
@@ -31,33 +27,38 @@ export {
   useTickets,
   useTicket,
   useCreateTicket,
-  useAssignTicket,
   useTicketMetrics,
   useLeads,
-  useAddTicketMessage,
+  useAddTicketComment,
+  useResolveTicket,
+  useCloseTicket,
   useUpdateTicket,
   useUpdateLead,
 } from './useHelpdesk';
 
 // Domain â€” Reports
+// 2026-08-31: useRevenueReport → useRevenueAnalytics / useRevenueSeries;
+// useUsageReport → useUsageStats; useTokenReport → useTokenGenerationReport.
+// useReportDefinitions and useExportReport removed — /reports/definitions and
+// /reports/export do not exist on the API and always 404'd.
 export {
+  reportWindow,
   useGrowthReport,
-  useRevenueReport,
-  useUsageReport,
+  useRevenueAnalytics,
+  useRevenueSeries,
+  useUsageStats,
   useChurnReport,
+  useMerchantBehavior,
+  useMerchantHealth,
   useCommissionReport,
-  useTokenReport,
-  useReportDefinitions,
-  useExportReport,
+  useTokenGenerationReport,
 } from './useReports';
 
 // Domain â€” Settings
 export {
   useGlobalSettings,
   useUpdateGlobalSettings,
-  useFeatureToggles,
   useEmailTemplates,
-  useTokenConfig,
   useCommissionConfig,
   useGracePeriodConfig,
 } from './useSettings';
@@ -65,8 +66,7 @@ export {
 // Domain â€” Compliance
 export {
   useComplianceDashboard,
-  useDataRequests,
-  useProcessDataRequest,
+  useComplianceRequests,
 } from './useCompliance';
 
 // Domain â€” Content

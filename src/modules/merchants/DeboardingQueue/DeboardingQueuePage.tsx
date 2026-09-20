@@ -19,6 +19,7 @@ import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
 import type { MerchantDeboarding, DeboardingStatus } from '../types/merchant.types';
+import { DEBOARDING_STATUS_LABEL } from '../types/merchant.types';
 
 const STATUS_COLOR: Record<DeboardingStatus, BadgeColor> = {
   ConsentGiven: 'primary',
@@ -110,7 +111,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
         key: 'status',
         header: 'Status',
         renderCell: (val) => (
-          <ATMBadge color={STATUS_COLOR[val as DeboardingStatus]} size="sm" dot label={val} />
+          <ATMBadge color={STATUS_COLOR[val as DeboardingStatus]} size="sm" dot label={DEBOARDING_STATUS_LABEL[val as DeboardingStatus] ?? val} />
         ),
         width: '180px',
       },

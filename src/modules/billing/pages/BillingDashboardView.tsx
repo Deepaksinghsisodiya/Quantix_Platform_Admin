@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { formatDate } from '@/lib/utils/formatDate';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard } from '@/shared/ui/ATMCard';
@@ -26,16 +26,13 @@ import type {
   EscalationStep,
 } from './BillingDashboardWrapper';
 import {
-  MOCK_REVENUE_BY_MERCHANT_TYPE,
-  MOCK_BILLING_CYCLES,
-  MOCK_ESCALATION,
 } from './BillingDashboardWrapper';
 
 // ---------------------------------------------------------------------------
 // Chart helpers (pure presentational — no data logic)
 // ---------------------------------------------------------------------------
 
-function PieChart({ data }: { data: RevenueByType[] }) {
+function PieChart({ data, currency }: { data: RevenueByType[]; currency: string | undefined }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   let cumulative = 0;
 
@@ -59,7 +56,7 @@ function PieChart({ data }: { data: RevenueByType[] }) {
       <svg viewBox="0 0 100 100" className="h-40 w-40 shrink-0">
         {slices}
         <circle cx="50" cy="50" r="22" className="fill-white dark:fill-gray-900" />
-        <text x="50" y="48" textAnchor="middle" className="fill-gray-900 text-[6px] font-bold dark:fill-gray-100">{formatCurrency(total)}</text>
+        <text x="50" y="48" textAnchor="middle" className="fill-gray-900 text-[6px] font-bold dark:fill-gray-100">{formatCurrencyOrDash(total, currency)}</text>
         <text x="50" y="56" textAnchor="middle" className="fill-gray-500 text-[4px] dark:fill-gray-400">Total</text>
       </svg>
       <div className="space-y-2">
@@ -119,6 +116,8 @@ function AreaChart({ data }: { data: RevenueTrend[] }) {
 // ---------------------------------------------------------------------------
 
 interface BillingDashboardViewProps {
+  /** 2026-09-05: the deployment currency from the dashboard payload; undefined while loading. */
+  currency: string | undefined;
   isLoading: boolean;
   isError: boolean;
   refetch: () => void;
@@ -127,6 +126,7 @@ interface BillingDashboardViewProps {
   revenueTrend: RevenueTrend[];
   overdueInvoices: OverdueInvoice[];
   recentTransactions: RecentTransaction[];
+  escalation: EscalationStep[];
   onRetryPayment: (invoiceId: string) => void;
   onSendReminder: (invoiceId: string) => void;
   onNavigate: (path: string) => void;
@@ -146,6 +146,7 @@ const statusVariant = (status: string) => {
 // ---------------------------------------------------------------------------
 
 export const BillingDashboardView: React.FC<BillingDashboardViewProps> = ({
+  currency,
   isLoading,
   isError,
   refetch,
@@ -154,6 +155,7 @@ export const BillingDashboardView: React.FC<BillingDashboardViewProps> = ({
   revenueTrend,
   overdueInvoices,
   recentTransactions,
+  escalation,
   onRetryPayment,
   onSendReminder,
   onNavigate,
@@ -205,8 +207,12 @@ export const BillingDashboardView: React.FC<BillingDashboardViewProps> = ({
             else if (card.title === 'Outstanding') IconClass = Clock;
             else if (card.title === 'Overdue') IconClass = AlertTriangle;
 
-            const isPositive = card.trend.direction === 'up';
-            const description = `${isPositive ? '+' : '-'}${card.trend.value}% vs last month`;
+            // 2026-08-30: the delta is optional — shown only when the server computed a
+            // real month-over-month change (the previous +8.2% / +12.1% / -3.4% / +5.7%
+            // were hardcoded). Otherwise fall back to the tile's factual sub-label.
+            const description = card.trend
+              ? `${card.trend.direction === 'up' ? '+' : '-'}${card.trend.value}% vs last month`
+              : card.subLabel;
 
             return (
               <ATMStatsCard key={card.title} label={card.title} value={card.value} icon={IconClass} variant={variant} description={description} />
@@ -218,74 +224,35 @@ export const BillingDashboardView: React.FC<BillingDashboardViewProps> = ({
       {/* Charts Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <ATMCard title="Revenue by Type">
-          {isLoading ? <ATMSkeleton height="200px" /> : <PieChart data={revenueByType} />}
+          {isLoading ? <ATMSkeleton height="200px" /> : <PieChart data={revenueByType} currency={currency} />}
         </ATMCard>
         <ATMCard title="Revenue Trend (12 months)">
           {isLoading ? <ATMSkeleton height="200px" /> : <AreaChart data={revenueTrend} />}
         </ATMCard>
       </div>
 
-      {/* Revenue by Merchant Type */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ATMCard title="Enterprise Revenue" extra={<ATMBadge label="Enterprise Only" color="purple" />}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm"><span className="text-gray-500 dark:text-gray-400">Subscription Revenue</span><span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(MOCK_REVENUE_BY_MERCHANT_TYPE.enterprise.subscription)}</span></div>
-            <div className="flex items-center justify-between text-sm"><span className="text-gray-500 dark:text-gray-400">Usage Overage</span><span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(MOCK_REVENUE_BY_MERCHANT_TYPE.enterprise.usageOverage)}</span></div>
-            <div className="flex items-center justify-between text-sm"><span className="text-gray-500 dark:text-gray-400">Commission</span><span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(MOCK_REVENUE_BY_MERCHANT_TYPE.enterprise.commission)}</span></div>
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700 dark:text-gray-300">Total ({MOCK_REVENUE_BY_MERCHANT_TYPE.enterprise.merchantCount} merchants)</span>
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(MOCK_REVENUE_BY_MERCHANT_TYPE.enterprise.total)}</span>
-            </div>
-          </div>
-        </ATMCard>
-        <ATMCard title="Standalone Revenue" extra={<ATMBadge label="Standalone Only" color="primary" />}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm"><span className="text-gray-500 dark:text-gray-400">Token Sales</span><span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(MOCK_REVENUE_BY_MERCHANT_TYPE.standalone.tokenSales)}</span></div>
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700 dark:text-gray-300">Total ({MOCK_REVENUE_BY_MERCHANT_TYPE.standalone.merchantCount} merchants)</span>
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(MOCK_REVENUE_BY_MERCHANT_TYPE.standalone.total)}</span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">No recurring billing — billed per token purchase (on-demand)</p>
-          </div>
-        </ATMCard>
-      </div>
+      {/* 2026-08-13: "Revenue by Merchant Type" and "Billing Cycles" panels REMOVED —
+          both rendered invented figures (revenue splits, merchant counts, anniversary /
+          annual cycles, pro-rata) with no backing data and describing a billing model this
+          platform does not use. Real revenue lives in the KPIs + chart above; the real
+          cadence configuration lives on Settings → Billing Cycle. */}
 
-      {/* Billing Cycles + Escalation */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ATMCard title="Billing Cycles" extra={<span className="text-xs text-gray-500 dark:text-gray-400">Enterprise billing model</span>}>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Cycles</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{MOCK_BILLING_CYCLES.enterprise.monthlyCycles}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Annual Cycles</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{MOCK_BILLING_CYCLES.enterprise.annualCycles}</p>
-              </div>
-            </div>
-            <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
-              <p>Anniversary billing: <strong>{MOCK_BILLING_CYCLES.enterprise.anniversaryBilling}</strong> merchants</p>
-              <p>Fixed date billing: <strong>{MOCK_BILLING_CYCLES.enterprise.fixedDateBilling}</strong> merchants</p>
-              <p>Grace period: <strong>{MOCK_BILLING_CYCLES.enterprise.gracePeriodDays} days</strong> after due date</p>
-              <p>Pro-rata: <strong>{MOCK_BILLING_CYCLES.enterprise.proRataEnabled ? 'Enabled' : 'Disabled'}</strong></p>
-            </div>
-            <div className="rounded-lg bg-green-50 px-3 py-2 text-xs text-green-800 dark:bg-green-900/20 dark:text-green-300">
-              Standalone: {MOCK_BILLING_CYCLES.standalone.description}
-            </div>
-          </div>
-        </ATMCard>
-
+      <div className="grid grid-cols-1 gap-6">
         <ATMCard title="Overdue Escalation Workflow" extra={<ATMBadge label="Enterprise Only" color="danger" />}>
           <div className="space-y-3">
-            {MOCK_ESCALATION.map((step) => (
-              <div key={step.day} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+            {escalation.length === 0 ? (
+              <p className="py-4 text-center text-sm text-gray-400">No invoices are in escalation.</p>
+            ) : escalation.map((step) => (
+              <div key={step.stage} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
                 <div className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white',
-                  step.day <= 1 ? 'bg-amber-500' : step.day <= 7 ? 'bg-orange-500' : step.day <= 14 ? 'bg-red-500' : 'bg-red-700',
-                )}>D{step.day}</div>
+                  step.dayThreshold <= 1 ? 'bg-amber-500' : step.dayThreshold <= 7 ? 'bg-orange-500' : step.dayThreshold <= 14 ? 'bg-red-500' : 'bg-red-700',
+                )}>D{step.dayThreshold}</div>
                 <div className="flex-1"><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{step.action}</p></div>
-                <ATMBadge label={`${step.count} merchants`} color={step.count > 0 ? 'warning' : 'gray'} />
+                <ATMBadge
+                  label={`${step.invoiceCount} invoice${step.invoiceCount === 1 ? '' : 's'}`}
+                  color={step.invoiceCount > 0 ? 'warning' : 'gray'}
+                />
               </div>
             ))}
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -317,7 +284,7 @@ export const BillingDashboardView: React.FC<BillingDashboardViewProps> = ({
                     <tr key={inv.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer" onClick={() => onNavigate(`/billing/invoices/${inv.id}`)}>{inv.invoiceNumber}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700 dark:text-gray-300">{inv.merchantName}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(inv.amount)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrencyOrDash(inv.amount, currency)}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-right"><ATMBadge label={`${inv.daysOverdue}d`} color="danger" /></td>
                       <td className="whitespace-nowrap px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
@@ -348,7 +315,7 @@ export const BillingDashboardView: React.FC<BillingDashboardViewProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(txn.amount)}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrencyOrDash(txn.amount, currency)}</span>
                     <StatusBadge status={txn.status} />
                   </div>
                 </div>

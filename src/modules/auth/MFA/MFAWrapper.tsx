@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { setMfaSetupRequired, selectCurrentUser } from '../slices/authSlice';
 import { useLazySetupMfaQuery, useEnableMfaMutation } from '../services/authApi';
 import MFAForm from './MFAForm';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 const verifySchema = Yup.object().shape({
   code: Yup.string()
@@ -17,6 +18,7 @@ const verifySchema = Yup.object().shape({
 });
 
 export const MFAWrapper: React.FC = () => {
+  const brandName = useBrandName();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
@@ -93,7 +95,7 @@ export const MFAWrapper: React.FC = () => {
 
   const handleDownloadBackupCodes = () => {
     const content = [
-      'Quantix Platform — Backup Recovery Codes',
+      `${brandName} — Backup Recovery Codes`,
       '==========================================',
       '',
       'Store these codes in a safe place. Each code can only be used once.',

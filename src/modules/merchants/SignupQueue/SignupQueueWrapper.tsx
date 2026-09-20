@@ -1,145 +1,65 @@
-import React, { useState, useCallback, useMemo } from 'react';
+/**
+ * Signup Queue — 2026-08-12 rework (user-locked model): the queue is the ENQUIRY INBOX,
+ * not a wizard dashboard. What matters: who signed up NEW (and from where), the business
+ * enquiry details (row click), and the DECISION — Onboard (opens the wizard = acceptance)
+ * or Reject (reason required, audit-logged, clears junk/spam signups). Rows already in
+ * onboarding show "Step X of 7" and leave the queue on activation. The All Merchants
+ * directory now starts where this queue ends (activated onward) — no shared rows.
+ */
+
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import {
-  useGetSignupQueueQuery,
-  useResendVerificationMutation,
-  useBypassPaymentMutation,
-  useRetryProvisioningMutation,
-  useActivateMerchantMutation,
-} from '../services/merchantApi';
-import type { SignupQueueEntry } from '../types/merchant.types';
-import SignupQueuePage, { SignupEntry, SignupStatus } from './SignupQueuePage';
+import { useGetWizardInProgressQuery, useWizardRejectMutation } from '../OnboardingWizard/wizardApi';
+import type { WizardState } from '../OnboardingWizard/wizard.types';
+import SignupQueuePage, { isAwaitingDecision } from './SignupQueuePage';
 
 export const SignupQueueWrapper: React.FC = () => {
   const navigate = useNavigate();
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [acceptCandidate, setAcceptCandidate] = useState<SignupEntry | null>(null);
-  const [accepting, setAccepting] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'website' | 'admin'>('all');
+  const [stageFilter, setStageFilter] = useState<'all' | 'awaiting' | 'onboarding'>('all');
 
-  // Mutations
-  const [resendVerification] = useResendVerificationMutation();
-  const [bypassPayment] = useBypassPaymentMutation();
-  const [retryProvisioning] = useRetryProvisioningMutation();
-  const [activateMerchant] = useActivateMerchantMutation();
-
-  // Map local statusFilter to server status string
-  const serverStatus = useMemo(() => {
-    switch (statusFilter) {
-      case 'PendingVerification': return 'Pending';
-      case 'PendingPayment': return 'Verified';
-      case 'Provisioning': return 'Provisioning';
-      case 'Active': return 'Completed';
-      case 'Failed': return 'Failed';
-      default: return undefined;
-    }
-  }, [statusFilter]);
-
-  // Fetch using RTK Query
-  const { data, isLoading, isFetching, refetch } = useGetSignupQueueQuery({
-    page: 1,
-    pageSize: 100,
-    ...(serverStatus ? { status: serverStatus } : {}),
-    ...(searchQuery ? { search: searchQuery } : {}),
-  }, {
-    pollingInterval: autoRefresh ? 30000 : 0,
+  const { data, isLoading, isFetching, refetch } = useGetWizardInProgressQuery(undefined, {
+    pollingInterval: autoRefresh ? 30_000 : 0,
   });
+  const [rejectSignup, { isLoading: isRejecting }] = useWizardRejectMutation();
 
-  // Map server rows to local formats
-  const signups: SignupEntry[] = useMemo(() => {
-    const rows = (data?.data as any[]) ?? [];
-    return rows.map((r: any) => {
-      const rawStatus = r.status || r.merchantStatus;
-      const status: SignupStatus =
-        rawStatus === 'Pending' || rawStatus === 'PendingApproval' ? 'PendingVerification'
-        : rawStatus === 'Verified' ? 'PendingPayment'
-        : rawStatus === 'Provisioning' ? 'Provisioning'
-        : rawStatus === 'Completed' || rawStatus === 'Active' ? 'Active'
-        : 'Failed';
+  const signups: WizardState[] = useMemo(() => data?.data ?? [], [data]);
 
-      return {
-        id: r.id || r.signupId,
-        businessName: r.businessName || r.companyName || 'Merchant Candidate',
-        email: r.email || r.adminEmail || 'admin@business.com',
-        phone: r.phone || '—',
-        merchantType: (r.merchantType || 'Enterprise') as 'Enterprise' | 'Standalone',
-        planName: r.plan || r.selectedPlan || (r.merchantType === 'Standalone' ? 'Standalone POS Pro' : 'Professional Enterprise'),
-        signupDate: r.createdAt || r.signupDate || new Date().toISOString(),
-        status,
-        subdomain: r.subdomain || r.businessName?.toLowerCase().replace(/[^a-z0-9]/g, ''),
-        verificationSentAt: r.verificationSentAt || r.createdAt,
-        dbStatus: r.dbStatus || (status === 'Active' ? 'Ready' : status === 'Provisioning' ? 'Creating...' : 'Not Started'),
-        businessNature: r.businessNature || 'General Retail',
-        submittedAt: r.createdAt || r.signupDate || new Date().toISOString(),
-        error: r.error || null,
-      };
-    });
-  }, [data]);
-
-  // Apply filters
-  const filteredSignups = useMemo(() => {
+  const filtered = useMemo(() => {
     return signups.filter((s) => {
-      if (statusFilter && s.status !== statusFilter) return false;
-      if (typeFilter && s.merchantType !== typeFilter) return false;
+      if (sourceFilter !== 'all') {
+        const isAdmin = (s.signupSource ?? '').startsWith('admin');
+        if (sourceFilter === 'admin' && !isAdmin) return false;
+        if (sourceFilter === 'website' && isAdmin) return false;
+      }
+      if (stageFilter === 'awaiting' && !isAwaitingDecision(s)) return false;
+      if (stageFilter === 'onboarding' && isAwaitingDecision(s)) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        const matchesName = s.businessName.toLowerCase().includes(q);
-        const matchesEmail = s.email.toLowerCase().includes(q);
-        if (!matchesName && !matchesEmail) return false;
+        const name = s.companyName?.toLowerCase() ?? '';
+        const email = s.basicInfo?.contactEmail?.toLowerCase() ?? '';
+        const nature = s.basicInfo?.businessNature?.toLowerCase() ?? '';
+        if (!name.includes(q) && !email.includes(q) && !nature.includes(q)) return false;
       }
       return true;
     });
-  }, [signups, statusFilter, typeFilter, searchQuery]);
+  }, [signups, sourceFilter, stageFilter, searchQuery]);
 
-  const handleAction = useCallback(async (id: string, action: string) => {
+  const handleReject = async (merchantId: string, reason: string): Promise<boolean> => {
     try {
-      if (action === 'resend-verification') {
-        await resendVerification(id).unwrap();
-        toast.success(`Verification email resent to merchant ${id}`);
-      } else if (action === 'bypass-payment') {
-        await bypassPayment({ id }).unwrap();
-        toast.success(`Payment bypassed for merchant ${id}`);
-        refetch();
-      } else if (action === 'retry-provisioning') {
-        await retryProvisioning(id).unwrap();
-        toast.success(`Provisioning retried for merchant ${id}`);
-        refetch();
-      } else if (action === 'generate-token') {
-        toast.info(`Token generated for candidate ${id}`);
-      } else if (action === 'accept-candidate') {
-        const entry = signups.find((s) => s.id === id);
-        if (entry) setAcceptCandidate(entry);
-      }
-    } catch (err: any) {
-      const msg = err?.data?.message || err?.message || `Failed to perform ${action}`;
-      toast.error(msg);
+      await rejectSignup({ merchantId, reason }).unwrap();
+      toast.success('Signup rejected and removed from the queue.');
+      refetch();
+      return true;
+    } catch (e: any) {
+      toast.error(e?.data?.message || e?.message || 'Failed to reject the signup.');
+      return false;
     }
-  }, [navigate, signups, resendVerification, bypassPayment, retryProvisioning]);
-
-  const confirmAccept = useCallback(async () => {
-    if (!acceptCandidate) return;
-    const targetId = acceptCandidate.id ?? (acceptCandidate as any).merchantId ?? (acceptCandidate as any).signupId;
-    if (!targetId) {
-      toast.error('Merchant ID is missing for activation');
-      return;
-    }
-    setAccepting(true);
-    try {
-      await activateMerchant(targetId).unwrap();
-      toast.success(`${acceptCandidate.businessName} accepted. Credentials emailed.`);
-      setAcceptCandidate(null);
-    } catch (err: any) {
-      const msg = err?.data?.message || err?.message || `Failed to accept ${targetId}`;
-      toast.error(msg);
-    } finally {
-      setAccepting(false);
-    }
-  }, [acceptCandidate, activateMerchant]);
+  };
 
   return (
     <SignupQueuePage
@@ -147,20 +67,19 @@ export const SignupQueueWrapper: React.FC = () => {
       isFetching={isFetching}
       refetch={refetch}
       signups={signups}
-      filteredSignups={filteredSignups}
+      filteredSignups={filtered}
       autoRefresh={autoRefresh}
       setAutoRefresh={setAutoRefresh}
-      statusFilter={statusFilter}
-      setStatusFilter={setStatusFilter}
-      typeFilter={typeFilter}
-      setTypeFilter={setTypeFilter}
       searchQuery={searchQuery}
       setSearchQuery={setSearchQuery}
-      acceptCandidate={acceptCandidate}
-      setAcceptCandidate={setAcceptCandidate}
-      accepting={accepting}
-      confirmAccept={confirmAccept}
-      handleAction={handleAction}
+      sourceFilter={sourceFilter}
+      setSourceFilter={setSourceFilter}
+      stageFilter={stageFilter}
+      setStageFilter={setStageFilter}
+      isRejecting={isRejecting}
+      onNewSignup={() => navigate('/merchants/signups/new')}
+      onContinue={(id) => navigate(`/merchants/onboard/${id}`)}
+      onReject={handleReject}
     />
   );
 };

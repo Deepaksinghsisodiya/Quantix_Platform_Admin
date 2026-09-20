@@ -1,6 +1,10 @@
 import axios from 'axios';
+import { getApiBaseUrl } from '@/lib/config/runtimeConfig';
 
-const LOG_API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1/logs/client`;
+// 2026-08-31: honours the runtime /config.js override. The old template also produced the
+// literal URL "undefined/api/v1/logs/client" whenever VITE_API_BASE_URL was unset (the
+// resolver returns '' instead, i.e. a same-origin relative URL).
+const LOG_API_URL = `${getApiBaseUrl()}/api/v1/logs/client`;
 
 export type LogLevel = 'Info' | 'Warning' | 'Error' | 'Critical';
 

@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { ATMTable, ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { ATMSearch } from '@/shared/components/SearchInput/ATMSearch';
 import { RateCard } from '../types/rateCard.types';
-import { LayoutGrid, List,
+import {
   Package,
   Coins,
   Users,
@@ -41,40 +42,65 @@ export interface PricingItem {
   unit?: string;
 }
 
+// 2026-07-25: canonical labels — matches Quantix.Foundation.Licensing.FeatureCodes.Advance.
+// WTM label fixed (Waste Management, not Workforce & Tables turn).
 export const MODULES_INFO: PricingItem[] = [
-  { key: 'INV', name: 'Inventory Management' },
-  { key: 'FIN', name: 'Finance & Accounting' },
-  { key: 'HRM', name: 'HRM & Staff Roster' },
-  { key: 'MKT', name: 'Marketing & Loyalty' },
-  { key: 'ANL', name: 'Advanced Analytics & BI' },
-  { key: 'WTM', name: 'Workforce & Tables turn' }
+  { key: 'INV', name: 'Advance Inventory' },
+  { key: 'FIN', name: 'Finance & Accounts' },
+  { key: 'HRM', name: 'Human Resource Management' },
+  { key: 'MKT', name: 'Marketing & Promotions' },
+  { key: 'ANL', name: 'Advance Analytics & Reports' },
+  { key: 'WTM', name: 'Waste Management (Restaurant)' },
 ];
 
+// 2026-07-25: expanded to all 7 canonical PaymentMethodCodes; fixed label drifts
+// (GFT → Gift Card, WLT → Mobile Wallet, CSL → Credit Sale).
 export const PAYMENTS_INFO: PricingItem[] = [
-  { key: 'GFT', name: 'Gift Cards' },
+  { key: 'CSH', name: 'Cash' },
+  { key: 'CRD', name: 'Card' },
+  { key: 'GFT', name: 'Gift Card' },
   { key: 'STC', name: 'Store Credit' },
-  { key: 'WLT', name: 'Digital Wallet' },
-  { key: 'CSL', name: 'Credit Ledger / Udhar' }
+  { key: 'WLT', name: 'Mobile Wallet' },
+  { key: 'EXT', name: 'External / Manual' },
+  { key: 'CSL', name: 'Credit Sale' },
 ];
 
+// 2026-07-25: aligned to canonical Quantix.Foundation.Licensing.ServiceTypeCodes (10 codes).
+// Flavour tags shown in labels: (Restaurant) = Restaurant-only; (Retail) = Retail-only;
+// no tag = applies to both flavours.
 export const SERVICES_INFO: PricingItem[] = [
-  { key: 'PUP', name: 'Self-Pickup Module' },
-  { key: 'DLV', name: 'In-house Delivery Routing' },
-  { key: 'CTG', name: 'Catering & Events' },
-  { key: 'SNP', name: 'Snap QR Checkout' },
-  { key: 'RSO', name: 'Table Reservation System' },
-  { key: 'WOR', name: 'Web Ordering Storefront' },
-  { key: 'WRV', name: 'Waitlist Management' }
+  { key: 'DIN', name: 'Dine-In (Restaurant)' },
+  { key: 'CTR', name: 'Counter (Restaurant)' },
+  { key: 'PUP', name: 'Pickup' },
+  { key: 'DLV', name: 'Delivery (in-house drivers)' },
+  { key: 'CTG', name: 'Catering (Restaurant)' },
+  { key: 'SNP', name: 'Snap Order' },
+  { key: 'RSO', name: 'Reseller Order (Uber Eats / DoorDash)' },
+  { key: 'SHP', name: 'Shipping (Retail)' },
+  { key: 'INS', name: 'In-Store (Retail)' },
+  { key: 'WRV', name: 'Web Reservation (Restaurant)' },
 ];
 
+// 2026-07-19: aligned to canonical Quantix.Foundation.Licensing.LimitCodes (16 codes).
+// Fixed MPG (Max Payment Gateways, not Product Groups). Dropped bogus OTH.
+// Every unit is priced from unit 1 — no "baseline included free" concept.
 export const LIMITS_INFO: PricingItem[] = [
-  { key: 'MBU', name: 'Additional Business Units', unit: '/BU' },
-  { key: 'MLO', name: 'Additional Location Outlets', unit: '/Outlet' },
-  { key: 'MTM', name: 'Additional POS Terminals', unit: '/Terminal' },
-  { key: 'MPR', name: 'Excess Products Catalog', unit: '/100 Items' },
-  { key: 'MPG', name: 'Excess Product Groups', unit: '/5 Groups' },
-  { key: 'MGB', name: 'Additional Storage Capacity', unit: '/GB' },
-  { key: 'OTH', name: 'Other Limit Increments', unit: '/Item' }
+  { key: 'MBU', name: 'Business',                                    unit: '/business' },
+  { key: 'MLO', name: 'Location / Outlet',                           unit: '/outlet' },
+  { key: 'MTM', name: 'POS Terminal',                                unit: '/terminal' },
+  { key: 'MPR', name: 'Product (per 100)',                           unit: '/100 items' },
+  { key: 'MDP', name: 'Delivery Partner',                            unit: '/partner' },
+  { key: 'MKD', name: 'Kitchen Display Helper',                      unit: '/helper' },
+  { key: 'MDS', name: 'Dispatch Station Helper',                     unit: '/helper' },
+  { key: 'MIS', name: 'Inventory Station Helper',                    unit: '/helper' },
+  { key: 'MPW', name: 'Table POS App (BDS / PaymentWalker)',         unit: '/app' },
+  { key: 'MGB', name: 'Database Storage',                            unit: '/GB' },
+  { key: 'MPG', name: 'Payment Gateway',                             unit: '/gateway' },
+  { key: 'MRS', name: 'Reseller (delivery aggregator)',              unit: '/reseller' },
+  { key: 'MAC', name: 'Cloud Admin Portal Instance',                 unit: '/instance' },
+  { key: 'MWR', name: 'Web Restaurant Storefront',                   unit: '/storefront' },
+  { key: 'MWE', name: 'Web Retail Storefront',                       unit: '/storefront' },
+  { key: 'MBR', name: 'Billing Revenue (hard cap — not billed)',     unit: '/unit' }
 ];
 
 export const ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -88,20 +114,32 @@ export const ICON_MAP: Record<string, React.ComponentType<any>> = {
   STC: Landmark,
   WLT: Wallet,
   CSL: BookOpen,
+  DIN: UtensilsCrossed,
+  CTR: ShoppingBag,
   PUP: ShoppingBag,
   DLV: Truck,
   CTG: UtensilsCrossed,
   SNP: Zap,
-  RSO: CalendarCheck,
-  WOR: Globe,
-  WRV: Clock,
+  RSO: Globe,        // Reseller Order — inbound aggregator channel
+  SHP: Package,      // Shipping — Retail courier fulfilment
+  INS: Landmark,     // In-Store — Retail walk-in sale
+  WRV: CalendarCheck, // Web Reservation
   MBU: Building,
   MLO: MapPin,
   MTM: Terminal,
   MPR: Layers,
-  MPG: Tags,
+  MDP: Truck,
+  MKD: UtensilsCrossed,
+  MDS: Package,
+  MIS: ClipboardList,
+  MPW: Terminal,
   MGB: HardDrive,
-  OTH: Puzzle
+  MPG: Coins,
+  MRS: Globe,
+  MAC: Landmark,
+  MWR: UtensilsCrossed,
+  MWE: ShoppingBag,
+  MBR: LineChart,
 };
 
 interface RateCardGridSectionProps {
@@ -185,7 +223,7 @@ const RateCardGridSection: React.FC<RateCardGridSectionProps> = ({
                   +${price}.00
                 </span>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold tracking-wider">
-                  {unit || '/mo'}
+                  {unit || '/day'}
                 </span>
               </div>
             </div>
@@ -354,7 +392,7 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
             ? 'text-amber-655 dark:text-amber-450'
             : 'text-indigo-600 dark:text-indigo-400'
         )}>
-          +${row.price}.00 <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-wider">{row.unit || '/mo'}</span>
+          +${row.price}.00 <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-wider">{row.unit || '/day'}</span>
         </span>
       ),
       width: '150px',
@@ -383,33 +421,7 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
           />
 
           <div className="flex items-center gap-3">
-            {/* List/Grid View Toggle */}
-            <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 bg-slate-50 dark:bg-slate-950">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  'p-1.5 rounded-md transition-all',
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                )}
-                title="Grid View"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  'p-1.5 rounded-md transition-all',
-                  viewMode === 'list'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                )}
-                title="List Table View"
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
+            <ATMViewModeToggle value={viewMode} onChange={setViewMode} />
 
             <ATMButton onClick={onEditOpen} variant="primary" icon={Pencil} size="sm" className="h-9 rounded-lg">
               Edit Prices
@@ -418,41 +430,26 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
         </div>
       </div>
 
-      {/* Clickable Pro Statistics Dashboard for interactive filtering */}
+      {/* Clickable Pro Statistics Dashboard for interactive filtering.
+          2026-07-25: reordered to match Edit modal — Limits, Services, Payments, Modules. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div 
-          onClick={() => setActiveCategory(activeCategory === 'modules' ? 'all' : 'modules')}
+        <div
+          onClick={() => setActiveCategory(activeCategory === 'limits' ? 'all' : 'limits')}
           className={cn(
             "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'modules'
-              ? "border-indigo-500 dark:border-indigo-500 bg-indigo-50/5 dark:bg-indigo-950/10 ring-2 ring-indigo-500/10"
-              : "border-[var(--zen-border)] hover:border-indigo-550/20 dark:hover:border-indigo-500/20"
+            activeCategory === 'limits'
+              ? "border-amber-500 dark:border-amber-500 bg-amber-50/5 dark:bg-amber-950/10 ring-2 ring-amber-500/10"
+              : "border-[var(--zen-border)] hover:border-amber-550/20 dark:hover:border-amber-500/20"
           )}
         >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Premium Modules</span>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Capacity Limits</span>
           <span className={cn(
             "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'modules' ? "text-indigo-600 dark:text-indigo-400" : "text-slate-900 dark:text-white"
-          )}>{MODULES_INFO.length} Active</span>
+            activeCategory === 'limits' ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"
+          )}>{LIMITS_INFO.length} Active</span>
         </div>
 
-        <div 
-          onClick={() => setActiveCategory(activeCategory === 'payments' ? 'all' : 'payments')}
-          className={cn(
-            "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'payments'
-              ? "border-emerald-500 dark:border-emerald-500 bg-emerald-50/5 dark:bg-emerald-950/10 ring-2 ring-emerald-500/10"
-              : "border-[var(--zen-border)] hover:border-emerald-555/20 dark:hover:border-emerald-500/20"
-          )}
-        >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Payment channels</span>
-          <span className={cn(
-            "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'payments' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"
-          )}>{PAYMENTS_INFO.length} Active</span>
-        </div>
-
-        <div 
+        <div
           onClick={() => setActiveCategory(activeCategory === 'services' ? 'all' : 'services')}
           className={cn(
             "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
@@ -468,43 +465,50 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
           )}>{SERVICES_INFO.length} Active</span>
         </div>
 
-        <div 
-          onClick={() => setActiveCategory(activeCategory === 'limits' ? 'all' : 'limits')}
+        <div
+          onClick={() => setActiveCategory(activeCategory === 'payments' ? 'all' : 'payments')}
           className={cn(
             "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'limits'
-              ? "border-amber-500 dark:border-amber-500 bg-amber-50/5 dark:bg-amber-950/10 ring-2 ring-amber-500/10"
-              : "border-[var(--zen-border)] hover:border-amber-550/20 dark:hover:border-amber-500/20"
+            activeCategory === 'payments'
+              ? "border-emerald-500 dark:border-emerald-500 bg-emerald-50/5 dark:bg-emerald-950/10 ring-2 ring-emerald-500/10"
+              : "border-[var(--zen-border)] hover:border-emerald-555/20 dark:hover:border-emerald-500/20"
           )}
         >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Capacity Limits</span>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Payment Methods</span>
           <span className={cn(
             "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'limits' ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"
-          )}>{LIMITS_INFO.length} Active</span>
+            activeCategory === 'payments' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"
+          )}>{PAYMENTS_INFO.length} Active</span>
+        </div>
+
+        <div
+          onClick={() => setActiveCategory(activeCategory === 'modules' ? 'all' : 'modules')}
+          className={cn(
+            "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
+            activeCategory === 'modules'
+              ? "border-indigo-500 dark:border-indigo-500 bg-indigo-50/5 dark:bg-indigo-950/10 ring-2 ring-indigo-500/10"
+              : "border-[var(--zen-border)] hover:border-indigo-550/20 dark:hover:border-indigo-500/20"
+          )}
+        >
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Premium Modules</span>
+          <span className={cn(
+            "text-xl font-black mt-1 inline-block transition-colors",
+            activeCategory === 'modules' ? "text-indigo-600 dark:text-indigo-400" : "text-slate-900 dark:text-white"
+          )}>{MODULES_INFO.length} Active</span>
         </div>
       </div>
 
-      {/* Render Dynamic Content based on View Mode */}
+      {/* Render Dynamic Content based on View Mode.
+          2026-07-25: section order — Limits, Services, Payments, Modules. */}
       {viewMode === 'grid' ? (
         <div className="space-y-8">
-          {filteredModules.length > 0 && (
+          {filteredLimits.length > 0 && (
             <RateCardGridSection
-              title="Premium Modules Add-ons"
-              icon={Layers3}
-              items={filteredModules}
-              prices={defaultCard.modulePrices}
-              color="indigo"
-            />
-          )}
-
-          {filteredPayments.length > 0 && (
-            <RateCardGridSection
-              title="Premium Payment Channels"
-              icon={Coins}
-              items={filteredPayments}
-              prices={defaultCard.paymentPrices}
-              color="emerald"
+              title="Capacity & Limits Rates"
+              icon={Terminal}
+              items={filteredLimits}
+              prices={defaultCard.limitPrices}
+              color="amber"
             />
           )}
 
@@ -518,13 +522,23 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
             />
           )}
 
-          {filteredLimits.length > 0 && (
+          {filteredPayments.length > 0 && (
             <RateCardGridSection
-              title="Capacity & Limits Rates"
-              icon={Terminal}
-              items={filteredLimits}
-              prices={defaultCard.limitPrices}
-              color="amber"
+              title="Payment Methods"
+              icon={Coins}
+              items={filteredPayments}
+              prices={defaultCard.paymentPrices}
+              color="emerald"
+            />
+          )}
+
+          {filteredModules.length > 0 && (
+            <RateCardGridSection
+              title="Premium Modules Add-ons"
+              icon={Layers3}
+              items={filteredModules}
+              prices={defaultCard.modulePrices}
+              color="indigo"
             />
           )}
 

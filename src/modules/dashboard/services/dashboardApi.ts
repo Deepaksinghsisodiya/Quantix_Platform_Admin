@@ -13,48 +13,51 @@ import type {
 
 export type MerchantTypeFilter = 'All' | 'Enterprise' | 'Standalone';
 
+/* 2026-09-04: the signed-in user's dashboard arrangement — mirrors DashboardLayoutDto. */
+export interface DashboardLayoutWidget {
+  readonly id: string;
+  readonly visible: boolean;
+  readonly order: number;
+}
+export interface DashboardLayout {
+  readonly activePreset: string;
+  readonly widgets: readonly DashboardLayoutWidget[];
+  readonly updatedAt?: string | null;
+}
+/** `layout` is null until the user has saved one. */
+export interface DashboardLayoutLookup {
+  readonly layout: DashboardLayout | null;
+}
+
+/**
+ * 2026-08-30 (dashboard audit) — this slice had drifted badly from the real API:
+ *
+ *  1. getDashboardSummary called `/api/v1/billing/dashboard`, which DOES NOT EXIST
+ *     (404 on every load) — so every KPI rendered 0 / $0.00 while the platform had
+ *     real merchants and revenue. The real endpoint is `GET /api/v1/dashboard`, and it
+ *     already returns PlatformDashboardDto field-for-field.
+ *  2. Its transformResponse then FABRICATED the missing numbers: an invented 40/60
+ *     enterprise/standalone split (Math.floor/ceil of activeMerchants), arr = mrr × 12,
+ *     and a hardcoded 'USD'. All removed — the server computes these for real.
+ *  3. getRevenueMetrics called the legacy `/revenue` report (no MRR/ARR/ARPU, ignores
+ *     merchantType) instead of `/revenue-metrics`.
+ *  4. getMerchantHealth called `/api/v1/merchants` and invented health telemetry
+ *     (bridgeStatus 'Online', lastHeartbeat = now, healthScore 100, activeTerminals 1)
+ *     — every merchant looked perfectly healthy. The real `/dashboard/merchant-health`
+ *     endpoint returns risk classification, health score, grace phase and token balance.
+ *  5. Four endpoints used transformErrorResponse to turn FAILURES into fake successes
+ *     (system-health even reported "Healthy, CPU 15%" when the call failed). That
+ *     defeated the page's own error banner and violates the no-silent-failures rule —
+ *     removed, so a failed query surfaces as an error the operator can retry.
+ */
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardSummary: builder.query<ApiResponse<PlatformDashboardDto>, MerchantTypeFilter | undefined>({
       query: (merchantType) => ({
-        url: '/api/v1/billing/dashboard',
+        url: '/api/v1/dashboard',
         method: 'GET',
         params: merchantType && merchantType !== 'All' ? { merchantType } : undefined,
       }),
-      transformResponse: (response: any): ApiResponse<PlatformDashboardDto> => {
-        const d = response?.data ?? response;
-        const totalMerchants = d?.totalMerchants ?? d?.activeSubscriptions ?? 0;
-        const activeMerchants = d?.activeMerchants ?? d?.activeSubscriptions ?? 0;
-        const totalRev = d?.totalRevenue ?? 0;
-        const monthlyRev = d?.monthlyRevenue ?? d?.monthlyRecurringRevenue ?? 0;
-
-        return {
-          success: true,
-          timestamp: new Date().toISOString(),
-          data: {
-            totalMerchants,
-            activeMerchants,
-            enterpriseMerchants: d?.enterpriseMerchants ?? Math.floor(activeMerchants * 0.4),
-            standaloneMerchants: d?.standaloneMerchants ?? Math.ceil(activeMerchants * 0.6),
-            newSignupsThisMonth: d?.newSignupsThisMonth ?? d?.pendingSignups ?? 0,
-            enterpriseSignupsThisMonth: d?.enterpriseSignupsThisMonth ?? 0,
-            standaloneSignupsThisMonth: d?.standaloneSignupsThisMonth ?? 0,
-            totalRevenueThisMonth: totalRev || monthlyRev,
-            subscriptionRevenue: d?.subscriptionRevenue ?? monthlyRev,
-            tokenRevenue: d?.tokenRevenue ?? 0,
-            commissionRevenue: d?.commissionRevenue ?? 0,
-            revenueCurrency: d?.revenueCurrency ?? 'USD',
-            mrr: d?.mrr ?? monthlyRev,
-            arr: d?.arr ?? monthlyRev * 12,
-            activeUsers: d?.activeUsers ?? 0,
-            walletBalanceAggregate: d?.walletBalanceAggregate ?? 0,
-            merchantsInGracePeriod: d?.merchantsInGracePeriod ?? 0,
-            openSupportTickets: d?.openSupportTickets ?? 0,
-            pendingComplianceRequests: d?.pendingComplianceRequests ?? 0,
-            generatedAt: new Date().toISOString(),
-          },
-        };
-      },
       providesTags: ['Dashboard'],
     }),
 
@@ -71,10 +74,6 @@ export const dashboardApi = baseApi.injectEndpoints({
           ...(merchantType && merchantType !== 'All' ? { merchantType } : {}),
         },
       }),
-      transformErrorResponse: () => ({
-        success: true,
-        data: { labels: [], datasets: [] },
-      }),
       providesTags: ['Dashboard'],
     }),
 
@@ -83,7 +82,7 @@ export const dashboardApi = baseApi.injectEndpoints({
       { fromDate: string; toDate: string; groupBy?: 'day' | 'week' | 'month'; merchantType?: MerchantTypeFilter }
     >({
       query: ({ fromDate, toDate, groupBy = 'month', merchantType }) => ({
-        url: '/api/v1/dashboard/revenue',
+        url: '/api/v1/dashboard/revenue-metrics',
         method: 'GET',
         params: {
           fromDate,
@@ -92,10 +91,6 @@ export const dashboardApi = baseApi.injectEndpoints({
           ...(merchantType && merchantType !== 'All' ? { merchantType } : {}),
         },
       }),
-      transformErrorResponse: () => ({
-        success: true,
-        data: { totalRevenue: 0, recurringRevenue: 0, tokenRevenue: 0, chartData: [] },
-      }),
       providesTags: ['Dashboard'],
     }),
 
@@ -103,10 +98,6 @@ export const dashboardApi = baseApi.injectEndpoints({
       query: () => ({
         url: '/api/v1/dashboard/system-health',
         method: 'GET',
-      }),
-      transformErrorResponse: () => ({
-        success: true,
-        data: { status: 'Healthy', activeConnections: 100, memoryUsagePercent: 30, cpuUsagePercent: 15, diskUsagePercent: 20 },
       }),
       providesTags: ['Dashboard'],
     }),
@@ -124,10 +115,6 @@ export const dashboardApi = baseApi.injectEndpoints({
           ...(merchantType && merchantType !== 'All' ? { merchantType } : {}),
         },
       }),
-      transformErrorResponse: () => ({
-        success: true,
-        data: { totalActiveUsers: 0, enterpriseActiveUsers: 0, standaloneActiveUsers: 0, transactionsToday: 0, transactionsThisWeek: 0, apiCallVolume: 0, peakHour: '12:00', averageSessionMinutes: 0, geographicDistribution: [] },
-      }),
       providesTags: ['Dashboard'],
     }),
 
@@ -136,43 +123,13 @@ export const dashboardApi = baseApi.injectEndpoints({
       { page?: number; pageSize?: number; merchantType?: MerchantTypeFilter }
     >({
       query: ({ page = 1, pageSize = 50, merchantType }) => ({
-        url: '/api/v1/merchants',
+        url: '/api/v1/dashboard/merchant-health',
         method: 'GET',
         params: {
           page,
           pageSize,
           ...(merchantType && merchantType !== 'All' ? { merchantType } : {}),
         },
-      }),
-      transformResponse: (response: any) => {
-        const items = Array.isArray(response?.data?.items)
-          ? response.data.items
-          : Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        const healthList = items.map((m: any) => ({
-          merchantId: m.id ?? m.merchantId,
-          businessName: m.businessName ?? m.name ?? 'Merchant',
-          merchantType: m.merchantType ?? 'Standalone',
-          bridgeStatus: m.bridgeStatus ?? 'Online',
-          lastHeartbeat: m.lastHeartbeat ?? new Date().toISOString(),
-          healthScore: m.healthScore ?? 100,
-          activeTerminals: m.activeTerminals ?? 1,
-          syncErrorsCount: m.syncErrorsCount ?? 0,
-        }));
-
-        return {
-          success: true,
-          timestamp: new Date().toISOString(),
-          data: healthList,
-        };
-      },
-      transformErrorResponse: () => ({
-        success: true,
-        data: [],
       }),
       providesTags: ['Dashboard'],
     }),
@@ -192,6 +149,25 @@ export const dashboardApi = baseApi.injectEndpoints({
       }),
       providesTags: ['Dashboard'],
     }),
+
+    // 2026-09-04: per-user layout persistence (replaces the 501 the portal never called).
+    getDashboardLayout: builder.query<ApiResponse<DashboardLayoutLookup>, void>({
+      query: () => ({
+        url: '/api/v1/dashboard/layout',
+        method: 'GET',
+      }),
+      providesTags: ['DashboardLayout'],
+    }),
+
+    saveDashboardLayout: builder.mutation<ApiResponse<DashboardLayout>, DashboardLayout>({
+      query: (layout) => ({
+        url: '/api/v1/dashboard/layout',
+        method: 'PUT',
+        data: layout,
+      }),
+      // No invalidation: the local store is the truth after a save; refetching would only
+      // re-hydrate the same layout and bounce a second save.
+    }),
   }),
 });
 
@@ -204,4 +180,6 @@ export const {
   useGetMerchantHealthQuery,
   useGetTokenMetricsQuery,
   useGetCommissionSummaryQuery,
+  useGetDashboardLayoutQuery,
+  useSaveDashboardLayoutMutation,
 } = dashboardApi;

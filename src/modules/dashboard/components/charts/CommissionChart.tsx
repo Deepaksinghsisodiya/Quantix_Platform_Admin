@@ -14,29 +14,45 @@ import { CHART_COLORS, TOOLTIP_STYLE } from './chartColors';
 import { ChartSkeleton } from './ChartSkeleton';
 import { ChartEmptyState } from './ChartEmptyState';
 
+/** 2026-08-30: mirrors the server's commission trend — amount plus transaction volume.
+ *  The old `rate` field had no wire source; the caller hardcoded 0, drawing a flat
+ *  "Commission Rate" line that was pure decoration. */
 export interface CommissionDataPoint {
   readonly month: string;
   readonly earned: number;
-  readonly rate: number;
+  readonly transactionCount: number;
 }
 
 export interface CommissionChartProps {
   data: readonly CommissionDataPoint[];
   loading?: boolean;
   className?: string;
+  /** Deployment currency for axis + tooltip formatting. */
+  currency?: string;
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value}`;
+function makeCurrencyAxis(currency: string | undefined) {
+  // 2026-09-05: no 'USD' fallback. Until the deployment currency is known the axis shows
+  // plain grouped numbers — a wrong currency symbol is worse than none.
+  const fmt = (v: number, suffix: string) => {
+    const options: Intl.NumberFormatOptions = currency
+      ? { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 1 }
+      : { minimumFractionDigits: 0, maximumFractionDigits: 1 };
+    return `${new Intl.NumberFormat(undefined, options).format(v)}${suffix}`;
+  };
+  return (value: number): string => {
+    if (value >= 1_000_000) return fmt(value / 1_000_000, 'M');
+    if (value >= 1_000) return fmt(value / 1_000, 'K');
+    return fmt(value, '');
+  };
 }
 
 /**
  * FRS-SAP-110: Commission overview chart.
- * Bar for earned commission + line for rate trend.
+ * Bar for earned commission + line for transaction volume.
  */
-export function CommissionChart({ data, loading, className }: CommissionChartProps) {
+export function CommissionChart({ data, loading, className, currency }: CommissionChartProps) {
+  const formatCurrency = makeCurrencyAxis(currency);
   if (loading) return <ChartSkeleton height="300px" className={className} />;
   if (!data.length) return <ChartEmptyState message="No commission data available." className={className} />;
 
@@ -62,21 +78,22 @@ export function CommissionChart({ data, loading, className }: CommissionChartPro
             width={56}
           />
           <YAxis
-            yAxisId="rate"
+            yAxisId="volume"
             orientation="right"
-            tickFormatter={(v: number) => `${v}%`}
+            tickFormatter={(v: number) => `${v}`}
             tick={{ fontSize: 11 }}
             className="fill-gray-500 dark:fill-gray-400"
             tickLine={false}
             axisLine={false}
             width={40}
+            allowDecimals={false}
             domain={[0, 'dataMax + 2']}
           />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
             formatter={((value: number, name: string) => {
               if (name === 'earned') return [formatCurrency(value), 'Commission Earned'];
-              return [`${value.toFixed(1)}%`, 'Commission Rate'];
+              return [`${value}`, 'Transactions'];
             }) as never}
             cursor={{ fill: 'rgba(107, 114, 128, 0.06)' }}
           />
@@ -85,7 +102,7 @@ export function CommissionChart({ data, loading, className }: CommissionChartPro
             iconSize={8}
             wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
             formatter={(value: string) =>
-              value === 'earned' ? 'Commission Earned' : 'Commission Rate'
+              value === 'earned' ? 'Commission Earned' : 'Transactions'
             }
           />
           <Bar
@@ -97,9 +114,9 @@ export function CommissionChart({ data, loading, className }: CommissionChartPro
             animationEasing="ease-out"
           />
           <Line
-            yAxisId="rate"
+            yAxisId="volume"
             type="monotone"
-            dataKey="rate"
+            dataKey="transactionCount"
             stroke={CHART_COLORS.revenue.main}
             strokeWidth={2.5}
             dot={{ r: 3, strokeWidth: 2 }}

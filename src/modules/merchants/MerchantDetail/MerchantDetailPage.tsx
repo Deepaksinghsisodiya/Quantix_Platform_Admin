@@ -9,7 +9,6 @@ import {
   Cloud,
   CreditCard,
   Download,
-  Eye,
   FileText,
   Globe,
   Mail,
@@ -45,7 +44,7 @@ import EnterprisePanels from '../components/EnterprisePanels';
 import StandalonePanels from '../components/StandalonePanels';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import type {
   Merchant,
   MerchantNote,
@@ -55,10 +54,16 @@ import type {
   MerchantDeboarding,
   DeboardingStatus,
 } from '../types/merchant.types';
+import { DEBOARDING_STATUS_LABEL } from '../types/merchant.types';
+import type { WizardPlanOption } from '../OnboardingWizard/wizard.types';
+import { useGetSetupStatusQuery } from '@/modules/settings/services/settingsApi';
 
 interface MerchantDetailPageProps {
   id: string;
   merchant: Merchant | undefined;
+  /** FRS-SAP-402 (2026-08-05): rich detail payload for the type-specific panels. */
+  detail: import('../types/merchantDetail.types').MerchantDetailPayload | null;
+  isDetailLoading: boolean;
   isMerchantLoading: boolean;
   merchantError: any;
   notes: readonly MerchantNote[];
@@ -85,44 +90,41 @@ interface MerchantDetailPageProps {
   handleReactivateConfirm: () => Promise<void>;
   isReactivating: boolean;
 
-  cancelModal: boolean;
-  setCancelModal: (open: boolean) => void;
-  cancelReason: string;
-  setCancelReason: (val: string) => void;
-  handleCancelConfirm: () => Promise<void>;
-  isCancelling: boolean;
+  // 2026-08-30: legacy Cancel/Delete modals removed (retired Pass-39 flows; DELETE
+  // endpoint returns 410) — the deboard consent modal is the one exit entry point.
+  deboardModal: boolean;
+  setDeboardModal: (open: boolean) => void;
+  deboardNote: string;
+  setDeboardNote: (val: string) => void;
+  handleDeboardConfirm: () => Promise<void>;
 
-  deleteModal: boolean;
-  setDeleteModal: (open: boolean) => void;
-  handleDeleteConfirm: () => Promise<void>;
-  isDeleting: boolean;
-
+  // 2026-08-30: tier fiction removed — the modal lists real catalog plans (same
+  // deployment kind, active, not deprecated) and submits the planId.
   planChangeModal: boolean;
   setPlanChangeModal: (open: boolean) => void;
+  planOptions: WizardPlanOption[];
   selectedNewPlan: string | null;
   setSelectedNewPlan: (val: string | null) => void;
-  selectedNewTier: string | null;
-  setSelectedNewTier: (val: string | null) => void;
+  planChangeReason: string;
+  setPlanChangeReason: (val: string) => void;
+  /** Per-merchant discount (%) — onboarding parity; sent as dailyPriceOverride. */
+  planDiscountPct: number;
+  setPlanDiscountPct: (val: number) => void;
   handleApplyPlanChange: () => Promise<void>;
   isChangingPlan: boolean;
-  isChangingTier: boolean;
-
-  impersonateModal: boolean;
-  setImpersonateModal: (open: boolean) => void;
-  handleImpersonateConfirm: () => Promise<void>;
-  isImpersonating: boolean;
 
   handleAddNote: (content: string) => Promise<void>;
   onBack: () => void;
 
   deboarding: MerchantDeboarding | undefined;
-  handleGiveConsent: (note?: string) => Promise<void>;
   handleDeactivateDeboarding: (deboardingId: string) => Promise<void>;
   handleGenerateFinalInvoice: (deboardingId: string) => Promise<void>;
   handleSettleDeboarding: (deboardingId: string) => Promise<void>;
   handleAskRecharge: (deboardingId: string, shortfallAmount: number, note?: string) => Promise<void>;
   handleIssueRefund: (deboardingId: string, channel: string, reference?: string, note?: string) => Promise<void>;
   handleCancelDeboarding: (deboardingId: string, reason: string) => Promise<void>;
+  handleRetrySettleDeboarding: (deboardingId: string) => Promise<void>;
+  handleSoftDeleteDeboarding: (deboardingId: string) => Promise<void>;
 }
 
 // Action dropdown item helper
@@ -249,6 +251,25 @@ function latestActivity(d: MerchantDeboarding): string {
   return candidates[0] ?? d.consentGivenAt;
 }
 
+// 2026-08-30 (user: "UI not clean"): readable status chips + a one-line purpose under
+// each step so the checklist explains itself. The Deactivate description also draws the
+// line against Suspend — both actions were visible with no hint of the difference.
+const STEP_STATUS_LABEL: Record<string, string> = {
+  Pending: 'Pending',
+  InProgress: 'In Progress',
+  Completed: 'Completed',
+  NotApplicable: 'Not Applicable',
+};
+
+const STEP_DESCRIPTION: Record<string, string> = {
+  ConsentGiven: 'Admin approval that starts the exit workflow.',
+  AccountDeactivated: 'Stops service and revokes tokens as part of leaving — unlike Suspend, which is a temporary pause outside deboarding.',
+  FinalInvoiceGenerated: 'Bills all unbilled subscription days up to deactivation.',
+  BillingSettled: 'Clears the final invoice from the wallet (or requests a shortfall recharge).',
+  RefundIssued: 'Returns the remaining wallet balance and security deposit.',
+  SoftDeleted: 'Archives the merchant. Point of no return.',
+};
+
 function DeboardingWorkflowCard({
   deboarding,
   onDeactivate,
@@ -257,6 +278,8 @@ function DeboardingWorkflowCard({
   onAskRecharge,
   onIssueRefund,
   onCancel,
+  onRetrySettle,
+  onSoftDelete,
 }: {
   deboarding: MerchantDeboarding;
   onDeactivate: (dbId: string) => Promise<void>;
@@ -265,6 +288,8 @@ function DeboardingWorkflowCard({
   onAskRecharge: (dbId: string, amount: number, note?: string) => Promise<void>;
   onIssueRefund: (dbId: string, channel: string, ref?: string, note?: string) => Promise<void>;
   onCancel: (dbId: string, reason: string) => Promise<void>;
+  onRetrySettle: (dbId: string) => Promise<void>;
+  onSoftDelete: (dbId: string) => Promise<void>;
 }) {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -273,19 +298,35 @@ function DeboardingWorkflowCard({
   const [refundOpen, setRefundOpen] = useState(false);
   const [refundChannel, setRefundChannel] = useState('CreditCard');
   const [refundRef, setRefundRef] = useState('');
+  const [softDeleteOpen, setSoftDeleteOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const steps = deboarding.steps || [];
+  // AwaitingRecharge / AdminEscalated: settlement is waiting on the merchant's recharge —
+  // "Settle Billing" would be refused; the correct action is the retry endpoint.
+  const awaitingRecharge = deboarding.status === 'AwaitingRecharge' || deboarding.status === 'AdminEscalated';
+  // 2026-08-30: the service never emits step-status "InProgress" (rows go Pending →
+  // Completed), so buttons keyed on it alone NEVER rendered. The actionable step is the
+  // first non-completed, applicable one while the workflow is open.
+  const workflowOpen = deboarding.status !== 'Completed' && deboarding.status !== 'Cancelled';
+  const nextActionableKey = workflowOpen
+    ? steps.find((s) => s.status === 'Pending' || s.status === 'InProgress')?.stepKey
+    : undefined;
 
   return (
     <ATMCard title="Deboarding Workflow" className="border-amber-250 bg-amber-50/10 dark:border-amber-900/30">
       <div className="space-y-4 pt-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-gray-900 dark:text-white">Deboarding ID:</span>
-            <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{deboarding.deboardingId}</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-white">Deboarding</span>
+            <span
+              className="font-mono text-[11px] uppercase text-gray-400 dark:text-gray-500"
+              title={deboarding.deboardingId}
+            >
+              {deboarding.deboardingId.slice(0, 8)}
+            </span>
           </div>
-          <ATMBadge label={deboarding.status} color={STATUS_COLOR[deboarding.status]} size="sm" />
+          <ATMBadge label={DEBOARDING_STATUS_LABEL[deboarding.status] ?? deboarding.status} color={STATUS_COLOR[deboarding.status]} size="sm" />
         </div>
 
         {deboarding.status !== 'Completed' && deboarding.status !== 'Cancelled' && (
@@ -297,33 +338,39 @@ function DeboardingWorkflowCard({
         )}
 
         {/* Steps List */}
-        <div className="relative pl-6 pt-2 space-y-4">
-          <div className="absolute left-2.5 top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-800" />
+        <div className="relative pl-8 pt-2 space-y-5">
+          <div className="absolute left-[13px] top-3 bottom-3 w-px bg-gray-200 dark:bg-gray-800" />
           {steps.map((step) => {
             const isCompleted = step.status === 'Completed';
             const isInProgress = step.status === 'InProgress';
             const isNotApplicable = step.status === 'NotApplicable';
 
             return (
-              <div key={step.stepKey} className="relative flex gap-3 items-start animate-fade-in">
+              <div key={step.stepKey} className={cn('relative flex gap-3 items-start animate-fade-in', isNotApplicable && 'opacity-60')}>
                 <span className={cn(
-                  "absolute -left-3.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white dark:border-gray-950 text-white",
+                  "absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white dark:border-gray-950 text-white",
                   isCompleted ? "bg-emerald-500" : isInProgress ? "bg-amber-500" : isNotApplicable ? "bg-slate-300 dark:bg-slate-700" : "bg-gray-200 dark:bg-gray-800"
                 )}>
                   {isCompleted ? <Check className="h-3 w-3" /> : <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-bold text-gray-900 dark:text-white">{step.stepLabel}</p>
                     <ATMBadge
                       size="sm"
-                      color={isCompleted ? 'success' : isInProgress ? 'warning' : isNotApplicable ? 'muted' : 'muted'}
-                      label={step.status}
+                      color={isCompleted ? 'success' : isInProgress ? 'warning' : 'muted'}
+                      label={STEP_STATUS_LABEL[step.status] ?? step.status}
                     />
                   </div>
+                  {!isCompleted && STEP_DESCRIPTION[step.stepKey] && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-md">
+                      {STEP_DESCRIPTION[step.stepKey]}
+                    </p>
+                  )}
                   {step.completedAt && (
-                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
-                      Completed {formatDate(step.completedAt, 'datetime')} &middot; {step.completedBy}
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mt-0.5">
+                      Completed {formatDate(step.completedAt, 'datetime')}
+                      {step.completedByName ? <> &middot; by {step.completedByName}</> : null}
                     </p>
                   )}
                   {step.note && (
@@ -332,8 +379,8 @@ function DeboardingWorkflowCard({
                     </p>
                   )}
 
-                  {/* Step Action Triggers */}
-                  {isInProgress && (
+                  {/* Step Action Triggers — first open step (service never emits InProgress) */}
+                  {(isInProgress || step.stepKey === nextActionableKey) && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {step.stepKey === 'AccountDeactivated' && (
                         <ATMButton
@@ -363,7 +410,20 @@ function DeboardingWorkflowCard({
                           Generate Final Invoice
                         </ATMButton>
                       )}
-                      {step.stepKey === 'BillingSettled' && (
+                      {step.stepKey === 'BillingSettled' && (awaitingRecharge ? (
+                        <ATMButton
+                          size="sm"
+                          variant="primary"
+                          onClick={async () => {
+                            setSubmitting(true);
+                            await onRetrySettle(deboarding.deboardingId);
+                            setSubmitting(false);
+                          }}
+                          isLoading={submitting}
+                        >
+                          Retry Settle (after recharge)
+                        </ATMButton>
+                      ) : (
                         <>
                           <ATMButton
                             size="sm"
@@ -385,7 +445,7 @@ function DeboardingWorkflowCard({
                             Request Recharge
                           </ATMButton>
                         </>
-                      )}
+                      ))}
                       {step.stepKey === 'RefundIssued' && (
                         <ATMButton
                           size="sm"
@@ -393,6 +453,17 @@ function DeboardingWorkflowCard({
                           onClick={() => setRefundOpen(true)}
                         >
                           Issue Refund
+                        </ATMButton>
+                      )}
+                      {/* 2026-08-30: the FINAL step had no trigger — every deboarding
+                          stalled at RefundIssued forever. Point of no return: confirmed. */}
+                      {step.stepKey === 'SoftDeleted' && (
+                        <ATMButton
+                          size="sm"
+                          variant="danger"
+                          onClick={() => setSoftDeleteOpen(true)}
+                        >
+                          Soft-Delete Merchant
                         </ATMButton>
                       )}
                     </div>
@@ -435,6 +506,36 @@ function DeboardingWorkflowCard({
             disabled={!cancelReason.trim()}
           >
             Cancel Deboarding
+          </ATMButton>
+        </div>
+      </ATMModal>
+
+      {/* Soft-Delete Confirmation — the point of no return */}
+      <ATMModal isOpen={softDeleteOpen} onClose={() => setSoftDeleteOpen(false)} title="Soft-Delete Merchant">
+        <div className="space-y-3">
+          <p className="text-sm text-surface-500 font-medium">
+            This completes the deboarding. The merchant record is soft-deleted: their login is
+            disabled, the row disappears from All Merchants, and the deboarding can no longer
+            be cancelled or reversed.
+          </p>
+          <p className="text-xs font-bold text-red-600 dark:text-red-400">
+            This is the point of no return — every earlier step was reversible; this one is not.
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-2">
+          <ATMButton variant="secondary" size="sm" onClick={() => setSoftDeleteOpen(false)}>Keep Merchant</ATMButton>
+          <ATMButton
+            variant="danger"
+            size="sm"
+            onClick={async () => {
+              setSubmitting(true);
+              await onSoftDelete(deboarding.deboardingId);
+              setSoftDeleteOpen(false);
+              setSubmitting(false);
+            }}
+            isLoading={submitting}
+          >
+            Soft-Delete Permanently
           </ATMButton>
         </div>
       </ATMModal>
@@ -585,6 +686,8 @@ const NotesTabSection: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
 export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
   id,
   merchant,
+  detail,
+  isDetailLoading,
   isMerchantLoading,
   merchantError,
   notes,
@@ -611,45 +714,48 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
   handleReactivateConfirm,
   isReactivating,
 
-  cancelModal,
-  setCancelModal,
-  cancelReason,
-  setCancelReason,
-  handleCancelConfirm,
-  isCancelling,
-
-  deleteModal,
-  setDeleteModal,
-  handleDeleteConfirm,
-  isDeleting,
+  deboardModal,
+  setDeboardModal,
+  deboardNote,
+  setDeboardNote,
+  handleDeboardConfirm,
 
   planChangeModal,
   setPlanChangeModal,
+  planOptions,
   selectedNewPlan,
   setSelectedNewPlan,
-  selectedNewTier,
-  setSelectedNewTier,
+  planChangeReason,
+  setPlanChangeReason,
+  planDiscountPct,
+  setPlanDiscountPct,
   handleApplyPlanChange,
   isChangingPlan,
-  isChangingTier,
-
-  impersonateModal,
-  setImpersonateModal,
-  handleImpersonateConfirm,
-  isImpersonating,
 
   handleAddNote,
   onBack,
 
   deboarding,
-  handleGiveConsent,
   handleDeactivateDeboarding,
   handleGenerateFinalInvoice,
   handleSettleDeboarding,
   handleAskRecharge,
   handleIssueRefund,
   handleCancelDeboarding,
+  handleRetrySettleDeboarding,
+  handleSoftDeleteDeboarding,
 }) => {
+  // Deployment currency (frozen at platform setup) — plan prices in the change-plan
+  // modal are always shown in it; never a hardcoded 'USD'.
+  const { data: setupRes } = useGetSetupStatusQuery();
+  // undefined (not '') while loading — Intl throws on an empty currency code.
+  const platformCurrency = setupRes?.data?.currency || undefined;
+
+  // 2026-08-30 (user: "what is the difference between deactivate and suspend"): while a
+  // deboarding is in flight the exit workflow owns the lifecycle — Suspend (a temporary,
+  // reversible pause outside deboarding) is hidden so the two shutdown actions never
+  // compete on the same screen.
+  const deboardingInFlight = !!deboarding && deboarding.status !== 'Cancelled' && deboarding.status !== 'Completed';
 
   if (isMerchantLoading) {
     return (
@@ -679,13 +785,11 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
           The requested merchant could not be found or an error occurred while connecting to the server.
         </p>
         <ATMButton variant="outline" size="sm" className="mt-5" onClick={onBack}>
-          Back to Merchant Directory
+          Back to All Merchants
         </ATMButton>
       </div>
     );
   }
-
-  const TIER_ORDER = ['Basic', 'Standard', 'Advance', 'Premium'];
 
   return (
     <div className="flex flex-col space-y-5 animate-fade-in w-full">
@@ -725,20 +829,21 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 {merchant.status === 'Pending' && (
                   <ActionItem icon={<PlayCircle className="h-4 w-4" />} label="Activate" onClick={() => handleAction('activate')} />
                 )}
-                {merchant.status === 'Active' && (
+                {merchant.status === 'Active' && !deboardingInFlight && (
                   <ActionItem icon={<Pause className="h-4 w-4" />} label="Suspend" onClick={() => handleAction('suspend')} variant="warning" />
                 )}
                 {merchant.status === 'Suspended' && (
                   <ActionItem icon={<PlayCircle className="h-4 w-4" />} label="Reactivate" onClick={() => handleAction('reactivate')} />
                 )}
-                {(merchant.status === 'Active' || merchant.status === 'Suspended') && (
-                  <ActionItem icon={<XCircle className="h-4 w-4" />} label="Cancel" onClick={() => handleAction('cancel')} variant="danger" />
+                {/* 2026-08-30 (deboarding audit): the retired "Cancel" (silent IsActive
+                    flip + fictional wind-down toast) and "Delete (Compliance)" (410 Gone
+                    endpoint) actions are gone — deboarding is the ONE exit path. A
+                    Cancelled workflow may be re-initiated (server allows fresh consent). */}
+                {(!deboarding || deboarding.status === 'Cancelled') && (
+                  <ActionItem icon={<XCircle className="h-4 w-4" />} label="Initiate Deboarding" onClick={() => handleAction('deboard')} variant="danger" />
                 )}
                 {merchant.status === 'Failed' && merchant.merchantType === 'Enterprise' && (
                   <ActionItem icon={<RefreshCw className="h-4 w-4" />} label="Retry Provisioning" onClick={() => handleAction('retry-provisioning')} />
-                )}
-                {merchant.status === 'Cancelled' && (
-                  <ActionItem icon={<Trash2 className="h-4 w-4" />} label="Delete (Compliance)" onClick={() => handleAction('delete')} variant="danger" />
                 )}
 
                 <div className="my-1.5 border-t border-gray-100 dark:border-gray-800" />
@@ -746,14 +851,12 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 {merchant.status === 'Active' && (
                   <ActionItem
                     icon={<Sliders className="h-4 w-4" />}
-                    label={merchant.merchantType === 'Enterprise' ? 'Change Plan' : 'Change Tier'}
+                    label="Change Plan"
                     onClick={() => handleAction('change-plan')}
                   />
                 )}
                 <ActionItem icon={<FileText className="h-4 w-4" />} label="Export Merchant Data" onClick={() => handleAction('export')} />
-                {merchant.merchantType === 'Enterprise' && (
-                  <ActionItem icon={<Eye className="h-4 w-4" />} label="Impersonate (View-Only)" onClick={() => handleAction('impersonate')} />
-                )}
+                {/* 2026-09-04: "Impersonate (View-Only)" REMOVED — see MerchantDetailWrapper. */}
                 {merchant.merchantType === 'Standalone' && (
                   <ActionItem icon={<Monitor className="h-4 w-4" />} label="Manage Terminals" onClick={() => handleAction('terminals')} />
                 )}
@@ -775,26 +878,10 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 label: 'Overview',
                 content: (
                   <div className="space-y-6">
-                    {/* Initiate Deboarding Action Card */}
-                    {!deboarding && merchant.status === 'Cancelled' && (
-                      <ATMCard title="Deboarding Process" className="border-amber-250 bg-amber-50/10 dark:border-amber-900/30">
-                        <div className="space-y-4 pt-1">
-                          <p className="text-sm text-slate-500 font-semibold">
-                            This merchant's subscription was cancelled. You must record consent and initiate the deboarding workflow to deactivate access and settle outstanding invoices.
-                          </p>
-                          <div className="flex justify-end">
-                            <ATMButton
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleGiveConsent("Initiated automatically by admin.")}
-                            >
-                              Initiate Deboarding Workflow
-                            </ATMButton>
-                          </div>
-                        </div>
-                      </ATMCard>
-                    )}
-
+                    {/* 2026-08-30: the old "Initiate Deboarding" card was gated on
+                        merchant.status === 'Cancelled' — an enum value retired in Pass 39,
+                        so deboarding could never be started. Entry now lives in the
+                        Actions menu ("Initiate Deboarding" → Admin consent modal). */}
                     {deboarding && (
                       <DeboardingWorkflowCard
                         deboarding={deboarding}
@@ -804,6 +891,8 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                         onAskRecharge={handleAskRecharge}
                         onIssueRefund={handleIssueRefund}
                         onCancel={handleCancelDeboarding}
+                        onRetrySettle={handleRetrySettleDeboarding}
+                        onSoftDelete={handleSoftDeleteDeboarding}
                       />
                     )}
 
@@ -871,7 +960,15 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                           <ATMDetailRow icon={Mail} label="Corporate Email" value={merchant.email} />
                           <ATMDetailRow icon={Phone} label="Phone Number" value={merchant.phone} />
                           <ATMDetailRow icon={Globe} label="Country Location" value={merchant.country} />
-                          <ATMDetailRow icon={Calendar} label="Commencement Date" value={formatDate(merchant.signupDate || new Date().toISOString(), 'long')} isLast />
+                          {/* 2026-08-31: was `merchant.signupDate || new Date().toISOString()` —
+                              a missing signup date silently rendered TODAY as the merchant's
+                              commencement date. An unknown date says so. */}
+                          <ATMDetailRow
+                            icon={Calendar}
+                            label="Commencement Date"
+                            value={merchant.signupDate ? formatDate(merchant.signupDate, 'long') : 'Not recorded'}
+                            isLast
+                          />
                         </div>
                       </div>
 
@@ -880,10 +977,31 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                         <ATMSectionHeader title="Infrastructure & Subscription" />
                         <div className="space-y-1">
                           <ATMDetailRow icon={Cloud} label="Merchant Model" value={merchant.merchantType} />
-                          <ATMDetailRow icon={Sliders} label="Subscription Plan" value={merchant.plan || merchant.tier || 'Starter'} />
-                          <ATMDetailRow icon={CreditCard} label="Billing Cadence" value={(merchant as any).billingFrequency || 'Monthly'} />
-                          <ATMDetailRow icon={CreditCard} label="Payment Option" value={(merchant as any).preferredPaymentMethod || 'Invoice'} />
-                          <ATMDetailRow icon={Monitor} label="Registered Devices" value={`${merchant.terminalCount || 0} active devices`} isLast />
+                          {/* 2026-08-31: was `merchant.plan || merchant.tier || 'Starter'`.
+                              MerchantDto carries neither field, so EVERY merchant read
+                              "Starter" — a tier name that no longer exists anywhere in the
+                              platform. The real plan is the active subscription's. */}
+                          <ATMDetailRow
+                            icon={Sliders}
+                            label="Subscription Plan"
+                            value={detail?.activeSubscription?.planDisplayName || 'No plan attached'}
+                          />
+                          {/* 2026-08-31: "Billing Cadence" and "Payment Option" rows REMOVED.
+                              Cadence defaulted to "Monthly" from a field the wire never sent —
+                              and post-Pass-36 the invoice cadence is a platform-wide admin
+                              setting (Billing → Cadence), not a per-merchant value, so showing
+                              it here implied a per-merchant choice that does not exist.
+                              Payment Option defaulted to "Invoice" from Merchant.
+                              PreferredPaymentMethod, which the onboarding wizard never
+                              collects (null for every merchant in the database). */}
+                          <ATMDetailRow
+                            icon={Monitor}
+                            label="Registered Devices"
+                            value={`${detail?.registeredTerminalCount ?? 0} active ${
+                              (detail?.registeredTerminalCount ?? 0) === 1 ? 'device' : 'devices'
+                            }`}
+                            isLast
+                          />
                         </div>
                       </div>
                     </div>
@@ -919,9 +1037,21 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                     </div>
 
                     {merchant.merchantType === 'Enterprise' ? (
-                      <EnterprisePanels />
+                      <EnterprisePanels
+                        bridgeHealth={detail?.platformBridgeHealth}
+                        usageSummary={detail?.usageSummary}
+                        commissionSummary={detail?.commissionSummary}
+                        subscription={detail?.activeSubscription}
+                        wallet={detail?.wallet}
+                        isLoading={isDetailLoading}
+                      />
                     ) : (
-                      <StandalonePanels merchantId={merchant.id} />
+                      <StandalonePanels
+                        merchantId={merchant.id}
+                        activeToken={detail?.activeToken}
+                        tokenHistory={detail?.tokenHistory}
+                        isLoading={isDetailLoading}
+                      />
                     )}
                   </div>
                 ),
@@ -1016,9 +1146,11 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 icon={Pencil}
                 onClick={() => handleAction('edit')}
               />
+              {/* 2026-08-30: "Change Tier" retired — tiers don't exist (plans are the
+                  one catalog); the same real plan-change flow serves both types. */}
               {merchant.status === 'Active' && (
                 <ATMActionSidebarItem
-                  label={merchant.merchantType === 'Enterprise' ? 'Change Plan' : 'Change Tier'}
+                  label="Change Plan"
                   icon={Sliders}
                   onClick={() => handleAction('change-plan')}
                 />
@@ -1035,7 +1167,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 icon={FileText}
                 onClick={() => handleAction('export')}
               />
-              {merchant.status === 'Active' && (
+              {merchant.status === 'Active' && !deboardingInFlight && (
                 <ATMActionSidebarItem
                   label="Suspend Account"
                   icon={Pause}
@@ -1050,6 +1182,16 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                   onClick={() => handleAction('reactivate')}
                 />
               )}
+              {/* 2026-08-30 (user: "where is the deboarding button"): the exit path,
+                  surfaced here as well as in the Actions menu. */}
+              {(!deboarding || deboarding.status === 'Cancelled') && (
+                <ATMActionSidebarItem
+                  label="Initiate Deboarding"
+                  icon={XCircle}
+                  onClick={() => handleAction('deboard')}
+                  variant="rose"
+                />
+              )}
             </div>
           </div>
 
@@ -1057,12 +1199,10 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
             <OnboardingChecklistPanel checklist={merchant.onboardingChecklist} />
           )}
 
-          <WelcomeCommunications
-            merchantType={merchant.merchantType}
-            merchantId={merchant.id}
-            email={merchant.email}
-            contactPerson={merchant.contactPerson}
-          />
+          {/* 2026-08-31: the panel reads its own data from the server now — recipient,
+              merchant type and delivery state all come from the real record, so the
+              page no longer feeds it props it used only to decorate a hardcoded log. */}
+          <WelcomeCommunications merchantId={merchant.id} />
         </div>
       </div>
 
@@ -1138,116 +1278,140 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         </div>
       </ATMModal>
 
-      {/* Cancel Modal */}
+      {/* 2026-08-30: legacy Cancel (fictional wind-down) + Delete (410 endpoint) modals
+          removed — replaced by the deboarding consent gate below (Pass-39 design). */}
       <ATMModal
-        isOpen={cancelModal}
-        onClose={() => setCancelModal(false)}
-        title="Cancel Merchant"
+        isOpen={deboardModal}
+        onClose={() => setDeboardModal(false)}
+        title="Initiate Deboarding"
       >
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-4">
-          Initiate a 30-day grace wind-down period. This suspends new token issuances, but leaves existing ones active.
-        </p>
-        <div>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
+            Records the Admin consent that starts the deboarding workflow for{' '}
+            <strong className="text-gray-900 dark:text-white">{merchant.businessName}</strong>.
+            Operations then executes the checklist: deactivate, final invoice, settlement,
+            refund, and finally soft-delete.
+          </p>
+          <p className="text-xs text-gray-400 font-medium">
+            Reversible at every step until the final soft-delete — cancelling restores billing
+            and access.
+          </p>
           <ATMTextField
-            label="Cancellation Reason"
-            placeholder="Customer request, business closed..."
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
+            label="Consent Note (optional)"
+            placeholder="Reason / ticket reference…"
+            value={deboardNote}
+            onChange={(e) => setDeboardNote(e.target.value)}
           />
         </div>
         <div className="mt-6 flex justify-end gap-3">
-          <ATMButton variant="outline" size="sm" onClick={() => setCancelModal(false)}>
+          <ATMButton variant="outline" size="sm" onClick={() => setDeboardModal(false)}>
             Cancel
           </ATMButton>
-          <ATMButton variant="danger" size="sm" onClick={handleCancelConfirm} isLoading={isCancelling}>
-            Cancel Subscription
+          <ATMButton variant="danger" size="sm" onClick={handleDeboardConfirm}>
+            Record Consent & Start
           </ATMButton>
         </div>
       </ATMModal>
 
-      {/* Delete Modal */}
-      <ATMModal
-        isOpen={deleteModal}
-        onClose={() => setDeleteModal(false)}
-        title="Delete Merchant (Compliance)"
-      >
-        <p className="text-sm text-rose-600 dark:text-rose-450 font-bold mb-6">
-          This action is permanent and deletes all platform records. Enterprise databases are deleted/anonymized.
-        </p>
-        <div className="flex justify-end gap-3">
-          <ATMButton variant="outline" size="sm" onClick={() => setDeleteModal(false)}>
-            Cancel
-          </ATMButton>
-          <ATMButton variant="danger" size="sm" onClick={handleDeleteConfirm} isLoading={isDeleting}>
-            Permanently Delete
-          </ATMButton>
-        </div>
-      </ATMModal>
-
-      {/* Plan / Tier Change Modal */}
+      {/* Plan Change Modal — 2026-08-30: real catalog plans (same deployment kind as the
+          active subscription); the hardcoded Starter/Professional/Business/Enterprise +
+          Basic/Standard/Advance/Premium tier lists were pure fiction. */}
       <ATMModal
         isOpen={planChangeModal}
         onClose={() => {
           setPlanChangeModal(false);
           setSelectedNewPlan(null);
-          setSelectedNewTier(null);
+          setPlanChangeReason('');
+          setPlanDiscountPct(0);
         }}
-        title={merchant.merchantType === 'Enterprise' ? 'Change Plan' : 'Change Token Tier'}
+        title="Change Plan"
       >
         <div className="space-y-4">
-          {merchant.merchantType === 'Enterprise' ? (
-            <>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
-                Current plan: <strong className="text-gray-900 dark:text-white font-bold">{merchant.plan}</strong>
-              </p>
-              <div className="space-y-2.5">
-                {['Starter', 'Professional', 'Business', 'Enterprise'].map((plan) => (
-                  <button
-                    key={plan}
-                    type="button"
-                    onClick={() => setSelectedNewPlan(plan)}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all font-bold',
-                      selectedNewPlan === plan
-                        ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
-                        : merchant.plan === plan
-                          ? 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60'
-                          : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
-                    )}
-                  >
-                    <span className="text-sm text-gray-900 dark:text-white">{plan}</span>
-                    {merchant.plan === plan && <ATMBadge label="Current" color="muted" variant="soft" />}
-                  </button>
-                ))}
-              </div>
-            </>
+          <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
+            Current plan:{' '}
+            <strong className="text-gray-900 dark:text-white font-bold">
+              {detail?.activeSubscription?.planDisplayName || merchant.plan || '—'}
+            </strong>
+            {typeof detail?.activeSubscription?.dailySubscriptionPrice === 'number' && (
+              <span className="ml-1.5 text-gray-500 dark:text-gray-400 font-medium">
+                ({formatCurrencyOrDash(detail.activeSubscription.dailySubscriptionPrice, platformCurrency)}/day)
+              </span>
+            )}
+          </p>
+          {planOptions.length === 0 ? (
+            <p className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60 px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-medium">
+              No other active plan of this deployment kind exists in the catalog. Create one
+              under Plans first, then change the merchant to it.
+            </p>
           ) : (
-            <>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
-                Current tier: <strong className="text-gray-900 dark:text-white font-bold">{merchant.tier}</strong>
-              </p>
-              <div className="space-y-2.5">
-                {TIER_ORDER.map((tier) => (
-                  <button
-                    key={tier}
-                    type="button"
-                    onClick={() => setSelectedNewTier(tier)}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all font-bold',
-                      selectedNewTier === tier
-                        ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
-                        : merchant.tier === tier
-                          ? 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60'
-                          : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
+            <div className="space-y-2.5">
+              {planOptions.map((plan) => (
+                <button
+                  key={plan.planId}
+                  type="button"
+                  onClick={() => setSelectedNewPlan(plan.planId)}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all font-bold',
+                    selectedNewPlan === plan.planId
+                      ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
+                      : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
+                  )}
+                >
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    {plan.displayName}
+                    {plan.flavour && plan.flavour !== 'BOT' && (
+                      <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                        {plan.flavour === 'RES' ? 'Restaurant' : 'Retail'}
+                      </span>
                     )}
-                  >
-                    <span className="text-sm text-gray-900 dark:text-white">{tier}</span>
-                    {merchant.tier === tier && <ATMBadge label="Current" color="muted" variant="soft" />}
-                  </button>
-                ))}
-              </div>
-            </>
+                  </span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatCurrencyOrDash(plan.planPricePerDay ?? 0, platformCurrency)}/day
+                  </span>
+                </button>
+              ))}
+            </div>
           )}
+          {merchant.merchantType === 'Standalone' && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              Tokens issued from now on derive from the new plan. Already-issued tokens keep
+              the grants they were minted with.
+            </p>
+          )}
+          {/* Per-merchant pricing — same semantics as onboarding's assign-plan: the
+              discounted rate is stored as this merchant's daily price. Prefilled with the
+              current subscription's implied discount so the deal carries over. */}
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <ATMTextField
+              label="Merchant Discount (%)"
+              type="number"
+              value={String(planDiscountPct)}
+              onChange={(e) => setPlanDiscountPct(Number(e.target.value) || 0)}
+            />
+            <div className="pb-1">
+              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Effective daily rate
+              </p>
+              {(() => {
+                const sel = planOptions.find((p) => p.planId === selectedNewPlan);
+                if (!sel) {
+                  return <p className="text-sm font-bold text-gray-400 dark:text-gray-500">Select a plan</p>;
+                }
+                const eff = Number(((sel.planPricePerDay ?? 0) * (1 - (planDiscountPct || 0) / 100)).toFixed(2));
+                return (
+                  <p className={cn('text-lg font-black', planDiscountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white')}>
+                    {formatCurrencyOrDash(eff, platformCurrency)}/day
+                  </p>
+                );
+              })()}
+            </div>
+          </div>
+          <ATMTextField
+            label="Reason (optional)"
+            placeholder="Reason / ticket reference…"
+            value={planChangeReason}
+            onChange={(e) => setPlanChangeReason(e.target.value)}
+          />
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <ATMButton
@@ -1256,7 +1420,8 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
             onClick={() => {
               setPlanChangeModal(false);
               setSelectedNewPlan(null);
-              setSelectedNewTier(null);
+              setPlanChangeReason('');
+              setPlanDiscountPct(0);
             }}
           >
             Cancel
@@ -1265,50 +1430,15 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
             variant="primary"
             size="sm"
             onClick={handleApplyPlanChange}
-            isLoading={isChangingPlan || isChangingTier}
-            disabled={
-              merchant.merchantType === 'Enterprise'
-                ? !selectedNewPlan || selectedNewPlan === merchant.plan
-                : !selectedNewTier || selectedNewTier === merchant.tier
-            }
+            isLoading={isChangingPlan}
+            disabled={!selectedNewPlan}
           >
             Apply Change
           </ATMButton>
         </div>
       </ATMModal>
 
-      {/* Impersonate Modal */}
-      <ATMModal
-        isOpen={impersonateModal}
-        onClose={() => setImpersonateModal(false)}
-        title="Impersonate Merchant (View-Only)"
-      >
-        <div className="flex items-start gap-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-250 p-4 mb-6">
-          <Eye className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-          <div className="text-sm text-amber-800 dark:text-amber-300 font-semibold space-y-1">
-            <p>You are about to view <strong>{merchant.businessName}</strong>'s Merchant Admin Portal in read-only mode.</p>
-            <ul className="list-disc ml-4 text-xs font-semibold space-y-1">
-              <li>Platform Admin permission required</li>
-              <li>All actions are read-only — no modifications possible</li>
-              <li>Session is logged in the audit trail</li>
-            </ul>
-          </div>
-        </div>
-        <div className="flex justify-end gap-3">
-          <ATMButton variant="outline" size="sm" onClick={() => setImpersonateModal(false)}>
-            Cancel
-          </ATMButton>
-          <ATMButton
-            variant="primary"
-            size="sm"
-            icon={Eye}
-            onClick={handleImpersonateConfirm}
-            isLoading={isImpersonating}
-          >
-            Start View-Only Session
-          </ATMButton>
-        </div>
-      </ATMModal>
+      {/* 2026-09-04: the Impersonate modal is gone with the action (see MerchantDetailWrapper). */}
     </div>
   );
 };

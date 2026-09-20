@@ -1,4 +1,5 @@
 import React from 'react';
+import { getApiBaseUrl } from '@/lib/config/runtimeConfig';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -67,7 +68,10 @@ export const ATMAvatar: React.FC<Props> = ({
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
       return url;
     }
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5095';
+    // 2026-08-31: was falling back to a hardcoded http://127.0.0.1:5095 — not even the
+    // API's port (5104) — so relative avatar URLs pointed at nothing in any build where
+    // the env var was unset. Shared resolver: runtime config → build-time → same-origin.
+    const apiBaseUrl = getApiBaseUrl();
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
     return `${apiBaseUrl}${cleanUrl}`;
   };

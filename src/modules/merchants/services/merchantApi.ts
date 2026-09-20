@@ -15,6 +15,8 @@ import type {
   CreateMerchantTerminalDto,
   UpdateMerchantTerminalDto,
   PlatformPairingCode,
+  MerchantDataExportDocument,
+  MerchantCommunications,
   ApiResponse,
   ApiListResponse,
 } from '../types/merchant.types';
@@ -57,6 +59,16 @@ export const merchantApi = baseApi.injectEndpoints({
         data: response.data?.map(mapMerchantResponse) ?? [],
       }),
       providesTags: ['Merchants'],
+    }),
+
+    // FRS-SAP-402 (2026-08-05): rich detail payload — commission summary, bridge health,
+    // token history, renewal status, usage rollup. Backs the type-specific detail panels.
+    getMerchantDetail: builder.query<ApiResponse<import('../types/merchantDetail.types').MerchantDetailPayload>, string>({
+      query: (id) => ({
+        url: `/api/v1/merchants/${id}/detail`,
+        method: 'GET',
+      }),
+      providesTags: (_res, _err, id) => [{ type: 'Merchants', id }],
     }),
 
     getMerchant: builder.query<ApiResponse<Merchant>, string>({
@@ -117,22 +129,8 @@ export const merchantApi = baseApi.injectEndpoints({
       invalidatesTags: (_res, _err, { id }) => [{ type: 'Merchants', id }, 'Merchants'],
     }),
 
-    cancelMerchant: builder.mutation<ApiResponse<Merchant>, { id: string; reason: string }>({
-      query: ({ id, reason }) => ({
-        url: `/api/v1/merchants/${id}/deactivate`,
-        method: 'POST',
-        data: { reason },
-      }),
-      invalidatesTags: (_res, _err, { id }) => [{ type: 'Merchants', id }, 'Merchants'],
-    }),
-
-    deleteMerchant: builder.mutation<ApiResponse<{ deleted: boolean }>, string>({
-      query: (id) => ({
-        url: `/api/v1/merchants/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Merchants'],
-    }),
+    // 2026-08-30: cancelMerchant/deleteMerchant endpoints removed — retired Pass-39
+    // exits (DELETE /merchants/{id} returns 410 Gone); deboarding is the one exit path.
 
     retryProvisioning: builder.mutation<ApiResponse<Merchant>, string>({
       query: (id) => ({
@@ -142,7 +140,10 @@ export const merchantApi = baseApi.injectEndpoints({
       invalidatesTags: (_res, _err, id) => [{ type: 'Merchants', id }, 'Merchants'],
     }),
 
-    exportMerchantData: builder.mutation<ApiResponse<unknown>, string>({
+    // 2026-08-30: typed to what the server actually returns (FRS-SPA-507) — the response
+    // BODY is the export document itself, streamed as a JSON attachment (no ApiResponse
+    // envelope; integrity hash in the X-Quantix-Export-Sha256 header). Caller downloads it.
+    exportMerchantData: builder.mutation<MerchantDataExportDocument, string>({
       query: (id) => ({
         url: `/api/v1/merchants/${id}/export`,
         method: 'POST',
@@ -173,111 +174,45 @@ export const merchantApi = baseApi.injectEndpoints({
       }),
     }),
 
-    changePlan: builder.mutation<ApiResponse<Merchant>, { id: string; plan: string }>({
-      query: ({ id, plan }) => ({
+    // 2026-08-31: the merchant's REAL message-delivery record. The Communications panel
+    // used to render a hardcoded array with invented "sent" timestamps and Send buttons
+    // that never contacted the server.
+    getMerchantCommunications: builder.query<ApiResponse<MerchantCommunications>, string>({
+      query: (id) => ({
+        url: `/api/v1/merchants/${id}/communications`,
+        method: 'GET',
+      }),
+      providesTags: (_res, _err, id) => [{ type: 'Merchants', id }],
+    }),
+
+    resendWelcomeEmail: builder.mutation<ApiResponse<boolean>, string>({
+      query: (id) => ({
+        url: `/api/v1/merchants/${id}/communications/welcome-email/resend`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_res, _err, id) => [{ type: 'Merchants', id }],
+    }),
+
+    // 2026-08-30: changePlan now sends what PlanChangeDto actually reads — the old body
+    // { plan: 'Starter' } mapped to NOTHING server-side, so every plan change failed.
+    // changeTier removed entirely: /change-tier returns 410 Gone (tiers don't exist).
+    // dailyPriceOverride = the negotiated merchant-specific daily rate (onboarding
+    // parity); omitted ⇒ catalog price.
+    changePlan: builder.mutation<ApiResponse<boolean>, { id: string; newPlanId: string; dailyPriceOverride?: number; reason?: string }>({
+      query: ({ id, newPlanId, dailyPriceOverride, reason }) => ({
         url: `/api/v1/merchants/${id}/change-plan`,
         method: 'POST',
-        data: { plan },
+        data: { newPlanId, dailyPriceOverride, reason },
       }),
       invalidatesTags: (_res, _err, { id }) => [{ type: 'Merchants', id }, 'Merchants'],
     }),
 
-    changeTier: builder.mutation<ApiResponse<Merchant>, { id: string; tier: string }>({
-      query: ({ id, tier }) => ({
-        url: `/api/v1/merchants/${id}/change-tier`,
-        method: 'POST',
-        data: { tier },
-      }),
-      invalidatesTags: (_res, _err, { id }) => [{ type: 'Merchants', id }, 'Merchants'],
-    }),
+    // 2026-09-04: impersonateMerchant REMOVED. It expected `{ sessionUrl }` from a route that
+    // returned an opaque `imp.v2.*` token nothing in the solution could consume; the modal
+    // announced a view-only session and opened nothing.
 
-    impersonateMerchant: builder.mutation<ApiResponse<{ sessionUrl: string; expiresAt: string }>, string>({
-      query: (id) => ({
-        url: `/api/v1/merchants/${id}/impersonate`,
-        method: 'POST',
-      }),
-    }),
-
-    // --- Registration ---
-    registerEnterprise: builder.mutation<ApiResponse<Merchant>, MerchantCreateEnterprise>({
-      query: (data) => {
-        const planIdMap: Record<string, string> = {
-          starter: '20000002-0000-0000-0000-000000000002',
-          professional: '20000002-0000-0000-0000-000000000003',
-          business: '20000002-0000-0000-0000-000000000003',
-          enterprise: '20000002-0000-0000-0000-000000000004',
-        };
-        const mappedPlanId = planIdMap[data.plan?.toLowerCase() || ''] || planIdMap[data.tier?.toLowerCase() || ''] || planIdMap['professional'];
-
-        return {
-          url: '/api/v1/merchants',
-          method: 'POST',
-          data: {
-            merchantType: 'Enterprise',
-            companyName: data.businessName,
-            displayName: data.businessName,
-            contactName: data.contactPerson,
-            contactEmail: data.email,
-            contactPhone: data.phone,
-            addressLine1: (data as any).addressLine1 || (data as any).address || null,
-            addressLine2: (data as any).addressLine2 || null,
-            city: (data as any).city || null,
-            state: (data as any).state || null,
-            postalCode: (data as any).postalCode || (data as any).zipCode || null,
-            country: data.country,
-            databaseEngine: data.dbEngine || 'PostgreSQL',
-            businessNature: data.businessNature || null,
-            preferredPaymentMethod: data.preferredPaymentMethod || null,
-            planId: mappedPlanId,
-          },
-        };
-      },
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: mapMerchantResponse(response.data),
-      }),
-      invalidatesTags: ['Merchants', 'SignupQueue'],
-    }),
-
-    registerStandalone: builder.mutation<ApiResponse<Merchant>, MerchantCreateStandalone>({
-      query: (data) => {
-        const tierIdMap: Record<string, string> = {
-          basic: '20000002-0000-0000-0000-000000000002',
-          standard: '20000002-0000-0000-0000-000000000003',
-          advance: '20000002-0000-0000-0000-000000000003',
-          premium: '20000002-0000-0000-0000-000000000004',
-        };
-        const mappedPlanId = tierIdMap[data.initialTokenTier?.toLowerCase() || ''] || null;
-
-        return {
-          url: '/api/v1/merchants',
-          method: 'POST',
-          data: {
-            merchantType: 'Standalone',
-            companyName: data.businessName,
-            displayName: data.businessName,
-            contactName: data.contactPerson,
-            contactEmail: data.email,
-            contactPhone: data.phone,
-            addressLine1: (data as any).addressLine1 || (data as any).address || null,
-            addressLine2: (data as any).addressLine2 || null,
-            city: (data as any).city || null,
-            state: (data as any).state || null,
-            postalCode: (data as any).postalCode || (data as any).zipCode || null,
-            country: data.country,
-            databaseEngine: null,
-            businessNature: data.businessNature || null,
-            preferredPaymentMethod: null,
-            planId: mappedPlanId,
-          },
-        };
-      },
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: mapMerchantResponse(response.data),
-      }),
-      invalidatesTags: ['Merchants', 'SignupQueue'],
-    }),
+    // Registration mutations REMOVED 2026-08-12 with the retired register wizards —
+    // the unified onboarding wizard (/merchants/onboard) is the only creation path.
 
     getSignupQueue: builder.query<ApiListResponse<SignupQueueEntry>, Record<string, any>>({
       query: (params) => ({
@@ -411,6 +346,16 @@ export const merchantApi = baseApi.injectEndpoints({
     }),
 
     // --- Terminals ---
+    // 2026-08-30: the terminal types this merchant may register — server-derived from the
+    // active plan (flavour → Restaurant/Retail; Advance Inventory feature → Inventory).
+    getAllowedTerminalTypes: builder.query<ApiResponse<string[]>, string>({
+      query: (merchantId) => ({
+        url: `/api/v1/terminals/allowed-types/by-merchant/${merchantId}`,
+        method: 'GET',
+      }),
+      providesTags: (_res, _err, merchantId) => [{ type: 'Merchants', id: merchantId }],
+    }),
+
     getTerminalsByMerchant: builder.query<ApiResponse<MerchantTerminal[]>, string>({
       query: (merchantId) => ({
         url: `/api/v1/terminals/by-merchant/${merchantId}`,
@@ -463,23 +408,20 @@ export const merchantApi = baseApi.injectEndpoints({
 export const {
   useGetMerchantsQuery,
   useGetMerchantQuery,
+  useGetMerchantDetailQuery,
   useUpdateMerchantMutation,
   useActivateMerchantMutation,
   useSuspendMerchantMutation,
   useReactivateMerchantMutation,
   useReactivateMerchantWithResolutionMutation,
-  useCancelMerchantMutation,
-  useDeleteMerchantMutation,
   useRetryProvisioningMutation,
   useExportMerchantDataMutation,
   useGetMerchantNotesQuery,
   useAddMerchantNoteMutation,
   useGetMerchantTimelineQuery,
+  useGetMerchantCommunicationsQuery,
+  useResendWelcomeEmailMutation,
   useChangePlanMutation,
-  useChangeTierMutation,
-  useImpersonateMerchantMutation,
-  useRegisterEnterpriseMutation,
-  useRegisterStandaloneMutation,
   useGetSignupQueueQuery,
   useResendVerificationMutation,
   useBypassPaymentMutation,
@@ -495,6 +437,7 @@ export const {
   useGetDeboardingByIdQuery,
   useGetDeboardingByMerchantQuery,
   useGetDeboardingQueueQuery,
+  useGetAllowedTerminalTypesQuery,
   useGetTerminalsByMerchantQuery,
   useCreateTerminalMutation,
   useUpdateTerminalMutation,

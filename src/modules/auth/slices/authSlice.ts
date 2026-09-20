@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../../app/store';
+import { deriveModulePermissions, toPlatformRole } from '@/lib/utils/permissions';
 
 export interface ModulePermission {
   module: string;
@@ -51,13 +52,29 @@ export const parseJwt = (token: string) => {
   }
 };
 
+// 2026-08-30: the API user carries `roleName` only, while permission checks read
+// `user.role` (canAccess callers). The refresh interceptor already normalizes both keys;
+// the login path and saved sessions didn't — a fresh Admin login was denied on
+// permission-gated screens until the first token refresh. Normalize at every boundary.
+/**
+ * 2026-09-04: `role` is the portal's canonical PlatformRole ('OperationsManager'), folded
+ * from whichever spelling the API sent ("Operations Manager" display name, or the seed key).
+ * `roleName` keeps the API's display string for labels. Before this, `role` was the raw
+ * display name and the dashboard switch / Admin check compared it to 'OperationsManager'.
+ */
+const normalizeUserRole = <T extends { role?: string; roleName?: string } | null>(user: T): T => {
+  if (!user) return user;
+  const raw = user.role ?? user.roleName;
+  return { ...user, role: toPlatformRole(raw) ?? raw, roleName: user.roleName ?? raw };
+};
+
 const loadSavedAuth = () => {
   if (typeof window === 'undefined') return null;
   try {
     const accessToken = localStorage.getItem('accessToken');
     const refreshToken = localStorage.getItem('refreshToken');
     const rawUser = localStorage.getItem('authUser');
-    const user = rawUser ? JSON.parse(rawUser) : null;
+    const user = normalizeUserRole(rawUser ? JSON.parse(rawUser) : null);
     
     // Check if there are saved token details from old Zustand store
     const rawZustand = localStorage.getItem('quantix-platform-auth');
@@ -72,7 +89,7 @@ const loadSavedAuth = () => {
         return {
           accessToken: accessToken || zToken || 'persisted-session-token',
           refreshToken,
-          user: user || zUser,
+          user: user || normalizeUserRole(zUser),
           tokenExpiresAt: zExpiresAt || null,
           permissionCodes: zPermissions || [],
         };
@@ -90,13 +107,25 @@ const loadSavedAuth = () => {
 
 const savedAuth = loadSavedAuth();
 
+/**
+ * 2026-09-04: a saved session's codes come from the saved JWT itself (one `permissions`
+ * claim per code), so the sidebar is correct on a cold reload instead of empty until the
+ * first token refresh.
+ */
+const savedCodes: string[] = (() => {
+  const decoded = savedAuth?.accessToken ? parseJwt(savedAuth.accessToken) : null;
+  if (Array.isArray(decoded?.permissions)) return decoded.permissions as string[];
+  const legacy = (savedAuth as any)?.permissionCodes;
+  return Array.isArray(legacy) ? legacy : [];
+})();
+
 const initialState: AuthState = {
   user: savedAuth?.user || null,
   accessToken: savedAuth?.accessToken || null,
   refreshToken: savedAuth?.refreshToken || null,
   isAuthenticated: !!(savedAuth?.accessToken && savedAuth?.user),
-  permissions: savedAuth?.user?.permissions || [],
-  permissionCodes: (savedAuth as any)?.permissionCodes || [],
+  permissions: deriveModulePermissions(savedCodes),
+  permissionCodes: savedCodes,
   roleVersion: savedAuth?.user?.permissionsVersion || 0,
   isLoading: false,
   isInitialized: true,
@@ -121,7 +150,8 @@ const authSlice = createSlice({
         mustChangePassword?: boolean;
       }>
     ) => {
-      const { user, accessToken, refreshToken, mfaSetupRequired, mustChangePassword } = action.payload;
+      const { user: rawLoginUser, accessToken, refreshToken, mfaSetupRequired, mustChangePassword } = action.payload;
+      const user = normalizeUserRole(rawLoginUser);
       const decoded = parseJwt(accessToken);
       
       const finalMfaSetupRequired = mfaSetupRequired !== undefined
@@ -158,29 +188,29 @@ const authSlice = createSlice({
         }
       }
 
+      // 2026-09-04: the JWT carries permission CODES (one `permissions` claim per code —
+      // a single-code token arrives as a plain string). They used to be stored straight
+      // into `state.permissions`, which usePermission reads as MODULE objects, so every
+      // non-Admin staff login saw an empty sidebar. Codes are kept in permissionCodes and
+      // the module flags are derived through the one shared map.
       let permissionsList: string[] = [];
       if (decoded) {
         if (Array.isArray(decoded.permissions)) {
-          state.permissions = decoded.permissions;
-          permissionsList = decoded.permissions;
+          permissionsList = decoded.permissions.filter((p: unknown): p is string => typeof p === 'string');
         } else if (typeof decoded.permissions === 'string') {
-          try {
-            state.permissions = JSON.parse(decoded.permissions);
-            permissionsList = state.permissions as unknown as string[];
-          } catch (e) {
-            state.permissions = [];
-          }
-        } else {
-          state.permissions = [];
+          permissionsList = decoded.permissions.includes(';')
+            ? decoded.permissions.split(';').filter(Boolean)
+            : [decoded.permissions];
         }
         state.roleVersion = parseInt(decoded.role_v || '0');
       } else {
-        // Fallback to user object if decode fails
-        state.permissions = user?.permissions || [];
-        permissionsList = user?.permissions || [];
+        // Fallback to the login payload if the token cannot be decoded.
+        const fromUser = user?.permissions;
+        permissionsList = Array.isArray(fromUser) ? fromUser.filter((p: unknown): p is string => typeof p === 'string') : [];
         state.roleVersion = user?.permissionsVersion || 0;
       }
       state.permissionCodes = permissionsList;
+      state.permissions = deriveModulePermissions(permissionsList);
     },
 
     logout: (state) => {
@@ -236,7 +266,14 @@ const authSlice = createSlice({
     },
 
     updateUser: (state, action: PayloadAction<any>) => {
-      state.user = { ...state.user, ...action.payload };
+      // 2026-08-30: callers pass raw API users (`roleName` only, e.g. the /auth/me boot
+      // revalidation in useAuth) — normalize like loginSuccess, and mark the session
+      // authenticated: a resolved user IS the proof of a valid session on that path.
+      state.user = normalizeUserRole({ ...state.user, ...action.payload });
+      state.isAuthenticated = true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('authUser', JSON.stringify(state.user));
+      }
     },
 
     updateProfilePicture: (state, action: PayloadAction<string>) => {
@@ -274,6 +311,9 @@ const authSlice = createSlice({
 
     setPermissions: (state, action: PayloadAction<readonly string[]>) => {
       state.permissionCodes = [...action.payload];
+      // 2026-09-04: a token refresh re-derives the module flags too (it used to leave
+      // `permissions` stale while updating only the codes).
+      state.permissions = deriveModulePermissions(action.payload);
     },
 
     markMfaEnabled: (state) => {
@@ -323,10 +363,11 @@ export const selectMfaPending = (state: RootState) => state.auth.mfaPending;
 export const selectMfaChallengeToken = (state: RootState) => state.auth.mfaChallengeToken;
 export const selectTokenExpiresAt = (state: RootState) => state.auth.tokenExpiresAt;
 export const selectPermissionCodes = (state: RootState) => state.auth.permissionCodes;
-export const selectIsAdmin = (state: RootState) => {
-  const role = state.auth.user?.roleName?.toLowerCase() || state.auth.user?.role?.toLowerCase();
-  return role === 'admin' || role === 'superadmin' || role === 'administrator' || role === 'opsmanager';
-};
+// 2026-09-04: Admin is the one role that bypasses every gate. The old check also accepted
+// 'superadmin' / 'administrator' (no such roles) and 'opsmanager' — which would have made
+// an Operations Manager whose role happened to be spelled that way a full Admin.
+export const selectIsAdmin = (state: RootState) =>
+  toPlatformRole(state.auth.user?.role ?? state.auth.user?.roleName) === 'Admin';
 export const selectIsLoading = (state: RootState) => state.auth.isLoading;
 
 export default authSlice.reducer;

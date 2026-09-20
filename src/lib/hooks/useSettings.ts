@@ -1,9 +1,7 @@
 import {
   useGetGlobalSettingsQuery,
   useUpdateGlobalSettingsMutation,
-  useGetFeatureTogglesQuery,
   useGetEmailTemplatesQuery,
-  useGetTokenConfigQuery,
   useGetCommissionConfigQuery,
   useGetGracePeriodConfigQuery,
 } from '@/modules/settings/services/settingsApi';
@@ -18,16 +16,8 @@ export function useUpdateGlobalSettings() {
   return wrapMutation(trigger, result);
 }
 
-export function useFeatureToggles() {
-  return useGetFeatureTogglesQuery();
-}
-
 export function useEmailTemplates() {
   return useGetEmailTemplatesQuery();
-}
-
-export function useTokenConfig() {
-  return useGetTokenConfigQuery();
 }
 
 export function useCommissionConfig() {

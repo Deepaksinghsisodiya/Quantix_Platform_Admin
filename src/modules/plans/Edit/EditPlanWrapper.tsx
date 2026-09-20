@@ -6,15 +6,10 @@ import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { Pencil } from 'lucide-react';
 import { PlanForm } from '../Form/PlanForm';
-import { useUpdatePlanHook } from '../services/usePlans';
-import type { Plan, PlanType, PlanStatus } from '../types/plan.types';
-import { useAppSelector } from '@/app/hooks';
-import { calculatePlanPrice } from '@/modules/rateCards/utils/priceCalculator';
+import { useUpdatePlanHook, usePlan } from '../services/usePlans';
+import type { Plan, PlanType, PlanStatus, Flavour } from '../types/plan.types';
 import {
-  DEFAULT_ENT_MODULES,
-  DEFAULT_ENT_PAYMENTS,
-  DEFAULT_ENT_SERVICES,
-  DEFAULT_ENT_LIMITS,
+  PLAN_TYPE_WIRE_TO_UI,
   DEFAULT_STD_MODULES,
   DEFAULT_STD_PAYMENTS,
   DEFAULT_STD_SERVICES,
@@ -30,16 +25,12 @@ interface EditPlanWrapperProps {
 
 const planValidationSchema = Yup.object().shape({
   name: Yup.string().trim().required('Plan Name is required'),
+  displayName: Yup.string().trim().required('Display Name is required'),
   planType: Yup.string().oneOf(['Standalone POS', 'Standalone Cloud', 'Enterprise cloud'], 'Select valid plan type').required('Plan type is required'),
+  flavour: Yup.string().oneOf(['RES', 'RET', 'BOT'], 'Select a valid flavour').required('Flavour is required'),
   status: Yup.string().oneOf(['Active', 'Inactive', 'Deprecated']).required('Status is required'),
   priority: Yup.number().typeError('Must be a number').integer('Must be an integer').min(1, 'Priority must be at least 1').required('Priority is required'),
   dailyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Daily Price is required'),
-  weeklyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Weekly Price is required'),
-  monthlyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Monthly Price is required'),
-  yearlyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Yearly Price is required'),
-  trialPeriod: Yup.number().typeError('Must be a number').min(0, 'Trial period cannot be negative'),
-  maxLocations: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative').required('Max locations required'),
-  maxTerminals: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative').required('Max terminals required'),
   features: Yup.array().of(
     Yup.object().shape({
       text: Yup.string().trim().required('Feature text is required'),
@@ -52,6 +43,31 @@ const planValidationSchema = Yup.object().shape({
   priceVariation: Yup.number().typeError('Must be a number'),
 });
 
+/**
+ * Server PlanDto children arrive as arrays ({ limitCode, maxValue } / { featureCode,
+ * isIncluded } / …); PlanForm edits flat on-off dicts. Each dict starts from the known
+ * code set so a plan missing a code still renders every toggle.
+ */
+function limitsToDict(rows: any[] | undefined): Record<string, number> {
+  const dict: Record<string, number> = { ...DEFAULT_STD_LIMITS };
+  rows?.forEach((r) => { if (r.limitCode in dict) dict[r.limitCode] = Number(r.maxValue) || 0; });
+  return dict;
+}
+
+function rowsToBoolDict(
+  rows: any[] | undefined,
+  codeField: string,
+  // PlanModules / PlanPayments / PlanServices are fixed-key interfaces without an index
+  // signature, so accept any object and read its keys.
+  knownCodes: object
+): Record<string, boolean> {
+  const dict: Record<string, boolean> = Object.fromEntries(
+    Object.keys(knownCodes).map((k) => [k, false])
+  );
+  rows?.forEach((r) => { if (r[codeField] in dict) dict[r[codeField]] = !!r.isIncluded; });
+  return dict;
+}
+
 export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
   isOpen,
   onClose,
@@ -59,90 +75,90 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
   onSuccess,
 }) => {
   const updatePlanMutation = useUpdatePlanHook();
-  const rateCards = useAppSelector((state) => state.rateCards.rateCards);
-  const activeRateCard = rateCards.find((c) => c.isDefault) || rateCards[0];
-
-  const calcBase = plan && activeRateCard ? calculatePlanPrice({
-    planFeatures: plan.planFeatures as any,
-    planPayments: plan.planPayments as any,
-    planServices: plan.planServices as any,
-    planLimits: plan.planLimits as any,
-  }, activeRateCard).dailyPrice : 0;
-  
-  const initialVariation = plan ? Number((plan.dailyPrice - calcBase).toFixed(2)) : 0;
+  // Summary rows carry no children — fetch the full PlanDto so limits/features/payments/
+  // services prefill from the server instead of silently resetting to defaults on save.
+  const detailQuery = usePlan(isOpen && plan ? plan.id : undefined);
+  const detail: any = (detailQuery.data as any)?.data;
 
   const formik = useFormik({
     initialValues: {
-      name: plan?.name || '',
-      planType: (plan?.planType || 'Enterprise cloud') as PlanType,
-      priority: plan?.priority ?? 1,
-      status: (plan?.status || 'Active') as PlanStatus,
-      dailyPrice: plan?.dailyPrice ? String(plan.dailyPrice) : '',
-      weeklyPrice: plan?.weeklyPrice ? String(plan.weeklyPrice) : '',
-      monthlyPrice: plan?.monthlyPrice ? String(plan.monthlyPrice) : '',
-      yearlyPrice: plan?.yearlyPrice ? String(plan.yearlyPrice) : '',
-      priceVariation: initialVariation,
-      trialPeriod: plan?.trialPeriod ?? 14,
-      maxLocations: plan?.maxLocations ?? 1,
-      maxTerminals: plan?.maxTerminals ?? 1,
-      features: plan?.features?.length
-        ? plan.features.map((f) => ({ text: f.text, included: f.included }))
+      name: detail?.planName ?? plan?.name ?? '',
+      displayName: detail?.displayName ?? '',
+      planType: (detail?.planType
+        ? PLAN_TYPE_WIRE_TO_UI[detail.planType as keyof typeof PLAN_TYPE_WIRE_TO_UI]
+        : plan?.planType || 'Enterprise cloud') as PlanType,
+      flavour: (detail?.flavour ?? plan?.flavour ?? 'BOT') as Flavour,
+      priority: detail?.sortOrder ?? plan?.priority ?? 1,
+      status: (detail
+        ? (detail.isDeprecated ? 'Deprecated' : detail.isActive ? 'Active' : 'Inactive')
+        : plan?.status || 'Active') as PlanStatus,
+      dailyPrice: detail?.planPricePerDay != null
+        ? String(detail.planPricePerDay)
+        : plan?.dailyPrice != null ? String(plan.dailyPrice) : '',
+      weeklyPrice: '',
+      monthlyPrice: '',
+      yearlyPrice: '',
+      priceVariation: 0,
+      features: detail?.marketingBullets?.length
+        ? detail.marketingBullets.map((t: string) => ({ text: t, included: true }))
         : [{ text: '', included: true }],
-      planFeatures: plan?.planFeatures ? { ...plan.planFeatures } : (plan?.planType?.startsWith('Standalone') ? { ...DEFAULT_STD_MODULES } : { ...DEFAULT_ENT_MODULES }),
-      planPayments: plan?.planPayments ? { ...plan.planPayments } : (plan?.planType?.startsWith('Standalone') ? { ...DEFAULT_STD_PAYMENTS } : { ...DEFAULT_ENT_PAYMENTS }),
-      planServices: plan?.planServices ? { ...plan.planServices } : (plan?.planType?.startsWith('Standalone') ? { ...DEFAULT_STD_SERVICES } : { ...DEFAULT_ENT_SERVICES }),
-      planLimits: plan?.planLimits ? { ...plan.planLimits } : (plan?.planType?.startsWith('Standalone') ? { ...DEFAULT_STD_LIMITS } : { ...DEFAULT_ENT_LIMITS }),
+      planFeatures: rowsToBoolDict(detail?.features, 'featureCode', DEFAULT_STD_MODULES),
+      planPayments: rowsToBoolDict(detail?.payments, 'paymentCode', DEFAULT_STD_PAYMENTS),
+      planServices: rowsToBoolDict(detail?.services, 'serviceCode', DEFAULT_STD_SERVICES),
+      planLimits: limitsToDict(detail?.limits),
       popular: !!plan?.popular,
-      isManualPrice: plan?.isManualPrice || false,
-      manualPrice: plan?.manualPrice || '',
+      isManualPrice: false,
+      manualPrice: '',
     },
     enableReinitialize: true,
     validationSchema: planValidationSchema,
     onSubmit: async (values, { resetForm }) => {
       if (!plan) return;
       try {
-        const cleanedFeatures = values.features
-          .filter((f) => f.text.trim().length > 0)
-          .map((f) => ({ text: f.text.trim(), included: f.included }));
-
-        const manualVal = Number(values.manualPrice || 0);
-        const dailyVal = values.isManualPrice ? Number((manualVal / 30).toFixed(2)) : Number(values.dailyPrice);
-        const weeklyVal = values.isManualPrice ? Number((manualVal / 4).toFixed(2)) : Number(values.weeklyPrice);
-        const monthlyVal = values.isManualPrice ? manualVal : Number(values.monthlyPrice);
-        const yearlyVal = values.isManualPrice ? Number((manualVal * 10).toFixed(2)) : Number(values.yearlyPrice);
-
-        const res = await updatePlanMutation.mutateAsync({
+        // Backend UpdatePlanDto — PlanType is immutable after creation, so it is not sent.
+        // Fields without a form control (description, commission, marketing discount) pass
+        // through from the fetched detail so a save never wipes them.
+        const payload = {
           id: plan.id,
-          name: values.name.trim(),
-          planType: values.planType,
-          priority: Number(values.priority),
-          status: values.status,
-          dailyPrice: dailyVal,
-          weeklyPrice: weeklyVal,
-          monthlyPrice: monthlyVal,
-          yearlyPrice: yearlyVal,
-          trialPeriod: Number(values.trialPeriod || 0),
-          features: cleanedFeatures,
-          maxLocations: Number(values.maxLocations || 1),
-          maxTerminals: Number(values.maxTerminals || 1),
-          planFeatures: values.planFeatures,
-          planPayments: values.planPayments,
-          planServices: values.planServices,
-          planLimits: values.planLimits,
-          popular: values.popular,
-          isManualPrice: values.isManualPrice,
-          manualPrice: manualVal,
-        } as any);
+          PlanName: values.name.trim(),
+          DisplayName: values.displayName.trim(),
+          Flavour: values.flavour,
+          Description: detail?.description ?? '',
+          CommissionPercent: detail?.commissionPercent ?? 0,
+          DiscountType: detail?.discountType ?? 'None',
+          DiscountValue: detail?.discountValue ?? 0,
+          PlanPricePerDay: Number(values.dailyPrice) || 0,
+          IsActive: values.status === 'Active',
+          IsPublic: values.status === 'Active',
+          SortOrder: Number(values.priority) || 1,
+          MarketingBullets: (values.features || [])
+            .filter((f: any) => f.included && f.text?.trim())
+            .map((f: any) => f.text.trim()),
+          Limits: Object.entries(values.planLimits || {}).map(([LimitCode, MaxValue]) => ({
+            LimitCode,
+            MaxValue: Number(MaxValue) || 0,
+          })),
+          Features: Object.entries(values.planFeatures || {}).map(([FeatureCode, IsIncluded]) => ({
+            FeatureCode,
+            IsIncluded: !!IsIncluded,
+            ShowOnWebsite: !!IsIncluded,
+          })),
+          Payments: Object.entries(values.planPayments || {}).map(([PaymentCode, IsIncluded]) => ({
+            PaymentCode,
+            IsIncluded: !!IsIncluded,
+          })),
+          Services: Object.entries(values.planServices || {}).map(([ServiceCode, IsIncluded]) => ({
+            ServiceCode,
+            IsIncluded: !!IsIncluded,
+          })),
+        };
 
-        const updatedPlan = res?.data;
+        await updatePlanMutation.mutateAsync(payload as any);
 
         toast.success(`Plan "${values.name.trim()}" updated successfully.`);
         resetForm();
         onClose();
-        if (onSuccess) {
-          if (updatedPlan) (onSuccess as any)(updatedPlan);
-          else onSuccess();
-        }
+        onSuccess?.();
       } catch (err: any) {
         toast.error(err?.data?.message || err?.message || 'Failed to update plan.');
       }
@@ -156,7 +172,7 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
   const removeFeatureRow = (index: number) => {
     formik.setFieldValue(
       'features',
-      formik.values.features.filter((_, i) => i !== index)
+      formik.values.features.filter((_: unknown, i: number) => i !== index)
     );
   };
 
@@ -173,7 +189,7 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={plan ? `Edit Subscription Plan: ${plan.name}` : 'Edit Subscription Plan'}
-      subtitle="Update pricing, features, limits, and status for merchants"
+      subtitle="Update pricing, flavour, limits, features, payments, and service types"
       size="4xl"
       footer={
         <div className="flex items-center justify-end gap-3 w-full border-t border-gray-100 dark:border-gray-800 pt-4">
@@ -190,6 +206,7 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
             variant="primary"
             onClick={() => formik.handleSubmit()}
             isLoading={updatePlanMutation.isPending}
+            disabled={detailQuery.isLoading}
             icon={Pencil}
           >
             Save Changes
@@ -197,12 +214,22 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
         </div>
       }
     >
-      <PlanForm
-        formik={formik}
-        addFeatureRow={addFeatureRow}
-        removeFeatureRow={removeFeatureRow}
-        toggleFeatureIncluded={toggleFeatureIncluded}
-      />
+      {detailQuery.isLoading ? (
+        <div className="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+          Loading plan details…
+        </div>
+      ) : detailQuery.isError ? (
+        <div className="py-12 text-center text-sm text-red-500">
+          Failed to load plan details. Close and retry.
+        </div>
+      ) : (
+        <PlanForm
+          formik={formik}
+          addFeatureRow={addFeatureRow}
+          removeFeatureRow={removeFeatureRow}
+          toggleFeatureIncluded={toggleFeatureIncluded}
+        />
+      )}
     </ATMModal>
   );
 };

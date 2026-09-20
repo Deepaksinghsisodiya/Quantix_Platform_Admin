@@ -12,8 +12,6 @@ export const ROUTES = {
   TENANTS: {
     LIST: '/merchants',
     DETAIL: (id: string) => `/merchants/${id}`,
-    REGISTER_ENTERPRISE: '/merchants/register/enterprise',
-    REGISTER_STANDALONE: '/merchants/register/standalone',
     EDIT: (id: string) => `/merchants/${id}/edit`,
     ONBOARDING: (id: string) => `/merchants/${id}/onboarding`,
     LOCATIONS: (id: string) => `/merchants/${id}/locations`,
@@ -29,7 +27,6 @@ export const ROUTES = {
     LIST: '/tokens',
     GENERATE: '/tokens/generate',
     BATCH_GENERATE: '/tokens/bulk',
-    VALIDITY: '/tokens/validity',
     DETAIL: (id: string) => `/tokens/${id}`,
   },
 
@@ -53,28 +50,38 @@ export const ROUTES = {
     COLLECTIONS: '/commission/collections',
   },
 
-  // Support
+  // Support — 2026-09-08: the helpdesk only. Leads moved to CONTENT; the dead entries
+  // (/support/tickets, knowledge-base, announcements) named routes that never existed.
   SUPPORT: {
-    TICKETS: '/support/tickets',
-    TICKET_DETAIL: (id: string) => `/support/tickets/${id}`,
-    CREATE_TICKET: '/support/tickets/create',
-    KNOWLEDGE_BASE: '/support/knowledge-base',
-    ANNOUNCEMENTS: '/support/announcements',
-    // Round_16 Pass 15: missing pages (audit H-1 PlatformAdmin coverage gap).
-    LEADS: '/support/leads',
-    LEAD_DETAIL: (id: string) => `/support/leads/${id}`,
+    QUEUE: '/support',
+    TICKET_DETAIL: (id: string) => `/support/${id}`,
+    METRICS: '/support/metrics',
     CANNED_RESPONSES: '/support/canned-responses',
     AUTO_CLOSE: '/support/auto-close',
-    ROUTING_RULES: '/support/routing-rules',
+    ESCALATION_RULES: '/support/escalation-rules',
   },
 
-  // Content
+  // Content — the website, plus the CRM leads that arrive from it.
   CONTENT: {
-    PAGES: '/content/pages',
-    PAGE_DETAIL: (id: string) => `/content/pages/${id}`,
-    BANNERS: '/content/banners',
+    BLOG: '/content/blog',
+    HELP: '/content/help',
+    FAQ: '/content/faq',
     TEMPLATES: '/content/templates',
+    MARKETING: '/content/marketing',
+    TESTIMONIALS: '/content/testimonials',
+    ANNOUNCEMENTS: '/content/announcements',
+    CLIENTELE: '/content/clientele',
+    GALLERIES: '/content/galleries',
     MEDIA: '/content/media',
+    LEADS: '/content/leads',
+    LEAD_DETAIL: (id: string) => `/content/leads/${id}`,
+  },
+
+  // Merchant self-service portal.
+  MERCHANT: {
+    DASHBOARD: '/merchant/dashboard',
+    SUPPORT: '/merchant/support',
+    TICKET_DETAIL: (id: string) => `/merchant/support/${id}`,
   },
 
   // Reports
@@ -84,7 +91,7 @@ export const ROUTES = {
     TENANTS: '/reports/merchants',
     TOKENS: '/reports/tokens',
     USAGE: '/reports/usage',
-    CUSTOM: '/reports/custom',
+    // 2026-09-04 (decision D): CUSTOM ('/reports/custom') removed with the page.
     COMPLIANCE: '/reports/compliance',
     SCHEDULED: '/reports/scheduled',
   },
@@ -97,7 +104,6 @@ export const ROUTES = {
     EMAIL: '/settings/email',
     INTEGRATIONS: '/settings/integrations',
     API_KEYS: '/settings/api-keys',
-    WEBHOOKS: '/settings/webhooks',
   },
 
   // Compliance

@@ -1,12 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ATMBadge, ATMButton, ATMCard, ATMEmptyState, ATMSkeleton } from '@/shared/ui';
 import { ATMPagination } from '@/shared/components/Pagination/ATMPagination';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
   type ColumnDef,
   type SortingState,
@@ -14,25 +13,26 @@ import {
 import {
   LayoutGrid,
   List,
-  Plus,
   Search,
   Clock,
   AlertTriangle,
   CheckCircle2,
-  Loader2,
+  Archive,
   ArrowUpDown,
+  ArrowUpRight,
   ChevronRight,
   Filter,
-  X,
 } from 'lucide-react';
 import { useTickets, useTicketMetrics } from '@/lib/hooks/useHelpdesk';
 import { cn } from '@/lib/utils/cn';
-import { formatDate, formatRelativeTime } from '@/lib/utils/formatDate';
-import type {
-  Ticket,
-  TicketStatus,
-  TicketPriority,
-  TicketCategory,
+import { formatRelativeTime } from '@/lib/utils/formatDate';
+import { PRIORITY_CONFIG, STATUS_CONFIG, slaTimeRemaining } from '../ticketPresentation';
+import {
+  TICKET_STATUSES,
+  TICKET_PRIORITIES,
+  type TicketListItem,
+  type TicketStatus,
+  type TicketPriority,
 } from '@/lib/types/helpdesk';
 import type { MerchantType } from '@/lib/types/common';
 
@@ -40,48 +40,12 @@ import type { MerchantType } from '@/lib/types/common';
 /*  Constants                                                                  */
 /* -------------------------------------------------------------------------- */
 
-const PRIORITY_CONFIG: Record<TicketPriority, { variant: 'danger' | 'warning' | 'default' | 'info'; label: string }> = {
-  Urgent: { variant: 'danger', label: 'Critical' },
-  High: { variant: 'warning', label: 'High' },
-  Medium: { variant: 'info', label: 'Medium' },
-  Low: { variant: 'default', label: 'Low' },
-};
+/** Board columns — every state that still needs someone, plus Resolved for hand-off. */
+const KANBAN_COLUMNS: readonly TicketStatus[] = [
+  'New', 'Open', 'InProgress', 'WaitingOnCustomer', 'WaitingOnInternal', 'Reopened', 'Resolved',
+];
 
-const STATUS_CONFIG: Record<TicketStatus, { variant: 'info' | 'warning' | 'success' | 'default' | 'danger'; label: string }> = {
-  New: { variant: 'info', label: 'New' },
-  Open: { variant: 'info', label: 'Open' },
-  InProgress: { variant: 'warning', label: 'In Progress' },
-  WaitingOnCustomer: { variant: 'default', label: 'Waiting' },
-  Resolved: { variant: 'success', label: 'Resolved' },
-  Closed: { variant: 'default', label: 'Closed' },
-};
-
-const KANBAN_COLUMNS: TicketStatus[] = ['New', 'Open', 'InProgress', 'WaitingOnCustomer', 'Resolved'];
-
-const STATUS_OPTIONS: TicketStatus[] = ['New', 'Open', 'InProgress', 'WaitingOnCustomer', 'Resolved', 'Closed'];
-const PRIORITY_OPTIONS: TicketPriority[] = ['Urgent', 'High', 'Medium', 'Low'];
-const CATEGORY_OPTIONS: TicketCategory[] = ['Billing', 'Technical', 'Account', 'Token', 'Feature', 'General'];
-const TYPE_OPTIONS: MerchantType[] = ['Enterprise', 'Standalone'];
-
-/* -------------------------------------------------------------------------- */
-/*  Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function slaTimeRemaining(deadline: string | null): { text: string; breached: boolean } {
-  if (!deadline) return { text: '--', breached: false };
-  const now = Date.now();
-  const target = new Date(deadline).getTime();
-  const diff = target - now;
-  if (diff <= 0) return { text: 'Breached', breached: true };
-  const hours = Math.floor(diff / 3_600_000);
-  const mins = Math.floor((diff % 3_600_000) / 60_000);
-  if (hours > 24) return { text: `${Math.floor(hours / 24)}d ${hours % 24}h`, breached: false };
-  return { text: `${hours}h ${mins}m`, breached: false };
-}
-
-/* -------------------------------------------------------------------------- */
-/*  View mode type                                                             */
-/* -------------------------------------------------------------------------- */
+const TYPE_OPTIONS: readonly MerchantType[] = ['Enterprise', 'Standalone'];
 
 type ViewMode = 'table' | 'kanban';
 
@@ -89,8 +53,18 @@ type ViewMode = 'table' | 'kanban';
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * 2026-09-04: rebuilt on the API's real contract. The page used to read `id`, `merchantName`
+ * and `agentName` from rows that carry `ticketNumber`, `handledBy`… (a crash on the first
+ * row), showed a total of 0 on every page, offered category / agent-name / date filters the
+ * API does not implement, and a "Create Ticket" button that did nothing. Title matches the
+ * sidebar entry ("Support Queue"). Tickets are not assigned to users: the "Handled by"
+ * column is the name recorded on the ticket, and "Escalated" marks tickets handed to the
+ * Operations Managers (`?escalated=1` opens the queue pre-filtered to them).
+ */
 function TicketQueuePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   /* ---- Local state ---- */
   const [viewMode, setViewMode] = useState<ViewMode>('table');
@@ -98,15 +72,12 @@ function TicketQueuePage() {
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => searchParams.get('escalated') === '1');
 
   const [filterStatus, setFilterStatus] = useState<TicketStatus | ''>('');
   const [filterPriority, setFilterPriority] = useState<TicketPriority | ''>('');
-  const [filterCategory, setFilterCategory] = useState<TicketCategory | ''>('');
   const [filterMerchantType, setFilterMerchantType] = useState<MerchantType | ''>('');
-  const [filterAgent, setFilterAgent] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterEscalated, setFilterEscalated] = useState(() => searchParams.get('escalated') === '1');
 
   /* ---- API calls ---- */
   const ticketsQuery = useTickets({
@@ -115,45 +86,36 @@ function TicketQueuePage() {
     search: search || undefined,
     status: filterStatus || undefined,
     priority: filterPriority || undefined,
-    category: filterCategory || undefined,
     merchantType: filterMerchantType || undefined,
-    agentId: filterAgent || undefined,
-    createdFrom: filterDateFrom || undefined,
-    createdTo: filterDateTo || undefined,
+    escalated: filterEscalated || undefined,
   });
 
   const metricsQuery = useTicketMetrics();
 
-  const rawTickets = ticketsQuery.data?.data?.items ?? ticketsQuery.data?.data;
-  const tickets = Array.isArray(rawTickets) ? rawTickets : Array.isArray(ticketsQuery.data) ? (ticketsQuery.data as any[]) : [];
-  const totalCount = ticketsQuery.data?.data?.totalCount ?? 0;
+  const tickets: readonly TicketListItem[] = ticketsQuery.data?.data ?? [];
+  const totalCount = ticketsQuery.data?.totalCount ?? 0;
   const metrics = metricsQuery.data?.data;
   const isLoading = ticketsQuery.isLoading;
 
-  /* ---- Active filter count ---- */
-  const activeFilterCount = [filterStatus, filterPriority, filterCategory, filterMerchantType, filterAgent, filterDateFrom, filterDateTo].filter(Boolean).length;
+  const activeFilterCount = [filterStatus, filterPriority, filterMerchantType, filterEscalated].filter(Boolean).length;
 
-  const clearFilters = useCallback(() => {
+  const clearFilters = () => {
     setFilterStatus('');
     setFilterPriority('');
-    setFilterCategory('');
     setFilterMerchantType('');
-    setFilterAgent('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
-  }, []);
+    setFilterEscalated(false);
+    setPage(1);
+  };
 
   /* ---- Table columns ---- */
-  const columns = useMemo<ColumnDef<Ticket>[]>(
+  const columns = useMemo<ColumnDef<TicketListItem>[]>(
     () => [
       {
-        accessorKey: 'id',
-        header: 'ID',
-        size: 90,
+        accessorKey: 'ticketNumber',
+        header: 'Ticket',
+        size: 110,
         cell: ({ getValue }) => (
-          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-            #{(getValue() as string).slice(0, 8)}
-          </span>
+          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{getValue() as string}</span>
         ),
       },
       {
@@ -161,7 +123,7 @@ function TicketQueuePage() {
         header: 'Merchant',
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900 dark:text-gray-100">{row.original.merchantName}</span>
+            <span className="font-medium text-gray-900 dark:text-gray-100">{row.original.merchantName || '—'}</span>
             <ATMBadge variant={row.original.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">
               {row.original.merchantType}
             </ATMBadge>
@@ -179,37 +141,43 @@ function TicketQueuePage() {
         accessorKey: 'category',
         header: 'Category',
         size: 100,
-        cell: ({ getValue }) => (
-          <ATMBadge variant="outline" size="sm">{getValue() as string}</ATMBadge>
-        ),
+        cell: ({ getValue }) => {
+          const category = getValue() as string;
+          return category ? <ATMBadge variant="outline" size="sm">{category}</ATMBadge> : <span className="text-xs text-gray-400">—</span>;
+        },
       },
       {
         accessorKey: 'priority',
         header: 'Priority',
         size: 100,
         cell: ({ getValue }) => {
-          const p = getValue() as TicketPriority;
-          const cfg = PRIORITY_CONFIG[p];
+          const cfg = PRIORITY_CONFIG[getValue() as TicketPriority];
           return <ATMBadge variant={cfg.variant} size="sm" dot>{cfg.label}</ATMBadge>;
         },
       },
       {
         accessorKey: 'status',
         header: 'Status',
-        size: 110,
-        cell: ({ getValue }) => {
-          const s = getValue() as TicketStatus;
-          const cfg = STATUS_CONFIG[s];
-          return <ATMBadge variant={cfg.variant} size="sm">{cfg.label}</ATMBadge>;
+        size: 150,
+        cell: ({ row }) => {
+          const cfg = STATUS_CONFIG[row.original.status];
+          return (
+            <div className="flex items-center gap-1.5">
+              <ATMBadge variant={cfg.variant} size="sm">{cfg.label}</ATMBadge>
+              {row.original.isEscalated && (
+                <ATMBadge variant="danger" size="sm" dot>Escalated</ATMBadge>
+              )}
+            </div>
+          );
         },
       },
       {
-        accessorKey: 'agentName',
-        header: 'Agent',
-        size: 120,
+        accessorKey: 'handledBy',
+        header: 'Handled by',
+        size: 130,
         cell: ({ getValue }) => (
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            {(getValue() as string | null) ?? 'Unassigned'}
+            {(getValue() as string | null | undefined) || '—'}
           </span>
         ),
       },
@@ -228,7 +196,7 @@ function TicketQueuePage() {
         header: 'SLA',
         size: 100,
         cell: ({ getValue }) => {
-          const sla = slaTimeRemaining(getValue() as string | null);
+          const sla = slaTimeRemaining(getValue() as string | null | undefined);
           return (
             <span className={cn('text-sm font-medium tabular-nums', sla.breached ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400')}>
               {sla.breached && <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />}
@@ -244,7 +212,7 @@ function TicketQueuePage() {
         cell: ({ row }) => (
           <button
             type="button"
-            onClick={() => navigate(`/support/${row.original.id}`)}
+            onClick={() => navigate(`/support/${row.original.ticketId}`)}
             className="rounded p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
             aria-label="View ticket"
           >
@@ -257,28 +225,29 @@ function TicketQueuePage() {
   );
 
   const table = useReactTable({
-    data: tickets as Ticket[],
+    data: tickets as TicketListItem[],
     columns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     manualPagination: true,
-    pageCount: Math.ceil(totalCount / pageSize),
+    pageCount: Math.max(1, Math.ceil(totalCount / pageSize)),
   });
 
   /* ---- Kanban helpers ---- */
   const ticketsByStatus = useMemo(() => {
-    const map: Record<string, Ticket[]> = {};
-    for (const col of KANBAN_COLUMNS) map[col] = [];
+    const map = new Map<TicketStatus, TicketListItem[]>();
+    for (const col of KANBAN_COLUMNS) map.set(col, []);
     for (const t of tickets) {
-      if (map[t.status]) map[t.status]!.push(t);
+      // A legacy "Assigned" ticket shows in the Open column; nothing creates that state now.
+      const col = t.status === 'Assigned' ? 'Open' : t.status;
+      map.get(col)?.push(t);
     }
     return map;
   }, [tickets]);
 
-  /* ---- Quick stats ---- */
+  /* ---- Quick stats (the API's 30-day window) ---- */
   function renderQuickStats() {
     if (metricsQuery.isLoading) {
       return (
@@ -293,20 +262,26 @@ function TicketQueuePage() {
       );
     }
 
+    if (metricsQuery.isError) {
+      return (
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
+          <span className="text-sm text-red-700 dark:text-red-300">Ticket metrics could not be loaded.</span>
+          <ATMButton variant="ghost" size="sm" onClick={() => { void metricsQuery.refetch(); }}>Retry</ATMButton>
+        </div>
+      );
+    }
+
     const stats = [
-      { label: 'Open', value: metrics?.totalOpen ?? 0, icon: <Clock className="h-5 w-5 text-blue-500" />, color: 'text-blue-600 dark:text-blue-400' },
-      { label: 'In Progress', value: metrics?.byAgent?.length ?? 0, icon: <Loader2 className="h-5 w-5 text-amber-500" />, color: 'text-amber-600 dark:text-amber-400' },
-      { label: 'Resolved', value: metrics?.totalResolved ?? 0, icon: <CheckCircle2 className="h-5 w-5 text-emerald-500" />, color: 'text-emerald-600 dark:text-emerald-400' },
-      { label: 'SLA Breached', value: `${(100 - (metrics?.slaCompliancePercent ?? 100)).toFixed(1)}%`, icon: <AlertTriangle className="h-5 w-5 text-red-500" />, color: 'text-red-600 dark:text-red-400' },
+      { label: 'Open (30 days)', value: metrics?.openTickets ?? 0, icon: <Clock className="h-5 w-5 text-blue-500" />, color: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Resolved (30 days)', value: metrics?.resolvedTickets ?? 0, icon: <CheckCircle2 className="h-5 w-5 text-emerald-500" />, color: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Closed (30 days)', value: metrics?.closedTickets ?? 0, icon: <Archive className="h-5 w-5 text-gray-500" />, color: 'text-gray-700 dark:text-gray-300' },
+      { label: 'Avg Resolution', value: `${(metrics?.avgResolutionHours ?? 0).toFixed(1)}h`, icon: <AlertTriangle className="h-5 w-5 text-amber-500" />, color: 'text-amber-600 dark:text-amber-400' },
     ];
 
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-          >
+          <div key={s.label} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800">
               {s.icon}
             </div>
@@ -326,52 +301,61 @@ function TicketQueuePage() {
 
     return (
       <ATMCard padding="md" className="animate-fade-in">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as TicketStatus | '')} className="input-select">
+            <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value as TicketStatus | ''); setPage(1); }} className="input-select">
               <option value="">All</option>
-              {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
+              {TICKET_STATUSES.map((s) => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Priority</label>
-            <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value as TicketPriority | '')} className="input-select">
+            <select value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value as TicketPriority | ''); setPage(1); }} className="input-select">
               <option value="">All</option>
-              {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{PRIORITY_CONFIG[p].label}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Category</label>
-            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as TicketCategory | '')} className="input-select">
-              <option value="">All</option>
-              {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+              {TICKET_PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY_CONFIG[p].label}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Merchant Type</label>
-            <select value={filterMerchantType} onChange={(e) => setFilterMerchantType(e.target.value as MerchantType | '')} className="input-select">
+            <select value={filterMerchantType} onChange={(e) => { setFilterMerchantType(e.target.value as MerchantType | ''); setPage(1); }} className="input-select">
               <option value="">All</option>
               {TYPE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Agent</label>
-            <input type="text" value={filterAgent} onChange={(e) => setFilterAgent(e.target.value)} placeholder="Agent name..." className="input-base" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">From</label>
-            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="input-base" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">To</label>
-            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="input-base" />
+          <div className="flex flex-col justify-end gap-1.5">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={filterEscalated}
+                onChange={(e) => { setFilterEscalated(e.target.checked); setPage(1); }}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              Escalated only
+            </label>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">With the Operations Managers and still open</span>
           </div>
           <div className="flex items-end">
             <ATMButton variant="ghost" size="sm" onClick={clearFilters}>Clear All</ATMButton>
           </div>
         </div>
       </ATMCard>
+    );
+  }
+
+  /* ---- Load failure ---- */
+  if (ticketsQuery.isError) {
+    return (
+      <div className="flex flex-col gap-6 w-full">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Queue</h1>
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
+          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-4 w-4" />
+            <span>The support queue could not be loaded.</span>
+          </div>
+          <ATMButton variant="ghost" size="sm" onClick={() => { void ticketsQuery.refetch(); }}>Retry</ATMButton>
+        </div>
+      </div>
     );
   }
 
@@ -393,9 +377,7 @@ function TicketQueuePage() {
           <ATMEmptyState
             icon={Search}
             title="No tickets found"
-            description="Try adjusting your search or filters, or create a new ticket."
-            onAction={() => navigate('/support')}
-            actionLabel="Create Ticket"
+            description={activeFilterCount > 0 || search ? 'Try adjusting your search or filters.' : 'No merchant has raised a ticket yet.'}
           />
         </ATMCard>
       );
@@ -434,7 +416,7 @@ function TicketQueuePage() {
                 <tr
                   key={row.id}
                   className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
-                  onClick={() => navigate(`/support/${row.original.id}`)}
+                  onClick={() => navigate(`/support/${row.original.ticketId}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="whitespace-nowrap px-4 py-3">
@@ -453,7 +435,7 @@ function TicketQueuePage() {
             total={totalCount}
             pageSize={pageSize}
             onPageChange={setPage}
-            onPageSizeChange={setPageSize}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           />
         </div>
       </ATMCard>
@@ -464,7 +446,7 @@ function TicketQueuePage() {
   function renderKanbanView() {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {KANBAN_COLUMNS.map((col) => (
             <div key={col} className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/30">
               <ATMSkeleton variant="text" width="60%" />
@@ -478,10 +460,10 @@ function TicketQueuePage() {
     }
 
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {KANBAN_COLUMNS.map((col) => {
           const cfg = STATUS_CONFIG[col];
-          const items = ticketsByStatus[col] ?? [];
+          const items = ticketsByStatus.get(col) ?? [];
           return (
             <div key={col} className="flex flex-col rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/30">
               <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2.5 dark:border-gray-700">
@@ -499,9 +481,9 @@ function TicketQueuePage() {
                   const sla = slaTimeRemaining(ticket.slaDeadline);
                   return (
                     <button
-                      key={ticket.id}
+                      key={ticket.ticketId}
                       type="button"
-                      onClick={() => navigate(`/support/${ticket.id}`)}
+                      onClick={() => navigate(`/support/${ticket.ticketId}`)}
                       className="w-full rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -514,11 +496,16 @@ function TicketQueuePage() {
                         <ATMBadge variant={ticket.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">
                           {ticket.merchantType.charAt(0)}
                         </ATMBadge>
-                        <span className="truncate">{ticket.merchantName}</span>
+                        <span className="truncate">{ticket.merchantName || ticket.ticketNumber}</span>
+                        {ticket.isEscalated && (
+                          <span className="inline-flex items-center gap-0.5 text-red-600 dark:text-red-400">
+                            <ArrowUpRight className="h-3 w-3" /> Escalated
+                          </span>
+                        )}
                       </div>
                       <div className="mt-2 flex items-center justify-between text-xs">
                         <span className="text-gray-400 dark:text-gray-500">{formatRelativeTime(ticket.createdAt)}</span>
-                        {sla.text !== '--' && (
+                        {ticket.slaDeadline && (
                           <span className={cn('font-medium tabular-nums', sla.breached ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400')}>
                             {sla.text}
                           </span>
@@ -538,25 +525,17 @@ function TicketQueuePage() {
   /* ---- Render ---- */
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Tickets</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Queue</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Manage and resolve customer support requests
+            Work, escalate and resolve merchant support tickets
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <ATMButton variant="primary" leftIcon={<Plus className="h-4 w-4" />}>
-            Create Ticket
-          </ATMButton>
         </div>
       </div>
 
-      {/* Quick stats */}
       {renderQuickStats()}
 
-      {/* Toolbar: search + view toggle + filter toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -564,7 +543,7 @@ function TicketQueuePage() {
             type="search"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search by ticket ID or subject..."
+            placeholder="Search by ticket number or subject..."
             className="input-base w-full pl-10"
           />
         </div>
@@ -611,10 +590,8 @@ function TicketQueuePage() {
         </div>
       </div>
 
-      {/* Filters */}
       {renderFilters()}
 
-      {/* Content */}
       {viewMode === 'table' ? renderTableView() : renderKanbanView()}
     </div>
   );

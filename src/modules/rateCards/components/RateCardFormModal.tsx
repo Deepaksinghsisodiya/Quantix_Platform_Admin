@@ -6,6 +6,7 @@ import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
 import { RateCard } from '../types/rateCard.types';
+import { LIMITS_INFO, SERVICES_INFO } from '../list/RateCardListPage';
 import { cn } from '@/lib/utils/cn';
 
 interface RateCardFormModalProps {
@@ -30,47 +31,24 @@ const DEFAULT_INITIAL = {
   baseWeeklyPrice: 7.0,
   baseMonthlyPrice: 29.0,
   baseYearlyPrice: 290.0,
-  modulePrices: {
-    INV: 10,
-    FIN: 10,
-    HRM: 10,
-    MKT: 10,
-    ANL: 10,
-    WTM: 10,
-  },
-  paymentPrices: {
-    CSH: 0,
-    CRD: 0,
-    EXT: 0,
-    GFT: 3,
-    STC: 3,
-    WLT: 3,
-    CSL: 3,
-  },
+  // 2026-08-08 (user-approved split): fully-loaded total ≈ $22.50/day — basics free,
+  // premium modules priced highest, infra-heavy limits above commodity ones.
+  modulePrices: { INV: 1.25, FIN: 1.25, HRM: 1.0, MKT: 1.0, ANL: 1.0, WTM: 0.5 },
+  paymentPrices: { CSH: 0, CRD: 0.75, EXT: 0.25, GFT: 0.5, STC: 0.5, WLT: 0.5, CSL: 1.0 },
   servicePrices: {
-    DIN: 0,
-    CTR: 0,
-    PUP: 5,
-    DLV: 5,
-    CTG: 5,
-    SNP: 5,
-    RSO: 5,
-    WOR: 5,
-    WRV: 5,
+    DIN: 0, CTR: 0, INS: 0,
+    PUP: 0.5, DLV: 0.75, CTG: 0.75, SNP: 0.5, RSO: 1.0, SHP: 0.75, WRV: 0.75,
   },
   limitPrices: {
-    MBU: 20,
-    MLO: 15,
-    MTM: 5,
-    MPR: 1,
-    MPG: 1,
-    MGB: 2,
-    OTH: 2,
+    MBU: 1.0, MLO: 1.0, MTM: 0.75, MPR: 0.25,
+    MDP: 0.25, MKD: 0.5, MDS: 0.5, MIS: 0.5, MPW: 0.5,
+    MGB: 0.25, MPG: 0.5, MRS: 0.5, MAC: 0.5, MWR: 0.5, MWE: 0.5,
+    MBR: 0,
   },
 };
 
 const DollarPrefix = <span className="text-gray-400 font-bold text-xs">$</span>;
-const MoSuffix = <span className="text-gray-400 text-[10px] font-bold">/mo</span>;
+const MoSuffix = <span className="text-gray-400 text-[10px] font-bold">/day</span>;
 
 export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
   isOpen,
@@ -78,7 +56,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
   onSubmit,
   initialValues,
 }) => {
-  const [activeTab, setActiveTab] = useState<'base' | 'features' | 'payments' | 'limits'>('base');
+  const [activeTab, setActiveTab] = useState<'base' | 'limits' | 'services' | 'features' | 'payments'>('base');
 
   const formik = useFormik({
     initialValues: initialValues || DEFAULT_INITIAL,
@@ -90,11 +68,13 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
     },
   });
 
+  // 2026-07-25: section order — Limits, Services, Payment Methods, Modules.
   const tabs = [
     { id: 'base', label: 'Base Pricing' },
+    { id: 'limits', label: 'Capacity & Limits' },
+    { id: 'services', label: 'Operation Services' },
+    { id: 'payments', label: 'Payment Methods' },
     { id: 'features', label: 'Feature Add-ons' },
-    { id: 'payments', label: 'Payments & Order Types' },
-    { id: 'limits', label: 'Limit Add-ons' },
   ] as const;
 
   return (
@@ -273,241 +253,129 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
             </div>
           )}
 
-          {/* TAB 3: PAYMENTS & SERVICES */}
-          {activeTab === 'payments' && (
-            <div className="space-y-5">
-              <div>
-                <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
-                  Payment Channels
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {/* TAB: OPERATION SERVICES — 2026-07-25: split out from combined payments+services tab;
+              data-driven from SERVICES_INFO (10 canonical codes). */}
+          {activeTab === 'services' && (
+            <div className="space-y-4">
+              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                Operational Service Pricing
+              </h3>
+              <p className="text-[10px] text-gray-400 font-medium">
+                Restaurant-only: DIN, CTR, CTG, WRV. Retail-only: SHP, INS. Others apply to both flavours.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {SERVICES_INFO.map(({ key, name }) => (
                   <ATMTextField
-                    name="paymentPrices.CSH"
-                    label="Cash"
+                    key={key}
+                    name={`servicePrices.${key}`}
+                    label={`${key} — ${name}`}
                     type="number"
                     prefix={DollarPrefix}
                     suffix={MoSuffix}
-                    value={formik.values.paymentPrices.CSH}
+                    value={(formik.values.servicePrices as any)[key] ?? 0}
                     onChange={formik.handleChange}
                   />
-                  <ATMTextField
-                    name="paymentPrices.CRD"
-                    label="Card (POS)"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.paymentPrices.CRD}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="paymentPrices.EXT"
-                    label="UPI / QR"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.paymentPrices.EXT}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="paymentPrices.GFT"
-                    label="Gift Card"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.paymentPrices.GFT}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="paymentPrices.STC"
-                    label="Store Credit"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.paymentPrices.STC}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="paymentPrices.WLT"
-                    label="Wallet"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.paymentPrices.WLT}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="paymentPrices.CSL"
-                    label="Credit Ledger"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.paymentPrices.CSL}
-                    onChange={formik.handleChange}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
-                  Order / Service Types
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  <ATMTextField
-                    name="servicePrices.DIN"
-                    label="Dine-In"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.DIN}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.CTR"
-                    label="Counter/Takeaway"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.CTR}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.PUP"
-                    label="Store Pickup"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.PUP}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.DLV"
-                    label="Delivery Support"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.DLV}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.SNP"
-                    label="Snap QR Order"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.SNP}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.WOR"
-                    label="Web Order Store"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.WOR}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.CTG"
-                    label="Catering & Events"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.CTG}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.RSO"
-                    label="Table Reservation"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.RSO}
-                    onChange={formik.handleChange}
-                  />
-                  <ATMTextField
-                    name="servicePrices.WRV"
-                    label="Waitlist Management"
-                    type="number"
-                    prefix={DollarPrefix}
-                    suffix={MoSuffix}
-                    value={formik.values.servicePrices.WRV}
-                    onChange={formik.handleChange}
-                  />
-                </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* TAB 4: LIMIT ADD-ONS */}
+          {/* TAB: PAYMENT CHANNELS — only the 7 payment codes. */}
+          {activeTab === 'payments' && (
+            <div className="space-y-4">
+              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                Payment Channel Pricing
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <ATMTextField
+                  name="paymentPrices.CSH"
+                  label="Cash"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.CSH}
+                  onChange={formik.handleChange}
+                />
+                <ATMTextField
+                  name="paymentPrices.CRD"
+                  label="Card"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.CRD}
+                  onChange={formik.handleChange}
+                />
+                <ATMTextField
+                  name="paymentPrices.EXT"
+                  label="External / Manual"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.EXT}
+                  onChange={formik.handleChange}
+                />
+                <ATMTextField
+                  name="paymentPrices.GFT"
+                  label="Gift Card"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.GFT}
+                  onChange={formik.handleChange}
+                />
+                <ATMTextField
+                  name="paymentPrices.STC"
+                  label="Store Credit"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.STC}
+                  onChange={formik.handleChange}
+                />
+                <ATMTextField
+                  name="paymentPrices.WLT"
+                  label="Mobile Wallet"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.WLT}
+                  onChange={formik.handleChange}
+                />
+                <ATMTextField
+                  name="paymentPrices.CSL"
+                  label="Credit Sale"
+                  type="number"
+                  prefix={DollarPrefix}
+                  suffix={MoSuffix}
+                  value={formik.values.paymentPrices.CSL}
+                  onChange={formik.handleChange}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: LIMIT ADD-ONS — 2026-07-19: data-driven from LIMITS_INFO (16 canonical codes). */}
           {activeTab === 'limits' && (
             <div className="space-y-4">
               <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
                 Incremental Limit Unit Pricing
               </h3>
+              <p className="text-[10px] text-gray-400 font-medium">
+                Rates are per day per unit — priced from unit 1, no free baseline. MPR bills per block of 100 products; MBR is a hard cap (usually $0).
+              </p>
               <div className="grid grid-cols-2 gap-4">
-                <ATMTextField
-                  name="limitPrices.MBU"
-                  label="Per Business Unit"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.MBU}
-                  onChange={formik.handleChange}
-                />
-                <ATMTextField
-                  name="limitPrices.MLO"
-                  label="Per Location / Outlet"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.MLO}
-                  onChange={formik.handleChange}
-                />
-                <ATMTextField
-                  name="limitPrices.MTM"
-                  label="Per POS Terminal"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.MTM}
-                  onChange={formik.handleChange}
-                />
-                <ATMTextField
-                  name="limitPrices.MPR"
-                  label="Per 100 Products (above 500)"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.MPR}
-                  onChange={formik.handleChange}
-                />
-                <ATMTextField
-                  name="limitPrices.MPG"
-                  label="Per 5 Product Groups"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.MPG}
-                  onChange={formik.handleChange}
-                />
-                <ATMTextField
-                  name="limitPrices.MGB"
-                  label="Per GB Storage"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.MGB}
-                  onChange={formik.handleChange}
-                />
-                <ATMTextField
-                  name="limitPrices.OTH"
-                  label="Per other quota items"
-                  type="number"
-                  prefix={DollarPrefix}
-                  suffix={MoSuffix}
-                  value={formik.values.limitPrices.OTH}
-                  onChange={formik.handleChange}
-                />
+                {LIMITS_INFO.map(({ key, name, unit }) => (
+                  <ATMTextField
+                    key={key}
+                    name={`limitPrices.${key}`}
+                    label={`${key} — ${name} (${unit ?? '/unit'})`}
+                    type="number"
+                    prefix={DollarPrefix}
+                    suffix={MoSuffix}
+                    value={(formik.values.limitPrices as any)[key] ?? 0}
+                    onChange={formik.handleChange}
+                  />
+                ))}
               </div>
             </div>
           )}

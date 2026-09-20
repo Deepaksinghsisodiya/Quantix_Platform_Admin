@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ATMBadge, ATMButton } from '@/shared/ui';
 import { Search, X, Eye, Pencil, Users, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils/cn';
 import { useLeads, useUpdateLead } from '@/lib/hooks/useHelpdesk';
 
@@ -66,6 +67,7 @@ function mapInterest(interest?: string | null): LeadInterest {
 /* -------------------------------------------------------------------------- */
 
 function LeadsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -73,8 +75,7 @@ function LeadsPage() {
   const updateMut = useUpdateLead();
 
   const leads = useMemo<LeadVM[]>(() => {
-    const rawItems = leadsQuery.data?.data?.items ?? leadsQuery.data?.data;
-    const items = Array.isArray(rawItems) ? rawItems : Array.isArray(leadsQuery.data) ? (leadsQuery.data as any[]) : [];
+    const items = leadsQuery.data?.data ?? [];
     return items.map((l: any) => ({
       id: l.leadId,
       name: l.name || l.contactPerson || '(no name)',
@@ -124,7 +125,7 @@ function LeadsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-          Contacts & Leads
+          Leads
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Track and manage sales leads from all channels.
@@ -222,7 +223,7 @@ function LeadsPage() {
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1">
                           <ATMButton variant="ghost" size="sm" onClick={() => setSelectedId(lead.id)}><Eye className="h-3.5 w-3.5" /></ATMButton>
-                          <ATMButton variant="ghost" size="sm" onClick={() => toast('Edit modal coming soon')}><Pencil className="h-3.5 w-3.5" /></ATMButton>
+                          <ATMButton variant="ghost" size="sm" onClick={() => navigate(`/content/leads/${lead.id}`)}><Pencil className="h-3.5 w-3.5" /></ATMButton>
                         </div>
                       </td>
                     </tr>

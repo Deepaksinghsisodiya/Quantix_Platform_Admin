@@ -13,6 +13,10 @@ import {
   DEFAULT_ENT_PAYMENTS,
   DEFAULT_ENT_SERVICES,
   DEFAULT_ENT_LIMITS,
+  DEFAULT_STDC_MODULES,
+  DEFAULT_STDC_PAYMENTS,
+  DEFAULT_STDC_SERVICES,
+  DEFAULT_STDC_LIMITS,
   DEFAULT_STD_MODULES,
   DEFAULT_STD_PAYMENTS,
   DEFAULT_STD_SERVICES,
@@ -29,57 +33,71 @@ interface PlanFormProps {
 const PLAN_TYPE_OPTIONS = [
   { value: 'Standalone POS', label: 'Standalone POS' },
   { value: 'Standalone Cloud', label: 'Standalone Cloud' },
-  { value: 'Enterprise cloud', label: 'Enterprise cloud' },
+  { value: 'Enterprise cloud', label: 'Enterprise Cloud' },
 ];
 
+// 2026-08-07: a Standalone POS merchant can run restaurant AND retail terminals — Both is valid.
+const FLAVOUR_OPTIONS = [
+  { value: 'RES', label: 'Restaurant' },
+  { value: 'RET', label: 'Retail' },
+  { value: 'BOT', label: 'Both (Restaurant + Retail)' },
+];
+
+// Advance features — matches Foundation.Licensing.FeatureCodes.Advance (6 codes).
 const ALL_FEATURES = [
-  { key: 'INV', label: 'Inventory Management' },
-  { key: 'FIN', label: 'Finance / Accounting' },
-  { key: 'HRM', label: 'HR & Staff Management' },
-  { key: 'MKT', label: 'Marketing & Loyalty' },
-  { key: 'ANL', label: 'Analytics & Reports' },
-  { key: 'WTM', label: 'Workforce / Table-Turn' },
+  { key: 'INV', label: 'Advance Inventory' },
+  { key: 'FIN', label: 'Finance & Accounts' },
+  { key: 'HRM', label: 'Human Resource Management' },
+  { key: 'MKT', label: 'Marketing & Promotions' },
+  { key: 'ANL', label: 'Advance Analytics & Reports' },
+  { key: 'WTM', label: 'Waste Management (Restaurant-only)' },
 ];
 
+// Payments — matches Foundation.Licensing.PaymentMethodCodes (7 codes).
 const ALL_PAYMENTS = [
   { key: 'CSH', label: 'Cash' },
-  { key: 'CRD', label: 'Card (POS/EDC)' },
-  { key: 'EXT', label: 'UPI / QR / Online' },
+  { key: 'CRD', label: 'Card' },
   { key: 'GFT', label: 'Gift Card' },
   { key: 'STC', label: 'Store Credit' },
-  { key: 'WLT', label: 'In-app Wallet' },
-  { key: 'CSL', label: 'Credit Sale / Udhar' },
+  { key: 'WLT', label: 'Mobile Wallet' },
+  { key: 'EXT', label: 'External / Manual' },
+  { key: 'CSL', label: 'Credit Sale' },
 ];
 
+// Services — matches Foundation.Licensing.ServiceTypeCodes (10 codes).
+// 2026-07-25: WOR dropped; SHP (Shipping) + INS (In-Store) added.
+// Flavour hints in labels: (Restaurant) = Restaurant-only; (Retail) = Retail-only.
 const ALL_SERVICES = [
-  { key: 'DIN', label: 'Dine-In' },
-  { key: 'CTR', label: 'Counter / Takeaway' },
+  { key: 'DIN', label: 'Dine-In (Restaurant)' },
+  { key: 'CTR', label: 'Counter (Restaurant)' },
   { key: 'PUP', label: 'Pickup' },
-  { key: 'DLV', label: 'Delivery' },
-  { key: 'CTG', label: 'Catering / Bulk' },
-  { key: 'SNP', label: 'QR / Self-Order' },
-  { key: 'RSO', label: 'Reservation Order' },
-  { key: 'WOR', label: 'Web Ordering' },
-  { key: 'WRV', label: 'Waitlist / Reservation' },
+  { key: 'DLV', label: 'Delivery (in-house drivers)' },
+  { key: 'CTG', label: 'Catering (Restaurant)' },
+  { key: 'SNP', label: 'Snap Order' },
+  { key: 'RSO', label: 'Reseller Order (Uber Eats / DoorDash)' },
+  { key: 'SHP', label: 'Shipping (Retail)' },
+  { key: 'INS', label: 'In-Store (Retail)' },
+  { key: 'WRV', label: 'Web Reservation (Restaurant)' },
 ];
 
+// Limits — matches Foundation.Licensing.LimitCodes exactly. 2026-07-19: fixed 7 wrong labels.
 const ALL_LIMITS = [
-  { key: 'MBU', label: 'Business Units' },
-  { key: 'MLO', label: 'Locations / Outlets' },
-  { key: 'MTM', label: 'POS Terminals' },
-  { key: 'MPR', label: 'Products' },
-  { key: 'MPG', label: 'Product Groups' },
-  { key: 'MGB', label: 'Storage (GB)' },
-  { key: 'MDP', label: 'Delivery Partners' },
-  { key: 'MKD', label: 'Kitchen Displays' },
-  { key: 'MDS', label: 'Dine-in Sections' },
-  { key: 'MIS', label: 'Integration Slots' },
-  { key: 'MPW', label: 'Payment Gateways' },
-  { key: 'MRS', label: 'Reservation Slots/day' },
-  { key: 'MAC', label: 'Active Campaigns' },
-  { key: 'MWR', label: 'Warehouses' },
-  { key: 'MWE', label: 'Staff Logins' },
-  { key: 'MBR', label: 'Branches' },
+  { key: 'MBU', label: 'Max Businesses' },
+  { key: 'MLO', label: 'Max Locations' },
+  { key: 'MTM', label: 'Max Terminals' },
+  { key: 'MPR', label: 'Max Products' },
+  { key: 'MDP', label: 'Max Delivery Partners' },
+  { key: 'MKD', label: 'Max Kitchen Display Helpers' },
+  { key: 'MDS', label: 'Max Dispatch Station Helpers' },
+  { key: 'MIS', label: 'Max Inventory Station Helpers' },
+  { key: 'MPW', label: 'Max Table POS Apps' },
+  { key: 'MGB', label: 'Max Storage (GB)' },
+  { key: 'MPG', label: 'Max Payment Gateways' },
+  { key: 'MRS', label: 'Max Resellers (delivery partners)' },
+  { key: 'MAC', label: 'Max Cloud Admin Portal Instances' },
+  { key: 'MWR', label: 'Max Web Restaurant Storefronts' },
+  { key: 'MWE', label: 'Max Web Retail Storefronts' },
+  { key: 'MBR', label: 'Max Billing Revenue (cap)' },
 ];
 
 const ToggleGrid: React.FC<{
@@ -124,7 +142,6 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   removeFeatureRow,
   toggleFeatureIncluded,
 }) => {
-  const isEnterprise = formik.values.planType === 'Enterprise cloud';
   const featureOn = ALL_FEATURES.filter((f) => !!formik.values.planFeatures?.[f.key]).length;
   const payOn = ALL_PAYMENTS.filter((p) => !!formik.values.planPayments?.[p.key]).length;
   const svcOn = ALL_SERVICES.filter((s) => !!formik.values.planServices?.[s.key]).length;
@@ -133,12 +150,10 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   const activeRateCard = rateCards.find((c) => c.isDefault) || rateCards[0];
   const [autoCalculate, setAutoCalculate] = useState(!formik.values.isManualPrice);
 
-  // Sync state if formik values change (e.g. during reinitialization on Edit)
   useEffect(() => {
     setAutoCalculate(!formik.values.isManualPrice);
   }, [formik.values.isManualPrice]);
 
-  // Dynamic formula calculation hook
   useEffect(() => {
     if (autoCalculate && activeRateCard) {
       const calc = calculatePlanPrice({
@@ -162,7 +177,6 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     autoCalculate,
   ]);
 
-  // Keep weekly, monthly, and yearly prices in sync with dailyPrice for API compatibility
   useEffect(() => {
     const daily = Number(formik.values.dailyPrice || 0);
     formik.setFieldValue('weeklyPrice', Number((daily * 7).toFixed(2)));
@@ -170,6 +184,9 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     formik.setFieldValue('yearlyPrice', Number((daily * 365).toFixed(2)));
   }, [formik.values.dailyPrice]);
 
+  // When planType changes, reload defaults matching the new deployment mode.
+  // 2026-08-08 (27-plan matrix): every plan type supports RES / RET / BOT — the chosen
+  // flavour is kept across type switches.
   const lastPlanTypeRef = React.useRef(formik.values.planType);
   useEffect(() => {
     if (formik.values.planType !== lastPlanTypeRef.current) {
@@ -179,6 +196,11 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         formik.setFieldValue('planPayments', { ...DEFAULT_ENT_PAYMENTS });
         formik.setFieldValue('planServices', { ...DEFAULT_ENT_SERVICES });
         formik.setFieldValue('planLimits', { ...DEFAULT_ENT_LIMITS });
+      } else if (formik.values.planType === 'Standalone Cloud') {
+        formik.setFieldValue('planFeatures', { ...DEFAULT_STDC_MODULES });
+        formik.setFieldValue('planPayments', { ...DEFAULT_STDC_PAYMENTS });
+        formik.setFieldValue('planServices', { ...DEFAULT_STDC_SERVICES });
+        formik.setFieldValue('planLimits', { ...DEFAULT_STDC_LIMITS });
       } else {
         formik.setFieldValue('planFeatures', { ...DEFAULT_STD_MODULES });
         formik.setFieldValue('planPayments', { ...DEFAULT_STD_PAYMENTS });
@@ -192,21 +214,39 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     <FormikProvider value={formik}>
       <form onSubmit={formik.handleSubmit} className="space-y-4 py-1 max-h-[500px] overflow-y-auto pr-1">
         {/* ── Basic Info ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ATMTextField
             name="name"
-            label="Plan Name"
+            label="Plan Name (unique, internal)"
             value={formik.values.name}
             onChange={formik.handleChange}
-            placeholder="e.g. Professional"
+            placeholder="e.g. Standalone POS · Restaurant · Pro"
             required
           />
+          <ATMTextField
+            name="displayName"
+            label="Display Name (website)"
+            value={formik.values.displayName}
+            onChange={formik.handleChange}
+            placeholder="e.g. Basic / Pro / Advance"
+            required
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <ATMSelectField
             name="planType"
             label="Plan Type"
             options={PLAN_TYPE_OPTIONS}
             value={formik.values.planType}
             onChange={(val) => formik.setFieldValue('planType', val)}
+            required
+          />
+          <ATMSelectField
+            name="flavour"
+            label="Flavour"
+            options={FLAVOUR_OPTIONS}
+            value={formik.values.flavour}
+            onChange={(val) => formik.setFieldValue('flavour', val)}
             required
           />
           <ATMTextField
@@ -271,7 +311,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           )}
         </div>
 
-        {/* ── Pricing Configuration (Daily Price & Price Variation) ── */}
+        {/* ── Pricing ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ATMTextField
             name="dailyPrice"
@@ -298,57 +338,63 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           />
         </div>
 
-        {/* Background Billing Summary Box */}
-        {/* <div className="p-3.5 rounded-lg border border-[var(--zen-border)] bg-slate-50/10 dark:bg-zinc-950/15">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Cycle Calculation Sync (Background API)</p>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Weekly Price</span>
-              <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5 inline-block">${formik.values.weeklyPrice} /wk</span>
-            </div>
-            <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25 ring-1 ring-primary-500/10">
-              <span className="text-[9px] font-bold text-primary-500 uppercase tracking-wider block font-semibold">Monthly Price</span>
-              <span className="text-xs font-black text-primary-600 dark:text-primary-400 mt-0.5 inline-block">${formik.values.monthlyPrice} /mo</span>
-            </div>
-            <div className="py-2 px-1 rounded border border-[var(--zen-border)] bg-slate-50/20 dark:bg-zinc-950/25">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Yearly Price</span>
-              <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5 inline-block">${formik.values.yearlyPrice} /yr</span>
-            </div>
-          </div>
-        </div> */}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ATMTextField
-            name="trialPeriod"
-            label="Trial Period (Days)"
-            type="number"
-            value={formik.values.trialPeriod}
-            onChange={formik.handleChange}
+        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)]">
+          <p className="text-xs font-semibold text-gray-800 dark:text-gray-250">Active — Available for signups</p>
+          <ATMSwitch
+            name="statusSwitch"
+            checked={formik.values.status === 'Active'}
+            onChange={(c) => formik.setFieldValue('status', c ? 'Active' : 'Inactive')}
+            size="md"
           />
-          <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)]">
-            <p className="text-xs font-semibold text-gray-800 dark:text-gray-250">Active — Available for signups</p>
-            <ATMSwitch
-              name="statusSwitch"
-              checked={formik.values.status === 'Active'}
-              onChange={(c) => formik.setFieldValue('status', c ? 'Active' : 'Inactive')}
-              size="md"
-            />
-          </div>
         </div>
 
-        {/* Section: Toggles — Features / Payments / Services */}
+        {/* Access Configuration — 2026-07-25: reordered to match Rate Card layout:
+            Capacity & Limits → Operational Services → Payment Methods → Premium Modules. */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-4">
           <p className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">
-            {isEnterprise ? 'Enterprise Cloud' : 'Standalone POS'} — Access Config
+            Access Configuration — mirrors the V3 token dictionaries
           </p>
 
+          {/* 1. Capacity & Limits */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1 border-b border-gray-100 dark:border-gray-800/65 pb-1">
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Capacity & Limits</p>
+              <span className="text-[10px] text-gray-400 font-bold">0 = unlimited where applicable</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {ALL_LIMITS.map(({ key, label: name }) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-955/20"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">
+                      {name}
+                    </span>
+                    <span className="text-[9px] font-mono text-gray-400 tracking-wider">{key}</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formik.values.planLimits?.[key] ?? 0}
+                    onChange={(e) => formik.setFieldValue(`planLimits.${key}`, Number(e.target.value) || 0)}
+                    className="w-20 h-8 text-center text-xs font-mono font-bold px-2 py-1 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all ml-2"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. Operational Services */}
           <ToggleGrid
-            label="Modules"
-            count={`${featureOn}/${ALL_FEATURES.length} ON`}
-            items={ALL_FEATURES}
-            field="planFeatures"
+            label="Operational Services"
+            count={`${svcOn}/${ALL_SERVICES.length} ON`}
+            items={ALL_SERVICES}
+            field="planServices"
             formik={formik}
           />
+
+          {/* 3. Payment Methods */}
           <ToggleGrid
             label="Payment Methods"
             count={`${payOn}/${ALL_PAYMENTS.length} ON`}
@@ -356,43 +402,15 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             field="planPayments"
             formik={formik}
           />
+
+          {/* 4. Premium Modules Add-ons */}
           <ToggleGrid
-            label="Order Types"
-            count={`${svcOn}/${ALL_SERVICES.length} ON`}
-            items={ALL_SERVICES}
-            field="planServices"
+            label="Premium Modules Add-ons"
+            count={`${featureOn}/${ALL_FEATURES.length} ON`}
+            items={ALL_FEATURES}
+            field="planFeatures"
             formik={formik}
           />
-        </div>
-
-        {/* Section: Limits */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <p className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">
-              Limits
-            </p>
-            <span className="text-[10px] text-gray-400">0 = unlimited</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {ALL_LIMITS.map(({ key, label: name }) => (
-              <div
-                key={key}
-                className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-955/20"
-              >
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate flex-1">
-                  {name}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  value={formik.values.planLimits?.[key] ?? 0}
-                  onChange={(e) => formik.setFieldValue(`planLimits.${key}`, Number(e.target.value) || 0)}
-                  className="w-20 h-8 text-center text-xs font-mono font-bold px-2 py-1 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all ml-2"
-                />
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Display Features (marketing labels) */}

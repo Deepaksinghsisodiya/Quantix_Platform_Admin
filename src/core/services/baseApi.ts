@@ -53,7 +53,11 @@ export const baseApi = createApi({
     'ActiveTimer', 'TimeEntries', 'TeamLiveStatus', 'Profile',
     'AttendanceReport', 'TimeTrackingReport', 'ProjectHealthReport', 'LeaveReport', 'ProductivityReport',
     'Settings', 'Holidays', 'Expenses', 'Payroll', 'SalaryStructure', 'FileHub', 'Clients', 'Tickets',
-    'Merchants', 'Deboarding', 'Terminals', 'SignupQueue', 'Webhooks', 'Tokens', 'Plans'
+    'Merchants', 'Deboarding', 'Terminals', 'SignupQueue', 'Tokens', 'Plans',
+    'Downloads', 'FeatureCatalog', 'DashboardLayout',
+    // 2026-09-05 (content Phase 1/2): the content module had NO tags at all, so a save
+    // never refreshed a list. 'Media' is the library; 'Content' is blog/FAQ/help/CMS.
+    'Media', 'Content'
   ],
   endpoints: () => ({}),
 });

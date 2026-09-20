@@ -1,85 +1,174 @@
 /**
- * Pass 40m (2026-05-25) â€” Enterprise merchant wallet recharge dialog.
+ * Enterprise merchant wallet recharge dialog (Pass 40m, 2026-05-25; rebuilt 2026-09-04).
  *
- * Two-step flow: (1) merchant enters token amount + currency amount (token rate
- * could be exchange-rate driven later); (2) PspMount captures the card via the
- * hosted iframe and returns a paymentToken which is forwarded to merchantSelf.
- * rechargeWallet.
+ * What the previous version did wrong, found on the first real Enterprise walk:
+ *   • It read the admin-only /settings/setup-status route for the currency and the
+ *     online-payment flag — 403 for every merchant, so opening the dialog fired
+ *     "Access denied" toasts and the charge label read "()".
+ *   • It let the merchant type BOTH the token amount and the currency amount — i.e. set
+ *     their own exchange rate — and the API charged that figure verbatim, falling back to
+ *     a hardcoded "USD" when the (blank) currency arrived.
+ * Now the merchant chooses how many tokens; GET /merchant-self/wallet/quote prices them
+ * from the platform's exchange rate and deployment currency (and carries the payment flag),
+ * and the recharge charges exactly the quote. Same shape as the token purchase dialog.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useRechargeSelfWalletMutation } from '@/modules/merchants/services/merchantSelfApi';
+import {
+  useGetSelfWalletQuoteQuery,
+  useRechargeSelfWalletMutation,
+} from '@/modules/merchants/services/merchantSelfApi';
+import { apiErrorMessage } from '@/lib/utils/apiError';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { ATMModal } from '@/shared/ui';
 import PspMount from './PspMount';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  defaultCurrency?: string;
+  /** Suggested amount — 30 days of the plan's daily charge when the wallet page knows it. */
+  suggestedTokens?: number;
 }
 
-export default function RechargeDialog({ open, onClose, defaultCurrency = 'USD' }: Props) {
+const DEFAULT_TOKENS = 100;
+const QUOTE_DEBOUNCE_MS = 400;
+
+export default function RechargeDialog({ open, onClose, suggestedTokens }: Props) {
+  const initial = suggestedTokens && suggestedTokens > 0 ? Math.ceil(suggestedTokens) : DEFAULT_TOKENS;
   const [step, setStep] = useState<'amount' | 'pay'>('amount');
-  const [tokenAmount, setTokenAmount] = useState<number>(100);
-  const [currencyAmount, setCurrencyAmount] = useState<number>(100);
-  const [currency] = useState<string>(defaultCurrency);
+  const [tokenInput, setTokenInput] = useState<string>(String(initial));
+  const [tokenAmount, setTokenAmount] = useState<number>(initial);
+
+  useEffect(() => {
+    if (open) {
+      setStep('amount');
+      setTokenInput(String(initial));
+      setTokenAmount(initial);
+    }
+  }, [open, initial]);
+
+  // Re-quote a moment after typing stops, not on every keystroke.
+  useEffect(() => {
+    const n = Number(tokenInput);
+    const timer = setTimeout(
+      () => setTokenAmount(Number.isFinite(n) && n > 0 ? Math.floor(n) : 0),
+      QUOTE_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [tokenInput]);
+
+  const quoteQuery = useGetSelfWalletQuoteQuery(tokenAmount, { skip: !open || tokenAmount <= 0 });
+  // currentData: a quote for a previous amount is not a quote for this one.
+  const quote = quoteQuery.currentData?.data ?? null;
+  const quoting = quoteQuery.isLoading || quoteQuery.isFetching;
+  // The payment flag does not vary by amount, so the last known answer is safe to keep.
+  const onlinePaymentEnabled = (quote ?? quoteQuery.data?.data)?.onlinePaymentEnabled !== false;
+  const quoteError = quoteQuery.isError
+    ? apiErrorMessage(quoteQuery.error, 'We could not price this recharge.')
+    : null;
 
   const [rechargeWallet, { isLoading: isRecharging }] = useRechargeSelfWalletMutation();
 
   async function handleRecharge(paymentToken: string) {
+    if (!quote) return;
     try {
       await rechargeWallet({
-        tokenAmount,
-        currencyAmount,
-        currencyCode: currency,
+        tokenAmount: quote.tokenAmount,
         paymentToken,
         description: 'Self-service recharge',
       }).unwrap();
-      toast.success(`${tokenAmount} tokens added to your wallet.`);
+      toast.success(`${quote.tokenAmount.toLocaleString()} tokens added to your wallet.`);
       handleClose();
-    } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Recharge failed.');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'The recharge could not be completed.'));
     }
   }
 
-
   function handleClose() {
     setStep('amount');
-    setTokenAmount(100);
-    setCurrencyAmount(100);
     onClose();
   }
 
+  // 2026-09-05 (decision B): the wallet must end up covering 30 days of subscription plus
+  // expected commission, or 90 days without a revenue estimate. The server refuses a short
+  // recharge, so the dialog states the shortfall rather than letting the merchant pay first.
+  const coverage = quote?.coverage ?? null;
+  const coverageShort = !!coverage && !coverage.isMet;
+  const canContinue =
+    !!quote && !quoting && tokenAmount > 0 && quote.tokenAmount === tokenAmount && !coverageShort;
+
   return (
     <ATMModal open={open} onClose={handleClose} title="Recharge wallet">
-      {step === 'amount' && (
+      {!onlinePaymentEnabled && (
+        <div className="space-y-4">
+          <p className="text-sm text-surface-600 dark:text-surface-300">
+            Online payment is not enabled on this deployment. Please contact support to
+            arrange an offline recharge (bank transfer / cash) — it will be credited to
+            your wallet by the platform team.
+          </p>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-lg border border-surface-300 dark:border-surface-600 px-3 py-2 text-sm hover:bg-surface-100 dark:hover:bg-surface-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {onlinePaymentEnabled && step === 'amount' && (
         <div className="space-y-4">
           <label className="block">
             <span className="text-sm font-medium">Tokens to add</span>
             <input
               type="number"
+              inputMode="numeric"
               min={1}
               step={1}
-              value={tokenAmount}
-              onChange={(e) => setTokenAmount(Number(e.target.value) || 0)}
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
               className="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-700 px-3 py-2 text-sm"
             />
           </label>
-          <label className="block">
-            <span className="text-sm font-medium">Charge amount ({currency})</span>
-            <input
-              type="number"
-              min={0.01}
-              step={0.01}
-              value={currencyAmount}
-              onChange={(e) => setCurrencyAmount(Number(e.target.value) || 0)}
-              className="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-700 px-3 py-2 text-sm"
-            />
-          </label>
+
+          <div className="rounded-lg bg-surface-50 dark:bg-surface-900 p-3 text-sm" aria-live="polite">
+            {tokenAmount <= 0 && <p className="text-surface-500">Enter how many tokens to add.</p>}
+            {tokenAmount > 0 && quoting && !quote && <p className="text-surface-500">Pricing…</p>}
+            {tokenAmount > 0 && quoteError && (
+              <p role="alert" className="font-semibold text-red-600 dark:text-red-400">{quoteError}</p>
+            )}
+            {coverage && coverage.requirement.minimumTokens > 0 && (
+              <p className={coverageShort
+                ? 'font-semibold text-amber-700 dark:text-amber-300'
+                : 'text-emerald-700 dark:text-emerald-300'}>
+                {coverageShort
+                  ? `Add at least ${coverage.shortfallTokens.toLocaleString()} more tokens — ${coverage.requirement.explanation}`
+                  : `Meets the minimum wallet cover of ${coverage.requirement.minimumTokens.toLocaleString()} tokens.`}
+              </p>
+            )}
+            {quote && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-surface-500">Charge</span>
+                  <strong>{formatCurrency(quote.currencyAmount, quote.currencyCode)}</strong>
+                </div>
+                <p className="mt-1 text-xs text-surface-500">
+                  {quote.tokensPerCurrencyUnit} token{quote.tokensPerCurrencyUnit === 1 ? '' : 's'} per{' '}
+                  {quote.currencyCode}
+                  {quote.daysCovered !== null && quote.plannedDailyCharge > 0
+                    ? ` · covers ≈ ${quote.daysCovered} day${quote.daysCovered === 1 ? '' : 's'} at your ${quote.plannedDailyCharge.toFixed(2)} tokens/day subscription`
+                    : ''}
+                </p>
+              </>
+            )}
+          </div>
+
           <p className="text-xs text-surface-500">
-            For the first recharge, plan to cover at least 30 days of subscription + your expected
-            commission for the month.
+            Subscription is deducted daily from the wallet; commission is charged at cycle end.
           </p>
+
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -91,7 +180,7 @@ export default function RechargeDialog({ open, onClose, defaultCurrency = 'USD' 
             <button
               type="button"
               onClick={() => setStep('pay')}
-              disabled={tokenAmount <= 0 || currencyAmount <= 0}
+              disabled={!canContinue}
               className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
             >
               Continue to payment
@@ -99,24 +188,25 @@ export default function RechargeDialog({ open, onClose, defaultCurrency = 'USD' 
           </div>
         </div>
       )}
-      {step === 'pay' && (
+
+      {onlinePaymentEnabled && step === 'pay' && quote && (
         <div className="space-y-4">
           <div className="rounded-lg bg-surface-50 dark:bg-surface-900 p-3 text-sm">
             <div className="flex justify-between">
               <span className="text-surface-500">Tokens</span>
-              <strong>{tokenAmount.toLocaleString()}</strong>
+              <strong>{quote.tokenAmount.toLocaleString()}</strong>
             </div>
             <div className="mt-1 flex justify-between">
               <span className="text-surface-500">Charge</span>
-              <strong>{currencyAmount.toFixed(2)} {currency}</strong>
+              <strong>{formatCurrency(quote.currencyAmount, quote.currencyCode)}</strong>
             </div>
           </div>
           <PspMount
-            amount={currencyAmount}
-            currency={currency}
+            amount={quote.currencyAmount}
+            currency={quote.currencyCode}
             submitting={isRecharging}
             onCancel={() => setStep('amount')}
-            onToken={(token) => handleRecharge(token)}
+            onToken={(token) => void handleRecharge(token)}
           />
         </div>
       )}

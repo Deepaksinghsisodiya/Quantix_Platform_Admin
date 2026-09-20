@@ -1,60 +1,50 @@
+/**
+ * Token hooks — 2026-08-29 rebuild (plan-derived tokens, no tiers).
+ * Metrics come from the real dashboard endpoint (dashboardApi.useGetTokenMetricsQuery);
+ * the former client-computed byTier metrics duplicate was removed.
+ */
 import {
-  useGetTokenHistoryQuery,
+  useGetAllTokensQuery,
+  useGetTokensByMerchantQuery,
   useGetTokenQuery,
-  useGenerateTokenMutation,
+  useIssueTokenMutation,
   useBulkGenerateTokensMutation,
   useRevokeTokenMutation,
-  useGetExpiringTokensQuery,
-  useGetExpiringByMerchantQuery,
   useGetTokenActivationsQuery,
   useLazyExportTokensCsvQuery,
-  useGetTokenPricingQuery,
-  useSendRenewalRemindersMutation,
   useGetTokenTemplatesQuery,
   useGetTokenTemplateByIdQuery,
   useCreateTokenTemplateMutation,
   useUpdateTokenTemplateMutation,
   useDeactivateTokenTemplateMutation,
-  useGetTokenMetricsQuery,
-  type TokenMetrics,
   type TokenActivation,
-  type TokenPricingResult,
+  type TokenTemplate,
 } from './tokenApi';
-import type {
-  RechargeToken,
-  TokenFilter,
-  TokenGenerateRequest,
-  BulkTokenRequest,
-  TokenTemplate,
-} from '@/lib/types';
-import type { PaginationParams } from '@/lib/types/common';
-import { useFilterStore } from '@/lib/store/filterStore';
+import type { PlanType } from '@/lib/types/platform-enums';
 import { wrapMutation } from '@/lib/utils/rtkQueryHelpers';
 
-// ─── Token List & Detail ───────────────────────────────────────────────
+// ─── List & Detail ─────────────────────────────────────────────────────
 
-export function useTokenHistory(params: Partial<TokenFilter & PaginationParams> = {}) {
-  const { businessTypeFilter } = useFilterStore();
+export function useAllTokens(params?: { status?: string; from?: string; to?: string }) {
+  const { status, from, to } = params ?? {};
+  return useGetAllTokensQuery(status || from || to ? { status, from, to } : undefined);
+}
 
-  /** FRS-SAP-1604: Merge global business type filter into token queries. */
-  const mergedParams: Partial<TokenFilter & PaginationParams> = {
-    ...params,
-    businessNature: businessTypeFilter !== 'All' ? businessTypeFilter : params.businessNature,
-  };
-
-  return useGetTokenHistoryQuery(mergedParams);
+export function useTokensByMerchant(merchantId: string | undefined, status?: string) {
+  return useGetTokensByMerchantQuery(
+    { merchantId: merchantId ?? '', status },
+    { skip: !merchantId },
+  );
 }
 
 export function useToken(id: string | undefined) {
-  return useGetTokenQuery(id ?? '', {
-    skip: !id,
-  });
+  return useGetTokenQuery(id ?? '', { skip: !id });
 }
 
-// ─── Generate ──────────────────────────────────────────────────────────
+// ─── Issue / Bulk ──────────────────────────────────────────────────────
 
-export function useGenerateToken() {
-  const [trigger, result] = useGenerateTokenMutation();
+export function useIssueToken() {
+  const [trigger, result] = useIssueTokenMutation();
   return wrapMutation(trigger, result);
 }
 
@@ -70,24 +60,11 @@ export function useRevokeToken() {
   return wrapMutation(trigger, result);
 }
 
-// ─── Expiring Tokens ───────────────────────────────────────────────────
+// 2026-08-30: Expiring hooks removed with the Token Validity page — expiry windows only
+// exist for tokens with a recorded apply date, so "expiring" undercounted coverage and
+// misdirected renewal chasing. Honest renewal outlook = future Reports module.
 
-export function useExpiringTokens(daysWindow: number) {
-  return useGetExpiringTokensQuery(
-    { daysWindow },
-    { skip: daysWindow <= 0 }
-  );
-}
-
-/** Swagger: GET /api/v1/tokens/expiring/by-merchant */
-export function useExpiringByMerchant(daysWindow: number) {
-  return useGetExpiringByMerchantQuery(
-    { daysWindow },
-    { skip: daysWindow <= 0 }
-  );
-}
-
-// ─── Token Activations ─────────────────────────────────────────────────
+// ─── Activations ───────────────────────────────────────────────────────
 
 export function useTokenActivations(params: { merchantId?: string; dateFrom?: string; dateTo?: string } = {}) {
   return useGetTokenActivationsQuery(params);
@@ -95,24 +72,16 @@ export function useTokenActivations(params: { merchantId?: string; dateFrom?: st
 
 // ─── Export ────────────────────────────────────────────────────────────
 
-/** Returns a lazy trigger for server-side CSV export. */
 export function useExportTokensCsv() {
   const [trigger, result] = useLazyExportTokensCsvQuery();
   return { trigger, ...result };
 }
 
-// ─── Pricing ───────────────────────────────────────────────────────────
+// 2026-08-31: useTokenPricing removed with GET /tokens/pricing (fabricated tier table;
+// no screen ever called it). Token cost = DailySubscriptionPrice × ValidityDays.
 
-export function useTokenPricing(params: { plan?: string; validityDays?: number; quantity?: number }) {
-  return useGetTokenPricingQuery(params);
-}
-
-// ─── Renewal Reminders ─────────────────────────────────────────────────
-
-export function useSendRenewalReminders() {
-  const [trigger, result] = useSendRenewalRemindersMutation();
-  return wrapMutation(trigger, result);
-}
+// 2026-08-30: useSendRenewalReminders removed with the Token Validity page (it blast-
+// emailed on the same flawed expiring-window basis).
 
 // ─── Templates ─────────────────────────────────────────────────────────
 
@@ -139,10 +108,4 @@ export function useDeactivateTokenTemplate() {
   return wrapMutation(trigger, result);
 }
 
-// ─── Metrics ───────────────────────────────────────────────────────────
-
-export function useTokenMetrics() {
-  return useGetTokenMetricsQuery();
-}
-
-export type { TokenMetrics, TokenActivation, TokenPricingResult };
+export type { TokenActivation, TokenTemplate };

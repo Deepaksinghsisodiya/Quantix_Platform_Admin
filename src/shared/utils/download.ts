@@ -1,9 +1,11 @@
 /**
- * Utility to download a file from a Blob response.
- * @param blob The binary data (typically from an Excel export)
- * @param filename The desired filename for the download
+ * Hand a Blob to the browser as a file download.
+ * 2026-09-04: generalised from `downloadExcelFromBlob` — the same primitive now serves
+ * report CSV/PDF exports, invoice PDFs and spreadsheet exports.
+ * @param blob The binary data.
+ * @param filename The file name the browser should save it as.
  */
-export const downloadExcelFromBlob = (blob: Blob, filename: string) => {
+export const downloadBlob = (blob: Blob, filename: string) => {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

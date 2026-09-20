@@ -37,14 +37,13 @@ export interface SourceAttributionEntry {
   readonly percentage: number;
 }
 
+/** 2026-08-30: mirrors the server's CohortDto exactly — one measured retention figure
+ *  per signup cohort (the old month0..month12 grid was fabricated client-side). */
 export interface CohortRetentionEntry {
   readonly cohort: string;
-  readonly month0: number;
-  readonly month1: number;
-  readonly month2: number;
-  readonly month3: number;
-  readonly month6: number;
-  readonly month12: number;
+  readonly merchantCount: number;
+  readonly stillActive: number;
+  readonly retentionRate: number;
 }
 
 export interface GrowthChartProps {
@@ -263,14 +262,16 @@ export function SourceAttributionChart({ data, conversionRate, loading, classNam
 
 /**
  * FRS-SAP-102: Cohort retention table.
- * Shows retention percentages across month cohorts.
+ *
+ * 2026-08-30 (dashboard audit): the M0/M1/M2/M3/M6/M12 grid was fabricated — the server
+ * returns a SINGLE retention figure per signup cohort (how many of that month's signups
+ * are still active), so the caller had to fan one number across six columns and hardcode
+ * M0 = 100%. Now the table shows exactly what is measured: cohort size, still active,
+ * and the resulting retention rate.
  */
 export function CohortRetentionTable({ data, loading, className }: CohortRetentionTableProps) {
   if (loading) return <ChartSkeleton height="200px" className={className} />;
   if (!data.length) return <ChartEmptyState message="No retention data available." className={className} />;
-
-  const columns = ['M0', 'M1', 'M2', 'M3', 'M6', 'M12'];
-  const fields = ['month0', 'month1', 'month2', 'month3', 'month6', 'month12'] as const;
 
   function cellColor(value: number): string {
     if (value >= 80) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
@@ -286,12 +287,10 @@ export function CohortRetentionTable({ data, loading, className }: CohortRetenti
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="px-2 py-1.5 text-left font-medium text-gray-500 dark:text-gray-400">Cohort</th>
-              {columns.map((col) => (
-                <th key={col} className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">
-                  {col}
-                </th>
-              ))}
+              <th className="px-2 py-1.5 text-left font-medium text-gray-500 dark:text-gray-400">Signup Cohort</th>
+              <th className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">Signed Up</th>
+              <th className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">Still Active</th>
+              <th className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">Retention</th>
             </tr>
           </thead>
           <tbody>
@@ -300,15 +299,19 @@ export function CohortRetentionTable({ data, loading, className }: CohortRetenti
                 <td className="px-2 py-1.5 font-medium text-gray-700 dark:text-gray-300">
                   {row.cohort}
                 </td>
-                {fields.map((field) => (
-                  <td key={field} className="px-1 py-1">
-                    <span
-                      className={`inline-flex w-full items-center justify-center rounded px-2 py-0.5 text-[10px] font-medium ${cellColor(row[field])}`}
-                    >
-                      {row[field]}%
-                    </span>
-                  </td>
-                ))}
+                <td className="px-2 py-1.5 text-center tabular-nums text-gray-600 dark:text-gray-400">
+                  {row.merchantCount}
+                </td>
+                <td className="px-2 py-1.5 text-center tabular-nums text-gray-600 dark:text-gray-400">
+                  {row.stillActive}
+                </td>
+                <td className="px-1 py-1">
+                  <span
+                    className={`inline-flex w-full items-center justify-center rounded px-2 py-0.5 text-[10px] font-medium ${cellColor(row.retentionRate)}`}
+                  >
+                    {Math.round(row.retentionRate)}%
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>

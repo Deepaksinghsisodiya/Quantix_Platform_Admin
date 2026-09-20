@@ -1,73 +1,102 @@
-/** Type of data subject request. */
-export type DataRequestType = 'Export' | 'Deletion' | 'Rectification' | 'Restriction';
+import type { MerchantType } from './common';
 
-export type DataRequestStatus =
-  | 'Pending'
-  | 'InProgress'
-  | 'Completed'
-  | 'Failed'
-  | 'Cancelled';
+/**
+ * Compliance types — 2026-09-08: realigned 1:1 to the API
+ * (`Quantix.PlatformBusiness.DTOs.Compliance` + `Quantix.Foundation.Enums.Platform`).
+ *
+ * The previous shapes described a product that does not exist: a `regulation` (GDPR / CCPA /
+ * LGPD) and `region` per request, a `deadline`, export-package and deletion-certificate URLs,
+ * `Rectification` / `Restriction` request types, and a `ComplianceMetrics` with a consent rate
+ * and per-region map. None of it was on the wire, so the pages mapped every request to "GDPR"
+ * and rendered invented region cards. This is a single-country deployment; there is no
+ * regulation axis. The API has three request types, four statuses, and a response window.
+ */
 
-/** PF-12: Scope of a data request depends on merchant type. */
-export type DataRequestScope = 'MerchantDatabase+PlatformRecords' | 'PlatformRecordsOnly';
+/** Mirrors Foundation `ComplianceRequestType`. */
+export type ComplianceRequestType = 'DataExport' | 'RightToDelete' | 'ConsentWithdrawal';
 
-/** A GDPR/privacy data subject request. PF-12 */
-export interface DataRequest {
-  readonly id: string;
+export const COMPLIANCE_REQUEST_TYPES: readonly ComplianceRequestType[] = ['DataExport', 'RightToDelete', 'ConsentWithdrawal'];
+
+export const COMPLIANCE_TYPE_LABEL: Readonly<Record<ComplianceRequestType, string>> = {
+  DataExport: 'Data Export',
+  RightToDelete: 'Deletion',
+  ConsentWithdrawal: 'Consent Withdrawal',
+};
+
+/** Mirrors Foundation `ComplianceStatus`. */
+export type ComplianceStatus = 'Pending' | 'InProgress' | 'Completed' | 'Rejected';
+
+export const COMPLIANCE_STATUSES: readonly ComplianceStatus[] = ['Pending', 'InProgress', 'Completed', 'Rejected'];
+
+export const COMPLIANCE_STATUS_LABEL: Readonly<Record<ComplianceStatus, string>> = {
+  Pending: 'Pending',
+  InProgress: 'In Progress',
+  Completed: 'Completed',
+  Rejected: 'Rejected',
+};
+
+/** Mirrors `ComplianceDataScope` — what a request covers. */
+export type ComplianceDataScope =
+  | 'AllData'
+  | 'PersonalDataOnly'
+  | 'BusinessDataOnly'
+  | 'OrdersOnly'
+  | 'PaymentsOnly'
+  | 'AnalyticsOnly'
+  | 'Other';
+
+export const COMPLIANCE_DATA_SCOPES: readonly ComplianceDataScope[] = [
+  'AllData', 'PersonalDataOnly', 'BusinessDataOnly', 'OrdersOnly', 'PaymentsOnly', 'AnalyticsOnly', 'Other',
+];
+
+/** One row of GET /compliance — mirrors `ComplianceRequestDto`. Nullable API fields are optional (the API omits nulls). */
+export interface ComplianceRequest {
+  readonly requestId: string;
   readonly merchantId: string;
   readonly merchantName: string;
-  readonly merchantType: 'Enterprise' | 'Standalone';
-  readonly type: DataRequestType;
-  readonly status: DataRequestStatus;
-  /** PF-12 Step 2: Scope — Enterprise includes merchant DB + platform records, Standalone is platform-only. */
-  readonly scope: DataRequestScope;
-  readonly requestedAt: string;
-  readonly completedAt: string | null;
-  /** PF-12 Step 5: Compliance deadline (e.g. 30 days for GDPR). */
-  readonly deadline: string;
-  readonly regulation: string;
-  readonly region: string;
+  readonly merchantType?: MerchantType | null;
+  readonly requestType: ComplianceRequestType;
+  readonly status: ComplianceStatus;
   readonly requestedBy: string;
-  readonly processedBy: string | null;
-  readonly approvedBy: string | null;
-  readonly approvedAt: string | null;
-  readonly notes: string | null;
-  /** PF-12 Step 4: URL to download the generated export package (null if not yet generated). */
-  readonly exportPackageUrl: string | null;
-  /** PF-12 Step 4: URL to download the deletion certificate (null if not deletion or not yet completed). */
-  readonly deletionCertificateUrl: string | null;
+  readonly approvedBy?: string | null;
+  readonly completedAt?: string | null;
+  readonly dataScope?: string | null;
+  readonly notes?: string | null;
+  readonly createdAt: string;
+  /** CreatedAt plus the operator's response window. */
+  readonly dueAt: string;
+  /** Still open and past dueAt. */
+  readonly isOverdue: boolean;
+  readonly updatedAt?: string | null;
 }
 
-/** Record of user/merchant consent for data processing. */
+/** POST /compliance — mirrors `CreateComplianceRequestDto`. */
+export interface CreateComplianceRequest {
+  readonly merchantId: string;
+  readonly requestType: ComplianceRequestType;
+  readonly requestedBy: string;
+  readonly dataScope?: ComplianceDataScope;
+  readonly notes?: string;
+}
+
+/** GET /compliance/dashboard — mirrors `ComplianceDashboardDto`. */
+export interface ComplianceDashboard {
+  readonly pendingRequests: number;
+  readonly inProgressRequests: number;
+  readonly rejectedRequests: number;
+  readonly completedRequests: number;
+  readonly overdueRequests: number;
+  readonly responseWindowDays: number;
+  readonly byType: readonly { readonly key: string; readonly count: number }[];
+}
+
+/** GET /compliance/consents — mirrors `ConsentRecordDto`. */
 export interface ConsentRecord {
-  readonly id: string;
+  readonly consentId: string;
   readonly merchantId: string;
   readonly consentType: string;
-  readonly granted: boolean;
+  readonly isGranted: boolean;
   readonly grantedAt: string;
-  readonly revokedAt: string | null;
-  readonly version: string;
-  readonly ipAddress: string | null;
-}
-
-/** Data retention policy configuration. */
-export interface RetentionPolicy {
-  readonly id: string;
-  readonly dataCategory: string;
-  readonly retentionDays: number;
-  readonly regulation: string;
-  readonly region: string;
-  readonly autoDelete: boolean;
-  readonly lastAppliedAt: string | null;
-}
-
-/** Aggregated compliance metrics for dashboards. */
-export interface ComplianceMetrics {
-  readonly pendingRequests: number;
-  readonly completedRequests: number;
-  readonly averageCompletionTimeHours: number;
-  readonly overdueRequests: number;
-  readonly consentRate: number;
-  readonly byRegulation: Record<string, number>;
-  readonly byRegion: Record<string, number>;
+  readonly revokedAt?: string | null;
+  readonly ipAddress?: string | null;
 }

@@ -1,4 +1,5 @@
 import type { PlatformRole } from '@/lib/types';
+import type { ModulePermission } from '@/types/permissions';
 
 // ---------------------------------------------------------------------------
 // Module & action types
@@ -54,20 +55,10 @@ const allModulesFull = (): Record<PermissionModule, readonly PermissionAction[]>
 export const ROLE_PERMISSIONS: RolePermissionMap = {
   Admin: allModulesFull(),
 
+  // 2026-09-04 (user directive): everything except user / role administration.
   OperationsManager: {
-    dashboard: VIEW_ONLY,
-    merchants: ALL_ACTIONS,        // lifecycle: onboard / deboard / suspend / reactivate / terminate
-    billing: VIEW_ONLY,
-    tokens: ALL_ACTIONS,           // token activities folded in from retired token_manager role
-    commission: VIEW_ONLY,
-    support: NONE,
-    content: NONE,
-    settings: VIEW_ONLY,
-    reports: ['view', 'create'],
-    compliance: CRUD,
-    audit: VIEW_ONLY,
+    ...allModulesFull(),
     users: NONE,
-    downloads: VIEW_ONLY,
   },
 
   FinanceManager: {
@@ -139,6 +130,111 @@ export const ROLE_PERMISSIONS: RolePermissionMap = {
 };
 
 // ---------------------------------------------------------------------------
+// Role identity
+// ---------------------------------------------------------------------------
+
+/**
+ * 2026-09-04: the API names a role three ways — the seed key (`operations_manager`), the
+ * display name the JWT `role` claim and the user DTO carry ("Operations Manager"), and the
+ * portal's own `PlatformRole` ('OperationsManager'). The dashboard switch, the merchant
+ * redirects and the Admin check all compared raw strings, so a Finance Manager landed on
+ * the Admin dashboard. Every spelling is folded to the portal's canonical value here.
+ */
+const ROLE_CANON: Readonly<Record<string, PlatformRole>> = {
+  admin: 'Admin',
+  operationsmanager: 'OperationsManager',
+  financemanager: 'FinanceManager',
+  contentmanager: 'ContentManager',
+  operator: 'Operator',
+  merchant: 'Merchant',
+};
+
+export function toPlatformRole(raw: string | null | undefined): PlatformRole | undefined {
+  if (!raw) return undefined;
+  return ROLE_CANON[raw.replace(/[\s_-]/g, '').toLowerCase()];
+}
+
+// ---------------------------------------------------------------------------
+// Server permission codes → portal modules
+// ---------------------------------------------------------------------------
+
+/**
+ * 2026-09-04: the JWT carries one server permission CODE per `permissions` claim
+ * (`wallet.recharge`, `tickets.view`, …) while the sidebar, RoleGuard and usePermission
+ * reason in portal MODULES (`billing`, `support`, …). Until now the raw code strings were
+ * stored where module objects were expected, so every non-Admin staff login saw an empty
+ * sidebar and "Access Denied" on every screen (Admin never noticed — it bypasses). This map
+ * is the ONE place the translation lives. Keys are code prefixes, longest match wins; a
+ * prefix may feed more than one module (CRM codes serve the helpdesk and the content desks).
+ */
+const CODE_PREFIX_TO_MODULES: Readonly<Record<string, readonly PermissionModule[]>> = {
+  dashboard: ['dashboard'],
+  merchants: ['merchants'],
+  onboarding: ['merchants'],
+  limits: ['merchants'],
+  subscriptions: ['merchants'],
+  token: ['tokens'],
+  wallet: ['billing'],
+  invoices: ['billing'],
+  tax: ['billing'],
+  billing: ['billing'],
+  commission: ['commission'],
+  tickets: ['support'],
+  crm: ['support', 'content'],
+  cms: ['content'],
+  blog: ['content'],
+  helpcentre: ['content'],
+  faq: ['content'],
+  settings: ['settings'],
+  plans: ['settings'],
+  features: ['settings'],
+  reports: ['reports'],
+  compliance: ['compliance'],
+  logs: ['audit'],
+  users: ['users'],
+  downloads: ['downloads'],
+};
+
+/** Actions that only read. Anything else on a module is a mutation. */
+const READ_ACTIONS = new Set(['view', 'statement', 'export', 'download', 'list']);
+/** Actions that remove or end something. */
+const DELETE_ACTIONS = new Set(['delete', 'deactivate', 'void', 'cancel', 'terminate', 'revoke', 'withdraw']);
+
+export function modulesForCode(code: string): readonly PermissionModule[] {
+  const parts = code.split('.');
+  for (let n = parts.length - 1; n >= 1; n--) {
+    const hit = CODE_PREFIX_TO_MODULES[parts.slice(0, n).join('.')];
+    if (hit) return hit;
+  }
+  return [];
+}
+
+/** Module flags derived from the server's permission codes — the shape the guards consume. */
+export function deriveModulePermissions(codes: readonly string[]): ModulePermission[] {
+  const byModule = new Map<string, ModulePermission>();
+  const grant = (module: string, action: string) => {
+    const p = byModule.get(module) ?? { module, canView: false, canAdd: false, canEdit: false, canDelete: false };
+    p.canView = true;
+    if (!READ_ACTIONS.has(action)) {
+      p.canAdd = true;
+      p.canEdit = true;
+      if (DELETE_ACTIONS.has(action)) p.canDelete = true;
+    }
+    byModule.set(module, p);
+  };
+  for (const code of codes) {
+    if (!code) continue;
+    if (code === '*') {
+      for (const module of Object.keys(allModulesFull())) grant(module, 'admin');
+      continue;
+    }
+    const action = code.slice(code.lastIndexOf('.') + 1);
+    for (const module of modulesForCode(code)) grant(module, action);
+  }
+  return [...byModule.values()];
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -157,15 +253,25 @@ export function canAccess(
   action: string,
   permissions?: readonly string[],
 ): boolean {
-  // Server-driven path: check the user's permissions claim first.
+  // 2026-08-29 (user-locked rule): Admin bypasses every permission gate unconditionally —
+  // UI and server alike. This also prevents a boot-time race where the permissions list
+  // is briefly empty and Admin flashed "Access Denied" on permission-gated screens.
+  if (role === 'Admin') return true;
+
+  // Server-driven path: the codes are translated through the same map the guards use.
+  // 2026-09-04: this used to test `${module}.${action}` literally, which only ever matched
+  // the `merchants.*` family — `billing.view` is not a code the server issues.
   if (permissions && permissions.length > 0) {
-    // Wildcard (debug / future top-tier sentinel): always allow.
     if (permissions.includes('*')) return true;
-    // Direct permission match: e.g. `merchants.view` or `merchants.admin`.
-    if (permissions.includes(`${module}.${action}`)) return true;
-    if (permissions.includes(`${module}.admin`)) return true;
-    // No matching server permission → deny.
-    return false;
+    const derived = deriveModulePermissions(permissions).find((p) => p.module === module);
+    if (!derived) return false;
+    switch (action) {
+      case 'view': return derived.canView;
+      case 'create': case 'add': return derived.canAdd;
+      case 'edit': return derived.canEdit;
+      case 'delete': return derived.canDelete;
+      default: return false;
+    }
   }
 
   // Legacy fallback: hardcoded ROLE_PERMISSIONS matrix (kept for tests / pre-migration code).

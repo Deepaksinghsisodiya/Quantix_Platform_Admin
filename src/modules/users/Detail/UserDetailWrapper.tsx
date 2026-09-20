@@ -70,7 +70,6 @@ export const UserDetailWrapper: React.FC = () => {
             displayName: user.name,
             roleId: mappedRoleId,
             isActive: true,
-            department: user.department,
             ipAllowlist: user.ipAllowlist || null,
           },
         }).unwrap();

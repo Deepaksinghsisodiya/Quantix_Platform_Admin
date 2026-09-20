@@ -11,21 +11,13 @@ import {
   useGetSelfProfileQuery,
   useGetSelfWalletQuery,
   useGetSelfWalletTransactionsQuery,
+  type MerchantSelfWallet,
 } from '@/modules/merchants/services/merchantSelfApi';
 import type { MerchantSelfProfile } from '@/lib/api/merchantSelf';
 import RechargeDialog from './components/RechargeDialog';
 
-interface WalletDto {
-  walletId: string;
-  merchantId: string;
-  tokenBalance: number;
-  lastDeductionDate: string | null;
-  lastTopUpDate: string | null;
-  consumptionRatePerDay: number;
-  projectedDepletionDays: number;
-  gracePeriodPhase: string;
-  gracePeriodStartDate: string | null;
-}
+// 2026-09-04: the private WalletDto mirror is gone — MerchantSelfWallet (merchantSelfApi) is
+// the one typed mirror of the wire, now carrying plannedDailyCharge + runwayBasis.
 
 interface WalletTransactionDto {
   walletTransactionId: string;
@@ -69,7 +61,7 @@ export default function MerchantWalletPage() {
     );
   }
 
-  const w = wallet.data?.data as WalletDto | undefined;
+  const w = wallet.data?.data as MerchantSelfWallet | undefined;
   const rawTxns = txns.data?.data;
   const transactions = Array.isArray(rawTxns) ? (rawTxns as WalletTransactionDto[]) : [];
 
@@ -94,13 +86,15 @@ export default function MerchantWalletPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard label="Token balance" value={wallet.isLoading ? '…' : (w?.tokenBalance ?? 0).toFixed(2)} accent="primary" />
         <StatCard
-          label="Daily consumption"
-          value={wallet.isLoading ? '…' : `${(w?.consumptionRatePerDay ?? 0).toFixed(2)} / day`}
+          label="Daily charge"
+          value={wallet.isLoading ? '…' : dailyChargeText(w)}
+          note={dailyChargeNote(w)}
         />
         <StatCard
           label="Projected runway"
-          value={wallet.isLoading ? '…' : formatRunway(w?.projectedDepletionDays)}
-          accent={w && w.projectedDepletionDays < 7 ? 'warning' : 'default'}
+          value={wallet.isLoading ? '…' : formatRunway(w)}
+          note={runwayNote(w)}
+          accent={w && w.runwayBasis !== 'None' && w.projectedDepletionDays < 7 ? 'warning' : 'default'}
         />
       </div>
 
@@ -181,7 +175,11 @@ export default function MerchantWalletPage() {
         )}
       </div>
 
-      <RechargeDialog open={rechargeOpen} onClose={() => setRechargeOpen(false)} />
+      <RechargeDialog
+        open={rechargeOpen}
+        onClose={() => setRechargeOpen(false)}
+        suggestedTokens={w && w.plannedDailyCharge > 0 ? w.plannedDailyCharge * 30 : undefined}
+      />
     </div>
   );
 }
@@ -189,10 +187,12 @@ export default function MerchantWalletPage() {
 function StatCard({
   label,
   value,
+  note,
   accent = 'default',
 }: {
   label: string;
   value: string;
+  note?: string;
   accent?: 'default' | 'primary' | 'warning';
 }) {
   const accentClass = {
@@ -204,13 +204,40 @@ function StatCard({
     <div className="rounded-xl bg-white dark:bg-surface-800 p-4 shadow-sm">
       <p className="text-sm text-surface-500">{label}</p>
       <p className={`mt-2 text-2xl font-semibold ${accentClass}`}>{value}</p>
+      {note && <p className="mt-1 text-xs text-surface-500">{note}</p>}
     </div>
   );
 }
 
-function formatRunway(days?: number): string {
-  if (days === undefined) return '—';
+/* 2026-09-04: runway used to read "< 1 day" for a freshly funded wallet — the server put 0 in
+   projectedDepletionDays whenever no deduction had happened yet. The server now falls back to
+   the subscription's daily charge and says which basis it used; the page states it. */
+
+function dailyChargeText(w?: MerchantSelfWallet): string {
+  if (!w) return '—';
+  const perDay = w.consumptionRatePerDay > 0 ? w.consumptionRatePerDay : w.plannedDailyCharge;
+  return perDay > 0 ? `${perDay.toFixed(2)} / day` : '—';
+}
+
+function dailyChargeNote(w?: MerchantSelfWallet): string | undefined {
+  if (!w) return undefined;
+  if (w.consumptionRatePerDay > 0) return 'Measured over the last 30 days';
+  if (w.plannedDailyCharge > 0) return 'Your subscription’s daily deduction — no deduction taken yet';
+  return 'No subscription charge recorded';
+}
+
+function formatRunway(w?: MerchantSelfWallet): string {
+  if (!w) return '—';
+  if (w.runwayBasis === 'None') return 'No daily charge yet';
+  const days = w.projectedDepletionDays;
   if (days < 1) return '< 1 day';
   if (days < 60) return `${days.toFixed(1)} days`;
   return `${(days / 30).toFixed(1)} months`;
+}
+
+function runwayNote(w?: MerchantSelfWallet): string | undefined {
+  if (!w || w.runwayBasis === 'None') return undefined;
+  return w.runwayBasis === 'Usage'
+    ? 'At your average daily usage over the last 30 days'
+    : 'At your plan’s daily charge';
 }

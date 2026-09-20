@@ -12,15 +12,19 @@ export * as dashboardApi from './dashboard';
 export * as usersApi from './users';
 export * as registrationApi from './registration';
 export * as walletApi from './wallet';
-export * as merchantsApi from './merchants';
+// 2026-08-30: merchantsApi removed — every function in the axios layer was unconsumed
+// (incl. the 410-Gone change-tier call); merchant calls live in
+// modules/merchants/services/merchantApi (RTK).
 export * as billingApi from './billing';
-export * as reportsApi from './reports';
+// 2026-09-04: `./reports` REMOVED — it mirrored routes this API never served (/reports/usage,
+// /reports/tokens, /reports/definitions, /reports/{id}/export) and the custom-report query.
+// The real report slice is modules/reports/services/reportsApi; export is useReportExport().
 export * as settingsApi from './settings';
 export * as helpdeskApi from './helpdesk';
-export * as complianceApi from './compliance';
 export * as contentApi from './content';
 export * as contactsApi from './contacts';
 export * as signupsApi from './signups';
 export * as auditApi from './audit';
-export * as tokensApi from './tokens';
+// 2026-08-29: tokensApi removed — the legacy REST layer carried the fictional tier→plan
+// mapping; token calls live in modules/tokens/services/tokenApi (RTK).
 export * as commissionApi from './commission';

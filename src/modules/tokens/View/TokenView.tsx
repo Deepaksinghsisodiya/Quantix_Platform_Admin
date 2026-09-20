@@ -1,24 +1,34 @@
+/**
+ * Token Detail — presentational side. 2026-08-29 rebuild: Tier → Plan, Valid From/To →
+ * Applied/Expires (window materialises on apply), fictional binding/gracePolicy objects
+ * replaced by the real payload columns, fake "Email to Merchant" removed.
+ */
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Copy,
   CheckCircle2,
   Loader2,
-  Mail,
   AlertTriangle,
   Ban,
   Key,
+  Mail,
+  Printer,
 } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
-import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
+import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
-import type { TokenTier, RechargeToken } from '@/lib/types';
+import { PLAN_TYPE_LABEL } from '@/lib/types/platform-enums';
+import type { RechargeTokenDetail } from '@/lib/types';
+import { parseJsonRecord } from '../services/tokenApi';
+import { TokenBreakdown } from '../components/TokenBreakdown';
+import { TokenStatusBadge } from '../components/TokenStatusBadge';
 
 export interface TimelineEvent {
   id: string;
@@ -28,13 +38,6 @@ export interface TimelineEvent {
   user?: string;
   type: 'info' | 'success' | 'warning' | 'error';
 }
-
-const TIER_BADGE_VARIANT: Record<TokenTier, 'gray' | 'primary' | 'purple' | 'warning'> = {
-  Basic: 'gray',
-  Standard: 'primary',
-  Advance: 'purple',
-  Premium: 'warning',
-};
 
 function getExpiryColor(days: number): string {
   if (days > 30) return 'bg-emerald-500';
@@ -60,6 +63,7 @@ function PayloadSection({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const isEmpty = Object.keys(data).length === 0;
 
   return (
     <div className="border-b border-gray-100 dark:border-gray-800 last:border-0">
@@ -73,20 +77,20 @@ function PayloadSection({
       </button>
       {open && (
         <div className="px-5 pb-4">
-          <pre className="overflow-x-auto rounded-xl bg-gray-50/50 p-4 font-mono text-xs text-gray-800 dark:bg-gray-900 dark:text-gray-200 border border-gray-100 dark:border-gray-800 shadow-inner">
-            {JSON.stringify(data, null, 2)}
-          </pre>
+          {isEmpty ? (
+            <p className="text-xs font-semibold text-gray-400 py-2">Nothing recorded.</p>
+          ) : (
+            <pre className="overflow-x-auto rounded-xl bg-gray-50/50 p-4 font-mono text-xs text-gray-800 dark:bg-gray-900 dark:text-gray-200 border border-gray-100 dark:border-gray-800 shadow-inner">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function TokenTimeline({
-  events,
-}: {
-  events: TimelineEvent[];
-}) {
+function TokenTimeline({ events }: { events: TimelineEvent[] }) {
   const dotColor: Record<string, string> = {
     info: 'bg-blue-500',
     success: 'bg-emerald-500',
@@ -124,15 +128,16 @@ function TokenTimeline({
 }
 
 export interface TokenViewProps {
-  token: RechargeToken | undefined;
+  token: RechargeTokenDetail | undefined;
   isLoading: boolean;
   isError: boolean;
   refetch: () => void;
-  daysRemaining: number;
+  daysRemaining: number | null;
   expiryPercent: number;
   copied: boolean;
   handleCopy: () => void;
-  handleEmail: () => void;
+  handleSend: () => void;
+  isSending: boolean;
   revokeModal: boolean;
   setRevokeModal: (open: boolean) => void;
   revokeReason: string;
@@ -152,7 +157,8 @@ export const TokenView: React.FC<TokenViewProps> = ({
   expiryPercent,
   copied,
   handleCopy,
-  handleEmail,
+  handleSend,
+  isSending,
   revokeModal,
   setRevokeModal,
   revokeReason,
@@ -192,12 +198,8 @@ export const TokenView: React.FC<TokenViewProps> = ({
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
                 <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                    Failed to load token
-                  </p>
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">
-                    Please try again.
-                  </p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Failed to load token</p>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">Please try again.</p>
                 </div>
               </div>
               <ATMButton type="button" variant="secondary" size="sm" onClick={refetch}>
@@ -210,109 +212,157 @@ export const TokenView: React.FC<TokenViewProps> = ({
     );
   }
 
-  const headerActions = (
-    <div className="flex gap-2">
-      <ATMButton type="button" variant="secondary" icon={Mail} onClick={handleEmail} className="hover:scale-[1.02] active:scale-[0.98]">
-        Email to Merchant
-      </ATMButton>
-      {token.status === 'Active' && (
-        <ATMButton type="button" variant="danger" icon={Ban} onClick={() => setRevokeModal(true)} className="hover:scale-[1.02] active:scale-[0.98]">
-          Revoke
-        </ATMButton>
-      )}
-    </div>
-  );
+  const limits = parseJsonRecord<Record<string, number>>(token.limitsPayload);
+  const features = parseJsonRecord<Record<string, boolean>>(token.featurePayload);
+  const gracePolicy = parseJsonRecord<Record<string, number>>(token.gracePolicyDays);
 
   return (
     <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
-      {/* Fixed Header */}
       <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
         <ATMPageHeader
           title="Token Detail"
           icon={Key}
           subtitle={
             <div className="flex items-center gap-2 mt-1">
-              <code className="font-mono text-xs text-gray-400">{token.id}</code>
-              <StatusBadge status={token.status} />
+              <code className="font-mono text-xs text-gray-400">{token.tokenId}</code>
+              <TokenStatusBadge status={token.status} />
             </div>
           }
           onBack={onBack}
-          extraActions={headerActions}
+          extraActions={
+            (token.status === 'Active' || token.status === 'Superseded') ? (
+              <ATMButton type="button" variant="danger" icon={Ban} onClick={() => setRevokeModal(true)} className="hover:scale-[1.02] active:scale-[0.98]">
+                Revoke
+              </ATMButton>
+            ) : undefined
+          }
         />
       </div>
 
-      {/* Scrollable Layout Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/10 dark:bg-gray-900/10">
         <div className="grid gap-6 lg:grid-cols-3 items-start max-w-7xl mx-auto w-full">
-          {/* Left panel core information */}
           <div className="space-y-6 lg:col-span-2">
             <ATMCard title="Token Information" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
               <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Merchant</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <span>{token.merchantName}</span>
-                    <ATMBadge label="Standalone" color="primary" />
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {token.merchantName || token.merchantId}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tier</dt>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Plan</dt>
                   <dd className="mt-1">
-                    <ATMBadge color={TIER_BADGE_VARIANT[token.tier] ?? 'gray'} label={token.tier} />
+                    <span title={PLAN_TYPE_LABEL[token.plan] ?? token.plan}>
+                      <ATMBadge color="primary" label={token.planName || (PLAN_TYPE_LABEL[token.plan] ?? token.plan)} />
+                    </span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Valid From</dt>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sequence</dt>
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">#{token.sequence}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Validity</dt>
                   <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
-                    {formatDate(token.validFrom, 'long')}
+                    {token.validityDays} days from activation
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Valid To</dt>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Applied</dt>
                   <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
-                    {formatDate(token.validTo, 'long')}
+                    {token.activatedAt ? formatDate(token.activatedAt, 'long') : 'Not applied yet'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Generated By</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">{token.generatedBy}</dd>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Expires</dt>
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {token.expiresAt ? formatDate(token.expiresAt, 'long') : '— (starts on apply)'}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Generated At</dt>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Price</dt>
                   <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
-                    {formatDate(token.generatedAt, 'datetime')}
+                    {token.priceCurrency > 0 ? token.priceCurrency.toFixed(2) : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Generated</dt>
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {formatDate(token.createdAt, 'datetime')} · {token.generatedBy}
                   </dd>
                 </div>
               </dl>
             </ATMCard>
 
-            <ATMCard title="Token Expiry Status" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className={cn('text-sm font-bold', getExpiryTextColor(daysRemaining))}>
-                    {daysRemaining} days remaining
-                  </span>
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                    {token.validityDays} day validity
-                  </span>
+            {token.status === 'Superseded' && (
+              <ATMCard padding="md" className="shadow-sm border border-amber-100 dark:border-amber-900/50">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Superseded — needs review
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      A higher-sequence token was recorded as applied while this one was never
+                      applied, so the merchant's system will reject it forever. The merchant paid
+                      for it — resolve by revoking it (and credit or reissue if warranted).
+                    </p>
+                  </div>
                 </div>
-                <div className="h-3.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200/20 shadow-inner">
-                  <div
-                    className={cn('h-full rounded-full transition-all duration-500', getExpiryColor(daysRemaining))}
-                    style={{ width: `${expiryPercent}%` }}
-                  />
+              </ATMCard>
+            )}
+
+            {token.status === 'Revoked' && (
+              <ATMCard padding="md" className="shadow-sm border border-red-100 dark:border-red-900/50">
+                <div className="flex items-start gap-3">
+                  <Ban className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Revoked {token.revokedAt ? formatDate(token.revokedAt, 'datetime') : ''}
+                      {token.revokedBy ? ` by ${token.revokedBy}` : ''}
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      {token.revokedReason ?? 'No reason recorded.'}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <span>{formatDate(token.validFrom, 'short')}</span>
-                  <span>{formatDate(token.validTo, 'short')}</span>
+              </ATMCard>
+            )}
+
+            <ATMCard title="Coverage" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+              {daysRemaining == null ? (
+                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 py-2">
+                  Not applied yet — the {token.validityDays}-day window starts when the merchant applies this token.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className={cn('text-sm font-bold', getExpiryTextColor(daysRemaining))}>
+                      {daysRemaining} days remaining
+                    </span>
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                      {token.validityDays} day validity
+                    </span>
+                  </div>
+                  <div className="h-3.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200/20 shadow-inner">
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-500', getExpiryColor(daysRemaining))}
+                      style={{ width: `${expiryPercent}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    <span>{token.activatedAt ? formatDate(token.activatedAt, 'short') : ''}</span>
+                    <span>{token.expiresAt ? formatDate(token.expiresAt, 'short') : ''}</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </ATMCard>
 
             <ATMCard title="Token String" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-3">
                 <code className="flex-1 break-all rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3.5 font-mono text-sm font-bold text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 shadow-inner">
-                  {token.tokenString}
+                  {token.encodedToken}
                 </code>
                 <ATMButton
                   type="button"
@@ -324,11 +374,20 @@ export const TokenView: React.FC<TokenViewProps> = ({
               </div>
             </ATMCard>
 
-            <ATMCard title="Token Payload Details" padding="none" className="shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-              <PayloadSection title="Binding Constraints" data={token.binding as unknown as Record<string, unknown>} defaultOpen />
-              <PayloadSection title="Limits Configuration" data={token.limitsPayload as Record<string, unknown>} />
-              <PayloadSection title="Feature Availability Map" data={token.featureMap as Record<string, unknown>} />
-              <PayloadSection title="Grace Period Policies" data={token.gracePolicy as unknown as Record<string, unknown>} />
+            {/* 2026-08-29 (user-locked): human-readable breakdown first; raw JSON stays
+                collapsed below for debugging. */}
+            <ATMCard title="What This Token Grants" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+              <TokenBreakdown
+                limitsPayload={token.limitsPayload}
+                featurePayload={token.featurePayload}
+                gracePolicyDays={token.gracePolicyDays}
+              />
+            </ATMCard>
+
+            <ATMCard title="Raw Payloads" padding="none" className="shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+              <PayloadSection title="Limits Configuration" data={limits} />
+              <PayloadSection title="Feature Availability Map" data={features} />
+              <PayloadSection title="Grace Period Policy" data={gracePolicy} />
             </ATMCard>
 
             <ATMCard title="Lifecycle Timeline" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
@@ -336,31 +395,48 @@ export const TokenView: React.FC<TokenViewProps> = ({
             </ATMCard>
           </div>
 
-          {/* Right sidebar - QR Code & Actions */}
           <div className="space-y-6">
             <ATMCard title="QR Activation Code" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
               <div className="flex flex-col items-center gap-4 py-4">
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-md">
-                  <QRCodeSVG
-                    value={token.tokenString}
-                    size={200}
-                    level="H"
-                    includeMargin
-                  />
+                <div className="rounded-2xl border border-gray-100 bg-white p-5 dark:border-gray-800 dark:bg-white shadow-md">
+                  <QRCodeSVG value={token.encodedToken} size={200} level="H" includeMargin />
                 </div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">Scan to activate on POS terminal</p>
+                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">Scan to apply on POS terminal</p>
               </div>
+            </ATMCard>
+
+            <ATMCard title="Activation" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+              <dl className="space-y-3">
+                <div>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Terminal</dt>
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 break-all">
+                    {token.activatedTerminalId ?? '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">App Version</dt>
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {token.activatedAppVersion ?? '—'}
+                  </dd>
+                </div>
+              </dl>
             </ATMCard>
 
             <ATMCard title="Quick Actions" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
               <div className="space-y-3">
-                <ATMButton type="button" variant="secondary" className="w-full font-semibold hover:scale-[1.01] transition-transform duration-100" icon={Mail} onClick={handleEmail}>
-                  Email to Merchant
-                </ATMButton>
                 <ATMButton type="button" variant="outline" className="w-full font-semibold hover:scale-[1.01] transition-transform duration-100" icon={Copy} onClick={handleCopy}>
                   {copied ? 'Copied!' : 'Copy Token String'}
                 </ATMButton>
+                <ATMButton type="button" variant="outline" className="w-full font-semibold hover:scale-[1.01] transition-transform duration-100" icon={Printer} onClick={() => window.print()}>
+                  Print
+                </ATMButton>
+                {/* Email only for Issued — a superseded token must never be delivered. */}
                 {token.status === 'Active' && (
+                  <ATMButton type="button" variant="secondary" className="w-full font-semibold hover:scale-[1.01] transition-transform duration-100" icon={Mail} isLoading={isSending} onClick={handleSend}>
+                    Email Token to Merchant
+                  </ATMButton>
+                )}
+                {(token.status === 'Active' || token.status === 'Superseded') && (
                   <ATMButton type="button" variant="danger" className="w-full font-semibold hover:scale-[1.01] transition-transform duration-100" icon={Ban} onClick={() => setRevokeModal(true)}>
                     Revoke Token
                   </ATMButton>
@@ -371,19 +447,19 @@ export const TokenView: React.FC<TokenViewProps> = ({
         </div>
       </div>
 
-      {/* Revoke Modal */}
       <ATMModal
         isOpen={revokeModal}
         onClose={() => { setRevokeModal(false); setRevokeReason(''); }}
         title="Revoke Token"
-        subtitle="This will immediately invalidate the token. The merchant will lose access after grace period expires."
+        subtitle="This will immediately invalidate the token."
         size="md"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3 rounded-xl bg-red-50/50 p-4 border border-red-100 dark:bg-red-950/20 dark:border-red-900/50">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400 animate-pulse" />
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
             <p className="text-sm font-semibold text-red-800 dark:text-red-200">
-              Revoking this token will disable access for <strong>{token.merchantName}</strong>. A {token.gracePolicy.gracePeriodDays}-day grace period will apply with read-only access.
+              Revoking this token removes its coverage for <strong>{token.merchantName || 'this merchant'}</strong>.
+              The plan's grace policy then governs POS access.
             </p>
           </div>
           <ATMTextField

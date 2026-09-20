@@ -35,7 +35,12 @@ interface InvoicePdfPayload {
   merchantAddress?: string | null;
 }
 
-export async function openInvoiceForDownload(invoiceId: string): Promise<void> {
+/**
+ * @param brandName Platform DBA name (platform.dba_name via useBrandName). 2026-09-02:
+ *   the invoice header used to print a hardcoded "Quantix Platform", so a deployment
+ *   trading under any other name issued invoices in the wrong company's name.
+ */
+export async function openInvoiceForDownload(invoiceId: string, brandName: string): Promise<void> {
   const res = await merchantSelf.downloadInvoice(invoiceId);
   const data = res.data as InvoicePdfPayload | undefined;
   if (!data) throw new Error('Invoice data missing from response.');
@@ -80,7 +85,7 @@ export async function openInvoiceForDownload(invoiceId: string): Promise<void> {
     <p style="color:#666;font-size:13px;margin-top:4px">#${escapeHtml(data.invoice.invoiceNumber)}</p>
   </div>
   <div style="text-align:right">
-    <h2>Quantix Platform</h2>
+    <h2>${escapeHtml(brandName)}</h2>
     <p style="font-size:12px;color:#666">Token-based billing</p>
     <p style="margin-top:8px"><span class="status ${data.invoice.status.toLowerCase()}">${escapeHtml(data.invoice.status)}</span></p>
   </div>

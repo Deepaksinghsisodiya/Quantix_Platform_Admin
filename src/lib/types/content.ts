@@ -48,15 +48,23 @@ export interface HelpArticle {
 }
 
 /** Frequently asked question entry. */
+/**
+ * 2026-09-05 (content Phase 2): re-shaped to mirror the API's FaqDto.
+ *
+ * The old declaration used `id` / `order` / `isPublished`, none of which the API has ever sent
+ * (it sends `faqId` / `sortOrder` / `isActive`). Nothing noticed, because the FAQ page rendered
+ * twelve hardcoded objects and made no network call at all.
+ */
 export interface FAQ {
-  readonly id: string;
+  readonly faqId: string;
   readonly question: string;
   readonly answer: string;
   readonly category: string;
-  readonly order: number;
-  readonly isPublished: boolean;
+  /** Enterprise / Standalone, or null when it applies to every merchant type. */
+  readonly merchantType: string | null;
+  readonly sortOrder: number;
+  readonly isActive: boolean;
   readonly createdAt: string;
-  readonly updatedAt: string;
 }
 
 /** Marketing or landing page content block. */

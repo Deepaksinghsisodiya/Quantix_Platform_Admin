@@ -1,14 +1,28 @@
 import { baseApi } from '../../../core/services/baseApi';
 import type { ApiResponse, PaginatedResult, PaginationParams } from '@/lib/types/common';
-import type { Invoice, SubscriptionPlan, TokenPricing } from '@/lib/types';
+import type { Invoice, SubscriptionPlan } from '@/lib/types';
 
+/**
+ * GET /billing/dashboard — mirrors the server's `BillingDashboardDto` 1:1.
+ * 2026-09-04: the previous shape here (totalRevenue / monthlyRevenue / activeSubscriptions)
+ * was never what the API sent; Billing Overview worked only because it re-declared the real
+ * shape locally. One definition now, shared by Billing Overview and the Finance desktop.
+ */
 export interface BillingDashboard {
-  readonly totalRevenue: number;
-  readonly monthlyRevenue: number;
-  readonly outstandingAmount: number;
-  readonly overdueInvoices: number;
-  readonly activeSubscriptions: number;
-  readonly revenueByMonth: readonly { readonly month: string; readonly amount: number }[];
+  readonly totalInvoiced: number;
+  readonly collected: number;
+  readonly outstanding: number;
+  readonly overdue: number;
+  readonly overdueCount: number;
+  readonly outstandingCount: number;
+  readonly currencyCode: string;
+  /** Percent change vs the previous month; null when there is no prior-month baseline. */
+  readonly totalInvoicedChangePercent: number | null;
+  readonly collectedChangePercent: number | null;
+  readonly revenueByType: readonly { readonly name: string; readonly amount: number }[];
+  readonly revenueByMonth: readonly { readonly month: string; readonly period: string; readonly amount: number }[];
+  readonly periodStart: string;
+  readonly generatedAt: string;
 }
 
 export interface InvoiceListParams extends Partial<PaginationParams> {
@@ -31,17 +45,20 @@ export interface CreatePlanDto {
   readonly maxTerminals: number;
 }
 
-export interface UpdateTokenPricingDto {
-  readonly id: string;
-  readonly tier: string;
-  readonly validityDays: number;
-  readonly price: number;
-  readonly currency: string;
-  readonly bulkDiscounts: readonly { readonly minQuantity: number; readonly discountPercent: number }[];
-}
 
 export const billingApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // 2026-08-13: live escalation-stage counts (replaced a hardcoded MOCK_ESCALATION array).
+    getEscalationSummary: builder.query<ApiResponse<readonly {
+      stage: string; dayThreshold: number; action: string; invoiceCount: number; totalAmount: number;
+    }[]>, void>({
+      query: () => ({
+        url: '/api/v1/billing/invoices/escalation-summary',
+        method: 'GET',
+      }),
+      providesTags: ['Invoices' as any],
+    }),
+
     getBillingDashboard: builder.query<ApiResponse<BillingDashboard>, void>({
       query: () => ({
         url: '/api/v1/billing/dashboard',
@@ -99,40 +116,6 @@ export const billingApi = baseApi.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: ['Plans'],
-    }),
-
-    getTokenPricing: builder.query<ApiResponse<readonly TokenPricing[]>, void>({
-      query: () => ({
-        url: '/api/v1/billing/token-pricing',
-        method: 'GET',
-      }),
-      providesTags: ['Tokens'],
-    }),
-
-    createTokenPricing: builder.mutation<ApiResponse<TokenPricing>, Omit<UpdateTokenPricingDto, 'id'>>({
-      query: (data) => ({
-        url: '/api/v1/billing/token-pricing',
-        method: 'POST',
-        data,
-      }),
-      invalidatesTags: ['Tokens'],
-    }),
-
-    updateTokenPricing: builder.mutation<ApiResponse<TokenPricing>, UpdateTokenPricingDto>({
-      query: (data) => ({
-        url: `/api/v1/billing/token-pricing/${data.id}`,
-        method: 'PUT',
-        data,
-      }),
-      invalidatesTags: ['Tokens'],
-    }),
-
-    deleteTokenPricing: builder.mutation<ApiResponse<{ success: boolean }>, string>({
-      query: (id) => ({
-        url: `/api/v1/billing/token-pricing/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Tokens'],
     }),
 
     markInvoicePaid: builder.mutation<ApiResponse<Invoice>, { invoiceId: string; paymentRef: string }>({
@@ -229,16 +212,13 @@ export const billingApi = baseApi.injectEndpoints({
 
 export const {
   useGetBillingDashboardQuery,
+  useGetEscalationSummaryQuery,
   useGetInvoicesQuery,
   useGetInvoiceQuery,
   useGetPlansQuery,
   useCreatePlanMutation,
   useUpdatePlanMutation,
   useDeletePlanMutation,
-  useGetTokenPricingQuery,
-  useCreateTokenPricingMutation,
-  useUpdateTokenPricingMutation,
-  useDeleteTokenPricingMutation,
   useMarkInvoicePaidMutation,
   useRetryPaymentMutation,
   useSendPaymentReminderMutation,

@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { canAccess } from '@/lib/utils/permissions';
 import { useDashboardWidgetStore } from '@/lib/store/dashboardWidgetStore';
+import { useDashboardLayoutSync } from '@/lib/store/useDashboardLayoutSync';
 import type { DashboardViewPreset } from '@/lib/store/dashboardWidgetStore';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useGetSetupStatusQuery } from '@/modules/settings/services/settingsApi';
 import { ROUTES } from '@/lib/config/routes';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
@@ -130,19 +132,17 @@ interface ServiceStatus {
 }
 
 // Adapt functions (bridging server shapes to charts) with bulletproof Array.isArray fallbacks
-function adaptRevenueData(metrics: RevenueMetricsDto | undefined, filter: 'All' | MerchantType): any[] {
+// 2026-08-30: the server's revenue lines carry a period TOTAL and no per-type split, so
+// the old "enterprise vs standalone" stacking was invented (with 'All' dumping every
+// dollar into the enterprise series). One honest series per period; the merchant-type
+// filter is already applied server-side, so the total IS the filtered total.
+function adaptRevenueData(metrics: RevenueMetricsDto | undefined): any[] {
   if (!metrics || !metrics.lines || !Array.isArray(metrics.lines)) return [];
-  return metrics.lines.map((l) => {
-    const enterprise = filter === 'Enterprise' ? l.amount : filter === 'All' ? l.amount : 0;
-    const standalone = filter === 'Standalone' ? l.amount : 0;
-    return {
-      month: l.label,
-      enterprise,
-      standalone,
-      mrr: l.amount,
-      arr: l.amount * 12,
-    };
-  });
+  return metrics.lines.map((l) => ({
+    month: l.label,
+    amount: l.amount,
+    merchantCount: l.merchantCount,
+  }));
 }
 
 function adaptGrowthData(growth: MerchantGrowthDto | undefined): any[] {
@@ -164,16 +164,16 @@ function adaptSourceAttribution(growth: MerchantGrowthDto | undefined): any[] {
   }));
 }
 
+// 2026-08-30: the server returns ONE retention figure per cohort (merchants signed up,
+// how many are still active). The old adapter fanned that single number across invented
+// M0/M1/M2/M3/M6/M12 columns — a fabricated retention curve. Honest shape only.
 function adaptCohortRetention(growth: MerchantGrowthDto | undefined): any[] {
   if (!growth || !growth.cohorts || !Array.isArray(growth.cohorts)) return [];
   return growth.cohorts.map((c) => ({
     cohort: c.cohortLabel,
-    month0: 100,
-    month1: c.retentionRate,
-    month2: c.retentionRate,
-    month3: c.retentionRate,
-    month6: c.retentionRate,
-    month12: c.retentionRate,
+    merchantCount: c.merchantCount,
+    stillActive: c.stillActive,
+    retentionRate: c.retentionRate,
   }));
 }
 
@@ -199,12 +199,15 @@ function adaptMerchantHealth(rows: readonly MerchantHealthDto[] | undefined): an
   });
 }
 
+// 2026-08-30: the wire has periodStart/periodEnd/commissionAmount/transactionCount —
+// the old adapter read t.month / t.amount (both undefined) and hardcoded `rate: 0`,
+// which drew a permanently-flat "Commission Rate" line. Volume is the real second series.
 function adaptCommissionTrend(summary: CommissionDashboardDto | undefined): any[] {
   if (!summary || !summary.trend || !Array.isArray(summary.trend)) return [];
   return summary.trend.map((t) => ({
-    month: t.month,
-    earned: t.amount,
-    rate: 0,
+    month: new Date(t.periodStart).toLocaleDateString(undefined, { month: 'short', year: '2-digit' }),
+    earned: t.commissionAmount,
+    transactionCount: t.transactionCount,
   }));
 }
 
@@ -369,7 +372,7 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
                   checked={widget.visible}
                   onChange={() => toggleWidget(widget.id)}
                   className="h-4 w-4 rounded border-gray-300 text-accent-600 focus:ring-accent-500 dark:border-gray-800"
-                  aria-label={`Toggle ${widget.visible}`}
+                  aria-label={`${widget.visible ? 'Hide' : 'Show'} ${widget.label}`}
                 />
                 {widget.visible ? (
                   <Eye className="h-4 w-4 text-gray-400" />
@@ -458,9 +461,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const navigate = useNavigate();
   const { widgets } = useDashboardWidgetStore();
+  // 2026-09-04: "Customize" is saved on the user's account, not just this browser.
+  useDashboardLayoutSync();
   const { user, permissions } = useAuthStore();
   const [showWidgetConfig, setShowWidgetConfig] = useState(false);
   const [showTypeBreakdown, setShowTypeBreakdown] = useState(false);
+
+  // 2026-08-30: deployment currency (platform.currency, frozen at setup) — the fallback
+  // for every money figure until its own payload arrives. Was a hardcoded 'USD' in 15
+  // places, which would misprice the whole dashboard in a non-USD deployment.
+  const { data: setupRes } = useGetSetupStatusQuery();
+  const platformCurrency = setupRes?.data?.currency || undefined;
 
   const summary: PlatformDashboardDto | undefined = summaryQuery.data?.data;
   const growth: MerchantGrowthDto | undefined = growthQuery.data?.data;
@@ -473,7 +484,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Derive KPI data
   const kpiCards: KpiCardData[] = useMemo(() => {
-    const currency = summary?.revenueCurrency ?? 'USD';
+    const currency = summary?.revenueCurrency ?? platformCurrency;
     return [
       {
         title: 'Total Active Merchants',
@@ -499,22 +510,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {
         title: 'Total Revenue (Month)',
         icon: <DollarSign className="h-3.5 w-3.5" />,
-        value: formatCurrency(summary?.totalRevenueThisMonth ?? 0, currency),
+        value: formatCurrencyOrDash(summary?.totalRevenueThisMonth ?? 0, currency),
         details: [
-          { label: 'Subscription', value: formatCurrency(summary?.subscriptionRevenue ?? 0, currency) },
-          { label: 'Token Sales', value: formatCurrency(summary?.tokenRevenue ?? 0, currency) },
-          { label: 'Commission', value: formatCurrency(summary?.commissionRevenue ?? 0, currency) },
+          { label: 'Subscription', value: formatCurrencyOrDash(summary?.subscriptionRevenue ?? 0, currency) },
+          { label: 'Token Sales', value: formatCurrencyOrDash(summary?.tokenRevenue ?? 0, currency) },
+          { label: 'Commission', value: formatCurrencyOrDash(summary?.commissionRevenue ?? 0, currency) },
         ],
         color: '#8b5cf6',
       },
       {
         title: 'MRR / ARR',
         icon: <Activity className="h-3.5 w-3.5" />,
-        value: formatCurrency(summary?.mrr ?? 0, currency),
+        value: formatCurrencyOrDash(summary?.mrr ?? 0, currency),
         details: [
-          { label: 'ARR', value: formatCurrency(summary?.arr ?? 0, currency) },
-          { label: 'Enterprise ARPU', value: formatCurrency(revenue?.enterpriseARPU ?? 0, currency) },
-          { label: 'Standalone ARPU', value: formatCurrency(revenue?.standaloneARPU ?? 0, currency) },
+          { label: 'ARR', value: formatCurrencyOrDash(summary?.arr ?? 0, currency) },
+          { label: 'Enterprise ARPU', value: formatCurrencyOrDash(revenue?.enterpriseARPU ?? 0, currency) },
+          { label: 'Standalone ARPU', value: formatCurrencyOrDash(revenue?.standaloneARPU ?? 0, currency) },
         ],
         color: '#22c55e',
       },
@@ -528,35 +539,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         ],
         color: '#f59e0b',
       },
-      {
-        title: 'Token Generation',
-        icon: <Key className="h-3.5 w-3.5" />,
-        value: (tokenMetrics?.totalGenerated ?? 0).toLocaleString(),
-        details: [
-          { label: 'Active', value: (tokenMetrics?.activeTokens ?? 0).toLocaleString() },
-          { label: 'Expired', value: (tokenMetrics?.expiredTokens ?? 0).toLocaleString() },
-          { label: 'Revenue', value: formatCurrency(tokenMetrics?.revenueFromTokens ?? 0, tokenMetrics?.revenueCurrency ?? 'USD') },
-        ],
-        color: '#ec4899',
-      },
+      // 2026-08-30: tokens exist only for Standalone merchants, and the token-metrics
+      // endpoint is platform-wide (no type filter). Under an Enterprise filter this card
+      // used to report Standalone token revenue right beside a $0.00 total — dropped
+      // instead of showing a figure the filter can't honour.
+      ...(merchantTypeFilter === 'Enterprise'
+        ? []
+        : [{
+            title: 'Token Generation',
+            icon: <Key className="h-3.5 w-3.5" />,
+            value: (tokenMetrics?.totalGenerated ?? 0).toLocaleString(),
+            details: [
+              { label: 'Active', value: (tokenMetrics?.activeTokens ?? 0).toLocaleString() },
+              { label: 'Expired', value: (tokenMetrics?.expiredTokens ?? 0).toLocaleString() },
+              { label: 'Revenue', value: formatCurrencyOrDash(tokenMetrics?.revenueFromTokens ?? 0, tokenMetrics?.revenueCurrency ?? platformCurrency) },
+            ],
+            color: '#ec4899',
+          }]),
     ];
-  }, [summary, revenue, tokenMetrics]);
+  }, [summary, revenue, tokenMetrics, platformCurrency, merchantTypeFilter]);
 
   // Derived Quick Actions (with permission filtering)
   const allQuickActions: QuickAction[] = useMemo(
     () => [
       {
-        label: 'Register Enterprise Merchant',
+        // 2026-08-12: the two register actions collapsed into the unified onboarding wizard.
+        label: 'New Merchant Signup',
         icon: <Plus className="h-4 w-4" />,
-        route: ROUTES.TENANTS.REGISTER_ENTERPRISE,
+        route: '/merchants/signups/new',
         color: 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/10',
-        permission: { module: 'merchants', action: 'create' },
-      },
-      {
-        label: 'Register Standalone Merchant',
-        icon: <Plus className="h-4 w-4" />,
-        route: ROUTES.TENANTS.REGISTER_STANDALONE,
-        color: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/10',
         permission: { module: 'merchants', action: 'create' },
       },
       {
@@ -569,7 +580,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {
         label: 'View Open Tickets',
         icon: <TicketCheck className="h-4 w-4" />,
-        route: ROUTES.SUPPORT.TICKETS,
+        route: ROUTES.SUPPORT.QUEUE,
         color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200',
         permission: { module: 'tickets', action: 'view' },
       },
@@ -616,7 +627,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   );
 
   // Adapt query results
-  const revenueData = useMemo(() => adaptRevenueData(revenue, merchantTypeFilter), [revenue, merchantTypeFilter]);
+  const revenueData = useMemo(() => adaptRevenueData(revenue), [revenue]);
   const growthData = useMemo(() => adaptGrowthData(growth), [growth]);
   const sourceAttribution = useMemo(() => adaptSourceAttribution(growth), [growth]);
   const cohortRetention = useMemo(() => adaptCohortRetention(growth), [growth]);
@@ -630,20 +641,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return heatmapData.filter((t) => t.merchantType === merchantTypeFilter);
   }, [heatmapData, merchantTypeFilter]);
 
+  // 2026-08-30: this DTO carries no currency of its own — commission is booked in the
+  // deployment currency. `totalEarnedCurrentMonth` never existed on the wire either
+  // (server: totalEarnedThisMonth), so "This Month" always rendered 0.
   const commissionStats = useMemo(() => {
-    const currency = commission?.currencyCode ?? 'USD';
+    const currency = platformCurrency;
     return {
-      totalEarnedMonth: formatCurrency(commission?.totalEarnedCurrentMonth ?? 0, currency),
-      pendingSettlement: formatCurrency(commission?.pendingSettlement ?? 0, currency),
-      ytdEarned: formatCurrency(
-        commissionTrend.reduce((sum, t) => sum + t.earned, 0),
-        currency,
-      ),
-      lastMonth: formatCurrency(commissionTrend[commissionTrend.length - 1]?.earned ?? 0, currency),
+      totalEarnedMonth: formatCurrencyOrDash(commission?.totalEarnedThisMonth ?? 0, currency),
+      pendingSettlement: formatCurrencyOrDash(commission?.pendingSettlement ?? 0, currency),
+      // All-time earned comes straight from the server; the trend is a windowed series
+      // and summing it is not the same figure.
+      ytdEarned: formatCurrencyOrDash(commission?.totalEarned ?? 0, currency),
+      lastMonth: formatCurrencyOrDash(commissionTrend[commissionTrend.length - 1]?.earned ?? 0, currency),
     };
-  }, [commission, commissionTrend]);
+  }, [commission, commissionTrend, platformCurrency]);
 
-  const statusPageUrl = 'https://status.quantix.io';
+  // 2026-08-30: the "Status Page" link pointed at a hardcoded https://status.quantix.io
+  // that does not exist (and hardcoded the brand, which is operator-configurable). The
+  // dead link is removed; System Health below is the real, measured status.
 
   // Mapping slots to sections
   const widgetSlots: Record<string, React.ReactNode> = {
@@ -663,7 +678,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         title="Revenue Trend"
         extra={<span className="text-xs font-semibold text-gray-500">By period</span>}
       >
-        <RevenueChart data={revenueData} period={dateRange} loading={revenueQuery.isLoading} />
+        <RevenueChart
+          data={revenueData}
+          period={dateRange}
+          loading={revenueQuery.isLoading}
+          currency={revenue?.currencyCode ?? platformCurrency}
+          seriesLabel={merchantTypeFilter === 'All' ? 'Revenue (all merchants)' : `Revenue (${merchantTypeFilter})`}
+        />
       </ATMCard>
     ),
     'growth-chart': (
@@ -807,12 +828,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <StatMini label="Last Month" value={commissionStats.lastMonth} />
           <StatMini label="Pending" value={commissionStats.pendingSettlement} />
         </div>
-        <CommissionChart data={commissionTrend} loading={commissionQuery.isLoading} />
+        <CommissionChart data={commissionTrend} loading={commissionQuery.isLoading} currency={platformCurrency} />
 
         <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Top Earning Merchants</p>
           <div className="space-y-1.5">
-            {(commission?.topMerchants ?? []).slice(0, 5).map((m, i) => (
+            {(commission?.byMerchant ?? []).slice(0, 5).map((m, i) => (
               <div key={m.merchantId} className="flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-2">
                   <span className="w-4 text-gray-400 dark:text-gray-500">{i + 1}.</span>
@@ -821,12 +842,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="flex items-center gap-3">
                   <span className="text-gray-500 dark:text-gray-400 font-medium">{m.transactionCount} txns</span>
                   <span className="font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrency(m.amount, commission?.currencyCode ?? 'USD')}
+                    {formatCurrencyOrDash(m.totalCommission, platformCurrency)}
                   </span>
                 </div>
               </div>
             ))}
-            {(!commission || (commission.topMerchants?.length ?? 0) === 0) && (
+            {(!commission || (commission.byMerchant?.length ?? 0) === 0) && (
               <p className="text-xs text-gray-400 dark:text-gray-500 italic">No commission earned yet.</p>
             )}
           </div>
@@ -835,12 +856,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
           <p className="text-xs font-bold text-gray-400 dark:text-gray-550 uppercase tracking-wider mb-2">Rate Distribution</p>
           <div className="flex gap-2">
+            {/* 2026-08-30: `d.bucket` did not exist on the wire (server sends rateBucket),
+                so every row rendered a blank label AND carried key={undefined} — the
+                source of React's "unique key" warning for this whole page. */}
             {(commission?.rateDistribution ?? []).map((d) => (
               <div
-                key={d.bucket}
+                key={d.rateBucket}
                 className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-center dark:border-gray-800 dark:bg-gray-950/20"
               >
-                <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{d.bucket}</p>
+                <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{d.rateBucket}</p>
                 <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{d.merchantCount} merchants</p>
               </div>
             ))}
@@ -872,9 +896,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <StatMini label="Revoked" value={(tokenMetrics?.revokedTokens ?? 0).toLocaleString()} />
           <StatMini
             label="Revenue"
-            value={formatCurrency(
+            value={formatCurrencyOrDash(
               tokenMetrics?.revenueFromTokens ?? 0,
-              tokenMetrics?.revenueCurrency ?? 'USD',
+              tokenMetrics?.revenueCurrency ?? platformCurrency,
             )}
           />
         </div>
@@ -925,26 +949,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-650 dark:text-gray-400">Subscription</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.subscriptionRevenue ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.subscriptionRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-655 dark:text-gray-400">Usage</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.usageRevenue ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.usageRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-655 dark:text-gray-400">Commission</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.commissionRevenue ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.commissionRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <hr className="border-gray-200 dark:border-gray-800" />
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-655 dark:text-gray-400">Standalone Token Sales</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.tokenSalesRevenue ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.tokenSalesRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
             </div>
@@ -956,20 +980,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-650 dark:text-gray-400">Enterprise ARPU</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.enterpriseARPU ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.enterpriseARPU ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-655 dark:text-gray-400">Standalone ARPU</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.standaloneARPU ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.standaloneARPU ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <hr className="border-gray-200 dark:border-gray-800" />
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-gray-700 dark:text-gray-300">Total in Window</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(revenue?.totalRevenue ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.totalRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
             </div>
@@ -984,7 +1008,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span className="text-gray-655 dark:text-gray-400">MRR (current)</span>
                 </div>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(revenue?.mrr ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.mrr ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
@@ -993,13 +1017,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span className="text-gray-655 dark:text-gray-400">Churn</span>
                 </div>
                 <span className="font-bold text-red-600 dark:text-red-400">
-                  -{formatCurrency(revenue?.churnRevenue ?? 0, revenue?.currencyCode ?? 'USD')}
+                  -{formatCurrencyOrDash(revenue?.churnRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
                 <span>ARR (annualised)</span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
-                  {formatCurrency(revenue?.arr ?? 0, revenue?.currencyCode ?? 'USD')}
+                  {formatCurrencyOrDash(revenue?.arr ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
             </div>
@@ -1050,15 +1074,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <> &middot; uptime {systemHealth.uptimePercent.toFixed(2)}%</>
               )}
             </span>
-            <a
-              href={statusPageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs font-bold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
-            >
-              Status Page
-              <ExternalLink className="h-3 w-3" />
-            </a>
             <StatusBadge
               status={
                 services.every((s) => s.status === 'Healthy')

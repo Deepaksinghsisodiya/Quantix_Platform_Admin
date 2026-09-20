@@ -4,12 +4,14 @@ import { Lock, Eye, EyeOff } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter/PasswordStrengthMeter';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface ChangePasswordFormProps {
   isSubmitting: boolean;
 }
 
 export const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isSubmitting }) => {
+  const brandName = useBrandName();
   const { values } = useFormikContext<{ newPassword: string }>();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -119,7 +121,7 @@ export const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isSubmit
         
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          Quantix Platform v1.0.0-alpha
+          {brandName} v1.0.0-alpha
         </p>
       </div>
     </div>

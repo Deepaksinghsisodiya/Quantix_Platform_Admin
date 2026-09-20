@@ -10,6 +10,7 @@ import {
 } from '@/modules/merchants/services/merchantSelfApi';
 import { toast } from 'sonner';
 import { openInvoiceForDownload } from './components/invoiceDownload';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface InvoiceListDto {
   invoiceId: string;
@@ -23,21 +24,30 @@ interface InvoiceListDto {
   paidAt?: string | null;
 }
 
+/**
+ * 2026-09-02: corrected against the wire. PaymentHistoryDto sends `amount`,
+ * `transactionId` and `createdAt`; this mirror declared `amountCurrency`,
+ * `paymentReference` and `processedAt`, none of which exist on the payload. The
+ * amount one was not cosmetic — `p.amountCurrency.toFixed(2)` on undefined threw a
+ * TypeError, so any merchant with a payment on file crashed this page on open.
+ */
 interface PaymentHistoryDto {
   paymentId: string;
   invoiceId: string;
   invoiceNumber: string;
-  amountCurrency: number;
+  amount: number;
   currencyCode: string;
   paymentMethod: string;
-  paymentReference: string;
+  transactionId: string;
   status: string;
-  processedAt: string;
+  createdAt: string;
 }
 
 export default function MerchantInvoicesPage() {
   const invoices = useGetSelfInvoicesQuery();
   const payments = useGetSelfPaymentsQuery();
+  // The printed invoice is issued in the deployment's trading name, not a hardcoded one.
+  const brandName = useBrandName();
 
 
   const rawInvoices = invoices.data?.data;
@@ -47,7 +57,7 @@ export default function MerchantInvoicesPage() {
 
   async function handleDownload(id: string) {
     try {
-      await openInvoiceForDownload(id);
+      await openInvoiceForDownload(id, brandName);
     } catch (err) {
       toast.error((err as Error).message ?? 'Download failed.');
     }
@@ -145,18 +155,18 @@ export default function MerchantInvoicesPage() {
                     className="border-b border-surface-100 dark:border-surface-700/50 last:border-0"
                   >
                     <td className="px-4 py-3 text-surface-600">
-                      {new Date(p.processedAt).toLocaleDateString()}
+                      {new Date(p.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{p.invoiceNumber}</td>
                     <td className="px-4 py-3">{p.paymentMethod}</td>
                     <td className="px-4 py-3 font-mono text-xs text-surface-500">
-                      {p.paymentReference}
+                      {p.transactionId || '—'}
                     </td>
                     <td className="px-4 py-3">
                       <InvoiceStatusBadge status={p.status} />
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {p.amountCurrency.toFixed(2)} {p.currencyCode}
+                      {(p.amount ?? 0).toFixed(2)} {p.currencyCode}
                     </td>
                   </tr>
                 ))}

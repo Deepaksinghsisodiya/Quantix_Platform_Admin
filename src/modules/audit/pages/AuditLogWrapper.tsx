@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useGetAuditLogsQuery, useExportAuditLogsMutation } from '../services/auditApi';
+import { useGetAuditLogsQuery, useLazyExportAuditLogsQuery } from '../services/auditApi';
 import { AuditLogView } from './AuditLogView';
 
 export interface AuditActionVariant {
@@ -38,16 +38,14 @@ export const AuditLogWrapper: React.FC = () => {
     userId: filterUser || undefined,
   });
 
-  const [exportTrigger] = useExportAuditLogsMutation();
+  const [exportTrigger] = useLazyExportAuditLogsQuery();
 
   // 2. Adapt the fetched entries
+  // 2026-09-08: GET /audit/logs answers a plain array of ActivityLogDto.
   const rows: readonly AuditRow[] = useMemo(() => {
-    const rawData = response?.data;
-    const items = rawData && 'items' in rawData && Array.isArray((rawData as any).items) 
-      ? (rawData as any).items 
-      : Array.isArray(rawData) ? rawData : [];
+    const items = response?.data ?? [];
 
-    return items.map((log: any) => {
+    return items.map((log) => {
       const userName = log.userName ?? log.userId ?? 'system';
       const initials = userName
         .split(' ')
@@ -58,13 +56,13 @@ export const AuditLogWrapper: React.FC = () => {
         .toUpperCase() || 'SY';
 
       return {
-        id: log.logId || log.id || '',
-        timestamp: log.createdAt || log.timestamp || '',
+        id: log.logId,
+        timestamp: log.createdAt,
         userName,
         userAvatar: initials,
         action: log.action || '',
-        entityType: log.entityType || log.resource || '',
-        entityId: log.entityId || log.resourceId || '',
+        entityType: log.entityType || '',
+        entityId: log.entityId || '',
         details: log.details || '',
         ipAddress: log.ipAddress || '',
       };
@@ -90,23 +88,33 @@ export const AuditLogWrapper: React.FC = () => {
 
   const hasFilters = !!(filterUser || filterAction || filterEntity || filterDateFrom || filterDateTo || search);
 
+  // 2026-09-08: the API returns the export TEXT (GET /audit/logs/export?format=), not a
+  // download link; the old code posted a body and then opened a `downloadUrl` that was never
+  // in the response. The same filter as the list is exported, capped at 5,000 rows.
   const onExport = async (format: 'CSV' | 'JSON') => {
     try {
-      const defaultFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
-      const defaultTo = new Date().toISOString().split('T')[0] || '';
       const res = await exportTrigger({
-        from: filterDateFrom || defaultFrom,
-        to: filterDateTo || defaultTo,
-        format,
+        format: format === 'CSV' ? 'csv' : 'json',
+        page: 1,
+        pageSize: 5000,
+        fromDate: filterDateFrom || undefined,
+        toDate: filterDateTo ? `${filterDateTo}T23:59:59Z` : undefined,
         action: filterAction || undefined,
+        entityType: filterEntity || undefined,
         userId: filterUser || undefined,
-        resource: filterEntity || undefined,
       }).unwrap();
 
-
-      if (res.success && res.data?.downloadUrl) {
-        window.open(res.data.downloadUrl, '_blank', 'noopener,noreferrer');
-        toast.success(`${format} export ready`);
+      if (res.success && typeof res.data === 'string') {
+        const blob = new Blob([res.data], { type: format === 'CSV' ? 'text/csv;charset=utf-8' : 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.${format.toLowerCase()}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`${format} export downloaded`);
       } else {
         toast.error(`Export ${format} failed`);
       }

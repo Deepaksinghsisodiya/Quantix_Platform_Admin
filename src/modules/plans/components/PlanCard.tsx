@@ -1,6 +1,7 @@
 import React from 'react';
+import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
@@ -22,6 +23,8 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   onToggleStatus,
   onViewDetails,
 }) => {
+  // 2026-09-05: currency always comes from configuration (platform.currency).
+  const { currency } = useDeploymentCurrency();
   const annualSavingsPercent =
     plan.monthlyPrice > 0
       ? Math.round((1 - plan.yearlyPrice / (plan.monthlyPrice * 12)) * 100)
@@ -90,7 +93,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         <div className="space-y-1.5 cursor-pointer" onClick={() => onViewDetails(plan)}>
           <div className="flex items-baseline">
             <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {formatCurrency(plan.monthlyPrice)}
+              {formatCurrencyOrDash(plan.monthlyPrice, currency)}
             </span>
             <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 ml-1">/mo</span>
           </div>
@@ -98,7 +101,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           <div className="flex items-center justify-between">
             {annualSavingsPercent > 0 ? (
               <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span>Billed {formatCurrency(plan.yearlyPrice)}/yr</span>
+                <span>Billed {formatCurrencyOrDash(plan.yearlyPrice, currency)}/yr</span>
                 <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black px-1.5 py-0.2 rounded-full">
                   Save {annualSavingsPercent}%
                 </span>

@@ -2,16 +2,11 @@ import { useCallback } from 'react';
 import {
   useGetMerchantsQuery,
   useGetMerchantQuery,
-  useRegisterEnterpriseMutation,
-  useRegisterStandaloneMutation,
   useActivateMerchantMutation,
   useSuspendMerchantMutation,
   useReactivateMerchantWithResolutionMutation,
-  useCancelMerchantMutation,
   useRetryProvisioningMutation,
-  useDeleteMerchantMutation,
   useChangePlanMutation,
-  useChangeTierMutation,
   useGetMerchantTimelineQuery,
 } from '@/modules/merchants/services/merchantApi';
 import type { MerchantFilter, MerchantCreateEnterprise, MerchantCreateStandalone } from '@/lib/types';
@@ -41,16 +36,6 @@ export function useMerchant(id: string | undefined) {
   });
 }
 
-export function useCreateEnterpriseMerchant() {
-  const [trigger, result] = useRegisterEnterpriseMutation();
-  return wrapMutation(trigger, result);
-}
-
-export function useCreateStandaloneMerchant() {
-  const [trigger, result] = useRegisterStandaloneMutation();
-  return wrapMutation(trigger, result);
-}
-
 export function useActivateMerchant() {
   const [trigger, result] = useActivateMerchantMutation();
   return wrapMutation(trigger, result);
@@ -78,43 +63,18 @@ export function useReactivateMerchant() {
   return wrapMutation(adaptedTrigger as any, result);
 }
 
-export function useCancelMerchant() {
-  const [trigger, result] = useCancelMerchantMutation();
-  const adaptedTrigger = useCallback(
-    async ({ merchantId, reason }: { merchantId: string; reason: string }) => {
-      return await trigger({ id: merchantId, reason });
-    },
-    [trigger]
-  );
-  return wrapMutation(adaptedTrigger as any, result);
-}
-
+// 2026-08-30: useCancelMerchant/useDeleteMerchant/useChangeTier removed (retired exits +
+// tier fiction; deboarding is the one exit path, plans the only subscription unit).
 export function useRetryProvisioning() {
   const [trigger, result] = useRetryProvisioningMutation();
-  return wrapMutation(trigger, result);
-}
-
-export function useDeleteMerchant() {
-  const [trigger, result] = useDeleteMerchantMutation();
   return wrapMutation(trigger, result);
 }
 
 export function useChangePlan() {
   const [trigger, result] = useChangePlanMutation();
   const adaptedTrigger = useCallback(
-    async ({ merchantId, newPlan }: { merchantId: string; newPlan: string }) => {
-      return await trigger({ id: merchantId, plan: newPlan });
-    },
-    [trigger]
-  );
-  return wrapMutation(adaptedTrigger as any, result);
-}
-
-export function useChangeTier() {
-  const [trigger, result] = useChangeTierMutation();
-  const adaptedTrigger = useCallback(
-    async ({ merchantId, newTier }: { merchantId: string; newTier: string }) => {
-      return await trigger({ id: merchantId, tier: newTier });
+    async ({ merchantId, newPlanId, dailyPriceOverride, reason }: { merchantId: string; newPlanId: string; dailyPriceOverride?: number; reason?: string }) => {
+      return await trigger({ id: merchantId, newPlanId, dailyPriceOverride, reason });
     },
     [trigger]
   );

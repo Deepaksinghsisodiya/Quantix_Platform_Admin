@@ -48,6 +48,15 @@ function applyPreset(preset: DashboardViewPreset): WidgetConfig[] {
   }));
 }
 
+const isPreset = (value: string): value is DashboardViewPreset =>
+  Object.prototype.hasOwnProperty.call(PRESET_CONFIGS, value);
+
+/** What the server stores per user — ids, visibility and order only; labels stay in code. */
+export interface SavedDashboardLayout {
+  readonly activePreset: string;
+  readonly widgets: readonly { readonly id: string; readonly visible: boolean; readonly order: number }[];
+}
+
 const loadSavedWidgets = (): DashboardWidgetState => {
   if (typeof window === 'undefined') return { activePreset: 'Default', widgets: [...ALL_WIDGETS] };
   try {
@@ -107,10 +116,28 @@ const dashboardWidgetSlice = createSlice({
       state.widgets = [...ALL_WIDGETS];
       persistWidgets(state);
     },
+    /**
+     * 2026-09-04: apply the layout saved on the user's account (see useDashboardLayoutSync).
+     * Ids the code no longer knows are dropped; widgets added since the save go to the end,
+     * visible, so a new widget is never silently hidden by an old layout.
+     */
+    hydrateLayout: (state, action: PayloadAction<SavedDashboardLayout>) => {
+      const saved = new Map(action.payload.widgets.map((w) => [w.id, w]));
+      const merged = ALL_WIDGETS.map((w) => {
+        const s = saved.get(w.id);
+        return s
+          ? { ...w, visible: s.visible, order: s.order }
+          : { ...w, visible: true, order: Number.MAX_SAFE_INTEGER };
+      });
+      merged.sort((a, b) => a.order - b.order);
+      state.widgets = merged.map((w, i) => ({ ...w, order: i }));
+      state.activePreset = isPreset(action.payload.activePreset) ? action.payload.activePreset : 'Default';
+      persistWidgets(state);
+    },
   },
 });
 
-export const { setPreset, toggleWidget, reorderWidget, resetToDefault } = dashboardWidgetSlice.actions;
+export const { setPreset, toggleWidget, reorderWidget, resetToDefault, hydrateLayout } = dashboardWidgetSlice.actions;
 export default dashboardWidgetSlice.reducer;
 export const selectActivePreset = (state: any) => state.dashboardWidgets.activePreset;
 export const selectWidgets = (state: any) => state.dashboardWidgets.widgets;

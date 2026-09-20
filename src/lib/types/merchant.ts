@@ -94,7 +94,7 @@ export interface MerchantCreateStandalone {
   readonly email: string;
   readonly phone: string;
   readonly country: string;
-  readonly initialTokenTier: string;
+  // 2026-08-29: initialTokenTier removed — tokens derive from the subscribed plan.
   readonly initialTokenValidityDays: number;
 }
 

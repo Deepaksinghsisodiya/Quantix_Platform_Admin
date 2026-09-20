@@ -34,9 +34,12 @@ export const ATMCard: React.FC<Props> = ({
   };
 
   return (
+    // No overflow-hidden here: select/dropdown menus render absolutely INSIDE cards and were
+    // clipped invisible at the card edge. Cards that need clipping (rounded table corners)
+    // pass `overflow-hidden` via className explicitly.
     <div
       className={`
-        relative bg-[var(--zen-surface)] border border-[var(--zen-border)] rounded-xl overflow-hidden dark:bg-[var(--zen-card)]
+        relative bg-[var(--zen-surface)] border border-[var(--zen-border)] rounded-xl dark:bg-[var(--zen-card)]
         ${shadow ? 'shadow-sm shadow-black/5 hover:shadow-md hover:shadow-black/5 transition-all duration-300' : ''}
         ${className}
       `}

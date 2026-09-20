@@ -1,10 +1,12 @@
 import React from 'react';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
+  const brandName = useBrandName();
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
       {/* Premium Ambient Glows */}
@@ -21,7 +23,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          Quantix Platform v1.0.0-alpha
+          {brandName} v1.0.0-alpha
         </p>
       </div>
     </div>

@@ -2,24 +2,21 @@ import {
   useGetTicketsQuery,
   useGetTicketQuery,
   useCreateTicketMutation,
-  useAssignTicketMutation,
   useGetTicketMetricsQuery,
   useGetLeadsQuery,
-  useAddTicketMessageMutation,
+  useAddTicketCommentMutation,
   useUpdateTicketMutation,
+  useResolveTicketMutation,
+  useCloseTicketMutation,
   useEscalateTicketMutation,
-  useAutoAssignTicketMutation,
   useUpdateLeadMutation,
-  type CreateTicketDto,
-  type AssignTicketDto,
+  type TicketListParams,
   type MetricsParams,
   type LeadParams,
 } from '@/modules/helpdesk/services/helpdeskApi';
-import type { TicketFilter } from '@/lib/types';
-import type { PaginationParams } from '@/lib/types/common';
 import { wrapMutation } from '@/lib/utils/rtkQueryHelpers';
 
-export function useTickets(params: Partial<TicketFilter & PaginationParams> = {}) {
+export function useTickets(params: TicketListParams = {}) {
   return useGetTicketsQuery(params);
 }
 
@@ -34,10 +31,8 @@ export function useCreateTicket() {
   return wrapMutation(trigger, result);
 }
 
-export function useAssignTicket() {
-  const [trigger, result] = useAssignTicketMutation();
-  return wrapMutation(trigger, result);
-}
+// 2026-09-04: useAssignTicket / useAutoAssignTicket REMOVED with the assignment model —
+// tickets are not assigned to platform users; the handler is a name saved via useUpdateTicket.
 
 export function useTicketMetrics(params: MetricsParams = {}) {
   return useGetTicketMetricsQuery(params);
@@ -47,27 +42,33 @@ export function useLeads(params: LeadParams = {}) {
   return useGetLeadsQuery(params);
 }
 
-/** FRS-SAP-902: Add message to ticket conversation. */
-export function useAddTicketMessage() {
-  const [trigger, result] = useAddTicketMessageMutation();
+/** FRS-SAP-902: add a reply or an internal note to a ticket's thread. */
+export function useAddTicketComment() {
+  const [trigger, result] = useAddTicketCommentMutation();
   return wrapMutation(trigger, result);
 }
 
-/** FRS-SAP-902: Update ticket details (status, priority, etc.). */
+/** FRS-SAP-902: replace a ticket's status / priority / handler / SLA (full UpdateTicketDto). */
 export function useUpdateTicket() {
   const [trigger, result] = useUpdateTicketMutation();
   return wrapMutation(trigger, result);
 }
 
-/** FRS-SAP-904: Escalate a ticket to the next level (Agent→TeamLead→PlatformAdmin). */
-export function useEscalateTicket() {
-  const [trigger, result] = useEscalateTicketMutation();
+/** Mark a ticket Resolved (stamps ResolvedAt). Operators and Operations Managers both may. */
+export function useResolveTicket() {
+  const [trigger, result] = useResolveTicketMutation();
   return wrapMutation(trigger, result);
 }
 
-/** FRS-SAP-903: Auto-assign ticket based on type-aware routing rules. */
-export function useAutoAssignTicket() {
-  const [trigger, result] = useAutoAssignTicketMutation();
+/** Close a ticket (stamps ClosedAt). */
+export function useCloseTicket() {
+  const [trigger, result] = useCloseTicketMutation();
+  return wrapMutation(trigger, result);
+}
+
+/** FRS-SAP-904: escalate — hands the ticket to the Operations Managers with a reason. */
+export function useEscalateTicket() {
+  const [trigger, result] = useEscalateTicketMutation();
   return wrapMutation(trigger, result);
 }
 
@@ -76,4 +77,3 @@ export function useUpdateLead() {
   const [trigger, result] = useUpdateLeadMutation();
   return wrapMutation(trigger, result);
 }
-

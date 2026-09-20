@@ -1,26 +1,35 @@
 import React, { useCallback } from 'react';
-import { useGetDashboardSummaryQuery, useGetRevenueMetricsQuery, useGetCommissionSummaryQuery } from '../services/dashboardApi';
+import { useGetBillingDashboardQuery } from '@/modules/billing/services/billingApi';
+import { useGetWalletsQuery } from '@/modules/wallet/services/walletApi';
+import { useGetCommissionSummaryQuery } from '../services/dashboardApi';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import FinanceManagerDashboard from './FinanceManagerDashboard';
 
-export const FinanceManagerDashboardWrapper: React.FC = () => {
-  const summaryQuery = useGetDashboardSummaryQuery(undefined);
-  const revenueQuery = useGetRevenueMetricsQuery({
-    fromDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    toDate: new Date().toISOString(),
-    groupBy: 'month',
-  });
-  const commissionQuery = useGetCommissionSummaryQuery();
+/** Only the total is needed, so a single row is requested. */
+const WALLET_COUNT_ONLY = { page: 1, pageSize: 1 } as const;
 
-  const isInitialLoading = summaryQuery.isLoading || revenueQuery.isLoading || commissionQuery.isLoading;
-  const isError = summaryQuery.isError || revenueQuery.isError || commissionQuery.isError;
+/**
+ * 2026-09-04: the Finance desktop read the platform summary + revenue report and showed
+ * "Pending Invoices —" and "Active Wallets" = active merchants. It now reads the billing
+ * dashboard (invoiced / collected / outstanding / overdue, real currency), the commission
+ * summary and the wallet list — the same endpoints the pages behind its links use.
+ */
+export const FinanceManagerDashboardWrapper: React.FC = () => {
+  const billingQuery = useGetBillingDashboardQuery();
+  const commissionQuery = useGetCommissionSummaryQuery();
+  // 2026-09-05 (decision C): /wallet/summary answers with the paged envelope, so the desk
+  // reads the real total instead of counting the rows it happened to fetch.
+  const walletsQuery = useGetWalletsQuery(WALLET_COUNT_ONLY);
+
+  const isInitialLoading = billingQuery.isLoading || commissionQuery.isLoading || walletsQuery.isLoading;
+  const isError = billingQuery.isError || commissionQuery.isError || walletsQuery.isError;
 
   const handleRetry = useCallback(() => {
-    void summaryQuery.refetch();
-    void revenueQuery.refetch();
+    void billingQuery.refetch();
     void commissionQuery.refetch();
-  }, [summaryQuery, revenueQuery, commissionQuery]);
+    void walletsQuery.refetch();
+  }, [billingQuery, commissionQuery, walletsQuery]);
 
   if (isInitialLoading) {
     return (
@@ -57,7 +66,7 @@ export const FinanceManagerDashboardWrapper: React.FC = () => {
             Failed to Load Finance Dashboard
           </h2>
           <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">
-            There was an issue fetching dashboard data. Please try again.
+            The billing, commission or wallet figures could not be fetched. Please try again.
           </p>
           <button
             onClick={handleRetry}
@@ -71,13 +80,14 @@ export const FinanceManagerDashboardWrapper: React.FC = () => {
     );
   }
 
+  const walletCount = walletsQuery.data?.totalCount;
+
   return (
     <FinanceManagerDashboard
-      summary={summaryQuery.data?.data}
-      revenue={revenueQuery.data?.data}
+      billing={billingQuery.data?.data}
       commission={commissionQuery.data?.data}
-      isFetching={summaryQuery.isFetching || revenueQuery.isFetching || commissionQuery.isFetching}
-      refetch={handleRetry}
+      walletCount={walletCount}
+      isFetching={billingQuery.isFetching || commissionQuery.isFetching || walletsQuery.isFetching}
     />
   );
 };

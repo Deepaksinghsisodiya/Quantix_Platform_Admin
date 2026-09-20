@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { sendInvoice } from '@/lib/api/billing';
+import { getBlob } from '@/lib/api/client';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { formatDate } from '@/lib/utils/formatDate';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard } from '@/shared/ui/ATMCard';
@@ -79,43 +82,64 @@ export function InvoiceDetailPage() {
   const invoice = useMemo(() => {
     if (!apiInvoice) return null;
 
-    const lineItems: LineItem[] = apiInvoice.items.map((it) => ({
-      id: it.id,
-      description: it.description,
-      quantity: it.quantity,
-      unitPrice: it.unitPrice,
-      total: it.amount,
-    }));
+    // 2026-08-29: the adapter assumed a fictional shape (items[], amount/tax/total,
+    // issuedDate/paidDate) and crashed on `.items.map` — the REAL wire (InvoiceDto) sends
+    // invoiceId, subtotal/tax/totalCurrency, invoiceDate/paidAt and `lineItems` as a JSON
+    // STRING whose entries vary by invoice type (token purchase: {Description, Tokens,
+    // Currency}). Read wire-first, tolerate both casings, never assume the array exists.
+    const raw = apiInvoice as any;
 
-    const subtotal = apiInvoice.amount;
-    const tax = apiInvoice.tax;
-    const grandTotal = apiInvoice.total;
+    const parsedLines: any[] = (() => {
+      const v = raw.lineItems ?? raw.items;
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try {
+          const arr = JSON.parse(v);
+          return Array.isArray(arr) ? arr : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    })();
+
+    const lineItems: LineItem[] = parsedLines.map((it, i) => {
+      const amount = it.amount ?? it.Amount ?? it.total ?? it.Total ?? it.Currency ?? it.currency ?? 0;
+      return {
+        id: String(it.id ?? it.Id ?? i),
+        description: it.description ?? it.Description ?? '—',
+        quantity: it.quantity ?? it.Quantity ?? 1,
+        unitPrice: it.unitPrice ?? it.UnitPrice ?? amount,
+        total: amount,
+      };
+    });
+
+    const subtotal = raw.subtotalCurrency ?? raw.amount ?? 0;
+    const tax = raw.taxCurrency ?? raw.tax ?? 0;
+    const grandTotal = raw.totalCurrency ?? raw.total ?? 0;
+    const issuedDate = raw.invoiceDate ?? raw.issuedDate ?? raw.createdAt;
+    const paidDate = raw.paidAt ?? raw.paidDate ?? null;
     const taxRate = subtotal > 0 ? Math.round((tax / subtotal) * 1000) / 10 : 0;
+    // IssueStandaloneTokenAsync marks paid with "Method:Reference".
+    const paymentRef: string = raw.paymentReference ?? '';
+    const refSep = paymentRef.indexOf(':');
 
     const timeline: TimelineEvent[] = [
       {
         id: 'ev-1',
         event: 'Invoice created',
-        date: apiInvoice.issuedDate,
+        date: issuedDate,
         by: 'System',
         icon: <FileText className="h-4 w-4" />,
         color: 'text-gray-500',
       },
-      {
-        id: 'ev-2',
-        event: 'Invoice sent to merchant',
-        date: apiInvoice.issuedDate,
-        by: 'System',
-        icon: <Send className="h-4 w-4" />,
-        color: 'text-blue-500',
-      },
-      ...(apiInvoice.paidDate
+      ...(paidDate
         ? [
             {
               id: 'ev-3',
               event: 'Payment received',
-              date: apiInvoice.paidDate,
-              by: 'Auto-charge',
+              date: paidDate,
+              by: paymentRef ? paymentRef.slice(0, 40) : 'Recorded',
               icon: <CheckCircle2 className="h-4 w-4" />,
               color: 'text-emerald-500',
             } as TimelineEvent,
@@ -124,27 +148,25 @@ export function InvoiceDetailPage() {
     ];
 
     return {
-      id: apiInvoice.id,
-      invoiceNumber: apiInvoice.invoiceNumber,
-      merchantName: apiInvoice.merchantName,
-      merchantId: apiInvoice.merchantId,
-      status: apiInvoice.status,
-      issuedDate: apiInvoice.issuedDate,
-      dueDate: apiInvoice.dueDate,
-      paidDate: apiInvoice.paidDate,
-      currency: apiInvoice.currency,
+      id: raw.invoiceId ?? raw.id,
+      invoiceNumber: raw.invoiceNumber,
+      merchantName: raw.merchantName ?? raw.companyName ?? '',
+      merchantId: raw.merchantId,
+      status: raw.status,
+      issuedDate,
+      dueDate: raw.dueDate ?? null,
+      paidDate,
+      currency: raw.currencyCode ?? raw.currency ?? '',
       lineItems,
       subtotal,
       taxRate,
       tax,
       grandTotal,
-      // TODO Pass-26: hook missing — payment-detail block (method/transactionId)
-      // is not part of GET /api/v1/billing/invoices/{id}; using paidDate as stand-in.
-      payment: apiInvoice.paidDate
+      payment: paidDate
         ? {
-            method: 'On file',
-            transactionId: '—',
-            date: apiInvoice.paidDate,
+            method: refSep > 0 ? paymentRef.slice(0, refSep) : 'Recorded',
+            transactionId: refSep > 0 ? paymentRef.slice(refSep + 1) || '—' : paymentRef || '—',
+            date: paidDate,
             status: 'Completed',
           }
         : null,
@@ -152,8 +174,40 @@ export function InvoiceDetailPage() {
     };
   }, [apiInvoice]);
 
+  // 2026-08-13: both header buttons were onClick={() => {}} no-ops. Wired to the real
+  // endpoints (POST /billing/invoices/{id}/send, GET /billing/invoices/{id}/pdf).
+  const [busy, setBusy] = useState<'resend' | 'pdf' | null>(null);
+
+  const handleResend = async () => {
+    if (!invoice) return;
+    setBusy('resend');
+    try {
+      await sendInvoice(invoice.id);
+      toast.success(`Invoice ${invoice.invoiceNumber} emailed to ${invoice.merchantName}.`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to send the invoice.');
+    } finally { setBusy(null); }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!invoice) return;
+    setBusy('pdf');
+    try {
+      const blob = await getBlob(`/api/v1/billing/invoices/${invoice.id}/pdf`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoice.invoiceNumber}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to download the invoice PDF.');
+    } finally { setBusy(null); }
+  };
+
+
   if (loading) {
-    return (
+  return (
       <div className="space-y-6">
         <ATMSkeleton width="300px" height="32px" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -211,7 +265,8 @@ export function InvoiceDetailPage() {
               variant="outline"
               size="md"
               icon={Send}
-              onClick={() => {}}
+              isLoading={busy === 'resend'}
+              onClick={handleResend}
             >
               Resend
             </ATMButton>
@@ -219,7 +274,8 @@ export function InvoiceDetailPage() {
               variant="outline"
               size="md"
               icon={Download}
-              onClick={() => {}}
+              isLoading={busy === 'pdf'}
+              onClick={handleDownloadPdf}
             >
               Download PDF
             </ATMButton>
@@ -268,10 +324,10 @@ export function InvoiceDetailPage() {
                         {item.quantity}
                       </td>
                       <td className="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                        {formatCurrency(item.unitPrice)}
+                        {formatCurrencyOrDash(item.unitPrice, invoice.currency)}
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {formatCurrency(item.total)}
+                        {formatCurrencyOrDash(item.total, invoice.currency)}
                       </td>
                     </tr>
                   ))}
@@ -282,7 +338,7 @@ export function InvoiceDetailPage() {
                       Subtotal
                     </td>
                     <td className="px-4 py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(invoice.subtotal)}
+                      {formatCurrencyOrDash(invoice.subtotal, invoice.currency)}
                     </td>
                   </tr>
                   <tr>
@@ -290,7 +346,7 @@ export function InvoiceDetailPage() {
                       Tax ({invoice.taxRate}%)
                     </td>
                     <td className="px-4 py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(invoice.tax)}
+                      {formatCurrencyOrDash(invoice.tax, invoice.currency)}
                     </td>
                   </tr>
                   <tr className="border-t border-gray-200 dark:border-gray-700">
@@ -298,7 +354,7 @@ export function InvoiceDetailPage() {
                       Grand Total
                     </td>
                     <td className="px-4 py-3 text-right text-lg font-bold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(invoice.grandTotal)}
+                      {formatCurrencyOrDash(invoice.grandTotal, invoice.currency)}
                     </td>
                   </tr>
                 </tfoot>

@@ -1,24 +1,67 @@
 import { baseApi } from '../../../core/services/baseApi';
-import type { ApiResponse, PaginatedResult, PaginationParams } from '@/lib/types/common';
-import type { Ticket, TicketFilter, TicketMetrics, Lead } from '@/lib/types';
+import type { ApiResponse, PagedResponse, PaginationParams } from '@/lib/types/common';
+import type {
+  TicketListItem,
+  TicketDetail,
+  TicketComment,
+  TicketFilter,
+  TicketMetrics,
+  TicketStatus,
+  TicketPriority,
+  CommentAuthorType,
+  Lead,
+} from '@/lib/types';
 
+/**
+ * 2026-09-04: every ticket endpoint here speaks the API's own contract —
+ *   • GET /helpdesk/tickets answers with the PagedResponse envelope (data + totalCount);
+ *     `escalated=true` lists the tickets handed to the Operations Managers that are open;
+ *   • PUT /helpdesk/tickets/{id} takes the FULL UpdateTicketDto (the server replaces
+ *     status / priority / handler / SLA wholesale, so callers must send current values);
+ *   • POST …/comment takes AddCommentDto (author id + type, internal flag);
+ *   • Resolved and Closed are their own endpoints (they stamp ResolvedAt / ClosedAt).
+ * Assignment endpoints (assign / auto-assign) were REMOVED with the assignment model —
+ * tickets are not assigned to platform users; the handler is a name on the ticket.
+ */
+
+export interface TicketListParams extends TicketFilter {
+  readonly page?: number;
+  readonly pageSize?: number;
+}
+
+/** Mirrors the server's CreateTicketDto. 2026-09-08: `message` was not a field the API reads - it is `description`. */
 export interface CreateTicketDto {
   readonly merchantId: string;
   readonly subject: string;
   readonly category: string;
   readonly priority: string;
-  readonly message: string;
+  readonly description: string;
 }
 
-export interface AssignTicketDto {
+/** Mirrors the server's UpdateTicketDto — a full replacement, not a patch. */
+export interface UpdateTicketDto {
+  readonly status: TicketStatus;
+  readonly priority: TicketPriority;
+  readonly category?: string | null;
+  /** Who is working the ticket, by name (may be outside the platform). */
+  readonly handledBy?: string | null;
+  readonly handlingRemarks?: string | null;
+  readonly slaDeadline?: string | null;
+}
+
+/** Mirrors the server's AddCommentDto. */
+export interface AddCommentDto {
   readonly ticketId: string;
-  readonly agentId: string;
+  readonly authorId: string;
+  readonly authorType: CommentAuthorType;
+  readonly content: string;
+  readonly isInternal: boolean;
 }
 
 export interface MetricsParams {
-  readonly from?: string;
-  readonly to?: string;
-  readonly agentId?: string;
+  readonly fromDate?: string;
+  readonly toDate?: string;
+  readonly merchantType?: 'Enterprise' | 'Standalone';
 }
 
 export interface LeadParams extends Partial<PaginationParams> {
@@ -27,9 +70,11 @@ export interface LeadParams extends Partial<PaginationParams> {
   readonly search?: string;
 }
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
 export const helpdeskApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getTickets: builder.query<ApiResponse<PaginatedResult<Ticket>>, Partial<TicketFilter & PaginationParams>>({
+    getTickets: builder.query<PagedResponse<TicketListItem>, TicketListParams>({
       query: (params) => ({
         url: '/api/v1/helpdesk/tickets',
         method: 'GET',
@@ -38,7 +83,7 @@ export const helpdeskApi = baseApi.injectEndpoints({
       providesTags: ['Tickets' as any],
     }),
 
-    getTicket: builder.query<ApiResponse<Ticket>, string>({
+    getTicket: builder.query<ApiResponse<TicketDetail>, string>({
       query: (id) => ({
         url: `/api/v1/helpdesk/tickets/${id}`,
         method: 'GET',
@@ -46,7 +91,7 @@ export const helpdeskApi = baseApi.injectEndpoints({
       providesTags: (_res, _err, id) => [{ type: 'Tickets' as any, id }, 'Tickets' as any],
     }),
 
-    createTicket: builder.mutation<ApiResponse<Ticket>, CreateTicketDto>({
+    createTicket: builder.mutation<ApiResponse<TicketDetail>, CreateTicketDto>({
       query: (data) => ({
         url: '/api/v1/helpdesk/tickets',
         method: 'POST',
@@ -55,25 +100,22 @@ export const helpdeskApi = baseApi.injectEndpoints({
       invalidatesTags: ['Tickets' as any],
     }),
 
-    assignTicket: builder.mutation<ApiResponse<Ticket>, AssignTicketDto>({
-      query: ({ ticketId, agentId }) => ({
-        url: '/api/v1/helpdesk/tickets/assign',
-        method: 'POST',
-        data: { ticketId, agentId },
-      }),
-      invalidatesTags: (_res, _err, { ticketId }) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
-    }),
-
     getTicketMetrics: builder.query<ApiResponse<TicketMetrics>, MetricsParams>({
-      query: (params) => ({
-        url: '/api/v1/helpdesk/metrics',
-        method: 'GET',
-        params,
-      }),
+      // The API needs an explicit window; the last 30 days is the default when none is given.
+      query: ({ fromDate, toDate, ...params }) => {
+        const to = toDate ? new Date(toDate) : new Date();
+        const from = fromDate ? new Date(fromDate) : new Date(to.getTime() - THIRTY_DAYS_MS);
+        return {
+          url: '/api/v1/helpdesk/metrics',
+          method: 'GET',
+          params: { ...params, fromDate: from.toISOString(), toDate: to.toISOString() },
+        };
+      },
       providesTags: ['Tickets' as any],
     }),
 
-    getLeads: builder.query<ApiResponse<PaginatedResult<Lead>>, LeadParams>({
+    // 2026-09-05: paged envelope, like tickets.
+    getLeads: builder.query<PagedResponse<Lead>, LeadParams>({
       query: (params) => ({
         url: '/api/v1/helpdesk/leads',
         method: 'GET',
@@ -82,16 +124,16 @@ export const helpdeskApi = baseApi.injectEndpoints({
       providesTags: ['Tickets' as any],
     }),
 
-    addTicketMessage: builder.mutation<ApiResponse<unknown>, { ticketId: string; message: string }>({
-      query: ({ ticketId, message }) => ({
-        url: `/api/v1/helpdesk/tickets/${ticketId}/comment`,
+    addTicketComment: builder.mutation<ApiResponse<TicketComment>, AddCommentDto>({
+      query: (data) => ({
+        url: `/api/v1/helpdesk/tickets/${data.ticketId}/comment`,
         method: 'POST',
-        data: { message },
+        data,
       }),
       invalidatesTags: (_res, _err, { ticketId }) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
     }),
 
-    updateTicket: builder.mutation<ApiResponse<Ticket>, { ticketId: string; data: Record<string, unknown> }>({
+    updateTicket: builder.mutation<ApiResponse<TicketDetail>, { ticketId: string; data: UpdateTicketDto }>({
       query: ({ ticketId, data }) => ({
         url: `/api/v1/helpdesk/tickets/${ticketId}`,
         method: 'PUT',
@@ -100,21 +142,31 @@ export const helpdeskApi = baseApi.injectEndpoints({
       invalidatesTags: (_res, _err, { ticketId }) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
     }),
 
-    escalateTicket: builder.mutation<ApiResponse<Ticket>, { ticketId: string; reason: string }>({
+    resolveTicket: builder.mutation<ApiResponse<TicketDetail>, { ticketId: string; resolvedBy: string }>({
+      query: ({ ticketId, resolvedBy }) => ({
+        url: `/api/v1/helpdesk/tickets/${ticketId}/resolve`,
+        method: 'POST',
+        data: { resolvedBy },
+      }),
+      invalidatesTags: (_res, _err, { ticketId }) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
+    }),
+
+    closeTicket: builder.mutation<ApiResponse<TicketDetail>, string>({
+      query: (ticketId) => ({
+        url: `/api/v1/helpdesk/tickets/${ticketId}/close`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_res, _err, ticketId) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
+    }),
+
+    /** Hands the ticket to the Operations Managers; the API records who escalated from the token. */
+    escalateTicket: builder.mutation<ApiResponse<TicketDetail>, { ticketId: string; reason: string }>({
       query: ({ ticketId, reason }) => ({
         url: '/api/v1/helpdesk/tickets/escalate',
         method: 'POST',
         data: { ticketId, reason },
       }),
       invalidatesTags: (_res, _err, { ticketId }) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
-    }),
-
-    autoAssignTicket: builder.mutation<ApiResponse<Ticket>, string>({
-      query: (ticketId) => ({
-        url: `/api/v1/helpdesk/tickets/${ticketId}/auto-assign`,
-        method: 'POST',
-      }),
-      invalidatesTags: (_res, _err, ticketId) => [{ type: 'Tickets' as any, id: ticketId }, 'Tickets' as any],
     }),
 
     updateLead: builder.mutation<ApiResponse<Lead>, { leadId: string; data: Record<string, unknown> }>({
@@ -132,12 +184,12 @@ export const {
   useGetTicketsQuery,
   useGetTicketQuery,
   useCreateTicketMutation,
-  useAssignTicketMutation,
   useGetTicketMetricsQuery,
   useGetLeadsQuery,
-  useAddTicketMessageMutation,
+  useAddTicketCommentMutation,
   useUpdateTicketMutation,
+  useResolveTicketMutation,
+  useCloseTicketMutation,
   useEscalateTicketMutation,
-  useAutoAssignTicketMutation,
   useUpdateLeadMutation,
 } = helpdeskApi;

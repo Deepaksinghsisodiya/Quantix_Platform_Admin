@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import {
   useGetTerminalsByMerchantQuery,
+  useGetAllowedTerminalTypesQuery,
   useCreateTerminalMutation,
   useUpdateTerminalMutation,
   useDeactivateTerminalMutation,
@@ -18,7 +19,10 @@ interface FormState {
   terminalType: string;
 }
 
-const EMPTY_FORM: FormState = { terminalCode: '', terminalName: '', terminalType: 'POS-REST' };
+// 2026-08-30: terminalType starts EMPTY — the old 'POS-REST' default was outside the
+// Restaurant/Retail/Inventory taxonomy the token generator flavours by, so every
+// default-typed terminal silently degraded to plan-flavour fallback.
+const EMPTY_FORM: FormState = { terminalCode: '', terminalName: '', terminalType: '' };
 
 export const MerchantTerminalsWrapper: React.FC = () => {
   const { id: merchantId = '' } = useParams<{ id: string }>();
@@ -26,6 +30,9 @@ export const MerchantTerminalsWrapper: React.FC = () => {
 
   // Queries
   const { data: terminalsRes, isLoading, error: terminalsError } = useGetTerminalsByMerchantQuery(merchantId);
+  // Plan-derived terminal type options (single option ⇒ preselected + disabled in the form).
+  const { data: allowedTypesRes } = useGetAllowedTerminalTypesQuery(merchantId, { skip: !merchantId });
+  const allowedTypes = allowedTypesRes?.data ?? [];
 
   // Mutations
   const [createTerminal] = useCreateTerminalMutation();
@@ -46,14 +53,14 @@ export const MerchantTerminalsWrapper: React.FC = () => {
   const terminals = terminalsRes?.data ?? [];
 
   const handleCreate = async () => {
-    if (!form.terminalCode.trim() || !form.terminalName.trim()) return;
+    if (!form.terminalCode.trim() || !form.terminalName.trim() || !form.terminalType) return;
     setSubmitting(true);
     try {
       await createTerminal({
         merchantId,
         terminalCode: form.terminalCode.trim(),
         terminalName: form.terminalName.trim(),
-        terminalType: form.terminalType.trim() || undefined,
+        terminalType: form.terminalType,
       }).unwrap();
       setCreateOpen(false);
       setForm(EMPTY_FORM);
@@ -66,7 +73,7 @@ export const MerchantTerminalsWrapper: React.FC = () => {
   };
 
   const handleUpdate = async () => {
-    if (!editTarget) return;
+    if (!editTarget || !form.terminalType) return;
     setSubmitting(true);
     try {
       await updateTerminal({
@@ -74,7 +81,7 @@ export const MerchantTerminalsWrapper: React.FC = () => {
         data: {
           terminalCode: form.terminalCode.trim(),
           terminalName: form.terminalName.trim(),
-          terminalType: form.terminalType.trim() || undefined,
+          terminalType: form.terminalType,
         },
       }).unwrap();
       setEditTarget(null);
@@ -117,7 +124,11 @@ export const MerchantTerminalsWrapper: React.FC = () => {
     setForm({
       terminalCode: t.terminalCode,
       terminalName: t.terminalName,
-      terminalType: t.terminalType ?? 'POS-REST',
+      // A pre-taxonomy value (e.g. old free-text 'POS-REST') won't match any option —
+      // the select shows empty (or the single allowed type) for the operator to fix.
+      terminalType: allowedTypes.includes(t.terminalType ?? '')
+        ? (t.terminalType as string)
+        : (allowedTypes.length === 1 ? allowedTypes[0] : '') ?? '',
     });
   };
 
@@ -136,6 +147,7 @@ export const MerchantTerminalsWrapper: React.FC = () => {
     <MerchantTerminalsPage
       merchantId={merchantId}
       terminals={terminals}
+      allowedTypes={allowedTypes}
       isLoading={isLoading}
       terminalsError={terminalsError}
       onBackClick={onBackClick}

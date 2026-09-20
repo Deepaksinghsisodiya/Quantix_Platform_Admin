@@ -5,7 +5,7 @@
 import { get, post, put } from './client';
 import type { ApiResponse, PaginationParams } from '@/lib/types/common';
 import type { ApiListResponse } from './types';
-import type { Invoice, SubscriptionPlan, TokenPricing } from '@/lib/types/billing';
+import type { Invoice, SubscriptionPlan } from '@/lib/types/billing';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,17 +66,7 @@ export interface PlanUpdateDto {
   readonly isActive?: boolean;
 }
 
-export interface TokenPricingUpdateDto {
-  readonly tiers: readonly {
-    readonly tier: string;
-    readonly validityDays: number;
-    readonly price: number;
-    readonly currency: string;
-    readonly bulkDiscounts: readonly { readonly minQuantity: number; readonly discountPercent: number }[];
-  }[];
-  /** FRS-SAP-609: Schedule price changes for a future date. */
-  readonly effectiveDate?: string;
-}
+// 2026-08-30: TokenPricingUpdateDto removed with the tier-pricing fiction.
 
 /** FRS-SAP-601: Revenue split by merchant type. */
 export interface RevenueByMerchantType {
@@ -175,14 +165,6 @@ export function updatePlan(id: string, data: PlanUpdateDto): Promise<ApiResponse
   return put<ApiResponse<SubscriptionPlan>>(`/api/v1/billing/plans/${id}`, data);
 }
 
-export function getTokenPricing(): Promise<ApiResponse<readonly TokenPricing[]>> {
-  return get<ApiResponse<readonly TokenPricing[]>>('/api/v1/billing/token-pricing');
-}
-
-export function updateTokenPricing(data: TokenPricingUpdateDto): Promise<ApiResponse<readonly TokenPricing[]>> {
-  return put<ApiResponse<readonly TokenPricing[]>>('/api/v1/billing/token-pricing', data);
-}
-
 export function processRefund(invoiceId: string, data: RefundDto): Promise<ApiResponse<{ refundId: string }>> {
   return post<ApiResponse<{ refundId: string }>>(`/api/v1/billing/invoices/${invoiceId}/refund`, data);
 }
@@ -258,20 +240,6 @@ export function retryPayment(invoiceId: string): Promise<ApiResponse<{ attempt: 
   return post<ApiResponse<{ attempt: number; status: 'Completed' | 'Failed'; nextRetryAt: string | null }>>(`/api/v1/billing/payments/retry/${invoiceId}`);
 }
 
-/** Get payment attempts for an invoice. */
-export function getPaymentAttempts(invoiceId: string): Promise<ApiResponse<readonly {
-  readonly attempt: number;
-  readonly status: 'Completed' | 'Failed';
-  readonly attemptedAt: string;
-  readonly failureReason: string | null;
-}[]>> {
-  return get<ApiResponse<readonly {
-    readonly attempt: number;
-    readonly status: 'Completed' | 'Failed';
-    readonly attemptedAt: string;
-    readonly failureReason: string | null;
-  }[]>>(`/api/v1/billing/invoices/${invoiceId}/payment-attempts`);
-}
 
 /** Send payment reminder email for an overdue invoice. */
 export function sendPaymentReminder(invoiceId: string): Promise<ApiResponse<{ sent: boolean }>> {
@@ -370,7 +338,3 @@ export function markOverdueContacted(invoiceId: string, notes: string): Promise<
   return post<ApiResponse<OverdueEscalationEntry>>(`/api/v1/billing/invoices/${invoiceId}/mark-contacted`, { notes });
 }
 
-/** PF-10 Standalone: Get lapsed merchants (token expired, not renewed). */
-export function getLapsedStandaloneMerchantsCount(): Promise<ApiResponse<{ count: number; merchantIds: readonly string[] }>> {
-  return get<ApiResponse<{ count: number; merchantIds: readonly string[] }>>('/api/v1/billing/standalone/lapsed');
-}

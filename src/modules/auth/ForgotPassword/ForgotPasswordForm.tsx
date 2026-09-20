@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface ForgotPasswordFormProps {
   isSuccess: boolean;
@@ -14,6 +15,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   isSuccess,
   isSubmitting,
 }) => {
+  const brandName = useBrandName();
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
       {/* Premium Ambient Glows */}
@@ -27,11 +29,11 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
           {/* Logo / header */}
           <div className="mb-8 flex flex-col items-center gap-3.5">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-600 to-accent-400 shadow-xl shadow-accent-500/25 transition-all duration-300 hover:scale-105">
-              <span className="text-3xl font-black text-white tracking-tighter">Q</span>
+              <span className="text-3xl font-black text-white tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
             </div>
             <div className="text-center space-y-1">
               <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-555">
-                Quantix
+                {brandName}
               </h1>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
                 Platform Admin
@@ -120,7 +122,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
 
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          Quantix Platform v1.0.0-alpha
+          {brandName} v1.0.0-alpha
         </p>
       </div>
     </div>

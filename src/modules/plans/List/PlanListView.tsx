@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -78,6 +79,8 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
   onViewDetails,
   onAddClick,
 }) => {
+  // 2026-09-05: currency always comes from configuration (platform.currency).
+  const { currency } = useDeploymentCurrency();
 
   // Table columns definition for List View
   const columns: ATMTableColumn<Plan>[] = [
@@ -123,10 +126,10 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       renderCell: (_, row) => (
         <div className="flex flex-col">
           <span className="font-bold text-slate-900 dark:text-white text-sm">
-            {formatCurrency(row.monthlyPrice)} <span className="text-xs font-normal text-slate-400 dark:text-slate-550">/mo</span>
+            {formatCurrencyOrDash(row.monthlyPrice, currency)} <span className="text-xs font-normal text-slate-400 dark:text-slate-550">/mo</span>
           </span>
           <span className="text-[10px] text-slate-455 dark:text-slate-500">
-            {formatCurrency(row.yearlyPrice)} /yr
+            {formatCurrencyOrDash(row.yearlyPrice, currency)} /yr
           </span>
         </div>
       ),

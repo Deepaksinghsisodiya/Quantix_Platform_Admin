@@ -7,12 +7,23 @@ import {
   CheckCircle2,
   ArrowLeft,
   Save,
-  Fingerprint
+  Fingerprint,
+  Lock
 } from 'lucide-react';
 import { ATMInputField, ATMSelectField } from '@/shared/components/form';
 import { ATMCheckbox, ATMButton, ATMIconButton } from '@/shared/ui';
-import type { PlatformRole } from '../types/user.types';
-import { ROLE_PERMISSIONS, type PermissionModule } from '@/lib/utils/permissions';
+import { ROLE_ID_MAP, type PermissionCatalogItem } from '../types/user.types';
+import { useGetPermissionCatalogQuery, useGetRolePermissionsQuery } from '../services/userApi';
+
+/**
+ * 2026-08-11 rework:
+ *  - "Assigned Department" REMOVED — nothing in the platform ever routed, filtered or
+ *    reported by it (the field was required for a concept that did not exist).
+ *  - The old module×action "Granular Permission Overrides" matrix was fiction: toggles were
+ *    never submitted and the backend had no per-user storage. Replaced with ADDITIVE
+ *    per-user grants over the REAL permission catalog: role permissions show locked;
+ *    extras are toggleable and persist via PUT /users/{id}/grants (Admin-only).
+ */
 
 interface UserFormProps {
   title: string;
@@ -29,28 +40,6 @@ const PLATFORM_ROLES = [
   { value: 'Operator', label: 'Operator', description: 'Helpdesk tickets by default; Admin grants additional activities per user' },
 ];
 
-const DEPARTMENTS = [
-  'Engineering', 'Operations', 'Finance', 'Support', 'Marketing', 'Management', 'Sales',
-];
-
-const ALL_MODULES = [
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'merchants', label: 'Merchants' },
-  { value: 'billing', label: 'Billing' },
-  { value: 'tokens', label: 'Tokens' },
-  { value: 'commission', label: 'Commission' },
-  { value: 'support', label: 'Support' },
-  { value: 'content', label: 'Content' },
-  { value: 'settings', label: 'Settings' },
-  { value: 'reports', label: 'Reports' },
-  { value: 'compliance', label: 'Compliance' },
-  { value: 'audit', label: 'Audit' },
-  { value: 'users', label: 'Users' },
-  { value: 'downloads', label: 'Downloads' },
-];
-
-const ALL_ACTIONS = ['view', 'create', 'edit', 'delete', 'admin'];
-
 export const UserForm: React.FC<UserFormProps> = ({
   title,
   formikProps,
@@ -60,33 +49,27 @@ export const UserForm: React.FC<UserFormProps> = ({
   const { values, setFieldValue, isSubmitting, errors, touched } = formikProps;
 
   const selectedRoleInfo = PLATFORM_ROLES.find((r) => r.value === values.role);
+  const isAdminRole = values.role === 'Admin';
+  const roleId = ROLE_ID_MAP[values.role as string] ?? '';
 
-  const isPermissionGranted = (mod: string, action: string) => {
-    const overrides = values.overrides || {};
-    if (overrides[mod]) {
-      return overrides[mod].includes(action);
-    }
-    const roleDefault = ROLE_PERMISSIONS[values.role as PlatformRole]?.[mod as PermissionModule];
-    return roleDefault ? roleDefault.includes(action as any) : false;
-  };
+  const { data: catalogRes, isLoading: catalogLoading } = useGetPermissionCatalogQuery(undefined, { skip: isAdminRole });
+  const { data: rolePermsRes, isLoading: rolePermsLoading } = useGetRolePermissionsQuery(roleId, { skip: isAdminRole || !roleId });
 
-  const togglePermission = (mod: string, action: string) => {
-    const currentOverrides = { ...(values.overrides || {}) };
-    let currentModuleActions = currentOverrides[mod];
+  const catalog = (catalogRes?.data ?? []) as readonly PermissionCatalogItem[];
+  const roleCodes = new Set((rolePermsRes?.data ?? []).map((p: PermissionCatalogItem) => p.permissionCode));
+  const extraGrants: string[] = values.extraGrants ?? [];
 
-    if (!currentModuleActions) {
-      const roleDefault = ROLE_PERMISSIONS[values.role as PlatformRole]?.[mod as PermissionModule] || [];
-      currentModuleActions = [...roleDefault];
-    }
+  const grouped = catalog.reduce<Record<string, PermissionCatalogItem[]>>((acc, p) => {
+    (acc[p.category || 'Other'] ??= []).push(p);
+    return acc;
+  }, {});
 
-    if (currentModuleActions.includes(action)) {
-      currentModuleActions = currentModuleActions.filter((a: string) => a !== action);
-    } else {
-      currentModuleActions.push(action);
-    }
-
-    currentOverrides[mod] = currentModuleActions;
-    setFieldValue('overrides', currentOverrides);
+  const toggleGrant = (code: string) => {
+    if (roleCodes.has(code)) return; // role permissions are locked — additive only
+    setFieldValue(
+      'extraGrants',
+      extraGrants.includes(code) ? extraGrants.filter((c) => c !== code) : [...extraGrants, code],
+    );
   };
 
   return (
@@ -171,7 +154,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 Work Details
               </h3>
               <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">
-                Assigned department, platform role, and IP address restrictions.
+                Platform role{isEdit ? ', account status and IP address restrictions' : ''}.
               </p>
             </div>
 
@@ -183,14 +166,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                 options={PLATFORM_ROLES}
                 placeholder="Select Role"
                 hint={selectedRoleInfo?.description}
-              />
-
-              <ATMSelectField
-                name="department"
-                label="Assigned Department"
-                required
-                options={DEPARTMENTS.map((d) => ({ value: d, label: d }))}
-                placeholder="Select Department"
               />
 
               {isEdit && (
@@ -219,59 +194,71 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           </div>
 
-          {/* Section 3 — Role Permissions Overrides */}
+          {/* Section 3 — Additional Permissions (additive per-user grants) */}
           <div className="space-y-10">
             <div className="border-l-4 border-indigo-500 pl-5">
               <h3 className="text-xs font-black text-slate-900 dark:text-gray-100 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Shield size={14} className="text-indigo-500" />
-                Granular Permission Overrides
+                Additional Permissions
               </h3>
               <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">
-                Pre-filled based on selected role. Toggle options below to define user-specific overrides.
+                Role permissions are locked (additive model — never subtracted). Extras granted
+                here apply on the user's next login.
+                {extraGrants.length > 0 && ` ${extraGrants.length} extra grant${extraGrants.length === 1 ? '' : 's'} selected.`}
               </p>
             </div>
 
             <div className="pl-6">
-              <div className="overflow-x-auto rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm bg-zen-card">
-                <table className="w-full min-w-[700px] text-sm text-left">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50/75 dark:border-gray-800 dark:bg-gray-900/30">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-gray-550">
-                        Module
-                      </th>
-                      {ALL_ACTIONS.map((a) => (
-                        <th
-                          key={a}
-                          className="px-4 py-5 text-center text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-gray-550"
-                        >
-                          {a}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800/80">
-                    {ALL_MODULES.map((mod) => (
-                      <tr key={mod.value} className="hover:bg-gray-50/30 dark:hover:bg-gray-850/10">
-                        <td className="px-8 py-4 font-bold text-gray-900 dark:text-white">
-                          {mod.label}
-                        </td>
-                        {ALL_ACTIONS.map((action) => (
-                          <td key={action} className="px-4 py-4">
-                            <div className="flex justify-center">
+              {isAdminRole ? (
+                <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-gray-800 dark:bg-gray-900/30">
+                  <Lock size={16} className="shrink-0 text-gray-400 mt-0.5" />
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                    Admin has every permission unconditionally — there is nothing extra to grant.
+                  </p>
+                </div>
+              ) : catalogLoading || rolePermsLoading ? (
+                <p className="text-sm font-semibold text-gray-400">Loading permission catalog…</p>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(grouped).map(([category, items]) => (
+                    <div key={category} className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-zen-card p-6">
+                      <p className="mb-4 text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-gray-550">
+                        {category}
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
+                        {items.map((p) => {
+                          const fromRole = roleCodes.has(p.permissionCode);
+                          const checked = fromRole || extraGrants.includes(p.permissionCode);
+                          return (
+                            <label
+                              key={p.permissionCode}
+                              className={`flex items-center gap-2.5 ${fromRole ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                              title={fromRole ? 'Included in the selected role — locked' : p.permissionCode}
+                            >
                               <ATMCheckbox
-                                name={`${mod.value}-${action}`}
+                                name={p.permissionCode}
                                 label=""
-                                checked={isPermissionGranted(mod.value, action)}
-                                onChange={() => togglePermission(mod.value, action)}
+                                checked={checked}
+                                disabled={fromRole}
+                                onChange={() => toggleGrant(p.permissionCode)}
                               />
-                            </div>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                                {p.permissionName}
+                                {fromRole && <Lock size={11} className="text-gray-400" />}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  {catalog.length === 0 && (
+                    <p className="text-sm font-semibold text-red-500">
+                      Permission catalog is empty — check the API connection.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -287,8 +274,8 @@ export const UserForm: React.FC<UserFormProps> = ({
               <p className="font-black uppercase text-[11px] tracking-[0.3em] text-accent-400">Security & Compliance Notice</p>
               <p className="font-medium text-base leading-relaxed text-slate-300 max-w-2xl">
                 {isEdit
-                  ? 'Modifying roles or status changes will immediately affect active sessions. Permissions overrides are evaluated dynamically on request authorization.'
-                  : 'A temporary password will be assigned. Users are required to undergo mandatory Multi-Factor Authentication (MFA) enrolment upon their first login.'}
+                  ? 'Role and status changes, and additional grants, apply on the user’s next login or token refresh — permissions travel in the JWT.'
+                  : 'A temporary password will be assigned; the user must change it on first login. Additional grants apply from their first login.'}
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <CheckCircle2 size={16} className="text-emerald-500" />

@@ -1,43 +1,18 @@
 import {
   useGetComplianceDashboardQuery,
-  useGetDataRequestsQuery,
-  useProcessDataRequestMutation,
-  useGenerateExportPackageMutation,
-  useExecuteAnonymizationMutation,
-  useFulfillDataRequestMutation,
-  type DataRequestParams,
-  type ProcessDataRequestDto,
+  useGetComplianceRequestsQuery,
+  type ComplianceListParams,
 } from '@/modules/compliance/services/complianceApi';
-import { wrapMutation } from '@/lib/utils/rtkQueryHelpers';
 
+/**
+ * 2026-09-08: thin re-exports over the RTK endpoints. The mutation wrappers that used to live
+ * here (process / generate-export / execute-anonymization / fulfill) targeted routes the API
+ * never had; the pages now call the real mutations from complianceApi directly.
+ */
 export function useComplianceDashboard() {
   return useGetComplianceDashboardQuery();
 }
 
-export function useDataRequests(params: DataRequestParams = {}) {
-  return useGetDataRequestsQuery(params);
+export function useComplianceRequests(params: ComplianceListParams = {}) {
+  return useGetComplianceRequestsQuery(params);
 }
-
-export function useProcessDataRequest() {
-  const [trigger, result] = useProcessDataRequestMutation();
-  return wrapMutation(trigger, result);
-}
-
-/** PF-12 Step 4: Generate data export package for an approved Export request. */
-export function useGenerateExportPackage() {
-  const [trigger, result] = useGenerateExportPackageMutation();
-  return wrapMutation(trigger, result);
-}
-
-/** PF-12 Step 4: Execute anonymization for an approved Deletion request. */
-export function useExecuteAnonymization() {
-  const [trigger, result] = useExecuteAnonymizationMutation();
-  return wrapMutation(trigger, result);
-}
-
-/** PF-12 Step 5: Mark a data request as fulfilled (completed). */
-export function useFulfillDataRequest() {
-  const [trigger, result] = useFulfillDataRequestMutation();
-  return wrapMutation(trigger, result);
-}
-

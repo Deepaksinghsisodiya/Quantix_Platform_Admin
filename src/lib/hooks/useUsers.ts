@@ -119,7 +119,6 @@ export function filterUsersByQuery(users: readonly PlatformUser[], q: string): P
   return users.filter(
     (u) =>
       u.name.toLowerCase().includes(needle) ||
-      u.email.toLowerCase().includes(needle) ||
-      (u.department ?? '').toLowerCase().includes(needle),
+      u.email.toLowerCase().includes(needle),
   );
 }

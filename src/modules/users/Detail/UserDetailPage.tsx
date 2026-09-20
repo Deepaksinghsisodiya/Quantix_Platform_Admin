@@ -153,7 +153,6 @@ export const UserDetailPage: React.FC<UserDetailPageProps> = ({
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-2">
                   <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
                     <Briefcase size={14} className="text-slate-400 dark:text-gray-500" />
-                    <span className="text-xs font-bold uppercase tracking-tight">{user.department || 'General Support'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
                     <Mail size={14} className="text-slate-400 dark:text-gray-500" />
@@ -186,7 +185,6 @@ export const UserDetailPage: React.FC<UserDetailPageProps> = ({
               <ATMSectionHeader title="Organizational Detail" />
               <div className="space-y-1">
                 <ATMDetailRow icon={Shield} label="Access Level" value={user.role} />
-                <ATMDetailRow icon={Briefcase} label="Departmental Unit" value={user.department || 'General'} />
                 <ATMDetailRow icon={Clock} label="Last Active Session" value={user.lastLogin ? formatTimestamp(user.lastLogin) : 'Never Logged In'} />
                 <ATMDetailRow icon={Calendar} label="Commencement Date" value={new Date(user.createdAt).toLocaleDateString()} isLast />
               </div>

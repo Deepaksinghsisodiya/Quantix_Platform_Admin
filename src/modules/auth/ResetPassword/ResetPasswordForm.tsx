@@ -1,9 +1,11 @@
 import React from 'react';
-import { Form } from 'formik';
+import { Form, useFormikContext } from 'formik';
 import { Link } from 'react-router-dom';
 import { Lock, Eye, EyeOff, ArrowLeft, Mail, Key } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter/PasswordStrengthMeter';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface ResetPasswordFormProps {
   email?: string;
@@ -24,6 +26,8 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   setShowConfirm,
   isSubmitting,
 }) => {
+  const brandName = useBrandName();
+  const { values } = useFormikContext<{ newPassword: string }>();
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
       {/* Ambient Ambient Glows */}
@@ -37,11 +41,11 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           {/* Logo / header */}
           <div className="mb-8 flex flex-col items-center gap-3.5">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-600 to-accent-400 shadow-xl shadow-accent-500/25 transition-all duration-300 hover:scale-105">
-              <span className="text-3xl font-black text-white tracking-tighter">Q</span>
+              <span className="text-3xl font-black text-white tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
             </div>
             <div className="text-center space-y-1">
               <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-555">
-                Quantix
+                {brandName}
               </h1>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
                 Platform Admin
@@ -84,23 +88,26 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             )}
 
             {/* New Password */}
-            <ATMInputField
-              name="newPassword"
-              label="New Password"
-              type={showNew ? 'text' : 'password'}
-              placeholder="Enter new password"
-              required
-              icon={<Lock size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-              suffix={
-                <button
-                  type="button"
-                  className="p-1 hover:text-accent-600 dark:hover:text-accent-400 transition-colors outline-none text-surface-400"
-                  onClick={() => setShowNew(!showNew)}
-                >
-                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              }
-            />
+            <div>
+              <ATMInputField
+                name="newPassword"
+                label="New Password"
+                type={showNew ? 'text' : 'password'}
+                placeholder="Enter new password"
+                required
+                icon={<Lock size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                suffix={
+                  <button
+                    type="button"
+                    className="p-1 hover:text-accent-600 dark:hover:text-accent-400 transition-colors outline-none text-surface-400"
+                    onClick={() => setShowNew(!showNew)}
+                  >
+                    {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
+              />
+              <PasswordStrengthMeter password={values.newPassword} minLength={8} />
+            </div>
 
             {/* Confirm Password */}
             <ATMInputField
@@ -146,7 +153,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          Quantix Platform v1.0.0-alpha
+          {brandName} v1.0.0-alpha
         </p>
       </div>
     </div>

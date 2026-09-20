@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
 import { logout, setCredentials, updateUser } from '../slices/authSlice';
 import { toast } from 'sonner';
+import { getApiBaseUrl } from '@/lib/config/runtimeConfig';
 
 let isRefreshing = false;
 let isSyncing = false;
@@ -27,7 +28,7 @@ async function refreshPermissionsQuietly(store: any) {
   isSyncing = true;
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/auth/refresh`,
+      `${getApiBaseUrl()}/api/v1/auth/refresh`,
       { refreshToken },
       { withCredentials: true }
     );
@@ -126,7 +127,7 @@ export const setupAuthInterceptor = (axiosInstance: AxiosInstance, store: any) =
 
         try {
           const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/auth/refresh`,
+            `${getApiBaseUrl()}/api/v1/auth/refresh`,
             { refreshToken },
             { withCredentials: true }
           );

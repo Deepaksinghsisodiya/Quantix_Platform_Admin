@@ -8,6 +8,7 @@
 
 import type { ApiListResponse, ApiErrorBody } from './types';
 import { useAuthStore } from '@/lib/store/authStore';
+import { getApiBaseUrl } from '@/lib/config/runtimeConfig';
 
 // ---------------------------------------------------------------------------
 // ApiError
@@ -32,16 +33,9 @@ export class ApiError extends Error {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getBaseUrl(): string {
-  // Runtime config (window.__QUANTIX_CONFIG__) wins over the build-time
-  // VITE_API_URL. The operator can edit /config.js in the published dist/
-  // to retarget the SPA at a different API without rebuilding. See
-  // public/config.js for the full runtime-config shape.
-  if (typeof window !== 'undefined' && window.__QUANTIX_CONFIG__?.apiBaseUrl) {
-    return window.__QUANTIX_CONFIG__.apiBaseUrl;
-  }
-  return import.meta.env.VITE_API_URL ?? '';
-}
+// 2026-08-31: delegates to the shared resolver so this helper and the axios/RTK path can
+// never disagree about where the API is (see lib/config/runtimeConfig.ts).
+const getBaseUrl = getApiBaseUrl;
 
 // Round_16 audit C9: import the canonical key from the store so client and store cannot drift.
 // (Avoids a static import-cycle by reading the key as a string constant.)
@@ -350,6 +344,39 @@ export async function patch<T>(path: string, body?: unknown): Promise<T> {
     method: 'PATCH',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+}
+
+// 2026-08-12: multipart upload — Content-Type is left to the browser (boundary), unlike
+// buildHeaders() which forces application/json.
+export async function postForm<T>(path: string, form: FormData): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const response = await fetch(buildUrl(path), { method: 'POST', headers, body: form });
+  return handleResponse<T>(response);
+}
+
+/** Authenticated binary fetch (e.g. uploaded KYC documents — plain <a href> carries no JWT). */
+export async function getBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const response = await fetch(buildUrl(path), { headers });
+  if (!response.ok) {
+    // 2026-09-04: a refused download carries the API's own reason (validation, missing
+    // window, unknown report) — surface it instead of a generic "download failed".
+    let message = 'File download failed.';
+    let code = 'FILE_DOWNLOAD_FAILED';
+    try {
+      const body = (await response.json()) as { message?: string; errorCode?: string } | null;
+      if (body?.message) message = body.message;
+      if (body?.errorCode) code = body.errorCode;
+    } catch {
+      // Not a JSON error body — keep the generic message.
+    }
+    throw new ApiError(response.status, message, code);
+  }
+  return response.blob();
 }
 
 export async function del<T>(path: string): Promise<T> {

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import {
   LoginPage,
@@ -15,6 +15,8 @@ import {
 } from '@/modules/auth';
 import { usePermission } from '@/shared/hooks/usePermission';
 import type { PermissionModule } from '@/lib/utils/permissions';
+// 2026-08-07: first-run platform setup gate — forces Global Settings before any activity.
+import PlatformSetupGuard from '@/modules/settings/components/PlatformSetupGuard';
 
 /* -------------------------------------------------------------------------- */
 /*  Skeleton fallback for lazy-loaded pages                                   */
@@ -118,6 +120,9 @@ const MerchantTokensPage = React.lazy(() => import('@/modules/merchants/pages/me
 const MerchantInvoicesPage = React.lazy(() => import('@/modules/merchants/pages/merchant/MerchantInvoicesPage'));
 const MerchantDownloadsPage = React.lazy(() => import('@/modules/merchants/pages/merchant/MerchantDownloadsPage'));
 const MerchantProfilePage = React.lazy(() => import('@/modules/merchants/pages/merchant/MerchantProfilePage'));
+// 2026-09-08: the merchant portal's helpdesk (own tickets only).
+const MerchantSupportPage = React.lazy(() => import('@/modules/merchants/pages/merchant/MerchantSupportPage'));
+const MerchantTicketPage = React.lazy(() => import('@/modules/merchants/pages/merchant/MerchantTicketPage'));
 
 // Dashboard
 // Pass 40j (2026-05-25): role-aware dispatcher replaces the direct DashboardPage import.
@@ -139,8 +144,9 @@ const SessionManagementPage = React.lazy(() => import('@/modules/users/Session/S
 
 // Merchants
 const MerchantDirectoryPage = React.lazy(() => import('@/modules/merchants/AllMerchants'));
-const EnterpriseRegisterPage = React.lazy(() => import('@/modules/merchants/RegisterEnterprise'));
-const StandaloneRegisterPage = React.lazy(() => import('@/modules/merchants/RegisterStandalone'));
+// 2026-08-06: unified 7-step onboarding wizard replaces the two register wizards.
+const OnboardingWizardPage = React.lazy(() => import('@/modules/merchants/OnboardingWizard'));
+const NewSignupPage = React.lazy(() => import('@/modules/merchants/SignupQueue/NewSignupPage'));
 const SignupQueuePage = React.lazy(() => import('@/modules/merchants/SignupQueue'));
 const MerchantDetailPage = React.lazy(() => import('@/modules/merchants/MerchantDetail'));
 const MerchantEditPage = React.lazy(() => import('@/modules/merchants/Edit'));
@@ -153,7 +159,6 @@ const MerchantTerminalsPage = React.lazy(() => import('@/modules/merchants/Merch
 const TokenHistoryPage = React.lazy(() => import('@/modules/tokens/List'));
 const TokenGeneratePage = React.lazy(() => import('@/modules/tokens/Add'));
 const BulkTokenPage = React.lazy(() => import('@/modules/tokens/Bulk'));
-const TokenValidityPage = React.lazy(() => import('@/modules/tokens/Validity'));
 const TokenDetailPage = React.lazy(() => import('@/modules/tokens/View'));
 
 // Billing
@@ -161,7 +166,6 @@ const BillingDashboardPage = React.lazy(() => import('@/modules/billing/pages/Bi
 const InvoiceListPage = React.lazy(() => import('@/modules/billing/pages/InvoiceListPage'));
 const InvoiceDetailPage = React.lazy(() => import('@/modules/billing/pages/InvoiceDetailPage'));
 const PlanManagementPage = React.lazy(() => import('@/modules/billing/pages/PlanManagementPage'));
-const TokenPricingPage = React.lazy(() => import('@/modules/billing/pages/TokenPricingPage'));
 const RateCardListPage = React.lazy(() => import('@/modules/rateCards/list/RateCardListPageWrapper'));
 const WalletListPage = React.lazy(() => import('@/modules/billing/pages/WalletListPage'));
 
@@ -180,7 +184,8 @@ const LeadsPage = React.lazy(() => import('@/modules/helpdesk/pages/LeadsPage'))
 const LeadDetailPage = React.lazy(() => import('@/modules/helpdesk/pages/LeadDetailPage'));
 const CannedResponsesPage = React.lazy(() => import('@/modules/helpdesk/pages/CannedResponsesPage'));
 const AutoCloseConfigPage = React.lazy(() => import('@/modules/helpdesk/pages/AutoCloseConfigPage'));
-const RoutingRulesPage = React.lazy(() => import('@/modules/helpdesk/pages/RoutingRulesPage'));
+// 2026-09-04: RoutingRulesPage (two 501s) replaced by the real SLA policy editor.
+const EscalationRulesPage = React.lazy(() => import('@/modules/helpdesk/pages/EscalationRulesPage'));
 
 // Compliance
 const ComplianceDashboardPage = React.lazy(() => import('@/modules/compliance/pages/ComplianceDashboardPage'));
@@ -189,6 +194,17 @@ const ConsentManagementPage = React.lazy(() => import('@/modules/compliance/page
 
 // Content
 const MarketingContentPage = React.lazy(() => import('@/modules/content/pages/MarketingContentPage'));
+// 2026-09-05 (content Phase 1): the media library.
+const MediaLibraryPage = React.lazy(() => import('@/modules/content/pages/MediaLibraryPage'));
+// 2026-09-05 (content Phase 2): help articles were read-only; this is the missing editor.
+const HelpArticleEditorPage = React.lazy(() => import('@/modules/content/pages/HelpArticleEditorPage'));
+// 2026-09-05 (content Phase 3): four website content types that had no page, endpoint or table.
+const TestimonialsPage = React.lazy(() => import('@/modules/content/pages/TestimonialsPage'));
+const AnnouncementsPage = React.lazy(() => import('@/modules/content/pages/AnnouncementsPage'));
+const ClientelePage = React.lazy(() => import('@/modules/content/pages/ClientelePage'));
+const GalleriesPage = React.lazy(() => import('@/modules/content/pages/GalleriesPage'));
+// 2026-09-08 (content Phase 4): article templates.
+const ArticleTemplatesPage = React.lazy(() => import('@/modules/content/pages/ArticleTemplatesPage'));
 const BlogListPage = React.lazy(() => import('@/modules/content/pages/BlogListPage'));
 const BlogEditorPage = React.lazy(() => import('@/modules/content/pages/BlogEditorPage'));
 const HelpArticlesPage = React.lazy(() => import('@/modules/content/pages/HelpArticlesPage'));
@@ -197,17 +213,22 @@ const FAQPage = React.lazy(() => import('@/modules/content/pages/FAQPage'));
 // Downloads
 const DownloadsPage = React.lazy(() => import('@/modules/downloads/pages/DownloadsPage'));
 
+// Notifications (2026-08-05)
+const NotificationsPage = React.lazy(() => import('@/modules/notifications/pages/NotificationsPage'));
+
 // Settings
 const GlobalSettingsPage = React.lazy(() => import('@/modules/settings/pages/GlobalSettingsPage'));
-const FeatureTogglesPage = React.lazy(() => import('@/modules/settings/pages/FeatureTogglesPage'));
-const TokenConfigPage = React.lazy(() => import('@/modules/settings/pages/TokenConfigPage'));
-const CommissionConfigPage = React.lazy(() => import('@/modules/settings/pages/CommissionConfigPage'));
+const BillingCyclePage = React.lazy(() => import('@/modules/settings/pages/BillingCyclePage'));
 const GracePeriodConfigPage = React.lazy(() => import('@/modules/settings/pages/GracePeriodConfigPage'));
 const EmailTemplatesPage = React.lazy(() => import('@/modules/settings/pages/EmailTemplatesPage'));
-const IntegrationsPage = React.lazy(() => import('@/modules/settings/pages/IntegrationsPage'));
+// 2026-08-10: Integrations split into three toggle-gated screens + SMS Templates.
+const SmsTemplatesPage = React.lazy(() => import('@/modules/settings/pages/SmsTemplatesPage'));
+const EmailIntegrationPage = React.lazy(() => import('@/modules/settings/pages/EmailIntegrationPage'));
+const SmsIntegrationPage = React.lazy(() => import('@/modules/settings/pages/SmsIntegrationPage'));
+const PaymentIntegrationPage = React.lazy(() => import('@/modules/settings/pages/PaymentIntegrationPage'));
+const PaymentMethodsPage = React.lazy(() => import('@/modules/settings/pages/PaymentMethodsPage'));
+const ExchangeRatePage = React.lazy(() => import('@/modules/settings/pages/ExchangeRatePage'));
 const MaintenancePage = React.lazy(() => import('@/modules/settings/pages/MaintenancePage'));
-// Round_16 Pass 4 audit H-8: WebhooksPage — backend already had the controller, this is the missing UI.
-const WebhooksPage = React.lazy(() => import('@/modules/settings/Webhooks'));
 
 // Reports
 const ReportsHubPage = React.lazy(() => import('@/modules/reports/pages/ReportsHubPage'));
@@ -217,7 +238,8 @@ const UsageReportPage = React.lazy(() => import('@/modules/reports/pages/UsageRe
 const ChurnReportPage = React.lazy(() => import('@/modules/reports/pages/ChurnReportPage'));
 const CommissionReportPage = React.lazy(() => import('@/modules/reports/pages/CommissionReportPage'));
 const TokenReportPage = React.lazy(() => import('@/modules/reports/pages/TokenReportPage'));
-const CustomReportPage = React.lazy(() => import('@/modules/reports/pages/CustomReportPage'));
+// 2026-09-04 (decision D): CustomReportPage REMOVED — no query engine; page, route, sidebar
+// entry and the 501 endpoint behind it are gone.
 const ComplianceReportPage = React.lazy(() => import('@/modules/reports/pages/ComplianceReportPage'));
 
 // Audit
@@ -225,6 +247,8 @@ const AuditLogPage = React.lazy(() => import('@/modules/audit/pages/AuditLogPage
 
 // Layout shell (loaded eagerly since it wraps all protected routes)
 const AppShell = React.lazy(() => import('@/layout/AppShell'));
+// 2026-09-04: the merchant portal's own frame — header, links, sign-out.
+const MerchantShell = React.lazy(() => import('@/layout/MerchantShell/MerchantShell'));
 
 /* -------------------------------------------------------------------------- */
 /*  Router                                                                    */
@@ -250,8 +274,9 @@ export function AppRouter() {
         {/* ---- Protected routes (require authentication) ---- */}
         <Route element={<ProtectedRoute />}>
           {/* Pass 40 (2026-05-24): merchant-only route group. Lives OUTSIDE the staff
-              AppShell so the merchant SPA can render its own minimal layout. */}
-          <Route path="merchant" element={<MerchantGuard><Outlet /></MerchantGuard>}>
+              AppShell; since 2026-09-04 MerchantShell gives it its own navigation
+              (before that it was a bare Outlet with no way back from any page). */}
+          <Route path="merchant" element={<MerchantGuard><MerchantShell /></MerchantGuard>}>
             <Route index element={<Navigate to="/merchant/dashboard" replace />} />
             <Route path="dashboard" element={<MerchantDashboardPage />} />
             <Route path="wallet" element={<MerchantWalletPage />} />
@@ -259,10 +284,12 @@ export function AppRouter() {
             <Route path="invoices" element={<MerchantInvoicesPage />} />
             <Route path="payments" element={<MerchantInvoicesPage />} />
             <Route path="downloads" element={<MerchantDownloadsPage />} />
+            <Route path="support" element={<MerchantSupportPage />} />
+            <Route path="support/:id" element={<MerchantTicketPage />} />
             <Route path="profile" element={<MerchantProfilePage />} />
           </Route>
 
-          <Route element={<StaffGuard><AppShell /></StaffGuard>}>
+          <Route element={<StaffGuard><PlatformSetupGuard><AppShell /></PlatformSetupGuard></StaffGuard>}>
             {/* Root redirect */}
             <Route index element={<Navigate to="/dashboard" replace />} />
 
@@ -278,8 +305,10 @@ export function AppRouter() {
 
             {/* Merchants */}
             <Route path="merchants" element={<RoleGuard module="merchants"><MerchantDirectoryPage /></RoleGuard>} />
-            <Route path="merchants/register/enterprise" element={<RoleGuard module="merchants"><EnterpriseRegisterPage /></RoleGuard>} />
-            <Route path="merchants/register/standalone" element={<RoleGuard module="merchants"><StandaloneRegisterPage /></RoleGuard>} />
+            {/* 2026-08-06: unified onboarding wizard. Old register routes redirect here. */}
+            <Route path="merchants/signups/new" element={<RoleGuard module="merchants"><NewSignupPage /></RoleGuard>} />
+            <Route path="merchants/onboard" element={<RoleGuard module="merchants"><OnboardingWizardPage /></RoleGuard>} />
+            <Route path="merchants/onboard/:merchantId" element={<RoleGuard module="merchants"><OnboardingWizardPage /></RoleGuard>} />
             <Route path="merchants/signups" element={<RoleGuard module="merchants"><SignupQueuePage /></RoleGuard>} />
             {/* 2026-05-18 (Pass 39): deboarding workflow queue */}
             <Route path="merchants/deboardings" element={<RoleGuard module="merchants"><DeboardingQueuePage /></RoleGuard>} />
@@ -291,7 +320,6 @@ export function AppRouter() {
             <Route path="tokens" element={<RoleGuard module="tokens"><TokenHistoryPage /></RoleGuard>} />
             <Route path="tokens/generate" element={<RoleGuard module="tokens"><TokenGeneratePage /></RoleGuard>} />
             <Route path="tokens/bulk" element={<RoleGuard module="tokens"><BulkTokenPage /></RoleGuard>} />
-            <Route path="tokens/validity" element={<RoleGuard module="tokens"><TokenValidityPage /></RoleGuard>} />
             <Route path="tokens/:id" element={<RoleGuard module="tokens"><TokenDetailPage /></RoleGuard>} />
 
             {/* Billing */}
@@ -299,7 +327,6 @@ export function AppRouter() {
             <Route path="billing/invoices" element={<RoleGuard module="billing"><InvoiceListPage /></RoleGuard>} />
             <Route path="billing/invoices/:id" element={<RoleGuard module="billing"><InvoiceDetailPage /></RoleGuard>} />
             <Route path="billing/plans" element={<RoleGuard module="billing"><PlanManagementPage /></RoleGuard>} />
-            <Route path="billing/token-pricing" element={<RoleGuard module="billing"><TokenPricingPage /></RoleGuard>} />
             <Route path="billing/rate-cards" element={<RoleGuard module="billing"><RateCardListPage /></RoleGuard>} />
             <Route path="billing/wallets" element={<RoleGuard module="billing"><WalletListPage /></RoleGuard>} />
 
@@ -312,11 +339,9 @@ export function AppRouter() {
             <Route path="support" element={<RoleGuard module="support"><TicketQueuePage /></RoleGuard>} />
             <Route path="support/:id" element={<RoleGuard module="support"><TicketDetailPage /></RoleGuard>} />
             <Route path="support/metrics" element={<RoleGuard module="support"><TicketMetricsPage /></RoleGuard>} />
-            <Route path="support/leads" element={<RoleGuard module="support"><LeadsPage /></RoleGuard>} />
-            <Route path="support/leads/:id" element={<RoleGuard module="support"><LeadDetailPage /></RoleGuard>} />
             <Route path="support/canned-responses" element={<RoleGuard module="support"><CannedResponsesPage /></RoleGuard>} />
             <Route path="support/auto-close" element={<RoleGuard module="support"><AutoCloseConfigPage /></RoleGuard>} />
-            <Route path="support/routing-rules" element={<RoleGuard module="support"><RoutingRulesPage /></RoleGuard>} />
+            <Route path="support/escalation-rules" element={<RoleGuard module="support"><EscalationRulesPage /></RoleGuard>} />
 
             {/* Compliance */}
             <Route path="compliance" element={<RoleGuard module="compliance"><ComplianceDashboardPage /></RoleGuard>} />
@@ -324,26 +349,43 @@ export function AppRouter() {
             <Route path="compliance/consent" element={<RoleGuard module="compliance"><ConsentManagementPage /></RoleGuard>} />
 
             {/* Content */}
+            {/* 2026-09-08: leads live under Content (CRM is the Content Manager's scope); the
+                route guard is the content module, which crm.* codes also derive. */}
+            <Route path="content/leads" element={<RoleGuard module="content"><LeadsPage /></RoleGuard>} />
+            <Route path="content/leads/:id" element={<RoleGuard module="content"><LeadDetailPage /></RoleGuard>} />
+            <Route path="content/templates" element={<RoleGuard module="content"><ArticleTemplatesPage /></RoleGuard>} />
+            <Route path="content/media" element={<RoleGuard module="content"><MediaLibraryPage /></RoleGuard>} />
+            <Route path="content/testimonials" element={<RoleGuard module="content"><TestimonialsPage /></RoleGuard>} />
+            <Route path="content/announcements" element={<RoleGuard module="content"><AnnouncementsPage /></RoleGuard>} />
+            <Route path="content/clientele" element={<RoleGuard module="content"><ClientelePage /></RoleGuard>} />
+            <Route path="content/galleries" element={<RoleGuard module="content"><GalleriesPage /></RoleGuard>} />
             <Route path="content/marketing" element={<RoleGuard module="content"><MarketingContentPage /></RoleGuard>} />
             <Route path="content/blog" element={<RoleGuard module="content"><BlogListPage /></RoleGuard>} />
             <Route path="content/blog/new" element={<RoleGuard module="content"><BlogEditorPage /></RoleGuard>} />
             <Route path="content/blog/:id/edit" element={<RoleGuard module="content"><BlogEditorPage /></RoleGuard>} />
             <Route path="content/help" element={<RoleGuard module="content"><HelpArticlesPage /></RoleGuard>} />
+            <Route path="content/help/new" element={<RoleGuard module="content"><HelpArticleEditorPage /></RoleGuard>} />
+            <Route path="content/help/:slug/edit" element={<RoleGuard module="content"><HelpArticleEditorPage /></RoleGuard>} />
             <Route path="content/faq" element={<RoleGuard module="content"><FAQPage /></RoleGuard>} />
 
             {/* Downloads */}
             <Route path="downloads" element={<RoleGuard module="downloads"><DownloadsPage /></RoleGuard>} />
 
+            {/* Notifications (2026-08-05) — no role gate; every staff user has access */}
+            <Route path="notifications" element={<NotificationsPage />} />
+
             {/* Settings */}
             <Route path="settings" element={<RoleGuard module="settings"><GlobalSettingsPage /></RoleGuard>} />
-            <Route path="settings/features" element={<RoleGuard module="settings"><FeatureTogglesPage /></RoleGuard>} />
-            <Route path="settings/token-config" element={<RoleGuard module="settings"><TokenConfigPage /></RoleGuard>} />
-            <Route path="settings/commission-config" element={<RoleGuard module="settings"><CommissionConfigPage /></RoleGuard>} />
+            <Route path="settings/billing-cycle" element={<RoleGuard module="settings"><BillingCyclePage /></RoleGuard>} />
             <Route path="settings/grace-period" element={<RoleGuard module="settings"><GracePeriodConfigPage /></RoleGuard>} />
             <Route path="settings/email-templates" element={<RoleGuard module="settings"><EmailTemplatesPage /></RoleGuard>} />
-            <Route path="settings/integrations" element={<RoleGuard module="settings"><IntegrationsPage /></RoleGuard>} />
-            <Route path="settings/maintenance" element={<RoleGuard module="settings"><MaintenancePage /></RoleGuard>} />
-            <Route path="settings/webhooks" element={<RoleGuard module="settings"><WebhooksPage /></RoleGuard>} />
+            <Route path="settings/sms-templates" element={<RoleGuard module="settings"><SmsTemplatesPage /></RoleGuard>} />
+            <Route path="settings/email-integration" element={<RoleGuard module="settings"><EmailIntegrationPage /></RoleGuard>} />
+            <Route path="settings/sms-integration" element={<RoleGuard module="settings"><SmsIntegrationPage /></RoleGuard>} />
+            <Route path="settings/payment-integration" element={<RoleGuard module="settings"><PaymentIntegrationPage /></RoleGuard>} />
+            <Route path="settings/payment-methods" element={<RoleGuard module="settings"><PaymentMethodsPage /></RoleGuard>} />
+            <Route path="settings/exchange-rate" element={<RoleGuard module="settings"><ExchangeRatePage /></RoleGuard>} />
+            <Route path="maintenance" element={<RoleGuard module="settings"><MaintenancePage /></RoleGuard>} />
 
             {/* Reports */}
             <Route path="reports" element={<RoleGuard module="reports"><ReportsHubPage /></RoleGuard>} />
@@ -353,7 +395,6 @@ export function AppRouter() {
             <Route path="reports/churn" element={<RoleGuard module="reports"><ChurnReportPage /></RoleGuard>} />
             <Route path="reports/commission" element={<RoleGuard module="reports"><CommissionReportPage /></RoleGuard>} />
             <Route path="reports/tokens" element={<RoleGuard module="reports"><TokenReportPage /></RoleGuard>} />
-            <Route path="reports/custom" element={<RoleGuard module="reports"><CustomReportPage /></RoleGuard>} />
             <Route path="reports/compliance" element={<RoleGuard module="compliance"><ComplianceReportPage /></RoleGuard>} />
 
             {/* Audit */}

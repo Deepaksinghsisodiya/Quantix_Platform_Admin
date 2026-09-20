@@ -1,18 +1,18 @@
 import {
   useGetAuditLogsQuery,
-  useExportAuditLogsMutation,
+  useLazyExportAuditLogsQuery,
   type AuditLogEntry,
   type AuditLogParams,
-  type ExportAuditLogsDto,
+  type ExportAuditLogsParams,
 } from '@/modules/audit/services/auditApi';
-import { wrapMutation } from '@/lib/utils/rtkQueryHelpers';
 
 export function useAuditLogs(params: AuditLogParams = {}) {
   return useGetAuditLogsQuery(params);
 }
 
+/** 2026-09-08: the export is a GET returning the CSV/JSON text; callers download it themselves. */
 export function useExportAuditLogs() {
-  const [trigger, result] = useExportAuditLogsMutation();
-  return wrapMutation(trigger, result);
+  return useLazyExportAuditLogsQuery();
 }
 
+export type { AuditLogEntry, AuditLogParams, ExportAuditLogsParams };

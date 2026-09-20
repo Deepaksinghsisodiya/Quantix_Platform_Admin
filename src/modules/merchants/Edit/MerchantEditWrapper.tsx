@@ -88,7 +88,8 @@ export const MerchantEditWrapper: React.FC = () => {
     contactPerson: merchant.contactPerson || '',
     email: merchant.email || '',
     phone: merchant.phone || '',
-    country: merchant.country || 'US',
+    // No fabricated default — the country comes from the merchant row (== platform.country).
+    country: merchant.country || '',
   };
 
   return (

@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { AtSign, Lock, User, UserCheck, Shield } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter/PasswordStrengthMeter';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface RegisterFormProps {
   formikProps: FormikProps<any>;
@@ -12,9 +14,12 @@ interface RegisterFormProps {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
+  formikProps,
   isSubmitting,
   apiError,
 }) => {
+  const brandName = useBrandName();
+  const password: string = formikProps.values?.password ?? '';
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
       {/* Premium Ambient Glows */}
@@ -36,7 +41,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 Create Account
               </h1>
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
-                Join Quantix Platform
+                Join {brandName}
               </p>
             </div>
           </div>
@@ -89,14 +94,17 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               />
 
               {/* Password */}
-              <ATMInputField
-                name="password"
-                label="Password"
-                type="password"
-                placeholder="At least 12 characters"
-                required
-                icon={<Lock size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-              />
+              <div>
+                <ATMInputField
+                  name="password"
+                  label="Password"
+                  type="password"
+                  placeholder="At least 12 characters"
+                  required
+                  icon={<Lock size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                />
+                <PasswordStrengthMeter password={password} minLength={12} />
+              </div>
 
               {/* Confirm Password */}
               <ATMInputField

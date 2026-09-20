@@ -1,23 +1,26 @@
+/**
+ * Token API — 2026-08-29 rebuild.
+ *
+ * The previous version mapped a fictional TokenTier onto PlanType (`tierToPlan` even
+ * produced 'Pro'/'Enterprise' — values that don't exist in the C# enum), synthesized
+ * validFrom/validTo fields the server never sends, and computed a byTier metrics
+ * breakdown client-side. All of that is gone: there are no fixed token tiers — a token
+ * derives from the merchant's subscribed plan, priced and invoiced atomically by
+ * POST /api/v1/tokens/issue. List rows come from the real GET /api/v1/tokens.
+ */
+
 import { baseApi } from '../../../core/services/baseApi';
-import type { ApiResponse, PaginatedResult, PaginationParams } from '@/lib/types/common';
+import type { ApiResponse } from '@/lib/types/common';
 import type {
   RechargeToken,
-  TokenFilter,
-  TokenGenerateRequest,
+  RechargeTokenDetail,
+  TokenListItem,
+  IssueTokenRequest,
+  TokenIssueResult,
   BulkTokenRequest,
-  TokenTemplate,
-  TokenTier,
+  BulkTokenResult,
 } from '@/lib/types';
 import type { PlanType } from '@/lib/types/platform-enums';
-
-export interface TokenMetrics {
-  readonly totalActive: number;
-  readonly totalExpired: number;
-  readonly totalRevoked: number;
-  readonly expiringWithin30Days: number;
-  readonly generatedThisMonth: number;
-  readonly byTier: Record<string, number>;
-}
 
 export interface TokenActivation {
   readonly tokenId: string;
@@ -28,318 +31,228 @@ export interface TokenActivation {
   readonly ipAddress: string | null;
 }
 
-export interface TokenPricingResult {
-  readonly unitPrice: number;
-  readonly total: number;
-  readonly discount: number;
-  readonly currency: string;
+// 2026-08-31: TokenPricingResult REMOVED with GET /tokens/pricing. The endpoint served a
+// hardcoded tier table (100/500/1000 × an invented validity curve × an invented bulk
+// discount, in a hardcoded "USD") that no screen rendered — and this mirror read
+// `currency` where the wire sent `currencyCode`, so it would have shown undefined anyway.
+// A token costs DailySubscriptionPrice × ValidityDays; the issue wizard gets that from
+// the merchant's subscription.
+
+/** Mirror of `TokenTemplateDto` (templates are keyed on PlanType, not tiers). */
+export interface TokenTemplate {
+  readonly templateId: string;
+  readonly templateName: string;
+  readonly plan: PlanType;
+  readonly defaultLimitsPayload: string;
+  readonly defaultFeatureMap: string;
+  readonly defaultGracePolicyDays: string | null;
+  readonly description: string | null;
+  readonly isActive: boolean;
+  readonly isSystemDefined: boolean;
+  readonly createdAt: string;
+  readonly updatedAt: string | null;
 }
 
-type TokenListParams = Partial<TokenFilter & PaginationParams>;
+/** Subset mirror of `SubscriptionDto` — what the token screens need from the merchant's plan. */
+export interface MerchantSubscriptionInfo {
+  readonly subscriptionId: string;
+  readonly merchantId: string;
+  readonly planId: string;
+  readonly planDisplayName: string;
+  readonly planType: PlanType;
+  readonly dailySubscriptionPrice: number;
+  readonly status: string;
+  readonly startDate: string;
+}
 
-const tierToPlan: Record<TokenTier, PlanType> = {
-  Basic: 'Basic',
-  Standard: 'Pro',
-  Advance: 'Enterprise',
-  Premium: 'Enterprise',
-};
+// 2026-08-29: TokenPaymentLink + the payment-link endpoints removed — "External" means
+// payment collected OUTSIDE the platform; only a reference is recorded, for accounting.
 
-const planToTier = (plan?: PlanType | string): TokenTier => {
-  if (plan === 'Basic') return 'Basic';
-  if (plan === 'Enterprise' || plan === 'Custom') return 'Premium';
-  return 'Standard';
-};
+/** Mirror of `ChargeTokenPurchaseCardDto` — card already tokenized client-side. */
+export interface ChargeCardRequest {
+  readonly merchantId: string;
+  readonly validityDays: number;
+  readonly paymentToken: string;
+  readonly cardBrand?: string;
+  readonly cardLast4?: string;
+  readonly cardholderName?: string;
+  /** Batch checkout: number of tokens the charge covers (server multiplies; default 1). */
+  readonly quantity?: number;
+  readonly idempotencyKey: string;
+}
 
-const safeJsonRecord = <T extends Record<string, any>>(value: unknown, fallback: T): T => {
-  if (!value) return fallback;
-  if (typeof value === 'object') return value as T;
-  if (typeof value !== 'string') return fallback;
+/** Mirror of `CardChargeResultDto` — the attempt is persisted server-side either way. */
+export interface CardChargeResult {
+  readonly cardChargeId: string;
+  readonly status: 'Succeeded' | 'Declined';
+  readonly gatewayTransactionId: string | null;
+  readonly amount: number;
+  readonly currencyCode: string;
+  readonly provider: string;
+  readonly cardBrand: string | null;
+  readonly cardLast4: string | null;
+  readonly gatewayMessage: string | null;
+  readonly declineReason: string | null;
+}
+
+/** Mirror of `TokenPreviewDto` — dry-run of generation, nothing minted. */
+export interface TokenPreview {
+  readonly planName: string;
+  readonly flavour: string;
+  readonly sequence: number;
+  readonly validityDays: number;
+  readonly limitsPayload: string;
+  readonly featurePayload: string;
+  readonly servicesPayload: string;
+  readonly paymentsPayload: string;
+  readonly gracePolicyDays: string;
+  readonly revokedSequences: number[];
+}
+
+/** Parse a JSON-encoded payload column ({} on any failure — payloads are display-only here). */
+export const parseJsonRecord = <T extends Record<string, unknown>>(value: string | null | undefined): T => {
+  if (!value) return {} as T;
   try {
     return JSON.parse(value) as T;
   } catch {
-    return fallback;
+    return {} as T;
   }
-};
-
-export const DEFAULT_CANONICAL_LIMITS: Record<string, number> = {
-  MBU: 5,     // Max Users
-  MLO: 1,     // Max Locations
-  MTM: 1,     // Max Terminals
-  MPR: 500,   // Max Products
-  MDP: 5,     // Max Devices
-  MKD: 2,     // Max KDS
-  MDS: 2,     // Max Digital Signage
-  MIS: 10000, // Max Inventory SKUs
-  MPW: 5,     // Max Payment Waiters
-  MGB: 100,   // Max Gift Cards
-  MPG: 2,     // Max Payment Gateways
-  MRS: 20,    // Max Reports
-  MAC: 10,    // Max API Connections
-  MWR: 2,     // Max Warehouses
-  MWE: 2,     // Max Webshops
-  MBR: 5,     // Max Bridge Terminals
-};
-
-const LEGACY_LIMIT_MAP: Record<string, string> = {
-  MaxUsers: 'MBU',
-  users: 'MBU',
-  MaxLocations: 'MLO',
-  locations: 'MLO',
-  MaxTerminals: 'MTM',
-  terminals: 'MTM',
-  MaxProducts: 'MPR',
-  products: 'MPR',
-  MaxDevices: 'MDP',
-  devices: 'MDP',
-  MaxKDS: 'MKD',
-  kds: 'MKD',
-  MaxSignage: 'MDS',
-  MaxSKUs: 'MIS',
-  MaxWaiters: 'MPW',
-  MaxGiftCards: 'MGB',
-  MaxGateways: 'MPG',
-  MaxReports: 'MRS',
-  MaxApiConnections: 'MAC',
-  MaxWarehouses: 'MWR',
-  MaxWebshops: 'MWE',
-  MaxBridges: 'MBR',
-};
-
-export const toCanonical16LimitsPayload = (input?: Record<string, number> | null): Record<string, number> => {
-  const result: Record<string, number> = { ...DEFAULT_CANONICAL_LIMITS };
-
-  if (input && typeof input === 'object') {
-    Object.entries(input).forEach(([key, val]) => {
-      const numVal = typeof val === 'number' ? val : parseInt(String(val), 10);
-      if (Number.isFinite(numVal)) {
-        if (key in DEFAULT_CANONICAL_LIMITS) {
-          result[key] = numVal;
-        } else if (LEGACY_LIMIT_MAP[key]) {
-          result[LEGACY_LIMIT_MAP[key]] = numVal;
-        }
-      }
-    });
-  }
-
-  return result;
-};
-
-const mapGenerateTokenRequest = (request: TokenGenerateRequest) => ({
-  merchantId: request.merchantId,
-  terminalId: request.binding?.terminalId || null,
-  plan: tierToPlan[request.tier] ?? 'Pro',
-  validityDays: request.validityDays,
-  gracePolicyDays: request.gracePolicy ? JSON.stringify(request.gracePolicy) : null,
-  limitsOverride: toCanonical16LimitsPayload(request.limitsPayload),
-  featuresOverride: request.featureMap ?? null,
-});
-
-const mapBulkGenerateRequest = (request: BulkTokenRequest) => {
-  const firstMerchantId = request.merchantIds?.[0] ?? '';
-  const tier = request.overrides?.tier ?? 'Standard';
-
-  return {
-    merchantId: firstMerchantId,
-    plan: tierToPlan[tier] ?? 'Pro',
-    validityDays: request.overrides?.validityDays ?? 90,
-    gracePolicyDays: null,
-    quantity: Math.max(1, request.merchantIds?.length ?? 1),
-    terminalBindings: null,
-    limitsOverride: toCanonical16LimitsPayload(request.overrides?.limitsPayload),
-  };
-};
-
-const daysBetween = (from?: string, to?: string) => {
-  if (!from || !to) return 0;
-  const start = new Date(from).getTime();
-  const end = new Date(to).getTime();
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
-  return Math.max(0, Math.ceil((end - start) / 86_400_000));
-};
-
-const mapTokenResponse = (token: any): RechargeToken => {
-  if (!token) return token;
-
-  const id = token.id ?? token.tokenId;
-  const validFrom = token.validFrom ?? token.validFromDate ?? token.createdAt ?? new Date().toISOString();
-  const validTo = token.validTo ?? token.validToDate ?? token.expiresAt ?? validFrom;
-  const tier = token.tier ?? planToTier(token.plan);
-  const tokenString = token.tokenString ?? token.encodedToken ?? token.tokenHash ?? '';
-  const limitsPayload = safeJsonRecord<Record<string, number>>(token.limitsPayload, {});
-  const featureMap = safeJsonRecord<Record<string, boolean>>(token.featurePayload ?? token.featureMap, {});
-
-  return {
-    ...token,
-    id,
-    merchantId: token.merchantId,
-    merchantName: token.merchantName ?? token.companyName ?? token.displayName ?? '',
-    tier,
-    validFrom,
-    validTo,
-    validityDays: token.validityDays ?? daysBetween(validFrom, validTo),
-    status: token.status ?? 'Active',
-    generatedAt: token.generatedAt ?? token.createdAt ?? validFrom,
-    generatedBy: token.generatedBy ?? 'System',
-    tokenString,
-    qrCodeData: token.qrCodeData ?? token.qrCodeBase64 ?? tokenString,
-    binding: token.binding ?? {
-      merchantId: token.merchantId,
-      businessId: token.merchantId,
-      locationId: null,
-      terminalId: token.activatedTerminalId ?? null,
-    },
-    businessNature: token.businessNature ?? 'Retail',
-    tokenVersion: token.tokenVersion ?? 3,
-    limitsPayload,
-    featureMap,
-    gracePolicy: token.gracePolicy ?? {
-      gracePeriodDays: 0,
-      warningDays: 0,
-      degradedDays: 0,
-      restrictedDays: 0,
-      readOnlyDuringGrace: false,
-      notifyDaysBeforeExpiry: [],
-    },
-    priceAtGeneration: token.priceAtGeneration ?? token.priceTokens ?? null,
-    priceCurrency: typeof token.priceCurrency === 'string' ? token.priceCurrency : null,
-  };
 };
 
 const unwrapArray = (response: any): any[] => {
   const data = response?.data ?? response;
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.tokens)) return data.tokens;
   return [];
-};
-
-const toPaginatedResponse = (response: any, params: TokenListParams): ApiResponse<PaginatedResult<RechargeToken>> => {
-  const data = response?.data ?? response;
-  const rawItems = Array.isArray(data?.items) ? data.items : unwrapArray(response);
-  const items = rawItems.map(mapTokenResponse);
-  const page = params.page ?? data?.page ?? 1;
-  const pageSize = params.pageSize ?? data?.pageSize ?? items.length;
-  const totalCount = data?.totalCount ?? items.length;
-
-  return {
-    ...(response ?? {}),
-    success: response?.success ?? true,
-    timestamp: response?.timestamp ?? new Date().toISOString(),
-    data: {
-      items,
-      totalCount,
-      page,
-      pageSize,
-      totalPages: data?.totalPages ?? Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
-      hasNextPage: data?.hasNextPage ?? page * pageSize < totalCount,
-      hasPreviousPage: data?.hasPreviousPage ?? page > 1,
-    },
-  };
 };
 
 export const tokenApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // ─── Token List & Detail ───────────────────────────────────────────
-    getTokenHistory: builder.query<ApiResponse<PaginatedResult<RechargeToken>>, TokenListParams>({
+    // ─── List & Detail ─────────────────────────────────────────────────
+    /** GET /api/v1/tokens — tokens with merchant identity; from/to window the query
+     *  SERVER-side (2026-08-30: Token History defaults to the last 30 days so the
+     *  payload stays light as history grows). Client filters/paginates the window. */
+    getAllTokens: builder.query<
+      ApiResponse<readonly TokenListItem[]>,
+      { status?: string; from?: string; to?: string } | void
+    >({
       query: (params) => {
-        if (params.merchantId) {
-          return {
-            url: `/api/v1/tokens/merchant/${params.merchantId}`,
-            method: 'GET',
-            params: { status: params.status },
-          };
-        }
-
-        // No "get all tokens" endpoint in Swagger — use /expiring with large window as fallback
+        const query: Record<string, string> = {};
+        if (params?.status) query.status = params.status;
+        if (params?.from) query.from = params.from;
+        if (params?.to) query.to = params.to;
         return {
-          url: '/api/v1/tokens/expiring',
+          url: '/api/v1/tokens',
           method: 'GET',
-          params: { daysWindow: 3650 },
+          params: Object.keys(query).length > 0 ? query : undefined,
         };
       },
-      transformResponse: (response: any, _meta, params) => toPaginatedResponse(response, params),
       providesTags: ['Tokens'],
     }),
 
-    getToken: builder.query<ApiResponse<RechargeToken>, string>({
+    getTokensByMerchant: builder.query<ApiResponse<readonly RechargeToken[]>, { merchantId: string; status?: string }>({
+      query: ({ merchantId, status }) => ({
+        url: `/api/v1/tokens/merchant/${merchantId}`,
+        method: 'GET',
+        params: status ? { status } : undefined,
+      }),
+      providesTags: ['Tokens'],
+    }),
+
+    getToken: builder.query<ApiResponse<RechargeTokenDetail>, string>({
       query: (id) => ({
         url: `/api/v1/tokens/${id}`,
         method: 'GET',
       }),
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: mapTokenResponse(response.data),
-      }),
       providesTags: (_res, _err, id) => [{ type: 'Tokens', id }, 'Tokens'],
     }),
 
-    // ─── Generate ──────────────────────────────────────────────────────
-    generateToken: builder.mutation<ApiResponse<RechargeToken>, TokenGenerateRequest>({
-      query: (data) => ({
-        url: '/api/v1/tokens/generate',
-        method: 'POST',
-        data: mapGenerateTokenRequest(data),
+    /** GET /api/v1/billing/subscriptions/{merchantId} — the plan every token derives from. */
+    getMerchantSubscription: builder.query<ApiResponse<MerchantSubscriptionInfo>, string>({
+      query: (merchantId) => ({
+        url: `/api/v1/billing/subscriptions/${merchantId}`,
+        method: 'GET',
       }),
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: mapTokenResponse(response.data),
+      providesTags: ['Tokens'],
+    }),
+
+    /** POST /tokens/preview — dry-run: exactly what the token will contain. */
+    previewToken: builder.query<ApiResponse<TokenPreview>, { merchantId: string; terminalId?: string | null; validityDays: number }>({
+      query: (data) => ({
+        url: '/api/v1/tokens/preview',
+        method: 'POST',
+        data,
+      }),
+      providesTags: ['Tokens'],
+    }),
+
+    // ─── Issue (the only single-token generation path) ─────────────────
+    /** POST /api/v1/tokens/issue — plan from subscription; token + paid invoice atomically. */
+    issueToken: builder.mutation<ApiResponse<TokenIssueResult>, IssueTokenRequest>({
+      query: (data) => ({
+        url: '/api/v1/tokens/issue',
+        method: 'POST',
+        data,
       }),
       invalidatesTags: ['Tokens'],
     }),
 
-    bulkGenerateTokens: builder.mutation<ApiResponse<readonly RechargeToken[]>, BulkTokenRequest>({
+    /** POST /api/v1/tokens/issue-bulk — PAID batch; plan derived server-side from the subscription. */
+    bulkGenerateTokens: builder.mutation<ApiResponse<BulkTokenResult>, BulkTokenRequest>({
       query: (data) => ({
-        url: '/api/v1/tokens/generate-bulk',
+        url: '/api/v1/tokens/issue-bulk',
         method: 'POST',
-        data: mapBulkGenerateRequest(data),
-      }),
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: unwrapArray(response).map(mapTokenResponse),
+        data,
       }),
       invalidatesTags: ['Tokens'],
+    }),
+
+    // ─── Card checkout ─────────────────────────────────────────────────
+    /** POST /tokens/charge-card — charges a client-tokenized card; amount is plan-derived server-side. */
+    chargeCard: builder.mutation<ApiResponse<CardChargeResult>, ChargeCardRequest>({
+      query: (data) => ({
+        url: '/api/v1/tokens/charge-card',
+        method: 'POST',
+        data,
+      }),
+    }),
+
+    // ─── Mark as applied ───────────────────────────────────────────────
+    /** POST /tokens/{id}/mark-applied — operator records a locally-applied token (Local-Only
+     * POS never calls home); starts the validity window. */
+    markTokenApplied: builder.mutation<ApiResponse<RechargeTokenDetail>, { tokenId: string; appliedAt?: string | null }>({
+      query: ({ tokenId, appliedAt }) => ({
+        url: `/api/v1/tokens/${tokenId}/mark-applied`,
+        method: 'POST',
+        data: { appliedAt: appliedAt || null },
+      }),
+      invalidatesTags: (_res, _err, { tokenId }) => [{ type: 'Tokens', id: tokenId }, 'Tokens'],
+    }),
+
+    // ─── Delivery ──────────────────────────────────────────────────────
+    /** POST /tokens/{id}/send — emails the token to the merchant; fails visibly when email is off. */
+    sendToken: builder.mutation<ApiResponse<boolean>, string>({
+      query: (tokenId) => ({
+        url: `/api/v1/tokens/${tokenId}/send`,
+        method: 'POST',
+      }),
     }),
 
     // ─── Revoke ────────────────────────────────────────────────────────
-    revokeToken: builder.mutation<ApiResponse<RechargeToken>, { tokenId: string; reason: string }>({
+    revokeToken: builder.mutation<ApiResponse<boolean>, { tokenId: string; reason: string }>({
       query: ({ tokenId, reason }) => ({
         url: `/api/v1/tokens/${tokenId}/revoke`,
         method: 'POST',
         data: { reason },
       }),
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: mapTokenResponse(response.data),
-      }),
       invalidatesTags: (_res, _err, { tokenId }) => [{ type: 'Tokens', id: tokenId }, 'Tokens'],
     }),
 
-    // ─── Expiring Tokens ───────────────────────────────────────────────
-    getExpiringTokens: builder.query<ApiResponse<readonly RechargeToken[]>, { daysWindow: number }>({
-      query: ({ daysWindow }) => ({
-        url: '/api/v1/tokens/expiring',
-        method: 'GET',
-        params: { daysWindow },
-      }),
-      transformResponse: (response: ApiResponse<any>) => ({
-        ...response,
-        data: unwrapArray(response).map(mapTokenResponse),
-      }),
-      providesTags: ['Tokens'],
-    }),
+    // 2026-08-30: getExpiringTokens / getExpiringByMerchant removed with the Token
+    // Validity page — "expiring" only covers tokens with a recorded apply date, which
+    // misrepresents coverage for disconnected merchants. Server endpoints removed too.
 
-    /** Swagger: GET /api/v1/tokens/expiring/by-merchant */
-    getExpiringByMerchant: builder.query<ApiResponse<any>, { daysWindow: number }>({
-      query: ({ daysWindow }) => ({
-        url: '/api/v1/tokens/expiring/by-merchant',
-        method: 'GET',
-        params: { daysWindow },
-      }),
-      providesTags: ['Tokens'],
-    }),
-
-    // ─── Token Activations ─────────────────────────────────────────────
-    /** Swagger: GET /api/v1/tokens/activations */
+    // ─── Activations ───────────────────────────────────────────────────
     getTokenActivations: builder.query<ApiResponse<readonly TokenActivation[]>, { merchantId?: string; dateFrom?: string; dateTo?: string }>({
       query: (params) => ({
         url: '/api/v1/tokens/activations',
@@ -350,7 +263,6 @@ export const tokenApi = baseApi.injectEndpoints({
     }),
 
     // ─── Export ────────────────────────────────────────────────────────
-    /** Swagger: GET /api/v1/tokens/export/csv — server-side CSV export */
     exportTokensCsv: builder.query<Blob, { merchantId?: string; status?: string }>({
       query: (params) => ({
         url: '/api/v1/tokens/export/csv',
@@ -360,24 +272,9 @@ export const tokenApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // ─── Pricing ───────────────────────────────────────────────────────
-    /** Swagger: GET /api/v1/tokens/pricing */
-    getTokenPricing: builder.query<ApiResponse<TokenPricingResult>, { plan?: string; validityDays?: number; quantity?: number }>({
-      query: (params) => ({
-        url: '/api/v1/tokens/pricing',
-        method: 'GET',
-        params,
-      }),
-    }),
+    // 2026-08-31: getTokenPricing removed with GET /tokens/pricing (fabricated tier table).
 
-    // ─── Renewal Reminders ─────────────────────────────────────────────
-    /** Swagger: POST /api/v1/tokens/renewal-reminders */
-    sendRenewalReminders: builder.mutation<ApiResponse<{ sentCount: number }>, void>({
-      query: () => ({
-        url: '/api/v1/tokens/renewal-reminders',
-        method: 'POST',
-      }),
-    }),
+    // 2026-08-30: sendRenewalReminders removed with the Token Validity page.
 
     // ─── Templates ─────────────────────────────────────────────────────
     getTokenTemplates: builder.query<ApiResponse<readonly TokenTemplate[]>, void>({
@@ -389,7 +286,6 @@ export const tokenApi = baseApi.injectEndpoints({
       providesTags: ['Tokens'],
     }),
 
-    /** Swagger: GET /api/v1/tokens/templates/{id} */
     getTokenTemplateById: builder.query<ApiResponse<TokenTemplate>, string>({
       query: (id) => ({
         url: `/api/v1/tokens/templates/${id}`,
@@ -398,7 +294,6 @@ export const tokenApi = baseApi.injectEndpoints({
       providesTags: (_res, _err, id) => [{ type: 'Tokens', id }],
     }),
 
-    /** Swagger: POST /api/v1/tokens/templates */
     createTokenTemplate: builder.mutation<ApiResponse<TokenTemplate>, {
       templateName: string;
       plan: PlanType;
@@ -415,7 +310,6 @@ export const tokenApi = baseApi.injectEndpoints({
       invalidatesTags: ['Tokens'],
     }),
 
-    /** Swagger: PUT /api/v1/tokens/templates/{id} */
     updateTokenTemplate: builder.mutation<ApiResponse<TokenTemplate>, {
       id: string;
       templateName?: string | null;
@@ -433,7 +327,6 @@ export const tokenApi = baseApi.injectEndpoints({
       invalidatesTags: ['Tokens'],
     }),
 
-    /** Swagger: POST /api/v1/tokens/templates/{id}/deactivate */
     deactivateTokenTemplate: builder.mutation<ApiResponse<TokenTemplate>, string>({
       query: (id) => ({
         url: `/api/v1/tokens/templates/${id}/deactivate`,
@@ -441,72 +334,27 @@ export const tokenApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Tokens'],
     }),
-
-    // ─── Dashboard Metrics ─────────────────────────────────────────────
-    /** Swagger: GET /api/v1/dashboard/token-metrics — dedicated server-side metrics */
-    getTokenMetrics: builder.query<ApiResponse<TokenMetrics>, void>({
-      query: () => ({
-        url: '/api/v1/dashboard/token-metrics',
-        method: 'GET',
-      }),
-      transformResponse: (response: ApiResponse<any>) => {
-        const raw = response?.data;
-        if (raw && typeof raw === 'object' && 'totalActive' in raw) {
-          // Server returned pre-computed metrics — use directly
-          return response;
-        }
-
-        // Fallback: if response is a list of tokens, compute client-side
-        const tokens = unwrapArray(response).map(mapTokenResponse);
-        const now = new Date();
-        const month = now.getMonth();
-        const year = now.getFullYear();
-        const expiringWithin30Days = tokens.filter((token) => {
-          const validTo = new Date(token.validTo).getTime();
-          const days = Math.ceil((validTo - now.getTime()) / 86_400_000);
-          return days >= 0 && days <= 30;
-        }).length;
-
-        return {
-          ...response,
-          data: {
-            totalActive: tokens.filter((token) => token.status === 'Active').length,
-            totalExpired: tokens.filter((token) => token.status === 'Expired').length,
-            totalRevoked: tokens.filter((token) => token.status === 'Revoked').length,
-            expiringWithin30Days,
-            generatedThisMonth: tokens.filter((token) => {
-              const generatedAt = new Date(token.generatedAt);
-              return generatedAt.getMonth() === month && generatedAt.getFullYear() === year;
-            }).length,
-            byTier: tokens.reduce<Record<string, number>>((acc, token) => {
-              acc[token.tier] = (acc[token.tier] ?? 0) + 1;
-              return acc;
-            }, {}),
-          },
-        };
-      },
-      providesTags: ['Tokens'],
-    }),
   }),
 });
 
 export const {
-  useGetTokenHistoryQuery,
+  useGetAllTokensQuery,
+  useGetTokensByMerchantQuery,
+  useGetMerchantSubscriptionQuery,
+  usePreviewTokenQuery,
   useGetTokenQuery,
-  useGenerateTokenMutation,
+  useIssueTokenMutation,
+  useChargeCardMutation,
+  useMarkTokenAppliedMutation,
+  useSendTokenMutation,
   useBulkGenerateTokensMutation,
   useRevokeTokenMutation,
-  useGetExpiringTokensQuery,
-  useGetExpiringByMerchantQuery,
   useGetTokenActivationsQuery,
   useExportTokensCsvQuery,
   useLazyExportTokensCsvQuery,
-  useGetTokenPricingQuery,
-  useSendRenewalRemindersMutation,
   useGetTokenTemplatesQuery,
   useGetTokenTemplateByIdQuery,
   useCreateTokenTemplateMutation,
   useUpdateTokenTemplateMutation,
   useDeactivateTokenTemplateMutation,
-  useGetTokenMetricsQuery,
 } = tokenApi;

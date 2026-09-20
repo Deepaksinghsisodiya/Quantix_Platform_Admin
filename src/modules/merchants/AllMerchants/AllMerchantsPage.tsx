@@ -7,27 +7,17 @@ import type { Merchant } from '../types/merchant.types';
 // Constants for Filter Options
 // ---------------------------------------------------------------------------
 
+// 2026-08-12 (lifecycle split): the directory shows activated-onward merchants only —
+// signup-phase statuses live in the Signup Queue (the old Pending/Cancelled/Deleted
+// entries were not even real MerchantStatus values).
 const STATUS_OPTIONS = [
   { label: 'All Statuses', value: 'all' },
   { label: 'Active', value: 'Active' },
-  { label: 'Pending', value: 'Pending' },
   { label: 'Suspended', value: 'Suspended' },
-  { label: 'Cancelled', value: 'Cancelled' },
-  { label: 'Failed', value: 'Failed' },
-  { label: 'Deleted', value: 'Deleted' },
 ];
 
-const COUNTRY_OPTIONS = [
-  { label: 'All Countries', value: 'all' },
-  { label: 'United States', value: 'US' },
-  { label: 'United Kingdom', value: 'GB' },
-  { label: 'Canada', value: 'CA' },
-  { label: 'Australia', value: 'AU' },
-  { label: 'Germany', value: 'DE' },
-  { label: 'France', value: 'FR' },
-  { label: 'India', value: 'IN' },
-  { label: 'UAE', value: 'AE' },
-];
+// COUNTRY_OPTIONS removed 2026-08-12 — single-country deployment; a country filter
+// listing GB/CA/AU was fiction.
 
 const PLAN_OPTIONS = [
   { label: 'All Plans', value: 'all' },
@@ -75,7 +65,6 @@ interface AllMerchantsPageProps {
     merchantType: string;
     businessNature: string;
     status: string;
-    country: string;
     plan: string;
   };
   onFilterChange: (key: string, val: any) => void;
@@ -157,12 +146,6 @@ export const AllMerchantsPage: React.FC<AllMerchantsPageProps> = ({
             options: STATUS_OPTIONS,
           },
           {
-            key: 'country',
-            label: 'Country',
-            type: 'select',
-            options: COUNTRY_OPTIONS,
-          },
-          {
             key: 'plan',
             label: 'Plan',
             type: 'select',
@@ -176,7 +159,7 @@ export const AllMerchantsPage: React.FC<AllMerchantsPageProps> = ({
       emptyMessage={
         hasActiveFilters || searchValue
           ? 'No merchants match your filters. Try adjusting search or filters.'
-          : 'No merchants yet. Register your first merchant.'
+          : 'No active merchants yet — merchants appear here once onboarding completes (see Signup Queue).'
       }
     />
   );

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppSelector } from '../../app/hooks';
-import { selectCurrentUser } from '../../modules/auth/slices/authSlice';
+import { selectCurrentUser, selectPermissionCodes } from '../../modules/auth/slices/authSlice';
 import { usePermission } from '../../shared/hooks/usePermission';
 import { Sidebar } from './Sidebar';
 import { navItems, NavItem } from './navConfig';
@@ -19,17 +19,19 @@ export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
   onCollapseToggle,
 }) => {
   const user = useAppSelector(selectCurrentUser);
+  const permissionCodes = useAppSelector(selectPermissionCodes);
 
   const { hasPermission, isAdmin } = usePermission();
 
   const filteredItems = useMemo(() => {
     const filterNavigation = (items: NavItem[]): NavItem[] => {
       return items.reduce<NavItem[]>((result, item) => {
+        // 2026-09-04: module view + (optionally) any of the entry's specific codes; Admin
+        // bypasses both. The old `adminOnly` / stray `hr` role check is gone.
         const hasAccess =
-          (!item.permission || hasPermission(item.permission, 'view')) &&
-          (!item.adminOnly ||
-            isAdmin ||
-            user?.roleName?.toLowerCase() === 'hr');
+          isAdmin ||
+          ((!item.permission || hasPermission(item.permission, 'view')) &&
+            (!item.codes || item.codes.some((code) => permissionCodes.includes(code))));
 
         if (!hasAccess) {
           return result;
@@ -54,7 +56,7 @@ export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
     };
 
     return filterNavigation(navItems);
-  }, [user?.roleName, hasPermission, isAdmin]);
+  }, [user?.roleName, hasPermission, isAdmin, permissionCodes]);
 
   return (
     <Sidebar

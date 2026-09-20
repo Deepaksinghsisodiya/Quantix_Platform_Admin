@@ -61,10 +61,12 @@ export const merchantSelf = {
     params.set('pageSize', String(pageSize));
     return get<ApiResponse<unknown>>(`/api/v1/merchant-self/wallet/transactions?${params}`);
   },
+  // 2026-09-04: the server prices the recharge (GET wallet/quote?tokenAmount=) — the
+  // client no longer sends a currency amount or code.
+  getWalletRechargeQuote: (tokenAmount: number) =>
+    get<ApiResponse<unknown>>(`/api/v1/merchant-self/wallet/quote?tokenAmount=${encodeURIComponent(tokenAmount)}`),
   rechargeWallet: (dto: {
     tokenAmount: number;
-    currencyAmount: number;
-    currencyCode: string;
     paymentToken: string;
     description?: string;
   }) => post<ApiResponse<unknown>>('/api/v1/merchant-self/wallet/recharge', dto),
@@ -78,8 +80,7 @@ export const merchantSelf = {
     get<ApiResponse<unknown>>(`/api/v1/merchant-self/tokens/${tokenId}`),
   purchaseToken: (dto: {
     validityDays: number;
-    currencyAmount: number;
-    currencyCode: string;
+    // 2026-09-04: currencyAmount / currencyCode dropped — the server prices from tokens/quote.
     paymentToken: string;
   }) => post<ApiResponse<unknown>>('/api/v1/merchant-self/tokens/purchase', dto),
 

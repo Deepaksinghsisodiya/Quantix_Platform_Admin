@@ -2,9 +2,7 @@ import { baseApi } from '../../../core/services/baseApi';
 import type { ApiResponse } from '@/lib/types/common';
 import type {
   GlobalSettings,
-  FeatureToggle,
   EmailTemplate,
-  TokenGenerationConfig,
   CommissionConfig,
   GracePeriodConfig,
 } from '@/lib/types';
@@ -16,8 +14,128 @@ import {
   BulkUpdateSettingsRequest 
 } from '../types/settings';
 
+/** 2026-08-30: mirrors SetupCountryOptionDto — one supported deployment country. */
+export interface SetupCountryOption {
+  readonly code: string;
+  readonly currency: string;
+  readonly timezones: readonly string[];
+}
+
+/** 2026-08-07: first-run platform setup gate — mirrors PlatformSetupStatusDto. */
+export interface PlatformSetupStatus {
+  isConfigured: boolean;
+  country: string;
+  currency: string;
+  timezone: string;
+  language: string;
+  dbaName: string;
+  supportEmail: string;
+  platformName: string;
+  /** 2026-08-10 integration toggles — merchant dialogs hide online payment when off. */
+  onlinePaymentEnabled: boolean;
+  smsEnabled: boolean;
+  emailEnabled: boolean;
+  /** 2026-08-29 (card checkout): configured gateway provider key ("Mock" in dev) —
+   * the card form picks its client-side tokenizer by this. */
+  paymentProvider: string;
+}
+
+export interface CompletePlatformSetupInput {
+  country: string;
+  timezone: string;
+  supportEmail: string;
+  dbaName?: string;
+  language?: string;
+}
+
+/** 2026-08-08 grace redesign: per-plan-type policy — anchors from token expiry. */
+export interface GracePeriodPolicy {
+  standardGracePeriodId: string;
+  planType: 'StandalonePos' | 'StandaloneCloud' | 'EnterpriseCloud';
+  warningDays: number;
+  degradedAfterDays: number;
+  restrictedAfterDays: number;
+  suspendedAfterDays: number;
+}
+
+/** 2026-08-29 (Pass 44): mirror of PaymentMethodDto — platform-wide tender catalog. */
+export interface PlatformPaymentMethod {
+  paymentMethodId: string;
+  methodType: string;
+  displayName: string;
+  isEnabled: boolean;
+  sortOrder: number;
+}
+
 export const settingsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getPaymentMethods: builder.query<ApiResponse<PlatformPaymentMethod[]>, { enabledOnly?: boolean } | void>({
+      query: (params) => ({
+        url: '/api/v1/payment-methods',
+        method: 'GET',
+        params: params && params.enabledOnly ? { enabledOnly: true } : undefined,
+      }),
+      providesTags: ['Settings' as any],
+    }),
+    setPaymentMethodEnabled: builder.mutation<ApiResponse<PlatformPaymentMethod>, { methodType: string; isEnabled: boolean }>({
+      query: ({ methodType, isEnabled }) => ({
+        url: `/api/v1/payment-methods/${methodType}`,
+        method: 'PUT',
+        data: { isEnabled },
+      }),
+      invalidatesTags: ['Settings' as any],
+    }),
+    /** 2026-09-04: the feature catalog (code → name/class). Source of truth for download
+     *  package feature gates; nothing in the portal hardcodes feature codes. */
+    getFeatureCatalog: builder.query<ApiResponse<readonly FeatureCatalogEntry[]>, void>({
+      query: () => ({
+        url: '/api/v1/catalogs/features',
+        method: 'GET',
+      }),
+      providesTags: ['FeatureCatalog'],
+    }),
+    getGracePeriods: builder.query<ApiResponse<readonly GracePeriodPolicy[]>, void>({
+      query: () => ({
+        url: '/api/v1/catalogs/grace-periods',
+        method: 'GET',
+      }),
+      providesTags: ['Settings' as any],
+    }),
+    updateGracePeriod: builder.mutation<
+      ApiResponse<GracePeriodPolicy>,
+      { planType: string; warningDays: number; degradedAfterDays: number; restrictedAfterDays: number; suspendedAfterDays: number }
+    >({
+      query: ({ planType, ...body }) => ({
+        url: `/api/v1/catalogs/grace-periods/${planType}`,
+        method: 'PUT',
+        data: body,
+      }),
+      invalidatesTags: ['Settings' as any],
+    }),
+    getSetupStatus: builder.query<ApiResponse<PlatformSetupStatus>, void>({
+      query: () => ({
+        url: '/api/v1/settings/setup-status',
+        method: 'GET',
+      }),
+      providesTags: ['Settings' as any],
+    }),
+    /** 2026-08-30: supported deployment countries (code/currency/timezones) from the
+     *  server CountryCatalog — replaces the three hardcoded setup-screen maps. */
+    getSetupCatalog: builder.query<ApiResponse<readonly SetupCountryOption[]>, void>({
+      query: () => ({
+        url: '/api/v1/settings/setup-catalog',
+        method: 'GET',
+      }),
+      providesTags: ['Settings' as any],
+    }),
+    completePlatformSetup: builder.mutation<ApiResponse<PlatformSetupStatus>, CompletePlatformSetupInput>({
+      query: (body) => ({
+        url: '/api/v1/settings/setup',
+        method: 'POST',
+        data: body,
+      }),
+      invalidatesTags: ['Settings' as any],
+    }),
     getPublicSettings: builder.query<PublicSettings, void>({
       query: () => ({
         url: '/api/v1/settings/public',
@@ -68,13 +186,10 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
     }),
 
-    getAuditLogs: builder.query<any, { key?: string; page?: number; pageSize?: number }>({
-      query: (params) => ({
-        url: '/api/v1/settings/audit',
-        method: 'GET',
-        params,
-      }),
-    }),
+    // 2026-09-08: getAuditLogs REMOVED. It was a second endpoint of the SAME NAME as the audit
+    // module's, pointing at /settings/audit (a route that does not exist - it fell into the
+    // {key} setting lookup and 400'd). RTK keeps the first injection of a name, so the Audit
+    // Trail page and the consent audit trail were silently sent here instead of /audit/logs.
     getDatabaseHealth: builder.query<any, void>({
       query: () => ({
         url: '/api/v1/database/health',
@@ -112,34 +227,12 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Settings' as any],
     }),
-    getFeatureToggles: builder.query<ApiResponse<readonly FeatureToggle[]>, void>({
-      query: () => ({
-        url: '/api/v1/settings/feature-toggles',
-        method: 'GET',
-      }),
-      providesTags: ['Settings' as any],
-    }),
     getEmailTemplates: builder.query<ApiResponse<readonly EmailTemplate[]>, void>({
       query: () => ({
         url: '/api/v1/settings/email-templates',
         method: 'GET',
       }),
       providesTags: ['Settings' as any],
-    }),
-    getTokenConfig: builder.query<ApiResponse<TokenGenerationConfig>, void>({
-      query: () => ({
-        url: '/api/v1/settings/token-config',
-        method: 'GET',
-      }),
-      providesTags: ['Settings' as any],
-    }),
-    updateTokenConfig: builder.mutation<ApiResponse<TokenGenerationConfig>, Partial<TokenGenerationConfig>>({
-      query: (data) => ({
-        url: '/api/v1/settings/token-config',
-        method: 'PUT',
-        data,
-      }),
-      invalidatesTags: ['Settings' as any],
     }),
     getCommissionConfig: builder.query<ApiResponse<CommissionConfig>, void>({
       query: () => ({
@@ -230,6 +323,14 @@ export const settingsApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetPaymentMethodsQuery,
+  useSetPaymentMethodEnabledMutation,
+  useGetGracePeriodsQuery,
+  useUpdateGracePeriodMutation,
+  useGetSetupStatusQuery,
+  useGetSetupCatalogQuery,
+  useGetFeatureCatalogQuery,
+  useCompletePlatformSetupMutation,
   useGetPublicSettingsQuery,
   useGetAllSettingsQuery,
   useUpdateSettingMutation,
@@ -237,16 +338,12 @@ export const {
   useInitializeDefaultsMutation,
   useTestSmtpMutation,
   useTestGoogleMeetMutation,
-  useGetAuditLogsQuery,
   useGetDatabaseHealthQuery,
   useTriggerDatabaseBackupMutation,
   useTriggerDatabaseResetMutation,
   useGetGlobalSettingsQuery,
   useUpdateGlobalSettingsMutation,
-  useGetFeatureTogglesQuery,
   useGetEmailTemplatesQuery,
-  useGetTokenConfigQuery,
-  useUpdateTokenConfigMutation,
   useGetCommissionConfigQuery,
   useGetGracePeriodConfigQuery,
   useGetTaxDefinitionsQuery,
@@ -259,3 +356,15 @@ export const {
   useCreateTaxAssociationMutation,
   useDeleteTaxAssociationMutation,
 } = settingsApi;
+
+/** Mirror of FeatureCatalogDto (PlatformBusiness/DTOs/Catalog/CatalogDtos.cs). */
+export interface FeatureCatalogEntry {
+  readonly featureCode: string;
+  readonly featureName: string;
+  readonly description: string | null;
+  readonly featureClass: 'Basic' | 'Advance' | string;
+  readonly unitPricePerDay: number;
+  readonly applicableBusiness: string;
+  readonly isActive: boolean;
+  readonly sortOrder: number;
+}

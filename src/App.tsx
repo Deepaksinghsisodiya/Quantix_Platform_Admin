@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AppRouter } from './router';
 import ErrorBoundary from './shared/components/ErrorBoundary';
+import ConfigLoader from './shared/components/ConfigLoader/ConfigLoader';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
 import { injectStore } from './core/services/axiosInstance';
@@ -17,9 +18,11 @@ export function App() {
       <ErrorBoundary>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ThemeProvider>
-            <AuthProvider>
-              <AppRouter />
-            </AuthProvider>
+            <ConfigLoader>
+              <AuthProvider>
+                <AppRouter />
+              </AuthProvider>
+            </ConfigLoader>
           </ThemeProvider>
         </BrowserRouter>
       </ErrorBoundary>

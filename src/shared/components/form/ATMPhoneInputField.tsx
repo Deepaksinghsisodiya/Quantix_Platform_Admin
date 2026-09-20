@@ -3,6 +3,7 @@ import { useField } from 'formik';
 import { ChevronDown, Search, Check } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useGetSetupStatusQuery } from '@/modules/settings/services/settingsApi';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -15,11 +16,18 @@ interface Country {
     flag: string;
 }
 
+// 2026-09-04: this list MUST cover every deployable country in the server's
+// DeployableCountryCurrency (SettingsService) — the default dial code follows
+// platform.country, and a deployment whose country is missing here would silently
+// default to the first entry. Intl has no dial-code API, so this stays a list; SG and
+// MY were added with decision C (US, IN, AE, GB, DE, SG, MY).
 const countries: Country[] = [
     { code: 'IN', name: 'India', dialCode: '+91', flag: '🇮🇳' },
     { code: 'US', name: 'United States', dialCode: '+1', flag: '🇺🇸' },
     { code: 'GB', name: 'United Kingdom', dialCode: '+44', flag: '🇬🇧' },
     { code: 'AE', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪' },
+    { code: 'SG', name: 'Singapore', dialCode: '+65', flag: '🇸🇬' },
+    { code: 'MY', name: 'Malaysia', dialCode: '+60', flag: '🇲🇾' },
     { code: 'SA', name: 'Saudi Arabia', dialCode: '+966', flag: '🇸🇦' },
     { code: 'QA', name: 'Qatar', dialCode: '+974', flag: '🇶🇦' },
     { code: 'KW', name: 'Kuwait', dialCode: '+965', flag: '🇰🇼' },
@@ -46,13 +54,28 @@ const ATMPhoneInputField: React.FC<ATMPhoneInputFieldProps> = ({
     const [field, meta, helpers] = useField(props.name);
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // Find country from value or default to India
+
+    // 2026-08-30 (user directive): the default dial code follows the DEPLOYMENT country
+    // (platform.country, chosen at setup) — it was hardcoded to India (countries[0]).
+    const { data: setupRes } = useGetSetupStatusQuery();
+    const deploymentCode = setupRes?.data?.country?.toUpperCase();
+
+    // Detect the country from an existing value; the deployment default is applied by
+    // the effect below once setup status loads (never overriding a typed number or an
+    // explicit user selection).
     const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
         const val = field.value || '';
         const found = countries.find(c => val.startsWith(c.dialCode));
         return found || countries[0]!;
     });
+    const userChoseCountry = useRef(false);
+
+    useEffect(() => {
+        if (userChoseCountry.current || field.value) return;
+        const dep = countries.find(c => c.code === deploymentCode);
+        if (dep) setSelectedCountry(dep);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deploymentCode]);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const isError = meta.touched && meta.error;
@@ -79,6 +102,7 @@ const ATMPhoneInputField: React.FC<ATMPhoneInputFieldProps> = ({
 
     const handleCountrySelect = (country: Country) => {
         const currentNumber = displayValue || '';
+        userChoseCountry.current = true;
         setSelectedCountry(country);
         helpers.setValue(country.dialCode + currentNumber);
         setIsOpen(false);

@@ -60,21 +60,8 @@ export interface SubscriptionPlan {
   readonly isActive: boolean;
 }
 
-/** Pricing configuration for recharge tokens (Standalone model). */
-export interface TokenPricing {
-  readonly id: string;
-  readonly tier: string;
-  readonly validityDays: number;
-  readonly price: number;
-  readonly currency: string;
-  readonly bulkDiscounts: readonly BulkDiscount[];
-}
-
-/** Volume-based discount tier for token purchases. */
-export interface BulkDiscount {
-  readonly minQuantity: number;
-  readonly discountPercent: number;
-}
+// 2026-08-30: TokenPricing/BulkDiscount removed — tier-grid token pricing was fiction;
+// price = subscribed plan daily rate × validity days.
 
 /** Record of a payment transaction. */
 export interface PaymentRecord {

@@ -1,6 +1,7 @@
 import React from 'react';
+import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -35,6 +36,8 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
   onDelete,
   onToggleStatus,
 }) => {
+  // 2026-09-05: currency always comes from configuration (platform.currency).
+  const { currency } = useDeploymentCurrency();
   if (!plan) return null;
 
   return (
@@ -135,19 +138,19 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Daily Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrency(plan.dailyPrice)}</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.dailyPrice, currency)}</p>
             </div>
             <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Weekly Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrency(plan.weeklyPrice)}</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.weeklyPrice, currency)}</p>
             </div>
             <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Monthly Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrency(plan.monthlyPrice)}</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.monthlyPrice, currency)}</p>
             </div>
             <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Yearly Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrency(plan.yearlyPrice)}</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.yearlyPrice, currency)}</p>
             </div>
           </div>
         </div>

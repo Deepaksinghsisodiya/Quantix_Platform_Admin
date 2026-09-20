@@ -34,14 +34,3 @@ export interface CommissionRate {
   readonly effectiveTo: string | null;
 }
 
-/** Exemption from commission for a specific merchant or period. */
-export interface CommissionExemption {
-  readonly id: string;
-  readonly merchantId: string;
-  readonly merchantName: string;
-  readonly reason: string;
-  readonly effectiveFrom: string;
-  readonly effectiveTo: string | null;
-  readonly createdBy: string;
-  readonly createdAt: string;
-}

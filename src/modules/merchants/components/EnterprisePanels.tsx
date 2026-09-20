@@ -1,69 +1,33 @@
 /**
- * EnterprisePanels — Enterprise-specific detail cards with mock data.
+ * EnterprisePanels — Enterprise-merchant detail cards.
  *
- * Displays Cloud API Health, Sync Status, Platform Bridge,
- * Usage Metrics, Commission Summary, Subscription, and Wallet.
+ * FRS-SAP-402 (2026-08-05): de-mocked. Platform Bridge health, Usage rollup,
+ * Commission Summary, Subscription, and Wallet now render the real
+ * GET /merchants/{id}/detail payload.
  */
 
 import React from 'react';
+import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
 import {
   Activity,
-  Cloud,
   CreditCard,
   DollarSign,
   Link2,
   RefreshCw,
   Wallet,
-  Zap,
 } from 'lucide-react';
 
 import { ATMCard } from '@/shared/ui/ATMCard';
-import { ATMProgressBar } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
-
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
-
-const MOCK = {
-  cloudHealth: {
-    status: 'Connected' as const,
-    uptime: 99.97,
-    lastCheck: '2 minutes ago',
-  },
-  sync: {
-    lastSync: '2026-03-29T14:32:00Z',
-    frequency: 'Real-time',
-    pendingItems: 0,
-    locationsSyncing: 3,
-  },
-  platformBridge: {
-    connected: true,
-    version: '2.4.1',
-    lastHandshake: '1 minute ago',
-  },
-  usage: {
-    transactionsToday: 1247,
-    transactionsMonth: 28_450,
-    apiCallsToday: 5_892,
-    apiCallsMonth: 142_300,
-  },
-  commission: {
-    thisMonth: 2_340.50,
-    rate: 2.5,
-    pendingPayout: 1_120.00,
-  },
-  subscription: {
-    plan: 'Professional',
-    nextBilling: '2026-04-15',
-    amount: 129,
-  },
-  wallet: {
-    balance: 4_560.25,
-    limit: 10_000,
-  },
-};
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
+import { formatDate } from '@/lib/utils/formatDate';
+import type {
+  DetailBridgeHealth,
+  DetailCommissionSummary,
+  DetailSubscription,
+  DetailUsageSummary,
+  DetailWallet,
+} from '../types/merchantDetail.types';
 
 // ---------------------------------------------------------------------------
 // Stat row helper
@@ -78,173 +42,201 @@ function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function EmptyHint({ text }: { text: string }) {
+  return <p className="text-xs text-gray-500 dark:text-gray-400 py-4 text-center">{text}</p>;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-function EnterprisePanels() {
-  const walletPercent = Math.round((MOCK.wallet.balance / MOCK.wallet.limit) * 100);
+interface EnterprisePanelsProps {
+  bridgeHealth?: DetailBridgeHealth | null;
+  usageSummary?: DetailUsageSummary | null;
+  commissionSummary?: DetailCommissionSummary | null;
+  subscription?: DetailSubscription | null;
+  wallet?: DetailWallet | null;
+  isLoading?: boolean;
+}
+
+function EnterprisePanels({
+  bridgeHealth,
+  usageSummary,
+  commissionSummary,
+  subscription,
+  wallet,
+  isLoading,
+}: EnterprisePanelsProps) {
+  // 2026-09-05: currency always comes from configuration (platform.currency).
+  const { currency } = useDeploymentCurrency();
+  if (isLoading) {
+    return (
+      <div className="flex h-40 items-center justify-center">
+        <RefreshCw className="h-6 w-6 animate-spin text-accent-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {/* Cloud API Health */}
-      <ATMCard title="Cloud API Health" padding="md">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-              <Cloud className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {MOCK.cloudHealth.status}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Last check: {MOCK.cloudHealth.lastCheck}
-              </p>
-            </div>
-          </div>
-          <StatRow label="Uptime" value={`${MOCK.cloudHealth.uptime}%`} />
-        </div>
-      </ATMCard>
-
-      {/* Sync Status */}
-      <ATMCard title="Sync Status" padding="md">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-              <RefreshCw className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {MOCK.sync.frequency}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {MOCK.sync.locationsSyncing} locations syncing
-              </p>
-            </div>
-          </div>
-          <StatRow label="Pending Items" value={MOCK.sync.pendingItems} />
-        </div>
-      </ATMCard>
-
       {/* Platform Bridge */}
       <ATMCard title="Platform Bridge" padding="md">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-lg',
-              MOCK.platformBridge.connected
-                ? 'bg-emerald-100 dark:bg-emerald-900/30'
-                : 'bg-red-100 dark:bg-red-900/30',
-            )}>
-              <Link2 className={cn(
-                'h-5 w-5',
-                MOCK.platformBridge.connected
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-red-600 dark:text-red-400',
-              )} />
+        {bridgeHealth ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                'flex h-10 w-10 items-center justify-center rounded-lg',
+                bridgeHealth.isConnected
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                  : 'bg-red-100 dark:bg-red-900/30',
+              )}>
+                <Link2 className={cn(
+                  'h-5 w-5',
+                  bridgeHealth.isConnected
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-red-600 dark:text-red-400',
+                )} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  {bridgeHealth.isConnected && (
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  )}
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {bridgeHealth.isConnected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {bridgeHealth.syncStatus ?? 'No sync status reported'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {MOCK.platformBridge.connected ? 'Connected' : 'Disconnected'}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                v{MOCK.platformBridge.version}
-              </p>
-            </div>
+            <StatRow
+              label="Last Sync"
+              value={bridgeHealth.lastSyncAt ? formatDate(bridgeHealth.lastSyncAt, 'short') : 'Never'}
+            />
+            <StatRow label="Pending Sync Items" value={bridgeHealth.pendingSyncItems} />
           </div>
-          <StatRow label="Last Handshake" value={MOCK.platformBridge.lastHandshake} />
-        </div>
+        ) : (
+          <EmptyHint text="No bridge telemetry reported yet." />
+        )}
       </ATMCard>
 
-      {/* Usage Metrics */}
-      <ATMCard title="Usage Metrics" padding="md">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-              <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+      {/* Usage (30-day rollup) */}
+      <ATMCard title="Usage — Last 30 Days" padding="md">
+        {usageSummary ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {usageSummary.last30DaysTransactions.toLocaleString()} transactions
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {usageSummary.lastReportedAt
+                    ? `Last reported ${formatDate(usageSummary.lastReportedAt, 'short')}`
+                    : 'No usage reported yet'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Active</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Today's activity</p>
-            </div>
+            <StatRow label="API Calls" value={usageSummary.last30DaysApiCalls.toLocaleString()} />
+            <StatRow label="Active Terminals" value={usageSummary.latestActiveTerminals} />
+            <StatRow label="Active Users" value={usageSummary.latestActiveUsers} />
+            <StatRow label="Active Locations" value={usageSummary.latestActiveLocations} />
           </div>
-          <StatRow label="Transactions (today)" value={MOCK.usage.transactionsToday.toLocaleString()} />
-          <StatRow label="Transactions (month)" value={MOCK.usage.transactionsMonth.toLocaleString()} />
-          <StatRow label="API Calls (today)" value={MOCK.usage.apiCallsToday.toLocaleString()} />
-          <StatRow label="API Calls (month)" value={MOCK.usage.apiCallsMonth.toLocaleString()} />
-        </div>
+        ) : (
+          <EmptyHint text="No usage metrics reported yet." />
+        )}
       </ATMCard>
 
       {/* Commission Summary */}
       <ATMCard title="Commission Summary" padding="md">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-              <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        {commissionSummary ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {formatCurrencyOrDash(commissionSummary.totalCommissionEarned, currency)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total earned</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(MOCK.commission.thisMonth)}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">This month</p>
-            </div>
+            <StatRow label="Commission Rate" value={`${commissionSummary.currentRatePercent}%`} />
+            <StatRow label="Pending" value={formatCurrencyOrDash(commissionSummary.pendingCommission, currency)} />
+            <StatRow
+              label="Last Settlement"
+              value={
+                commissionSummary.lastSettlementDate
+                  ? `${formatCurrencyOrDash(commissionSummary.lastSettlementAmount, currency)} · ${formatDate(commissionSummary.lastSettlementDate, 'short')}`
+                  : '—'
+              }
+            />
           </div>
-          <StatRow label="Commission Rate" value={`${MOCK.commission.rate}%`} />
-          <StatRow label="Pending Payout" value={formatCurrency(MOCK.commission.pendingPayout)} />
-        </div>
+        ) : (
+          <EmptyHint text="No commission activity yet." />
+        )}
       </ATMCard>
 
       {/* Subscription */}
       <ATMCard title="Subscription" padding="md">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30">
-              <CreditCard className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+        {subscription ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                <CreditCard className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {subscription.planDisplayName ?? 'Subscribed'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {subscription.dailySubscriptionPrice != null
+                    ? `${formatCurrencyOrDash(Number(subscription.dailySubscriptionPrice), currency)}/day`
+                    : 'Rate on file'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {MOCK.subscription.plan} Plan
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {formatCurrency(MOCK.subscription.amount)}/mo
-              </p>
-            </div>
+            {subscription.status != null && <StatRow label="Status" value={String(subscription.status)} />}
+            {subscription.startDate != null && (
+              <StatRow label="Since" value={formatDate(String(subscription.startDate), 'short')} />
+            )}
           </div>
-          <StatRow label="Next Billing" value={MOCK.subscription.nextBilling} />
-        </div>
+        ) : (
+          <EmptyHint text="No active subscription." />
+        )}
       </ATMCard>
 
       {/* Wallet */}
-      <ATMCard title="Wallet" padding="md" className="sm:col-span-2 lg:col-span-1">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30">
-              <Wallet className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+      <ATMCard title="Wallet" padding="md">
+        {wallet ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30">
+                <Wallet className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {wallet.currencyBalance != null
+                    ? formatCurrencyOrDash(Number(wallet.currencyBalance), currency)
+                    : wallet.tokenBalance != null
+                      ? `${Number(wallet.tokenBalance).toLocaleString()} tokens`
+                      : '—'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Available balance</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(MOCK.wallet.balance)}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Available balance</p>
-            </div>
+            {wallet.tokenBalance != null && wallet.currencyBalance != null && (
+              <StatRow label="Token Balance" value={Number(wallet.tokenBalance).toLocaleString()} />
+            )}
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-              <span>Usage</span>
-              <span>{walletPercent}%</span>
-            </div>
-            <ATMProgressBar
-              value={walletPercent}
-              size="sm"
-              variant={walletPercent > 80 ? 'danger' : walletPercent > 50 ? 'warning' : 'default'}
-            />
-          </div>
-          <StatRow label="Limit" value={formatCurrency(MOCK.wallet.limit)} />
-        </div>
+        ) : (
+          <EmptyHint text="No wallet provisioned." />
+        )}
       </ATMCard>
     </div>
   );

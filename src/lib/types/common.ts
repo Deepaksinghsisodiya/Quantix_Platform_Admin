@@ -6,6 +6,21 @@ export interface PaginationParams {
   readonly sortDirection?: SortDirection;
 }
 
+/**
+ * 2026-09-04: mirror of `Quantix.Foundation.DTOs.PagedResponse<T>` — the API's canonical
+ * paged envelope (the whole HTTP body, not nested under `data`). Helpdesk tickets use it.
+ */
+export interface PagedResponse<T> {
+  readonly success: true;
+  readonly data: readonly T[];
+  readonly page: number;
+  readonly pageSize: number;
+  readonly totalCount: number;
+  readonly totalPages: number;
+  readonly hasNextPage: boolean;
+  readonly hasPreviousPage: boolean;
+}
+
 /** Paginated response wrapper. */
 export interface PaginatedResult<T> {
   readonly items: readonly T[];

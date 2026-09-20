@@ -1,25 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import { formatCurrency } from './formatCurrency';
 
+// 2026-09-05: `currency` is required now — these cases pin the USD formatting explicitly.
 describe('formatCurrency', () => {
   it('formats a positive USD amount', () => {
-    expect(formatCurrency(1234.5)).toBe('$1,234.50');
+    expect(formatCurrency(1234.5, 'USD')).toBe('$1,234.50');
   });
 
   it('formats zero', () => {
-    expect(formatCurrency(0)).toBe('$0.00');
+    expect(formatCurrency(0, 'USD')).toBe('$0.00');
   });
 
   it('formats negative amounts', () => {
-    expect(formatCurrency(-99.9)).toBe('-$99.90');
+    expect(formatCurrency(-99.9, 'USD')).toBe('-$99.90');
   });
 
   it('rounds to two decimal places', () => {
-    expect(formatCurrency(10.999)).toBe('$11.00');
+    expect(formatCurrency(10.999, 'USD')).toBe('$11.00');
   });
 
   it('defaults to USD when no currency provided', () => {
-    const result = formatCurrency(50);
+    const result = formatCurrency(50, 'USD');
     expect(result).toContain('$');
   });
 
@@ -35,10 +36,10 @@ describe('formatCurrency', () => {
   });
 
   it('handles large numbers', () => {
-    expect(formatCurrency(1_000_000)).toBe('$1,000,000.00');
+    expect(formatCurrency(1_000_000, 'USD')).toBe('$1,000,000.00');
   });
 
   it('handles small decimal amounts', () => {
-    expect(formatCurrency(0.01)).toBe('$0.01');
+    expect(formatCurrency(0.01, 'USD')).toBe('$0.01');
   });
 });

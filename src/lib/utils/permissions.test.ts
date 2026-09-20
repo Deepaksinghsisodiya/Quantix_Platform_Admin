@@ -107,7 +107,9 @@ describe('canAccess', () => {
     });
 
     it('returns false when permission is not granted', () => {
-      expect(canAccess('Admin', 'merchants', 'view', ['unrelated.permission'])).toBe(false);
+      // 2026-08-30: Admin bypasses every gate (user-locked rule) — assert the denial
+      // path on a non-admin role instead.
+      expect(canAccess('Operator', 'merchants', 'view', ['unrelated.permission'])).toBe(false);
     });
 
     it('treats `*` as wildcard', () => {
@@ -120,12 +122,16 @@ describe('canAccess', () => {
     });
   });
 
+  // 2026-08-30: Admin bypasses every gate (user-locked rule) — unknown module/action
+  // denials are asserted on a non-admin role; Admin always passes.
   it('returns false for unknown module', () => {
-    expect(canAccess('Admin', 'nonexistent', 'view')).toBe(false);
+    expect(canAccess('Operator', 'nonexistent', 'view')).toBe(false);
+    expect(canAccess('Admin', 'nonexistent', 'view')).toBe(true);
   });
 
   it('returns false for unknown action', () => {
-    expect(canAccess('Admin', 'dashboard', 'superpower' as any)).toBe(false);
+    expect(canAccess('Operator', 'dashboard', 'superpower' as any)).toBe(false);
+    expect(canAccess('Admin', 'dashboard', 'superpower' as any)).toBe(true);
   });
 });
 
@@ -178,12 +184,15 @@ describe('getAccessibleModules', () => {
 
 // Sanity check that ROLE_PERMISSIONS holds entries for exactly the 5 locked roles.
 describe('ROLE_PERMISSIONS shape', () => {
-  it('declares all 5 locked roles', () => {
+  // Pass 38 locked the 5 staff roles; Pass 40 (2026-05-24) added the portal-scoped
+  // Merchant role (no staff-side module access — guarded by MerchantGuard).
+  it('declares the 5 locked staff roles plus Merchant', () => {
     const roles = Object.keys(ROLE_PERMISSIONS).sort();
     expect(roles).toEqual([
       'Admin',
       'ContentManager',
       'FinanceManager',
+      'Merchant',
       'OperationsManager',
       'Operator',
     ]);

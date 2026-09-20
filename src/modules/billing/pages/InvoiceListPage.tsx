@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
+import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils/cn';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { formatDate } from '@/lib/utils/formatDate';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard } from '@/shared/ui/ATMCard';
@@ -70,6 +71,8 @@ const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'da
 // ---------------------------------------------------------------------------
 
 export function InvoiceListPage() {
+  // 2026-09-05: currency always comes from configuration (platform.currency).
+  const { currency } = useDeploymentCurrency();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -150,13 +153,13 @@ export function InvoiceListPage() {
         key: 'amount',
         header: 'Amount',
         align: 'right',
-        renderCell: (val, row) => formatCurrency(row.amount),
+        renderCell: (val, row) => formatCurrencyOrDash(row.amount, currency),
       },
       {
         key: 'tax',
         header: 'Tax',
         align: 'right',
-        renderCell: (val, row) => formatCurrency(row.tax),
+        renderCell: (val, row) => formatCurrencyOrDash(row.tax, currency),
       },
       {
         key: 'total',
@@ -164,7 +167,7 @@ export function InvoiceListPage() {
         align: 'right',
         renderCell: (val, row) => (
           <span className="font-bold text-gray-900 dark:text-gray-100">
-            {formatCurrency(row.total)}
+            {formatCurrencyOrDash(row.total, currency)}
           </span>
         ),
       },

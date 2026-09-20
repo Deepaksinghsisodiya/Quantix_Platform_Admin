@@ -7,12 +7,13 @@ import { ATMButton } from '@/shared/ui/ATMButton';
 import { Plus } from 'lucide-react';
 import { PlanForm } from '../Form/PlanForm';
 import { useCreatePlanHook } from '../services/usePlans';
-import type { PlanType, PlanStatus } from '../types/plan.types';
+import type { PlanType, PlanStatus, Flavour } from '../types/plan.types';
 import {
-  DEFAULT_ENT_MODULES,
-  DEFAULT_ENT_PAYMENTS,
-  DEFAULT_ENT_SERVICES,
-  DEFAULT_ENT_LIMITS,
+  PLAN_TYPE_UI_TO_WIRE,
+  DEFAULT_STD_MODULES,
+  DEFAULT_STD_PAYMENTS,
+  DEFAULT_STD_SERVICES,
+  DEFAULT_STD_LIMITS,
 } from '../types/plan.types';
 
 interface AddPlanWrapperProps {
@@ -23,16 +24,12 @@ interface AddPlanWrapperProps {
 
 const planValidationSchema = Yup.object().shape({
   name: Yup.string().trim().required('Plan Name is required'),
+  displayName: Yup.string().trim().required('Display Name is required'),
   planType: Yup.string().oneOf(['Standalone POS', 'Standalone Cloud', 'Enterprise cloud'], 'Select valid plan type').required('Plan type is required'),
+  flavour: Yup.string().oneOf(['RES', 'RET', 'BOT'], 'Select a valid flavour').required('Flavour is required'),
   status: Yup.string().oneOf(['Active', 'Inactive', 'Deprecated']).required('Status is required'),
   priority: Yup.number().typeError('Must be a number').integer('Must be an integer').min(1, 'Priority must be at least 1').required('Priority is required'),
   dailyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Daily Price is required'),
-  weeklyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Weekly Price is required'),
-  monthlyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Monthly Price is required'),
-  yearlyPrice: Yup.number().typeError('Must be a number').min(0, 'Price cannot be negative').required('Yearly Price is required'),
-  trialPeriod: Yup.number().typeError('Must be a number').min(0, 'Trial period cannot be negative'),
-  maxLocations: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative').required('Max locations required'),
-  maxTerminals: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative').required('Max terminals required'),
   features: Yup.array().of(
     Yup.object().shape({
       text: Yup.string().trim().required('Feature text is required'),
@@ -45,6 +42,68 @@ const planValidationSchema = Yup.object().shape({
   priceVariation: Yup.number().typeError('Must be a number'),
 });
 
+/**
+ * Builds the backend CreatePlanDto payload from Formik state — flattens the on/off dicts
+ * (planLimits / planFeatures / planPayments / planServices) into the arrays the API expects
+ * ({ code, ...flag }) and maps UI planType strings to their C# enum names.
+ */
+function buildBackendPayload(values: any) {
+  const limitsArray = Object.entries(values.planLimits || {}).map(([LimitCode, MaxValue]) => ({
+    LimitCode,
+    MaxValue: Number(MaxValue) || 0,
+  }));
+
+  // 23 Basic features are always-on server-side; we only submit the 6 Advance toggles.
+  const featuresArray = Object.entries(values.planFeatures || {}).map(([FeatureCode, IsIncluded]) => ({
+    FeatureCode,
+    IsIncluded: !!IsIncluded,
+    ShowOnWebsite: !!IsIncluded,
+  }));
+
+  const paymentsArray = Object.entries(values.planPayments || {}).map(([PaymentCode, IsIncluded]) => ({
+    PaymentCode,
+    IsIncluded: !!IsIncluded,
+  }));
+
+  const servicesArray = Object.entries(values.planServices || {}).map(([ServiceCode, IsIncluded]) => ({
+    ServiceCode,
+    IsIncluded: !!IsIncluded,
+  }));
+
+  return {
+    // Backend CreatePlanDto: PlanCode, PlanName, DisplayName, PlanType, Flavour, Description,
+    // CommissionPercent, DiscountType, DiscountValue, IsPublic, SortOrder, MarketingBullets[],
+    // Limits[], Features[], Payments[], Services[].
+    PlanCode: values.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+    PlanName: values.name.trim(),
+    DisplayName: values.displayName.trim(),
+    PlanType: PLAN_TYPE_UI_TO_WIRE[values.planType as PlanType],
+    Flavour: values.flavour as Flavour,
+    Description: '',
+    CommissionPercent: 0,
+    DiscountType: 0, // None
+    DiscountValue: 0,
+    IsPublic: values.status === 'Active',
+    SortOrder: Number(values.priority) || 1,
+    // Marketing bullet editor rows — unchecked rows are dropped on save.
+    MarketingBullets: (values.features || [])
+      .filter((f: any) => f.included && f.text?.trim())
+      .map((f: any) => f.text.trim()),
+    Limits: limitsArray,
+    Features: featuresArray,
+    Payments: paymentsArray,
+    Services: servicesArray,
+    // The effective daily price shown in the form (manual override or rate-card
+    // preview). Server rule mirrors UpdateAsync Q11(b): > 0 wins, 0 ⇒ server auto-calc.
+    PlanPricePerDay: Number(values.isManualPrice ? values.manualPrice : values.dailyPrice) || 0,
+    // 2026-08-30: the old extra fields `dailyPrice` + `features` are GONE — "backend
+    // ignores unknown fields" was wrong: JSON binding is case-INSENSITIVE, so the junk
+    // lowercase `features` (marketing rows {text, included}) clobbered the real
+    // `Features` array, deserializing PlanFeature rows with EMPTY FeatureCode →
+    // SQLite FK violation → every create 500'd.
+  };
+}
+
 export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
   isOpen,
   onClose,
@@ -55,7 +114,9 @@ export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
   const formik = useFormik({
     initialValues: {
       name: '',
-      planType: 'Enterprise cloud' as PlanType,
+      displayName: '',
+      planType: 'Standalone POS' as PlanType,
+      flavour: 'RES' as Flavour,
       priority: 1,
       status: 'Active' as PlanStatus,
       dailyPrice: '',
@@ -63,18 +124,15 @@ export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
       monthlyPrice: '',
       yearlyPrice: '',
       priceVariation: 0,
-      trialPeriod: 14,
-      maxLocations: 3,
-      maxTerminals: 6,
       features: [
-        { text: 'Cloud POS Terminal Billing', included: true },
-        { text: 'Multi-Outlet Support', included: true },
-        { text: 'Real-time Stock Sync', included: true },
+        { text: 'On-prem Standalone POS install', included: true },
+        { text: 'Multi-terminal support', included: true },
+        { text: 'Real-time inventory sync', included: true },
       ],
-      planFeatures: { ...DEFAULT_ENT_MODULES },
-      planPayments: { ...DEFAULT_ENT_PAYMENTS },
-      planServices: { ...DEFAULT_ENT_SERVICES },
-      planLimits: { ...DEFAULT_ENT_LIMITS },
+      planFeatures: { ...DEFAULT_STD_MODULES },
+      planPayments: { ...DEFAULT_STD_PAYMENTS },
+      planServices: { ...DEFAULT_STD_SERVICES },
+      planLimits: { ...DEFAULT_STD_LIMITS },
       popular: false,
       isManualPrice: false,
       manualPrice: '',
@@ -82,39 +140,9 @@ export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
     validationSchema: planValidationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        const cleanedFeatures = values.features
-          .filter((f) => f.text.trim().length > 0)
-          .map((f) => ({ text: f.text.trim(), included: f.included }));
-
-        const manualVal = Number(values.manualPrice || 0);
-        const dailyVal = values.isManualPrice ? Number((manualVal / 30).toFixed(2)) : Number(values.dailyPrice);
-        const weeklyVal = values.isManualPrice ? Number((manualVal / 4).toFixed(2)) : Number(values.weeklyPrice);
-        const monthlyVal = values.isManualPrice ? manualVal : Number(values.monthlyPrice);
-        const yearlyVal = values.isManualPrice ? Number((manualVal * 10).toFixed(2)) : Number(values.yearlyPrice);
-
-        const res = await createPlanMutation.mutateAsync({
-          name: values.name.trim(),
-          planType: values.planType,
-          priority: Number(values.priority),
-          status: values.status,
-          dailyPrice: dailyVal,
-          weeklyPrice: weeklyVal,
-          monthlyPrice: monthlyVal,
-          yearlyPrice: yearlyVal,
-          trialPeriod: Number(values.trialPeriod || 0),
-          features: cleanedFeatures,
-          maxLocations: Number(values.maxLocations || 1),
-          maxTerminals: Number(values.maxTerminals || 1),
-          planFeatures: values.planFeatures,
-          planPayments: values.planPayments,
-          planServices: values.planServices,
-          planLimits: values.planLimits,
-          popular: values.popular,
-          isManualPrice: values.isManualPrice,
-          manualPrice: manualVal,
-        } as any);
-
-        const newPlan = res?.data;
+        const payload = buildBackendPayload(values);
+        const res = await createPlanMutation.mutateAsync(payload as any);
+        const newPlan = (res as any)?.data;
 
         toast.success(`Plan "${values.name.trim()}" created successfully.`);
         resetForm();
@@ -153,7 +181,7 @@ export const AddPlanWrapper: React.FC<AddPlanWrapperProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Subscription Plan"
-      subtitle="Set up pricing, plan type, status, feature entitlements, and limits for merchants"
+      subtitle="Configure deployment mode, flavour, limits, features, payments, and service types — matches the V3 token structure."
       size="3xl"
       footer={
         <div className="flex items-center justify-end gap-3 w-full border-t border-gray-100 dark:border-gray-800 pt-4">

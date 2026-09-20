@@ -1,6 +1,6 @@
 import { baseApi } from '../../../core/services/baseApi';
 import type { ApiResponse } from '@/lib/types/common';
-import type { ApiListResponse } from '@/lib/api/types';
+import type { PagedResponse } from '@/lib/types/common';
 import type {
   Wallet,
   WalletListParams,
@@ -16,7 +16,9 @@ import type {
 
 export const walletApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getWallets: builder.query<ApiListResponse<Wallet>, WalletListParams>({
+    // 2026-09-05: paged envelope (data + totalCount) — was ApiListResponse with a
+    // `pagination` block the API never sent.
+    getWallets: builder.query<PagedResponse<Wallet>, WalletListParams>({
       query: (params) => ({
         url: '/api/v1/wallet/summary',
         method: 'GET',

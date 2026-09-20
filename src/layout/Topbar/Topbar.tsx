@@ -14,6 +14,7 @@ import { ATMDropdown } from '../../shared/ui/ATMDropdown';
 import { User as UserType } from '../../modules/auth';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { navItems, NavItem } from '../Sidebar/navConfig';
+import { NotificationBell } from './NotificationBell';
 
 interface SearchResult {
   id: string;
@@ -229,6 +230,8 @@ export const Topbar: React.FC<Props> = ({
       {/* Right Section */}
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <ThemeToggle />
+
+        <NotificationBell />
 
         <ATMDropdown
           trigger={

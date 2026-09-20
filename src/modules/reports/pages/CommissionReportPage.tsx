@@ -1,278 +1,289 @@
-import React, { useState } from 'react';
-import { ATMBadge, ATMCard, ATMSkeleton } from '@/shared/ui';
+import React, { useMemo, useState } from 'react';
+import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
-import { ExportButton } from '@/shared/components/ExportButton';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Percent, TrendingUp, ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import type { ReportExportFormat } from '@/lib/types';
+import { Percent, TrendingUp, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { useCommissionReport, reportWindow } from '@/lib/hooks/useReports';
+import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
+import { ReportExportMenu } from '../components/ReportExportMenu';
 
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------
+ * FRS-SAP-708 — Commission Report
+ *
+ * 2026-08-31 (de-fictioned). This page made ZERO API calls. It showed a 12-month
+ * commission curve invented month by month, a ten-row per-merchant table of
+ * invented companies (Metro Hospitality Group, Coastal Dining Co, …) with invented
+ * transaction counts and invented commission, a settlement-status pie with invented
+ * 65/22/13 percentages, and hardcoded 3.5% / 5.0% / 7.0% rate statistics. None of
+ * it moved when the database changed.
+ *
+ * It now renders GET /reports/commission-detailed: real commission charges grouped
+ * by merchant, by plan and by period, with the real pending/settled split derived
+ * from invoice linkage.
+ * ------------------------------------------------------------------------- */
 
-const COMMISSION_BY_PERIOD = [
-  { month: 'Apr', commission: 12400 },
-  { month: 'May', commission: 13200 },
-  { month: 'Jun', commission: 14100 },
-  { month: 'Jul', commission: 14800 },
-  { month: 'Aug', commission: 15900 },
-  { month: 'Sep', commission: 16500 },
-  { month: 'Oct', commission: 17400 },
-  { month: 'Nov', commission: 18200 },
-  { month: 'Dec', commission: 17100 },
-  { month: 'Jan', commission: 19700 },
-  { month: 'Feb', commission: 20500 },
-  { month: 'Mar', commission: 21500 },
-];
-
-const MERCHANT_COMMISSIONS = [
-  { name: 'Metro Hospitality Group', transactions: 48200, totalValue: 2410000, commission: 4820 },
-  { name: 'Coastal Dining Co', transactions: 42100, totalValue: 2105000, commission: 4210 },
-  { name: 'Urban Eats Network', transactions: 38500, totalValue: 1925000, commission: 3850 },
-  { name: 'Sakura Restaurant Chain', transactions: 35200, totalValue: 1760000, commission: 3520 },
-  { name: 'Fresh Market Holdings', transactions: 31800, totalValue: 1590000, commission: 3180 },
-  { name: 'Pixel Electronics', transactions: 28400, totalValue: 1420000, commission: 2840 },
-  { name: 'Peak Retail Corp', transactions: 25100, totalValue: 1255000, commission: 2510 },
-  { name: 'Brew Brothers Franchise', transactions: 22800, totalValue: 1140000, commission: 2280 },
-  { name: 'Garden Plate Cafes', transactions: 18600, totalValue: 930000, commission: 1860 },
-  { name: 'Noodle House Express', transactions: 8200, totalValue: 410000, commission: 820 },
-];
-
-const SETTLEMENT_STATUS = [
-  { name: 'Settled', value: 65, color: '#10b981' },
-  { name: 'Approved', value: 22, color: '#6366f1' },
-  { name: 'Pending', value: 13, color: '#f59e0b' },
-];
-
-const totalCommission = COMMISSION_BY_PERIOD.reduce((s, d) => s + d.commission, 0);
-const avgRate = 5.0;
-const minRate = 3.5;
-const maxRate = 7.0;
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+type WindowChoice = '30d' | '90d' | '12m';
+const WINDOW_DAYS: Record<WindowChoice, number> = { '30d': 30, '90d': 90, '12m': 365 };
+const WINDOW_LABEL: Record<WindowChoice, string> = {
+  '30d': 'Last 30 days',
+  '90d': 'Last 90 days',
+  '12m': 'Last 12 months',
+};
 
 function CommissionReportPage() {
-  const [loading] = useState(false);
+  const [windowChoice, setWindowChoice] = useState<WindowChoice>('12m');
+  const range = useMemo(() => reportWindow(WINDOW_DAYS[windowChoice]), [windowChoice]);
 
-  const handleExport = (_format: ReportExportFormat) => {
-    // stub
-  };
+  const query = useCommissionReport(range);
+  const report = query.data?.data;
+  // 2026-09-05: currency always comes from configuration (platform.currency).
+  const { currency } = useDeploymentCurrency();
+
+  const periodChart = useMemo(
+    () =>
+      (report?.byPeriod ?? []).map((p) => ({
+        label: p.periodLabel,
+        commission: p.commissionAmount,
+        charges: p.transactionCount,
+      })),
+    [report],
+  );
+
+  const isLoading = query.isLoading;
+  const isError = query.isError;
+  const errorMessage =
+    (query.error as any)?.data?.message ||
+    (query.error as any)?.message ||
+    'Failed to load the commission report.';
+
+  const windows: WindowChoice[] = ['30d', '90d', '12m'];
+  const hasData = (report?.byMerchant.length ?? 0) > 0 || (report?.totalEarned ?? 0) > 0;
 
   return (
     <div className="w-full space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Commission Report</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Commission earnings, merchant breakdown, and settlement status
+            Commission charged to merchants — {WINDOW_LABEL[windowChoice].toLowerCase()}
           </p>
         </div>
-        <ExportButton onExport={handleExport} />
+        <ReportExportMenu report="commission" window={range} disabled={isLoading || isError} />
       </div>
 
-      {/* Summary cards */}
-      {loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="card" height="100px" />)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              <Percent className="h-3.5 w-3.5" />
-              Total Earned (YTD)
-            </div>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">
-              {formatCurrency(totalCommission)}
-            </p>
+      {isError && (
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
+          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-4 w-4" />
+            <span>{errorMessage}</span>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Average Rate
-            </div>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">{avgRate}%</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              <ArrowDownRight className="h-3.5 w-3.5" />
-              Min Rate
-            </div>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">{minRate}%</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              Max Rate
-            </div>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">{maxRate}%</p>
-          </div>
+          <ATMButton variant="ghost" size="sm" onClick={() => { void query.refetch(); }}>
+            Retry
+          </ATMButton>
         </div>
       )}
 
-      {/* Commission bar chart + Settlement pie */}
+      <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
+        {windows.map((w) => (
+          <button
+            key={w}
+            type="button"
+            onClick={() => setWindowChoice(w)}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              windowChoice === w
+                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+            )}
+          >
+            {WINDOW_LABEL[w]}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="card" height="100px" />)}
+        </div>
+      ) : report ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Tile icon={TrendingUp} label="Total charged" value={formatCurrencyOrDash(report.totalEarned, currency)} />
+          <Tile
+            icon={CheckCircle2}
+            label="Settled"
+            value={formatCurrencyOrDash(report.settledAmount, currency)}
+            tone="emerald"
+          />
+          <Tile
+            icon={Clock}
+            label="Pending invoice"
+            value={formatCurrencyOrDash(report.pendingSettlement, currency)}
+          />
+          <Tile icon={Percent} label="Average rate" value={`${report.averageRate}%`} />
+        </div>
+      ) : null}
+
+      {!isLoading && report && !hasData && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+          No commission was charged in this window. Commission is pulled from merchant
+          revenue collections; a deployment with no Enterprise merchants trading records none.
+        </div>
+      )}
+
+      <ATMCard title="Commission Over Time">
+        {isLoading ? (
+          <ATMSkeleton variant="rect" height="300px" />
+        ) : periodChart.length === 0 ? (
+          <Empty text="No commission charges in this window." />
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={periodChart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+              <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+              <Tooltip
+                formatter={(v) => formatCurrencyOrDash(Number(v ?? 0), currency)}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface, #fff)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '0.5rem',
+                  fontSize: '12px',
+                }}
+              />
+              <Bar dataKey="commission" name="Commission" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </ATMCard>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ATMCard title="Commission by Period" action={
-          <span className="text-xs text-gray-500 dark:text-gray-400">12 months</span>
-        }>
-          {loading ? (
-            <ATMSkeleton variant="rect" height="300px" />
+        <ATMCard title="By Merchant">
+          {isLoading ? (
+            <ATMSkeleton variant="rect" height="220px" />
+          ) : (report?.byMerchant.length ?? 0) === 0 ? (
+            <Empty text="No merchant was charged commission in this window." />
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={COMMISSION_BY_PERIOD} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  stroke="#9ca3af"
-                  tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  formatter={((value: number) => formatCurrency(value)) as never}
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface, #fff)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    fontSize: '12px',
-                  }}
-                />
-                <Bar dataKey="commission" name="Commission" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <Th>Merchant</Th>
+                    <Th align="right">Charges</Th>
+                    <Th align="right">Rate</Th>
+                    <Th align="right">Commission</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {(report?.byMerchant ?? []).map((m) => (
+                    <tr key={m.merchantId}>
+                      <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{m.companyName}</td>
+                      <td className="py-3 text-right text-gray-700 dark:text-gray-300">{m.transactionCount}</td>
+                      <td className="py-3 text-right text-gray-700 dark:text-gray-300">{m.ratePercent}%</td>
+                      <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
+                        {formatCurrencyOrDash(m.totalCommission, currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </ATMCard>
 
-        <ATMCard title="Settlement Status">
-          {loading ? (
-            <ATMSkeleton variant="rect" height="300px" />
+        <ATMCard title="By Plan">
+          {isLoading ? (
+            <ATMSkeleton variant="rect" height="220px" />
+          ) : (report?.byPlan.length ?? 0) === 0 ? (
+            <Empty text="No commission by plan in this window." />
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={SETTLEMENT_STATUS}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={110}
-                  paddingAngle={2}
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, value }) => `${name} ${value}%`}
-                  labelLine={{ stroke: '#9ca3af' }}
-                >
-                  {SETTLEMENT_STATUS.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <Th>Plan</Th>
+                    <Th align="right">Merchants</Th>
+                    <Th align="right">Commission</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {(report?.byPlan ?? []).map((p) => (
+                    <tr key={p.planName}>
+                      <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{p.planName}</td>
+                      <td className="py-3 text-right text-gray-700 dark:text-gray-300">{p.merchantCount}</td>
+                      <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
+                        {formatCurrencyOrDash(p.totalCommission, currency)}
+                      </td>
+                    </tr>
                   ))}
-                </Pie>
-                <Tooltip
-                  formatter={((value: number) => `${value}%`) as never}
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface, #fff)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    fontSize: '12px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                </tbody>
+              </table>
+            </div>
           )}
         </ATMCard>
       </div>
 
-      {/* Merchant table */}
-      <ATMCard title="Commission by Merchant">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="pb-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">#</th>
-                <th className="pb-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Merchant</th>
-                <th className="pb-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Transactions</th>
-                <th className="pb-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Total Value</th>
-                <th className="pb-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Commission Earned</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {MERCHANT_COMMISSIONS.map((row, idx) => (
-                <tr key={row.name}>
-                  <td className="py-3 text-gray-500 dark:text-gray-400">{idx + 1}</td>
-                  <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{row.name}</td>
-                  <td className="py-3 text-right text-gray-700 dark:text-gray-300">
-                    {row.transactions.toLocaleString()}
-                  </td>
-                  <td className="py-3 text-right text-gray-700 dark:text-gray-300">
-                    {formatCurrency(row.totalValue)}
-                  </td>
-                  <td className="py-3 text-right font-medium text-gray-900 dark:text-gray-100">
-                    {formatCurrency(row.commission)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </ATMCard>
-      {/* FRS-SAP-709: Commission Rate Effectiveness & Disputes */}
-      <ATMCard title="Rate Effectiveness Analysis">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Rate by Plan Tier</h4>
-            <div className="space-y-2">
-              {[
-                { plan: 'Starter', rate: 3.0, merchants: 312, avgCommission: 42 },
-                { plan: 'Growth', rate: 2.5, merchants: 428, avgCommission: 89 },
-                { plan: 'Business', rate: 2.0, merchants: 356, avgCommission: 156 },
-                { plan: 'Enterprise', rate: 1.5, merchants: 151, avgCommission: 284 },
-              ].map((p) => (
-                <div key={p.plan} className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-                  <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.plan}</span>
-                    <span className="ml-2 text-xs text-gray-500">({p.merchants} merchants)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <ATMBadge variant="default" size="sm">{p.rate}%</ATMBadge>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(p.avgCommission)}/mo avg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Settlement Status</h4>
-            <div className="space-y-2">
-              {[
-                { status: 'Settled', count: 1842, amount: 186500, variant: 'success' as const },
-                { status: 'Pending', count: 234, amount: 21500, variant: 'warning' as const },
-                { status: 'Disputed', count: 12, amount: 3200, variant: 'danger' as const },
-              ].map((s) => (
-                <div key={s.status} className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-                  <div className="flex items-center gap-2">
-                    <ATMBadge variant={s.variant} size="sm" dot>{s.status}</ATMBadge>
-                    <span className="text-xs text-gray-500">{s.count.toLocaleString()} transactions</span>
-                  </div>
-                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(s.amount)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </ATMCard>
+      {/* 2026-08-31: the settlement-status pie is gone. The API reports two real
+          buckets — pending invoice and settled — shown as tiles above; the old chart
+          added a third "Approved" state that the commission model does not have. */}
+    </div>
+  );
+}
+
+function Tile({
+  icon: Icon,
+  label,
+  value,
+  tone = 'default',
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone?: 'default' | 'emerald';
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <p
+        className={cn(
+          'mt-1 text-2xl font-bold',
+          tone === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-gray-50',
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
+  return (
+    <th
+      className={cn(
+        'pb-2 text-xs font-medium text-gray-500 dark:text-gray-400',
+        align === 'right' ? 'text-right' : 'text-left',
+      )}
+    >
+      {children}
+    </th>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+      {text}
     </div>
   );
 }

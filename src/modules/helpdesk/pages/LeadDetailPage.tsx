@@ -82,7 +82,7 @@ function LeadDetailPage() {
     return (
       <div className="flex flex-col items-center gap-3 py-24 text-sm text-red-600">
         {error ?? 'Lead not found.'}
-        <Link to={ROUTES.SUPPORT.LEADS}>
+        <Link to={ROUTES.CONTENT.LEADS}>
           <ATMButton variant="secondary" size="sm" leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}>Back to leads</ATMButton>
         </Link>
       </div>
@@ -92,7 +92,7 @@ function LeadDetailPage() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Link to={ROUTES.SUPPORT.LEADS}>
+        <Link to={ROUTES.CONTENT.LEADS}>
           <ATMButton variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}>Back</ATMButton>
         </Link>
         <ATMBadge variant={STATUS_VARIANT[lead.status] ?? 'default'}>{lead.status}</ATMBadge>

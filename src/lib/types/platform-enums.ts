@@ -23,8 +23,19 @@ export type MerchantStatus =
 /** Mirror of `BillingCycleType`. */
 export type BillingCycleType = 'Monthly' | 'Quarterly' | 'Annual';
 
-/** Mirror of `PlanType` (§11.1). */
-export type PlanType = 'Trial' | 'Basic' | 'Pro' | 'Enterprise' | 'Custom';
+/**
+ * Mirror of `PlanType` (Pass 41 deployment-mode rework). 2026-08-29: the stale
+ * 'Trial'|'Basic'|'Pro'|'Enterprise'|'Custom' values were pre-Pass-41 fiction — plan
+ * tiers (Basic/Pro/Advance) are DisplayNames on Plan rows, not enum members.
+ */
+export type PlanType = 'StandalonePos' | 'StandaloneCloud' | 'EnterpriseCloud';
+
+/** Human labels for PlanType (matches C# [Description] attributes). */
+export const PLAN_TYPE_LABEL: Record<PlanType, string> = {
+  StandalonePos: 'Standalone POS',
+  StandaloneCloud: 'Standalone Cloud',
+  EnterpriseCloud: 'Enterprise Cloud',
+};
 
 /** Mirror of `RechargeTokenStatus` (Round_16 Pass 1). */
 export type RechargeTokenStatus = 'Active' | 'Consumed' | 'Expired' | 'Revoked';

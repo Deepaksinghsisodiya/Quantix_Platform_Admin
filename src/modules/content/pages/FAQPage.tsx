@@ -1,214 +1,374 @@
-import React, { useState } from 'react';
-import { ATMBadge, ATMButton, ATMCard, ATMModal } from '@/shared/ui';
-import { Plus, GripVertical, Pencil, Trash2, ChevronDown, ChevronUp, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { Plus, ChevronDown, ChevronUp, Trash2, Pencil, AlertTriangle, GripVertical, EyeOff } from 'lucide-react';
+
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
+import type { FAQ } from '@/lib/types';
+import {
+  useGetFaqsQuery,
+  useGetFaqCategoriesQuery,
+  useCreateFaqMutation,
+  useUpdateFaqMutation,
+  useDeleteFaqMutation,
+  useReorderFaqsMutation,
+} from '../services/contentApi';
 
-/* -------------------------------------------------------------------------- */
-/*  Types & Mock data                                                          */
-/* -------------------------------------------------------------------------- */
+/**
+ * FAQ — 2026-09-05 (content Phase 2), rebuilt on the API.
+ *
+ * What this replaces: a page that made ZERO network calls. It rendered twelve FAQ objects
+ * written into the source file, with invented answers about SLA times, a dedicated Slack channel
+ * and volume discount tiers. Add and delete mutated a `useState` array, so an edit survived
+ * until the next refresh and never reached anyone. Its drag handle carried the comment
+ * "visual only", and Edit opened a toast saying "coming soon".
+ *
+ * The Content Manager dashboard, meanwhile, showed the REAL server count next to a link to this
+ * page. With forty FAQs in the database the tile said forty and the page showed the same twelve
+ * invented ones.
+ *
+ * Page title matches the sidebar label verbatim.
+ */
 
-interface FAQ {
-  id: string;
+const ALL = '__all__';
+
+interface DraftFaq {
   question: string;
   answer: string;
   category: string;
-  order: number;
+  merchantType: string;
+  sortOrder: number;
+  isActive: boolean;
 }
 
-const FAQ_CATEGORIES = ['General', 'Billing', 'Technical', 'Features'];
-
-const ENTERPRISE_FAQS: FAQ[] = [
-  { id: 'e1', question: 'What is included in the Enterprise plan?', answer: 'The Enterprise plan includes multi-location management, real-time cloud sync, advanced analytics, KDS integration, dedicated support, and custom API access. You also get priority onboarding and a dedicated account manager.', category: 'General', order: 1 },
-  { id: 'e2', question: 'How does multi-location billing work?', answer: 'Enterprise billing is calculated per location with volume discounts. Each location is billed at the base plan rate, with automatic discounts applied at 5+, 10+, and 25+ location thresholds. Commission rates also decrease with volume.', category: 'Billing', order: 2 },
-  { id: 'e3', question: 'Can I sync data across all my locations?', answer: 'Yes, real-time sync is a core Enterprise feature. All locations share a unified cloud database with conflict resolution. Changes propagate within seconds when online, and offline changes are queued automatically.', category: 'Technical', order: 3 },
-  { id: 'e4', question: 'What happens if my internet goes down?', answer: 'Quantix POS continues operating in offline mode. All transactions are stored locally and automatically synced when connectivity is restored. The sync service handles conflict resolution using last-write-wins with configurable priority.', category: 'Technical', order: 4 },
-  { id: 'e5', question: 'How do I add a new location?', answer: 'Navigate to the Location Management section in your admin dashboard and click "Add Location". Enter the location details, assign a plan tier, and provision terminals. The new location will automatically receive the latest menu and product data via sync.', category: 'Features', order: 5 },
-  { id: 'e6', question: 'What support channels are available?', answer: 'Enterprise customers have access to priority email support (4-hour SLA), live chat during business hours, phone support for urgent issues, and a dedicated Slack channel for real-time communication with our team.', category: 'General', order: 6 },
-];
-
-const STANDALONE_FAQS: FAQ[] = [
-  { id: 's1', question: 'What is a Standalone license?', answer: 'A Standalone license allows you to operate Quantix POS independently without cloud connectivity. The software runs locally with all core features. You purchase token-based licenses that activate the software on specific devices.', category: 'General', order: 1 },
-  { id: 's2', question: 'How does token licensing work?', answer: 'Token licenses are one-time purchases that activate Quantix POS on a specific number of devices. Tokens are tied to hardware and include a validity period. You can manage and transfer tokens through the platform portal.', category: 'Billing', order: 2 },
-  { id: 's3', question: 'Can I upgrade from Standalone to Enterprise?', answer: 'Yes, you can upgrade at any time. Contact our sales team to initiate the migration. Your existing data will be migrated to the cloud, and your remaining token validity will be credited toward your Enterprise subscription.', category: 'General', order: 3 },
-  { id: 's4', question: 'Do I need internet for Standalone POS?', answer: 'No, Standalone POS operates fully offline. Internet is only required for initial token activation and optional software updates. All POS functionality works without connectivity.', category: 'Technical', order: 4 },
-  { id: 's5', question: 'How do I get software updates?', answer: 'Software updates are available through the Downloads section of the platform portal. Download the latest version and install it on your devices. Updates are included in your license for the token validity period.', category: 'Technical', order: 5 },
-  { id: 's6', question: 'What payment methods are accepted for tokens?', answer: 'We accept credit/debit cards (Visa, Mastercard, Amex), bank transfers, and PayPal. Enterprise customers can also pay via invoice with NET-30 terms.', category: 'Billing', order: 6 },
-];
-
-/* -------------------------------------------------------------------------- */
-/*  Component                                                                  */
-/* -------------------------------------------------------------------------- */
+const EMPTY_DRAFT: DraftFaq = {
+  question: '',
+  answer: '',
+  category: '',
+  merchantType: '',
+  sortOrder: 0,
+  isActive: true,
+};
 
 function FAQPage() {
-  const [activeTab, setActiveTab] = useState<'enterprise' | 'standalone'>('enterprise');
-  const [enterpriseFaqs, setEnterpriseFaqs] = useState<FAQ[]>(ENTERPRISE_FAQS);
-  const [standaloneFaqs, setStandaloneFaqs] = useState<FAQ[]>(STANDALONE_FAQS);
+  const [category, setCategory] = useState<string>(ALL);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState('');
-  const [newAnswer, setNewAnswer] = useState('');
-  const [newCategory, setNewCategory] = useState('General');
+  const [editing, setEditing] = useState<FAQ | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<DraftFaq>(EMPTY_DRAFT);
+  const [deleteTarget, setDeleteTarget] = useState<FAQ | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
 
-  const faqs = activeTab === 'enterprise' ? enterpriseFaqs : standaloneFaqs;
-  const setFaqs = activeTab === 'enterprise' ? setEnterpriseFaqs : setStandaloneFaqs;
+  // Staff see inactive FAQs so they can switch one back on; the public endpoint hides them.
+  const faqsQuery = useGetFaqsQuery({});
+  const categoriesQuery = useGetFaqCategoriesQuery();
+  const [createFaq, createState] = useCreateFaqMutation();
+  const [updateFaq, updateState] = useUpdateFaqMutation();
+  const [deleteFaq] = useDeleteFaqMutation();
+  const [reorderFaqs] = useReorderFaqsMutation();
 
-  const handleDelete = (id: string) => {
-    setFaqs((prev) => prev.filter((f) => f.id !== id));
-    toast.success('FAQ deleted');
+  const faqs = faqsQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
+
+  const visible = useMemo(
+    () => (category === ALL ? faqs : faqs.filter((f) => f.category === category)),
+    [faqs, category],
+  );
+
+  const openCreate = () => {
+    setDraft({ ...EMPTY_DRAFT, sortOrder: faqs.length, category: category === ALL ? '' : category });
+    setCreating(true);
   };
 
-  const handleAdd = () => {
-    if (!newQuestion.trim() || !newAnswer.trim()) {
-      toast.error('Please fill in both question and answer');
+  const openEdit = (faq: FAQ) => {
+    setDraft({
+      question: faq.question,
+      answer: faq.answer,
+      category: faq.category ?? '',
+      merchantType: faq.merchantType ?? '',
+      sortOrder: faq.sortOrder,
+      isActive: faq.isActive,
+    });
+    setEditing(faq);
+  };
+
+  const save = async () => {
+    if (!draft.question.trim() || !draft.answer.trim()) {
+      toast.error('A question and an answer are both required.');
       return;
     }
-    const newFaq: FAQ = {
-      id: `${activeTab.charAt(0)}${Date.now()}`,
-      question: newQuestion,
-      answer: newAnswer,
-      category: newCategory,
-      order: faqs.length + 1,
+    const payload = {
+      question: draft.question.trim(),
+      answer: draft.answer,
+      category: draft.category.trim() || undefined,
+      merchantType: draft.merchantType || null,
+      sortOrder: draft.sortOrder,
     };
-    setFaqs((prev) => [...prev, newFaq]);
-    setNewQuestion('');
-    setNewAnswer('');
-    setNewCategory('General');
-    setShowAddForm(false);
-    toast.success('FAQ added');
+    try {
+      if (editing) {
+        await updateFaq({ faqId: editing.faqId, ...payload, isActive: draft.isActive }).unwrap();
+        toast.success('FAQ updated.');
+        setEditing(null);
+      } else {
+        await createFaq(payload).unwrap();
+        toast.success('FAQ added.');
+        setCreating(false);
+      }
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Could not save the FAQ.');
+    }
   };
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-            FAQ Management
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Manage frequently asked questions for Enterprise and Standalone customers.
-          </p>
-        </div>
-        <ATMButton variant="primary" size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowAddForm(true)}>
-          Add FAQ
-        </ATMButton>
-      </div>
+  const togglePublished = async (faq: FAQ) => {
+    try {
+      await updateFaq({ faqId: faq.faqId, isActive: !faq.isActive }).unwrap();
+      toast.success(faq.isActive ? 'Hidden from the website.' : 'Published to the website.');
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Could not change the published state.');
+    }
+  };
 
-      {/* Tab toggle */}
-      <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 w-fit">
-        {(['enterprise', 'standalone'] as const).map((tab) => (
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteFaq(deleteTarget.faqId).unwrap();
+      toast.success('FAQ deleted.');
+      setDeleteTarget(null);
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Could not delete the FAQ.');
+    }
+  };
+
+  // Drag to reorder. The whole visible list is sent in its new order, so the server never has to
+  // guess what moved.
+  const handleDrop = async (targetId: string) => {
+    if (!dragId || dragId === targetId) return;
+    const ids = visible.map((f) => f.faqId);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = ids.splice(from, 1);
+    if (moved === undefined) return;
+    ids.splice(to, 0, moved);
+    setDragId(null);
+    try {
+      await reorderFaqs(ids).unwrap();
+      toast.success('Order saved.');
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Could not save the new order.');
+    }
+  };
+
+  const isError = faqsQuery.isError;
+
+  return (
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        title="FAQ"
+        subtitle="Questions and answers published on the website help centre."
+        action={{ label: 'Add FAQ', onClick: openCreate, icon: Plus }}
+      />
+
+      {isError && (
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
+          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-4 w-4" />
+            <span>Could not load the FAQs.</span>
+          </div>
+          <ATMButton variant="ghost" size="sm" onClick={() => { void faqsQuery.refetch(); }}>Retry</ATMButton>
+        </div>
+      )}
+
+      {/* Categories come from the API. The old page hardcoded four, so a FAQ filed under
+          anything else was unreachable. */}
+      <div className="inline-flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
+        <button
+          type="button"
+          onClick={() => setCategory(ALL)}
+          className={cn(
+            'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+            category === ALL
+              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
+          )}
+        >
+          All ({faqs.length})
+        </button>
+        {categories.map((c) => (
           <button
-            key={tab}
+            key={c}
             type="button"
-            onClick={() => { setActiveTab(tab); setExpandedId(null); }}
+            onClick={() => setCategory(c)}
             className={cn(
-              'px-4 py-2 text-sm font-medium capitalize transition-colors',
-              tab === 'enterprise' ? 'rounded-l-lg' : 'rounded-r-lg',
-              activeTab === tab
-                ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              category === c
+                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
             )}
           >
-            {tab} FAQs
+            {c} ({faqs.filter((f) => f.category === c).length})
           </button>
         ))}
       </div>
 
-      {/* FAQ list */}
-      <div className="space-y-2">
-        {faqs.map((faq) => (
-          <div
-            key={faq.id}
-            className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
-          >
-            <div className="flex items-center gap-3 px-4 py-3">
-              {/* Drag handle (visual only) */}
-              <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-300 dark:text-gray-600" />
-
-              {/* Order */}
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-gray-100 text-xs font-bold tabular-nums text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                {faq.order}
-              </span>
-
-              {/* Question */}
-              <button
-                type="button"
-                onClick={() => setExpandedId(expandedId === faq.id ? null : faq.id)}
-                className="flex flex-1 items-center gap-2 text-left"
+      <ATMCard>
+        {faqsQuery.isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="56px" />)}
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+            {faqs.length === 0 ? 'No FAQs yet. Add the first one.' : 'No FAQs in this category.'}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {visible.map((faq) => (
+              <div
+                key={faq.faqId}
+                draggable
+                onDragStart={() => setDragId(faq.faqId)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => { void handleDrop(faq.faqId); }}
+                className={cn(
+                  'py-3 transition-colors',
+                  dragId === faq.faqId && 'opacity-50',
+                  !faq.isActive && 'bg-gray-50/60 dark:bg-gray-900/40',
+                )}
               >
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{faq.question}</span>
-              </button>
-
-              {/* Category */}
-              <ATMBadge variant="outline" size="sm">{faq.category}</ATMBadge>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1">
-                <ATMButton variant="ghost" size="sm" onClick={() => toast('Edit modal coming soon')}>
-                  <Pencil className="h-3.5 w-3.5" />
-                </ATMButton>
-                <ATMButton variant="ghost" size="sm" onClick={() => handleDelete(faq.id)}>
-                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                </ATMButton>
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(expandedId === faq.id ? null : faq.id)}
-                  className="rounded p-1 text-gray-400 hover:text-gray-600"
-                >
-                  {expandedId === faq.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
+                <div className="flex items-start gap-3">
+                  <GripVertical className="mt-1 h-4 w-4 cursor-grab text-gray-300 dark:text-gray-600" />
+                  <button
+                    type="button"
+                    className="flex-1 text-left"
+                    onClick={() => setExpandedId(expandedId === faq.faqId ? null : faq.faqId)}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{faq.question}</span>
+                      {faq.category && <ATMBadge color="default" label={faq.category} />}
+                      {faq.merchantType && <ATMBadge color="primary" label={faq.merchantType} />}
+                      {!faq.isActive && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
+                          <EyeOff className="h-3 w-3" /> Hidden
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => { void togglePublished(faq); }}
+                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+                      aria-label={faq.isActive ? 'Hide from the website' : 'Publish to the website'}
+                    >
+                      <EyeOff className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(faq)}
+                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+                      aria-label={`Edit ${faq.question}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(faq)}
+                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                      aria-label={`Delete ${faq.question}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(expandedId === faq.faqId ? null : faq.faqId)}
+                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      aria-label="Toggle answer"
+                    >
+                      {expandedId === faq.faqId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                {expandedId === faq.faqId && (
+                  <p className="ml-7 mt-2 whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300">{faq.answer}</p>
+                )}
               </div>
-            </div>
-
-            {/* Expanded answer */}
-            {expandedId === faq.id && (
-              <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
-                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{faq.answer}</p>
-              </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+      </ATMCard>
 
-      {/* Add FAQ modal */}
-      <ATMModal open={showAddForm} onClose={() => setShowAddForm(false)} title="Add FAQ" size="md">
-        <div className="flex flex-col gap-4">
+      <ATMModal
+        isOpen={creating || !!editing}
+        onClose={() => { setCreating(false); setEditing(null); }}
+        title={editing ? 'Edit FAQ' : 'Add FAQ'}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <ATMTextField
+            name="question"
+            label="Question"
+            value={draft.question}
+            onChange={(e) => setDraft((d) => ({ ...d, question: e.target.value }))}
+          />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Question</label>
-            <input
-              type="text"
-              value={newQuestion}
-              onChange={(e) => setNewQuestion(e.target.value)}
-              placeholder="Enter the FAQ question..."
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Answer</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Answer</label>
             <textarea
-              value={newAnswer}
-              onChange={(e) => setNewAnswer(e.target.value)}
-              placeholder="Enter the answer..."
-              rows={5}
+              rows={6}
+              value={draft.answer}
+              onChange={(e) => setDraft((d) => ({ ...d, answer: e.target.value }))}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-            <select
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            >
-              {FAQ_CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <ATMTextField
+              name="category"
+              label="Category"
+              value={draft.category}
+              onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+              helperText="Groups the accordion. Leave blank for none."
+            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Applies to</label>
+              <select
+                value={draft.merchantType}
+                onChange={(e) => setDraft((d) => ({ ...d, merchantType: e.target.value }))}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              >
+                <option value="">Every merchant</option>
+                <option value="Enterprise">Enterprise only</option>
+                <option value="Standalone">Standalone only</option>
+              </select>
+            </div>
+            <ATMTextField
+              name="sortOrder"
+              label="Order"
+              type="number"
+              value={String(draft.sortOrder)}
+              onChange={(e) => setDraft((d) => ({ ...d, sortOrder: parseInt(e.target.value, 10) || 0 }))}
+            />
           </div>
           <div className="flex justify-end gap-2">
-            <ATMButton variant="secondary" size="sm" onClick={() => setShowAddForm(false)}>Cancel</ATMButton>
-            <ATMButton variant="primary" size="sm" onClick={handleAdd}>Add FAQ</ATMButton>
+            <ATMButton variant="ghost" onClick={() => { setCreating(false); setEditing(null); }}>Cancel</ATMButton>
+            <ATMButton
+              variant="primary"
+              onClick={() => { void save(); }}
+              isLoading={createState.isLoading || updateState.isLoading}
+            >
+              {editing ? 'Save' : 'Add FAQ'}
+            </ATMButton>
+          </div>
+        </div>
+      </ATMModal>
+
+      <ATMModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete this FAQ?" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            &ldquo;{deleteTarget?.question}&rdquo; will be removed from the website help centre.
+          </p>
+          <div className="flex justify-end gap-2">
+            <ATMButton variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</ATMButton>
+            <ATMButton variant="danger" onClick={() => { void confirmDelete(); }}>Delete</ATMButton>
           </div>
         </div>
       </ATMModal>

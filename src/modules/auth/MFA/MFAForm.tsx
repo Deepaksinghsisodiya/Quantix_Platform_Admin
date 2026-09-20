@@ -14,6 +14,7 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { useBrandName } from '@/shared/hooks/useBrandName';
 
 interface MFAFormProps {
   step: number;
@@ -104,6 +105,7 @@ export const MFAForm: React.FC<MFAFormProps> = ({
   onDownloadBackupCodes,
   onComplete,
 }) => {
+  const brandName = useBrandName();
   // Access Formik context when step === 3
   const formik = useFormikContext<any>();
 
@@ -413,7 +415,7 @@ export const MFAForm: React.FC<MFAFormProps> = ({
 
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          Quantix Platform v1.0.0-alpha
+          {brandName} v1.0.0-alpha
         </p>
       </div>
     </div>

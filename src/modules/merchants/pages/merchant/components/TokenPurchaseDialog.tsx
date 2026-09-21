@@ -18,20 +18,25 @@
  */
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { BadgeCheck } from 'lucide-react';
 import {
   useGetSelfTokenQuoteQuery,
   usePurchaseSelfTokenMutation,
 } from '@/modules/merchants/services/merchantSelfApi';
 import { ATMModal, ATMSkeleton } from '@/shared/ui';
+import { cn } from '@/lib/utils/cn';
 import PspMount from './PspMount';
 
 const VALIDITY_OPTIONS = [
   { days: 30, label: '1 month' },
   { days: 60, label: '2 months' },
   { days: 90, label: '3 months' },
-  { days: 180, label: '6 months' },
+  { days: 180, label: '6 months', bestValue: true },
   { days: 365, label: '12 months' },
 ];
+
+const validityLabel = (days: number) =>
+  VALIDITY_OPTIONS.find((o) => o.days === days)?.label ?? `${days} days`;
 
 interface Props {
   open: boolean;
@@ -116,12 +121,21 @@ export default function TokenPurchaseDialog({ open, onClose, onPurchased }: Prop
                 key={opt.days}
                 type="button"
                 onClick={() => setValidityDays(opt.days)}
-                className={`rounded-lg border p-3 text-sm transition ${
+                className={cn(
+                  'relative rounded-lg border p-3 text-sm transition',
                   validityDays === opt.days
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                    : 'border-surface-200 dark:border-surface-700 hover:border-primary-300'
-                }`}
+                    : opt.bestValue
+                      ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/20 hover:border-emerald-300'
+                      : 'border-surface-200 dark:border-surface-700 hover:border-primary-300',
+                )}
               >
+                {opt.bestValue && (
+                  <span className="absolute -top-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/30">
+                    <BadgeCheck className="h-2.5 w-2.5" />
+                    Best value
+                  </span>
+                )}
                 <div className="font-semibold">{opt.label}</div>
                 <div className="text-xs text-surface-500">{opt.days} days</div>
               </button>
@@ -134,18 +148,35 @@ export default function TokenPurchaseDialog({ open, onClose, onPurchased }: Prop
               <p className="text-sm font-semibold text-red-600 dark:text-red-400">{quoteError}</p>
             ) : (
               <>
-                <div className="flex justify-between">
-                  <span className="text-surface-500">Validity</span>
-                  <strong>{validityDays} days</strong>
-                </div>
-                <div className="mt-1 flex justify-between">
-                  <span className="text-surface-500">You will be charged</span>
-                  <strong>{quoting || !quote ? <ATMSkeleton width="70px" height="16px" className="inline-block align-middle" /> : money(quote.amount)}</strong>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-surface-400">
+                      Total you will be charged
+                    </p>
+                    <p className="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+                      {quoting || !quote ? (
+                        <ATMSkeleton width="110px" height="26px" className="inline-block align-middle" />
+                      ) : (
+                        money(quote.amount)
+                      )}
+                    </p>
+                  </div>
+                  {quote && !quoting && (
+                    <div className="shrink-0 text-right">
+                      <p className="text-xs font-semibold text-surface-600 dark:text-surface-300">
+                        {validityLabel(validityDays)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-surface-400">
+                        ≈ {money(Math.round(quote.dailyPrice * 100) / 100)} per day
+                      </p>
+                    </div>
+                  )}
                 </div>
                 {quote && !quoting && (
-                  <div className="mt-1 text-xs text-surface-500">
-                    {quote.planName} · {money(quote.dailyPrice)} per day × {validityDays} days
-                  </div>
+                  <p className="mt-2 border-t border-surface-200/70 pt-2 text-xs text-surface-500 dark:border-surface-800">
+                    {quote.planName} · {money(Math.round(quote.dailyPrice * 100) / 100)} per day ×{' '}
+                    {validityDays} days
+                  </p>
                 )}
               </>
             )}
@@ -169,14 +200,24 @@ export default function TokenPurchaseDialog({ open, onClose, onPurchased }: Prop
 
       {onlinePaymentEnabled && step === 'pay' && quote && (
         <div className="space-y-4">
-          <div className="rounded-lg bg-surface-50 dark:bg-surface-900 p-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-surface-500">Validity</span>
-              <strong>{validityDays} days</strong>
-            </div>
-            <div className="mt-1 flex justify-between">
-              <span className="text-surface-500">Charge</span>
-              <strong>{money(quote.amount)}</strong>
+          <div className="rounded-lg bg-surface-50 dark:bg-surface-900 p-3.5 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-surface-400">
+                  Charge
+                </p>
+                <p className="mt-0.5 text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+                  {money(quote.amount)}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-xs font-semibold text-surface-600 dark:text-surface-300">
+                  {validityLabel(validityDays)} · {validityDays} days
+                </p>
+                <p className="mt-0.5 text-xs text-surface-400">
+                  ≈ {money(Math.round(quote.dailyPrice * 100) / 100)} per day
+                </p>
+              </div>
             </div>
           </div>
           <PspMount

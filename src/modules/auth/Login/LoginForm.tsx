@@ -1,6 +1,6 @@
 import React from 'react';
 import { Form, type FormikProps } from 'formik';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AtSign, Lock, ShieldCheck } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
@@ -14,6 +14,8 @@ interface LoginFormProps {
   isSubmitting: boolean;
   resetForm?: () => void;
   apiError?: string;
+  /** 'admin' — Platform Admin branding (default); 'merchant' — Merchant Portal. */
+  variant?: 'admin' | 'merchant';
 }
 
 const SUBMIT_BUTTON_CLASS =
@@ -28,8 +30,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   isSubmitting,
   resetForm,
   apiError,
+  variant = 'admin',
 }) => {
   const brandName = useBrandName();
+  const navigate = useNavigate();
+  const isMerchant = variant === 'merchant';
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-12 selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
       {/* Subtle dot grid */}
@@ -60,9 +65,35 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <div className="space-y-1 text-center">
               <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">{brandName}</h1>
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                Platform Admin
+                {isMerchant ? 'Merchant Portal' : 'Platform Admin'}
               </p>
             </div>
+          </div>
+
+          {/* Portal switch — toggle between Admin and Merchant sign-in */}
+          <div className="mb-6 flex items-center gap-1 rounded-xl border border-slate-200/70 bg-slate-100/80 p-1 dark:border-slate-800 dark:bg-slate-900/70">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
+                !isMerchant
+                  ? 'bg-white text-accent-700 shadow-sm dark:bg-slate-700 dark:text-accent-300'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/merchant/login')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
+                isMerchant
+                  ? 'bg-white text-accent-700 shadow-sm dark:bg-slate-700 dark:text-accent-300'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              Merchant
+            </button>
           </div>
 
           {/* Step content */}
@@ -81,7 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               <ATMInputField
                 name="email"
                 label="Email or Username"
-                placeholder="admin@quantix.io or admin"
+                placeholder={isMerchant ? 'merchant@quantix.io or your username' : 'admin@quantix.io or admin'}
                 autoComplete="username"
                 required
                 autoFocus
@@ -118,17 +149,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               </ATMButton>
 
               {/* Registration link */}
-              <div className="mt-1 text-center">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  Don&apos;t have an account?{' '}
-                  <Link
-                    to="/register"
-                    className="font-bold text-accent-600 outline-none transition-colors hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
-                  >
-                    Sign Up
-                  </Link>
-                </span>
-              </div>
+              {!isMerchant && (
+                <div className="mt-1 text-center">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Don&apos;t have an account?{' '}
+                    <Link
+                      to="/register"
+                      className="font-bold text-accent-600 outline-none transition-colors hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
+                    >
+                      Sign Up
+                    </Link>
+                  </span>
+                </div>
+              )}
             </Form>
           ) : (
             <Form className="flex flex-col gap-5" noValidate>

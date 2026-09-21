@@ -4,6 +4,8 @@ import { ChevronRight, Home } from 'lucide-react';
 
 const routeMap: Record<string, string> = {
   '': 'Dashboard',
+  'merchant': 'Merchant Portal',
+  'dashboard': 'Dashboard',
   'projects': 'Projects',
   'new': 'New Project',
   'tasks': 'Tasks',
@@ -20,6 +22,24 @@ const routeMap: Record<string, string> = {
   'time-tracking': 'Time Tracking',
   'calendar': 'Calendar',
   'profile': 'My Profile',
+  'tokens': 'License Tokens',
+  'wallet': 'Wallet',
+  'invoices': 'Invoices & Payments',
+  'downloads': 'Downloads',
+  'support': 'Support',
+  'signups': 'Signup Queue',
+  'deboardings': 'Deboarding Queue',
+  'exchange-rate': 'Exchange Rate',
+  'tax-config': 'Tax Configuration',
+  'payment-methods': 'Payment Methods',
+  'sms-integration': 'SMS Integration',
+  'email-integration': 'Email Integration',
+  'auto-close-config': 'Auto-Close Config',
+  'grace-period-config': 'Grace Period Config',
+  'escalation-rules': 'Escalation Rules',
+  'canned-responses': 'Canned Responses',
+  'help-articles': 'Help Articles',
+  'consent-management': 'Consent Management',
 };
 
 export const Breadcrumb: React.FC = () => {

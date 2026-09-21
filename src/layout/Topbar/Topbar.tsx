@@ -31,6 +31,15 @@ interface Props {
   onLogout: () => void;
   onMenuToggle: () => void;
   onChangePassword: () => void;
+  /** Navigation source for the ⌘K search walk. Defaults to the staff navConfig. */
+  items?: NavItem[];
+  /** Identity overrides (merchant portal shows the merchant, not the auth user). */
+  identity?: { name?: string | null; role?: string | null; avatar?: string | null };
+  /** Where the Profile menu item navigates. Default "/profile". */
+  profilePath?: string;
+  /** Show the notifications bell. Defaults to true; the merchant portal hides it —
+      the staff notifications endpoint is not available to merchant tokens. */
+  showNotificationBell?: boolean;
 }
 
 export const Topbar: React.FC<Props> = ({
@@ -40,6 +49,10 @@ export const Topbar: React.FC<Props> = ({
   onLogout,
   onMenuToggle,
   onChangePassword,
+  items: searchWalkItems,
+  identity,
+  profilePath = '/profile',
+  showNotificationBell = true,
 }) => {
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
@@ -74,11 +87,11 @@ export const Topbar: React.FC<Props> = ({
         if (item.children?.length) walk(item.children, item.label);
       });
     };
-    walk(navItems);
+    walk(searchWalkItems || navItems);
 
     const dataResults = apiResults || [];
     return [...navMatches, ...dataResults];
-  }, [searchValue, apiResults]);
+  }, [searchValue, apiResults, searchWalkItems]);
 
   // Keyboard shortcut Ctrl+K / Cmd+K
   useEffect(() => {
@@ -136,8 +149,9 @@ export const Topbar: React.FC<Props> = ({
   const iconBtn =
     'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white';
 
-  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
-  const roleLabel = user?.roleName || 'Admin';
+  const fullName = identity?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
+  const roleLabel = identity?.role || user?.roleName || 'Admin';
+  const identityAvatar = identity?.avatar || user?.profilePictureUrl || user?.profilePicture || user?.avatar;
 
   return (
     <header
@@ -244,7 +258,7 @@ export const Topbar: React.FC<Props> = ({
 
         <span className="hidden sm:block h-5 w-px bg-slate-200/80 dark:bg-slate-800 mx-0.5" />
 
-        <NotificationBell />
+        {showNotificationBell && <NotificationBell />}
 
         <span className="hidden sm:block h-5 w-px bg-slate-200/80 dark:bg-slate-800 mx-0.5" />
 
@@ -263,7 +277,7 @@ export const Topbar: React.FC<Props> = ({
           >
             <div className="relative">
               <ATMAvatar
-                src={user?.profilePictureUrl || user?.profilePicture || user?.avatar}
+                src={identityAvatar}
                 name={fullName}
                 size="sm"
                 className="shadow-sm flex-shrink-0"
@@ -293,7 +307,7 @@ export const Topbar: React.FC<Props> = ({
               {/* User header */}
               <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/60 dark:bg-slate-900/40">
                 <ATMAvatar
-                  src={user?.profilePictureUrl || user?.profilePicture || user?.avatar}
+                  src={identityAvatar}
                   name={fullName}
                   size="md"
                   className="shrink-0"
@@ -307,7 +321,7 @@ export const Topbar: React.FC<Props> = ({
               <div className="p-1.5">
                 <button
                   role="menuitem"
-                  onClick={() => { setProfileOpen(false); navigate('/profile'); }}
+                  onClick={() => { setProfileOpen(false); navigate(profilePath); }}
                   className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-white/[0.05] dark:hover:text-white"
                 >
                   <span className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">

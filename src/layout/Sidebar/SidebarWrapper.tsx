@@ -10,6 +10,10 @@ interface SidebarWrapperProps {
   onClose: () => void;
   isCollapsed: boolean;
   onCollapseToggle: () => void;
+  /** Override the default staff navigation items (skips permission filtering). */
+  items?: NavItem[];
+  /** Override the default "ADMIN" badge label in the header. */
+  badgeLabel?: string;
 }
 
 export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
@@ -17,6 +21,8 @@ export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
   onClose,
   isCollapsed,
   onCollapseToggle,
+  items: overrideItems,
+  badgeLabel = 'ADMIN',
 }) => {
   const user = useAppSelector(selectCurrentUser);
   const permissionCodes = useAppSelector(selectPermissionCodes);
@@ -24,6 +30,8 @@ export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
   const { hasPermission, isAdmin } = usePermission();
 
   const filteredItems = useMemo(() => {
+    if (overrideItems?.length) return overrideItems;
+
     const filterNavigation = (items: NavItem[]): NavItem[] => {
       return items.reduce<NavItem[]>((result, item) => {
         // 2026-09-04: module view + (optionally) any of the entry's specific codes; Admin
@@ -56,7 +64,7 @@ export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
     };
 
     return filterNavigation(navItems);
-  }, [user?.roleName, hasPermission, isAdmin, permissionCodes]);
+  }, [user?.roleName, hasPermission, isAdmin, permissionCodes, overrideItems]);
 
   return (
     <Sidebar
@@ -65,6 +73,7 @@ export const SidebarWrapper: React.FC<SidebarWrapperProps> = ({
       onClose={onClose}
       isCollapsed={isCollapsed}
       onCollapseToggle={onCollapseToggle}
+      badgeLabel={badgeLabel}
     />
   );
 };

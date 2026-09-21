@@ -5,7 +5,14 @@
  */
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, LifeBuoy, Send } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  LifeBuoy,
+  Send,
+  User,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMSkeleton } from '@/shared/ui';
@@ -13,19 +20,12 @@ import {
   useGetSelfTicketQuery,
   useReplySelfTicketMutation,
 } from '@/modules/merchants/services/merchantSelfApi';
-import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/modules/helpdesk/ticketPresentation';
+import { PRIORITY_CONFIG, PRIORITY_ICONS, STATUS_CONFIG, STATUS_ICONS } from '@/modules/helpdesk/ticketPresentation';
+import { HelpdeskBadge } from '@/modules/helpdesk/components/HelpdeskBadge';
 import { useBrandName } from '@/shared/hooks/useBrandName';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatDate } from '@/lib/utils/formatDate';
 import { cn } from '@/lib/utils/cn';
-
-const BADGE: Record<string, string> = {
-  danger: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
-  warning: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-  info: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
-  success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-  default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-};
 
 export default function MerchantTicketPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -105,38 +105,83 @@ export default function MerchantTicketPage() {
         }
         extraActions={
           <div className="flex shrink-0 gap-2">
-            <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold', BADGE[priority.variant])}>{priority.label}</span>
-            <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold', BADGE[status.variant])}>{status.label}</span>
+            <HelpdeskBadge tone={priority.variant} icon={PRIORITY_ICONS[ticket.priority] ?? User} label={priority.label} />
+            <HelpdeskBadge tone={status.variant} icon={STATUS_ICONS[ticket.status] ?? LifeBuoy} label={status.label} />
           </div>
         }
         onBack={() => navigate('/merchant/support')}
       />
 
-      <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#13151a]">
-        <div className="whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-300">{ticket.description}</div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-[#13151a]">
+        <div className="flex items-center gap-2.5 border-b border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/40">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+            <User className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="text-xs font-bold text-slate-900 dark:text-white">You</p>
+            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+              {ticket.ticketNumber} · Opened {formatDate(ticket.createdAt, 'datetime')}
+              {ticket.category ? ` · ${ticket.category}` : ''}
+            </p>
+          </div>
+        </div>
+        <div className="whitespace-pre-wrap p-5 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+          {ticket.description}
+        </div>
         {ticket.resolvedAt && (
-          <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          <p className="flex items-center gap-1.5 border-t border-slate-100 px-5 py-3 text-xs font-semibold text-emerald-600 dark:border-slate-800 dark:text-emerald-400">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
             Marked resolved {formatDate(ticket.resolvedAt, 'datetime')}. Reply below if the problem is not fixed and it will reopen.
           </p>
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#13151a]">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Conversation</h2>
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#13151a]">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+            <LifeBuoy className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Conversation</h2>
+            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+              {ticket.comments.length === 0 ? 'Waiting for the support team' : `${ticket.comments.length} message${ticket.comments.length === 1 ? '' : 's'}`}
+            </p>
+          </div>
+        </div>
         {ticket.comments.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No replies yet. The support team has been notified and will answer here.</p>
+          <p className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+            No replies yet. The support team has been notified and will answer here.
+          </p>
         ) : (
-          <ul className="mt-3 space-y-3">
+          <ul className="mt-4 max-h-[520px] space-y-4 overflow-y-auto pr-1">
             {ticket.comments.map((c) => {
               const mine = c.authorType === 'Merchant';
               return (
-                <li key={c.commentId} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
-                  <div className={cn('max-w-[85%] rounded-xl px-4 py-3 text-sm', mine ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-900')}>
-                    <p className={cn('mb-1 text-[11px] font-semibold', mine ? 'text-white/80' : 'text-slate-500 dark:text-slate-400')}>
-                      {mine ? 'You' : `${brand} support`} · {formatDate(c.createdAt, 'datetime')}
+                <li key={c.commentId} className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
+                  {!mine && (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <LifeBuoy className="h-4 w-4" />
+                    </span>
+                  )}
+                  <div
+                    className={cn(
+                      'max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm',
+                      mine ? 'rounded-br-sm bg-primary-600 text-white' : 'rounded-bl-sm bg-slate-100 dark:bg-slate-900',
+                    )}
+                  >
+                    <p className={cn('mb-1 text-[11px] font-bold', mine ? 'text-white/85' : 'text-slate-500 dark:text-slate-400')}>
+                      {mine ? 'You' : `${brand} support`}
+                      <span className={cn('font-medium', mine ? 'text-white/60' : 'text-slate-400 dark:text-slate-500')}>
+                        {' · '}{formatDate(c.createdAt, 'datetime')}
+                      </span>
                     </p>
                     <p className="whitespace-pre-wrap">{c.content}</p>
                   </div>
+                  {mine && (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+                      <User className="h-4 w-4" />
+                    </span>
+                  )}
                 </li>
               );
             })}

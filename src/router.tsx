@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import {
   LoginPage,
+  MerchantLoginPage,
   RegisterPage,
   ForgotPasswordPage,
   ResetPasswordPage,
@@ -12,6 +13,8 @@ import {
   PublicRoute,
   selectCurrentUser,
   selectIsAuthenticated,
+  selectMfaSetupRequired,
+  selectMustChangePassword,
 } from '@/modules/auth';
 import { usePermission } from '@/shared/hooks/usePermission';
 import type { PermissionModule } from '@/lib/utils/permissions';
@@ -25,7 +28,12 @@ import { RateCardListSkeleton } from '@/modules/rateCards/list/RateCardListSkele
 
 function MerchantGuard({ children }: { children: React.ReactNode }) {
   const user = useAppSelector(selectCurrentUser);
-  if (!user) return <Navigate to="/login" replace />;
+  const mustChangePassword = useAppSelector(selectMustChangePassword);
+  const mfaSetupRequired = useAppSelector(selectMfaSetupRequired);
+
+  if (!user) return <Navigate to="/merchant/login" replace />;
+  if (mustChangePassword) return <Navigate to="/change-password" replace />;
+  if (mfaSetupRequired) return <Navigate to="/mfa-setup" replace />;
 
   const role = user.roleName || user.role;
   if (role !== 'Merchant') return <Navigate to="/dashboard" replace />;
@@ -239,6 +247,7 @@ export function AppRouter() {
         {/* ---- Public + first-login routes (outside ProtectedRoute) ---- */}
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/merchant/login" element={<MerchantLoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -249,23 +258,23 @@ export function AppRouter() {
             only while that flag is set + the user is authenticated. */}
         <Route path="/change-password" element={<ChangePasswordPage />} />
 
+        {/* Merchant portal — standalone guard: guests are sent to /merchant/login,
+            merchants get their own shell; staff go back to the staff app. */}
+        <Route path="merchant" element={<MerchantGuard><MerchantShell /></MerchantGuard>}>
+          <Route index element={<Navigate to="/merchant/dashboard" replace />} />
+          <Route path="dashboard" element={<MerchantDashboardPage />} />
+          <Route path="wallet" element={<MerchantWalletPage />} />
+          <Route path="tokens" element={<MerchantTokensPage />} />
+          <Route path="invoices" element={<MerchantInvoicesPage />} />
+          <Route path="payments" element={<MerchantInvoicesPage />} />
+          <Route path="downloads" element={<MerchantDownloadsPage />} />
+          <Route path="support" element={<MerchantSupportPage />} />
+          <Route path="support/:id" element={<MerchantTicketPage />} />
+          <Route path="profile" element={<MerchantProfilePage />} />
+        </Route>
+
         {/* ---- Protected routes (require authentication) ---- */}
         <Route element={<ProtectedRoute />}>
-          {/* Pass 40 (2026-05-24): merchant-only route group. Lives OUTSIDE the staff
-              AppShell; since 2026-09-04 MerchantShell gives it its own navigation
-              (before that it was a bare Outlet with no way back from any page). */}
-          <Route path="merchant" element={<MerchantGuard><MerchantShell /></MerchantGuard>}>
-            <Route index element={<Navigate to="/merchant/dashboard" replace />} />
-            <Route path="dashboard" element={<MerchantDashboardPage />} />
-            <Route path="wallet" element={<MerchantWalletPage />} />
-            <Route path="tokens" element={<MerchantTokensPage />} />
-            <Route path="invoices" element={<MerchantInvoicesPage />} />
-            <Route path="payments" element={<MerchantInvoicesPage />} />
-            <Route path="downloads" element={<MerchantDownloadsPage />} />
-            <Route path="support" element={<MerchantSupportPage />} />
-            <Route path="support/:id" element={<MerchantTicketPage />} />
-            <Route path="profile" element={<MerchantProfilePage />} />
-          </Route>
 
           <Route element={<StaffGuard><PlatformSetupGuard><AppShell /></PlatformSetupGuard></StaffGuard>}>
             {/* Root redirect */}

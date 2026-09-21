@@ -41,10 +41,39 @@ interface InvoicePdfPayload {
  *   trading under any other name issued invoices in the wrong company's name.
  */
 export async function openInvoiceForDownload(invoiceId: string, brandName: string): Promise<void> {
+  const data = await fetchInvoicePayload(invoiceId);
+  const html = buildInvoiceHtml(data, brandName, { withActions: true });
+
+  const w = window.open('', '_blank', 'width=900,height=1100');
+  if (!w) throw new Error('Pop-up blocked. Please allow pop-ups to download invoices.');
+  w.document.write(html);
+  w.document.close();
+}
+
+/**
+ * Fetched once, reused by both the popup download and the in-app preview modal.
+ */
+async function fetchInvoicePayload(invoiceId: string): Promise<InvoicePdfPayload> {
   const res = await merchantSelf.downloadInvoice(invoiceId);
   const data = res.data as InvoicePdfPayload | undefined;
   if (!data) throw new Error('Invoice data missing from response.');
+  return data;
+}
 
+/**
+ * HTML for the same invoice without the print/close buttons — for embedding as an
+ * in-app preview (iframe srcdoc) before the merchant chooses to print or save.
+ */
+export async function getInvoicePreviewHtml(invoiceId: string, brandName: string): Promise<string> {
+  const data = await fetchInvoicePayload(invoiceId);
+  return buildInvoiceHtml(data, brandName, { withActions: false });
+}
+
+function buildInvoiceHtml(
+  data: InvoicePdfPayload,
+  brandName: string,
+  opts: { withActions: boolean },
+): string {
   const lines: Array<{ description?: string; tokens?: number; currency?: number }> = (() => {
     try { return JSON.parse(data.invoice.lineItems ?? '[]'); } catch { return []; }
   })();
@@ -139,16 +168,14 @@ export async function openInvoiceForDownload(invoiceId: string, brandName: strin
 
 ${data.invoice.notes ? `<div style="margin-top:24px;padding:12px;background:#f9fafb;border-radius:6px;font-size:13px;color:#555"><strong>Notes:</strong> ${escapeHtml(data.invoice.notes)}</div>` : ''}
 
-<div class="actions">
+${opts.withActions
+    ? `<div class="actions">
   <button class="print" onclick="window.print()">Save as PDF / Print</button>
   <button onclick="window.close()">Close</button>
-</div>
+</div>`
+    : ''}
 </body></html>`;
-
-  const w = window.open('', '_blank', 'width=900,height=1100');
-  if (!w) throw new Error('Pop-up blocked. Please allow pop-ups to download invoices.');
-  w.document.write(html);
-  w.document.close();
+  return html;
 }
 
 function escapeHtml(s: string | null | undefined): string {

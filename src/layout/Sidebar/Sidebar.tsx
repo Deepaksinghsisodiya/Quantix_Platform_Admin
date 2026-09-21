@@ -14,9 +14,17 @@ interface Props {
   onClose: () => void;
   isCollapsed: boolean;
   onCollapseToggle: () => void;
+  /** Badge shown next to the app name in the desktop header. Default "ADMIN". */
+  badgeLabel?: string;
 }
 
-export const Sidebar: React.FC<Props> = ({ items, mobileOpen, onClose, isCollapsed }) => {
+export const Sidebar: React.FC<Props> = ({
+  items,
+  mobileOpen,
+  onClose,
+  isCollapsed,
+  badgeLabel = 'ADMIN',
+}) => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
@@ -283,7 +291,7 @@ const rowClasses = clsx(
                   {appName}
                 </span>
                 <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  ADMIN
+                  {badgeLabel}
                 </span>
               </div>
             )}

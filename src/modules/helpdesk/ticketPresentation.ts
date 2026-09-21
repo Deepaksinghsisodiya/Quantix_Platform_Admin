@@ -1,4 +1,6 @@
 import type { TicketPriority, TicketStatus } from '@/lib/types/helpdesk';
+import { ArrowDown, ArrowUp, Archive, CheckCircle2, ChevronUp, Clock, Hourglass, Loader, Minus, RotateCcw, Sparkles, User } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 /**
  * 2026-09-04: one place for how a ticket's status, priority and SLA are shown. The queue
@@ -26,6 +28,27 @@ export const STATUS_CONFIG: Readonly<Record<TicketStatus, { variant: BadgeTone; 
   Resolved: { variant: 'success', label: 'Resolved' },
   Closed: { variant: 'default', label: 'Closed' },
   Reopened: { variant: 'warning', label: 'Reopened' },
+};
+
+/** Semantic icon per priority, used by the merchant list + ticket pages. */
+export const PRIORITY_ICONS: Readonly<Record<TicketPriority, LucideIcon>> = {
+  Critical: ArrowUp,
+  High: ChevronUp,
+  Medium: Minus,
+  Low: ArrowDown,
+};
+
+/** Semantic icon per status, used by the merchant list + ticket pages. */
+export const STATUS_ICONS: Readonly<Record<TicketStatus, LucideIcon>> = {
+  New: Sparkles,
+  Open: Clock,
+  Assigned: User,
+  InProgress: Loader,
+  WaitingOnCustomer: Hourglass,
+  WaitingOnInternal: Hourglass,
+  Resolved: CheckCircle2,
+  Closed: Archive,
+  Reopened: RotateCcw,
 };
 
 /**

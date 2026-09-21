@@ -76,6 +76,8 @@ export interface ATMTableProps<T> {
   expandedRows?: string[];
   onExpandedRowsChange?: (ids: string[]) => void;
   isFetching?: boolean;
+  /** Per-row <tr> class hook (e.g. risk highlighting). Return undefined to leave unset. */
+  rowClassName?: (row: T, index?: number) => string | undefined;
 }
 
 const ATMTableComponent = <T,>({
@@ -105,6 +107,7 @@ const ATMTableComponent = <T,>({
   density = 'comfortable',
   renderExpandedRow,
   expandedRows = [],
+  rowClassName,
 }: ATMTableProps<T>) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tempValues, setTempValues] = useState<Record<string, any>>(filterConfig?.values || {});
@@ -399,7 +402,8 @@ const ATMTableComponent = <T,>({
                         'transition-colors duration-200 group cursor-pointer border-b border-[var(--zen-border)]',
                         'hover:bg-slate-50/80 dark:hover:bg-zinc-900/60',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400 dark:focus-visible:ring-primary-500',
-                        isExpanded && 'bg-slate-50 dark:bg-slate-800'
+                        isExpanded && 'bg-slate-50 dark:bg-slate-800',
+                        rowClassName?.(row, idx)
                       )}
                       onClick={() => onRowClick?.(row)}
                       onKeyDown={(e) => {

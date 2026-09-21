@@ -21,6 +21,7 @@ import {
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { ATMModal, ATMSkeleton } from '@/shared/ui';
+import { cn } from '@/lib/utils/cn';
 import PspMount from './PspMount';
 
 interface Props {
@@ -32,6 +33,13 @@ interface Props {
 
 const DEFAULT_TOKENS = 100;
 const QUOTE_DEBOUNCE_MS = 400;
+
+const TOP_UP_CHIPS = [
+  { days: 7, label: '1 week' },
+  { days: 15, label: '15 days' },
+  { days: 30, label: '30 days' },
+  { days: 90, label: '90 days' },
+];
 
 export default function RechargeDialog({ open, onClose, suggestedTokens }: Props) {
   const initial = suggestedTokens && suggestedTokens > 0 ? Math.ceil(suggestedTokens) : DEFAULT_TOKENS;
@@ -120,18 +128,52 @@ export default function RechargeDialog({ open, onClose, suggestedTokens }: Props
 
       {onlinePaymentEnabled && step === 'amount' && (
         <div className="space-y-4">
-          <label className="block">
-            <span className="text-sm font-medium">Tokens to add</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              step={1}
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-surface-600 dark:bg-surface-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
-            />
-          </label>
+          <div>
+            <label className="block">
+              <span className="text-sm font-medium">Tokens to add</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-surface-600 dark:bg-surface-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
+              />
+            </label>
+
+            {suggestedTokens && suggestedTokens > 0 && (
+              <div className="mt-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-surface-400">
+                  One-tap top-ups
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {TOP_UP_CHIPS.map((chip) => {
+                    const amount = Math.max(1, Math.round((suggestedTokens / 30) * chip.days));
+                    const isActive = Number(tokenInput) === amount;
+                    return (
+                      <button
+                        key={chip.days}
+                        type="button"
+                        onClick={() => {
+                          setTokenInput(String(amount));
+                          setTokenAmount(amount);
+                        }}
+                        className={cn(
+                          'rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors',
+                          isActive
+                            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+                            : 'border-surface-200 text-surface-600 hover:border-primary-300 hover:text-primary-600 dark:border-surface-700 dark:text-surface-300',
+                        )}
+                      >
+                        {chip.label} · {amount.toLocaleString()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="rounded-lg bg-surface-50 dark:bg-surface-900 p-3 text-sm" aria-live="polite">
             {tokenAmount <= 0 && <p className="text-surface-500">Enter how many tokens to add.</p>}

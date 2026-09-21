@@ -39,7 +39,12 @@ const getErrorMessage = (err: any, fallback: string) => {
   return fallback;
 };
 
-export const LoginFormWrapper: React.FC = () => {
+export interface LoginFormWrapperProps {
+  /** 'admin' — Platform Admin (default, /login); 'merchant' — Merchant Portal (/merchant/login). */
+  variant?: 'admin' | 'merchant';
+}
+
+export const LoginFormWrapper: React.FC<LoginFormWrapperProps> = ({ variant = 'admin' }) => {
   const navigate = useNavigate();
   const { completeLogin } = useAuth();
   const [loginMutation, { isLoading: isLoginLoading }] = useLoginMutation();
@@ -79,7 +84,12 @@ export const LoginFormWrapper: React.FC = () => {
     }
 
     toast.success(`Welcome back, ${displayName}`);
+    const isMerchantVariant = variant === 'merchant';
     const role = user.roleName || user.role;
+    if (isMerchantVariant) {
+      navigate('/merchant/dashboard', { replace: true });
+      return;
+    }
     navigate(role === 'Merchant' ? '/merchant/dashboard' : '/dashboard', { replace: true });
   };
 
@@ -182,6 +192,7 @@ export const LoginFormWrapper: React.FC = () => {
         isSubmitting={activeFormik.isSubmitting || isLoginLoading || isMfaLoading}
         apiError={apiError}
         resetForm={step === 'mfa' ? mfaFormik.resetForm : undefined}
+        variant={variant}
       />
     </FormikProvider>
   );

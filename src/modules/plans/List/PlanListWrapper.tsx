@@ -4,7 +4,7 @@ import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
-import { Plus, Loader2, BadgeDollarSign } from 'lucide-react';
+import { Plus, BadgeDollarSign } from 'lucide-react';
 import { usePagination } from '@/shared/hooks/usePagination';
 import {
   usePlansList,
@@ -165,7 +165,6 @@ export const PlanListWrapper: React.FC = () => {
         title={
           <div className="flex items-center gap-2.5">
             <span>Subscription & Billing Plans</span>
-            {plansQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-500" />}
           </div>
         }
         subtitle="Manage pricing tiers, merchant limits, and features for Cloud Enterprise & Standalone POS"

@@ -16,9 +16,13 @@
 import React, { useMemo, useState } from 'react';
 import { ShieldCheck, Search, CheckCircle2, X as XIcon } from 'lucide-react';
 
-import { ATMBadge, ATMCard } from '@/shared/ui';
+import { ATMBadge, ATMCard, ATMSkeleton, ATMStatsCard } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { useAuditLogs } from '@/lib/hooks/useAudit';
 import { useGetAllConsentsQuery } from '../services/complianceApi';
+import type { ConsentRecord } from '@/lib/types/compliance';
 import { formatDate } from '@/lib/utils/formatDate';
 
 export const ConsentManagementPage: React.FC = () => {
@@ -41,121 +45,139 @@ export const ConsentManagementPage: React.FC = () => {
   const grantedCount = (consentsQuery.data?.data ?? []).filter((c) => c.isGranted).length;
   const revokedCount = (consentsQuery.data?.data ?? []).length - grantedCount;
 
+  const consentColumns: ATMTableColumn<ConsentRecord>[] = [
+    {
+      key: 'merchantId',
+      header: 'Merchant',
+      renderCell: (_v, c) => (
+        <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300">{c.merchantId.slice(0, 8)}…</span>
+      ),
+    },
+    {
+      key: 'consentType',
+      header: 'Consent Type',
+      renderCell: (_v, c) => <span className="text-xs font-bold text-slate-900 dark:text-white">{c.consentType}</span>,
+    },
+    {
+      key: 'isGranted',
+      header: 'Status',
+      renderCell: (_v, c) => (
+        <ATMBadge size="sm" variant={c.isGranted ? 'success' : 'danger'}>
+          {c.isGranted ? 'Granted' : 'Withdrawn'}
+        </ATMBadge>
+      ),
+    },
+    {
+      key: 'grantedAt',
+      header: 'Granted',
+      renderCell: (_v, c) => <span className="text-[11px] text-slate-500 dark:text-slate-400">{c.grantedAt ? formatDate(c.grantedAt, 'short') : '—'}</span>,
+    },
+    {
+      key: 'revokedAt',
+      header: 'Withdrawn',
+      renderCell: (_v, c) => <span className="text-[11px] text-slate-500 dark:text-slate-400">{c.revokedAt ? formatDate(c.revokedAt, 'short') : '—'}</span>,
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
-      <div>
-        {/* Title matches the sidebar label. */}
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Consent Management
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-          Data-processing consents recorded for merchants, and the audit trail of every
-          grant and withdrawal.
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={ShieldCheck}
+        iconColor="theme"
+        title="Consent Management"
+        subtitle="Data-processing consents recorded for merchants, and the audit trail of every grant and withdrawal."
+      />
 
       {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: 'Consent records', value: (consentsQuery.data?.data ?? []).length, accent: 'text-gray-900 dark:text-white' },
-          { label: 'Granted', value: grantedCount, accent: 'text-emerald-600 dark:text-emerald-400' },
-          { label: 'Withdrawn', value: revokedCount, accent: 'text-red-600 dark:text-red-400' },
-        ].map((t) => (
-          <ATMCard key={t.label} className="glass-card">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t.label}</p>
-            <p className={`mt-1 text-2xl font-black ${t.accent}`}>{t.value}</p>
-          </ATMCard>
-        ))}
-      </div>
+      {consentsQuery.isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }, (_, i) => <ATMSkeleton key={i} variant="card" height="118px" />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <ATMStatsCard
+            label="Consent records"
+            value={(consentsQuery.data?.data ?? []).length.toLocaleString()}
+            icon={ShieldCheck}
+            variant="slate"
+            description="Recorded across all merchants"
+          />
+          <ATMStatsCard
+            label="Granted"
+            value={grantedCount.toLocaleString()}
+            icon={CheckCircle2}
+            variant="emerald"
+            description="Active data-processing consents"
+          />
+          <ATMStatsCard
+            label="Withdrawn"
+            value={revokedCount.toLocaleString()}
+            icon={XIcon}
+            variant="rose"
+            description="Revoked or withdrawn consents"
+          />
+        </div>
+      )}
 
       {/* Consent records */}
-      <ATMCard className="glass-card">
-        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-gray-400" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Consent Records</h2>
-          </div>
+      <ATMCard
+        title="Consent Records"
+        action={
           <div className="relative min-w-[220px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-950 text-xs font-medium outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
               placeholder="Search by consent type or merchant…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-        </div>
-
+        }
+        padding="none"
+        className="overflow-hidden"
+        loading={consentsQuery.isLoading}
+      >
         {consentsQuery.isLoading ? (
-          <p className="py-8 text-center text-sm font-semibold text-gray-400">Loading…</p>
+          <ATMSkeleton variant="rect" height="200px" />
         ) : consents.length === 0 ? (
-          <div className="py-10 text-center">
-            <ShieldCheck className="mx-auto h-9 w-9 text-gray-200 dark:text-gray-700" />
-            <p className="mt-3 text-sm font-bold text-gray-500 dark:text-gray-400">
+          <div className="m-4 flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 px-4 py-10 text-center dark:border-slate-800 dark:bg-slate-900/40">
+            <ShieldCheck className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               No consent records yet.
             </p>
-            <p className="mt-1 text-[11px] text-gray-400">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
               Records appear here as merchants grant or withdraw data-processing consent.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
-                  {['Merchant', 'Consent Type', 'Status', 'Granted', 'Withdrawn'].map((h) => (
-                    <th key={h} className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800/40">
-                {consents.map((c) => (
-                  <tr key={c.consentId} className="hover:bg-gray-50/60 dark:hover:bg-zinc-900/40">
-                    <td className="px-3 py-2.5 font-mono text-[11px] text-gray-600 dark:text-gray-300">{c.merchantId.slice(0, 8)}…</td>
-                    <td className="px-3 py-2.5 text-xs font-bold text-gray-900 dark:text-white">{c.consentType}</td>
-                    <td className="px-3 py-2.5">
-                      <ATMBadge
-                        size="sm"
-                        variant={c.isGranted ? 'success' : 'danger'}
-                      >
-                        {c.isGranted ? 'Granted' : 'Withdrawn'}
-                      </ATMBadge>
-                    </td>
-                    <td className="px-3 py-2.5 text-[11px] text-gray-500">{c.grantedAt ? formatDate(c.grantedAt, 'short') : '—'}</td>
-                    <td className="px-3 py-2.5 text-[11px] text-gray-500">{c.revokedAt ? formatDate(c.revokedAt, 'short') : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ATMTable columns={consentColumns} data={consents} emptyMessage="No consent records yet." />
         )}
       </ATMCard>
 
       {/* Audit trail — real audit log, no mock fallback */}
-      <ATMCard className="glass-card">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Consent Audit Trail</h2>
+      <ATMCard title="Consent Audit Trail" loading={auditQuery.isLoading}>
         {auditQuery.isLoading ? (
-          <p className="py-6 text-center text-sm font-semibold text-gray-400">Loading…</p>
+          <ATMSkeleton variant="rect" height="180px" />
         ) : auditEntries.length === 0 ? (
-          <p className="py-6 text-center text-sm font-semibold text-gray-400">
+          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-4 py-10 text-center text-sm font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
             No consent activity recorded yet.
-          </p>
+          </div>
         ) : (
           <div className="space-y-2">
             {auditEntries.map((entry) => (
-              <div key={entry.logId} className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-800 px-3 py-2.5">
+              <div key={entry.logId} className="flex items-start gap-3 rounded-lg border border-slate-200/80 px-3 py-2.5 dark:border-slate-800/60">
                 {entry.action?.toLowerCase().includes('revoke') || entry.action?.toLowerCase().includes('withdraw') ? (
                   <XIcon className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
                 ) : (
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-gray-900 dark:text-white">{entry.action}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{entry.details}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">{entry.action}</p>
+                  <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{entry.details}</p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{entry.userName}</p>
-                  <p className="text-[10px] text-gray-400">{entry.createdAt ? formatDate(entry.createdAt, 'short') : ''}</p>
+                <div className="shrink-0 text-right">
+                  <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">{entry.userName}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">{entry.createdAt ? formatDate(entry.createdAt, 'short') : ''}</p>
                 </div>
               </div>
             ))}

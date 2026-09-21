@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -144,7 +145,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
   ];
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Page Header */}
       <ATMPageHeader
         title="Signup Queue"
@@ -199,7 +200,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
           />
 
           {/* Stage filter */}
-          <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-zinc-950">
+          <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-slate-950">
             {([['all', 'All'], ['awaiting', 'Awaiting decision'], ['onboarding', 'In onboarding']] as const).map(([v, label]) => (
               <button
                 key={v}
@@ -207,8 +208,8 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                 className={cn(
                   'px-3 py-1.5 rounded-md text-[11px] font-bold transition-all',
                   stageFilter === v
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
                 )}
               >
                 {label}
@@ -217,7 +218,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
           </div>
 
           {/* Source filter */}
-          <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-zinc-950">
+          <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-slate-950">
             {(['all', 'website', 'admin'] as const).map((s) => (
               <button
                 key={s}
@@ -225,7 +226,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                 className={cn(
                   'px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-all',
                   sourceFilter === s
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
                 )}
               >
@@ -249,8 +250,8 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
       {/* List */}
       <ATMCard className="glass-card" padding="none">
         {isLoading ? (
-          <div className="flex h-48 items-center justify-center">
-            <RefreshCw className="h-5 w-5 animate-spin text-slate-400" />
+          <div className="p-5">
+            <ATMSkeleton variant="table-row" count={5} />
           </div>
         ) : filteredSignups.length === 0 ? (
           <div className="text-center py-16">
@@ -267,7 +268,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-separate border-spacing-0">
-              <thead className="bg-slate-50/80 dark:bg-[#121215]/80 backdrop-blur-md">
+              <thead className="bg-slate-50/80 dark:bg-slate-900/80">
                 <tr>
                   {['Business', 'Source', 'Business Nature', 'Status', 'Submitted', 'Actions'].map((h) => (
                     <th key={h} className="px-5 py-4 border-b border-[var(--zen-border)] text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{h}</th>
@@ -280,7 +281,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                   return (
                     <tr
                       key={s.merchantId}
-                      className="transition-colors duration-200 cursor-pointer border-b border-[var(--zen-border)] hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 group"
+                      className="transition-colors duration-200 cursor-pointer border-b border-[var(--zen-border)] hover:bg-slate-50/80 dark:hover:bg-slate-900/60 group"
                       onClick={() => setSelected(s)}
                     >
                       <td className="px-5 py-4 border-b border-[var(--zen-border)]">
@@ -345,7 +346,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
         {selected && (
           <div className="space-y-6 pt-1">
             {/* Merchant Identity Card */}
-            <div className="relative overflow-hidden rounded-2xl border border-[var(--zen-border)] bg-slate-50 dark:bg-zinc-900/60 p-5">
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--zen-border)] bg-slate-50 dark:bg-slate-900/60 p-5">
               <div className="absolute -right-10 -top-14 h-40 w-40 rounded-full bg-primary-500/10 blur-2xl" />
               <div className="relative flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3.5">
@@ -353,7 +354,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                     <Building2 size={22} strokeWidth={2} />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">{selected.companyName}</h3>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-tight">{selected.companyName}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <SourceBadge source={selected.signupSource} />
                       <span className="text-xs text-slate-400">&bull;</span>
@@ -380,8 +381,8 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                 Merchant Information
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 mt-0.5">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-slate-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 mt-0.5">
                     <User size={16} />
                   </div>
                   <div className="min-w-0">
@@ -390,7 +391,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-slate-950 flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 mt-0.5">
                     <Mail size={16} />
                   </div>
@@ -400,7 +401,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-slate-950 flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 mt-0.5">
                     <Phone size={16} />
                   </div>
@@ -410,7 +411,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-slate-950 flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 mt-0.5">
                     <Briefcase size={16} />
                   </div>
@@ -420,7 +421,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-slate-950 flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 mt-0.5">
                     <Globe size={16} />
                   </div>
@@ -430,7 +431,7 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-slate-950 flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 mt-0.5">
                     <Calendar size={16} />
                   </div>

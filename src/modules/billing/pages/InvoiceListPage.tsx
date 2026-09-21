@@ -22,9 +22,9 @@ import {
   Send,
   Filter,
   Search,
-  Loader2,
   AlertTriangle,
   RefreshCw,
+  FileText,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -48,12 +48,12 @@ interface InvoiceRow {
 // Badge helpers
 // ---------------------------------------------------------------------------
 
-const TYPE_VARIANT: Record<InvoiceType, 'enterprise' | 'standalone' | 'warning' | 'info' | 'default'> = {
-  Subscription: 'enterprise',
-  TokenPurchase: 'standalone',
+const TYPE_BADGE_COLOR: Record<InvoiceType, 'primary' | 'success' | 'warning' | 'purple' | 'muted'> = {
+  Subscription: 'primary',
+  TokenPurchase: 'success',
   Commission: 'warning',
-  Usage: 'info',
-  AddOn: 'default',
+  Usage: 'primary',
+  AddOn: 'purple',
 };
 
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'danger' | 'warning'> = {
@@ -130,7 +130,7 @@ export function InvoiceListPage() {
         key: 'invoiceNumber',
         header: 'Invoice #',
         renderCell: (val, row) => (
-          <span className="font-semibold text-gray-900 dark:text-gray-100">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
             {row.invoiceNumber}
           </span>
         ),
@@ -144,8 +144,8 @@ export function InvoiceListPage() {
         header: 'Type',
         renderCell: (val, row) => (
           <ATMBadge
-            label={row.type}
-            color={row.type === 'Subscription' ? 'purple' : row.type === 'TokenPurchase' ? 'success' : 'warning'}
+            label={row.type.replace(/([A-Z])/g, ' $1').trim()}
+            color={TYPE_BADGE_COLOR[row.type]}
           />
         ),
       },
@@ -166,7 +166,7 @@ export function InvoiceListPage() {
         header: 'Total',
         align: 'right',
         renderCell: (val, row) => (
-          <span className="font-bold text-gray-900 dark:text-gray-100">
+          <span className="font-bold text-slate-900 dark:text-slate-100">
             {formatCurrencyOrDash(row.total, currency)}
           </span>
         ),
@@ -188,16 +188,17 @@ export function InvoiceListPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
-        title={
+        icon={FileText}
+        iconColor="theme"
+        title="Invoices"
+        subtitle={
           <div className="flex items-center gap-2">
-            <span>Invoices</span>
-            {loading && <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />}
+            <span>Manage and track all platform invoices</span>
           </div>
         }
-        subtitle="Manage and track all platform invoices"
         action={{
           label: 'Generate Invoice',
           onClick: () => {},
@@ -212,7 +213,7 @@ export function InvoiceListPage() {
           placeholder="Search invoices..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          prefix={<Search size={16} className="text-gray-400" />}
+          prefix={<Search size={16} className="text-slate-400" />}
           className="flex-1 max-w-md !gap-0"
         />
         <ATMButton
@@ -280,7 +281,7 @@ export function InvoiceListPage() {
         {isError ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <AlertTriangle className="h-10 w-10 text-red-500" />
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Failed to load invoices.
             </p>
             <ATMButton variant="primary" size="sm" onClick={() => invoicesQuery.refetch()} icon={RefreshCw}>

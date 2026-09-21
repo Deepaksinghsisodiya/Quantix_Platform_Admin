@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '@/app/hooks';
 import { RateCardListPage } from './RateCardListPage';
+import { RateCardListSkeleton } from './RateCardListSkeleton';
 import { RateCardEditModalWrapper } from '../edit/RateCardEditModalWrapper';
 
 export const RateCardListPageWrapper: React.FC = () => {
@@ -10,11 +11,7 @@ export const RateCardListPageWrapper: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   if (!defaultCard) {
-    return (
-      <div className="p-12 text-center text-sm font-semibold text-slate-500 animate-pulse">
-        Loading rate card configurations...
-      </div>
-    );
+    return <RateCardListSkeleton />;
   }
 
   return (

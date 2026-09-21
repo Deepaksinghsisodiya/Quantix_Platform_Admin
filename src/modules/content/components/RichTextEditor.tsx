@@ -125,7 +125,7 @@ function markdownToHtml(md: string): string {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/_(.+?)_/g, '<em>$1</em>')
     // Code
-    .replace(/`(.+?)`/g, '<code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm font-mono dark:bg-gray-800">$1</code>')
+    .replace(/`(.+?)`/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 text-sm font-mono dark:bg-slate-800">$1</code>')
     // Images
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg my-2" />')
     // Links
@@ -195,12 +195,12 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900',
+        'overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#13151a]',
         className,
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800/50">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-slate-800/50">
         <div className="flex items-center gap-0.5">
           {TOOLBAR_ACTIONS.map((action) => (
             <button
@@ -209,9 +209,9 @@ export function RichTextEditor({
               title={action.label}
               onClick={() => applyAction(action)}
               className={cn(
-                'inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600',
-                'transition-colors hover:bg-gray-200 hover:text-gray-900',
-                'dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100',
+                'inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600',
+                'transition-colors hover:bg-slate-200 hover:text-slate-900',
+                'dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
               )}
             >
@@ -228,7 +228,7 @@ export function RichTextEditor({
             'rounded-md px-3 py-1 text-xs font-medium transition-colors',
             showPreview
               ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
-              : 'text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700',
+              : 'text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700',
           )}
         >
           {showPreview ? 'Edit' : 'Preview'}
@@ -249,9 +249,9 @@ export function RichTextEditor({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            'w-full resize-y bg-transparent p-4 text-sm text-gray-900 placeholder:text-gray-400',
+            'w-full resize-y bg-transparent p-4 text-sm text-slate-900 placeholder:text-slate-400',
             'focus:outline-none',
-            'dark:text-gray-100 dark:placeholder:text-gray-500',
+            'dark:text-slate-100 dark:placeholder:text-slate-500',
             'font-mono',
           )}
           style={{ minHeight }}

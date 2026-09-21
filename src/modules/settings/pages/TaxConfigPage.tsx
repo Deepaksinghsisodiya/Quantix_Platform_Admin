@@ -10,6 +10,7 @@ import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMCheckbox } from '@/shared/ui/ATMCheckbox';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMTabs } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMTable, ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
 
 import {
@@ -174,7 +175,7 @@ function DefinitionsTab() {
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">New Tax Definition</h3>
-              <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Add a tax slab — name, rate, jurisdiction &amp; calculation method</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Add a tax slab — name, rate, jurisdiction &amp; calculation method</p>
             </div>
           </div>
         }
@@ -254,20 +255,13 @@ function DefinitionsTab() {
       </ATMCard>
 
       <div className="rounded-2xl border border-[var(--zen-border)] bg-white/80 dark:bg-[#13151a]/90 backdrop-blur-2xl overflow-hidden shadow-sm h-[440px]">
-        {isLoading ? (
-          <div className="space-y-3 p-6">
-            <ATMSkeleton className="h-12 w-full" />
-            <ATMSkeleton className="h-12 w-full" />
-            <ATMSkeleton className="h-12 w-full" />
-          </div>
-        ) : (
-          <ATMTable
-            data={rows}
-            columns={defColumns}
-            rowActions={defActions}
-            emptyMessage="No tax definitions yet."
-          />
-        )}
+        <ATMTable
+          data={rows}
+          columns={defColumns}
+          rowActions={defActions}
+          emptyMessage="No tax definitions yet."
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
@@ -405,7 +399,7 @@ function GroupsTab() {
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">New Tax Group</h3>
-              <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Bundle one or more taxes into a reusable group</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Bundle one or more taxes into a reusable group</p>
             </div>
           </div>
         }
@@ -437,7 +431,7 @@ function GroupsTab() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-bold text-gray-550 dark:text-gray-400">Include Taxes</label>
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Include Taxes</label>
             <div className={`mt-1.5 max-h-32 overflow-y-auto rounded-xl border p-2 text-sm flex flex-col gap-0.5 font-semibold ${errors.taxDefinitionIds ? 'border-red-300 dark:border-red-900/60 bg-red-50/30 dark:bg-red-950/10' : 'border-[var(--zen-border)] bg-slate-50/40 dark:bg-slate-950/20'}`}>
               {defs.length === 0 && (
                 <p className="px-2.5 py-2 text-xs text-slate-400 dark:text-slate-500">No tax definitions yet — add one in the Definitions tab first.</p>
@@ -455,7 +449,7 @@ function GroupsTab() {
                       setErrors((p) => { const n = { ...p }; delete n.taxDefinitionIds; return n; });
                     }}
                   />
-                  <span className="text-gray-700 dark:text-gray-300">{d.taxName}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{d.taxName}</span>
                   <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-accent-50 dark:bg-accent-900/20 px-1.5 py-0.5 text-[10px] font-bold text-accent-500 dark:text-accent-400 tabular-nums">
                     <Percent size={10} strokeWidth={2.5} /> {d.taxRate}% · {d.calculationMethod}
                   </span>
@@ -483,19 +477,13 @@ function GroupsTab() {
       </ATMCard>
 
       <div className="rounded-2xl border border-[var(--zen-border)] bg-white/80 dark:bg-[#13151a]/90 backdrop-blur-2xl overflow-hidden shadow-sm h-[440px]">
-        {isLoading ? (
-          <div className="space-y-3 p-6">
-            <ATMSkeleton className="h-12 w-full" />
-            <ATMSkeleton className="h-12 w-full" />
-          </div>
-        ) : (
-          <ATMTable
-            data={groups}
-            columns={groupColumns}
-            rowActions={groupActions}
-            emptyMessage="No tax groups yet."
-          />
-        )}
+        <ATMTable
+          data={groups}
+          columns={groupColumns}
+          rowActions={groupActions}
+          emptyMessage="No tax groups yet."
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
@@ -572,9 +560,15 @@ function AssociationsTab() {
   if (isLoading) {
     return (
       <div className="space-y-3 pt-2">
-        <ATMSkeleton className="h-16 w-full" />
-        <ATMSkeleton className="h-16 w-full" />
-        <ATMSkeleton className="h-16 w-full" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-2xl border border-[var(--zen-border)] bg-white/80 p-4 dark:bg-[#13151a]/90">
+            <div className="flex items-center justify-between gap-4">
+              <ATMSkeleton width="40%" height="14px" className="rounded" />
+              <ATMSkeleton width="120px" height="36px" className="rounded-lg" />
+            </div>
+            <ATMSkeleton width="60%" height="12px" className="mt-2 rounded" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -608,7 +602,7 @@ function AssociationsTab() {
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Tax group per sale nature</h3>
-              <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Map each revenue type to the tax group that applies to it</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Map each revenue type to the tax group that applies to it</p>
             </div>
           </div>
         }
@@ -627,14 +621,14 @@ function AssociationsTab() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-black text-gray-900 dark:text-white">{label}</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">{label}</span>
                       <ATMBadge
                         size="sm"
                         color={exact ? 'primary' : 'default'}
                         label={exact ? 'Specific' : 'Inherits default'}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{hint}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">{hint}</p>
                   </div>
                 </div>
                 <div className="w-full lg:w-64 shrink-0">
@@ -662,7 +656,7 @@ function AssociationsTab() {
         </div>
       </ATMCard>
 
-      <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold px-1">
+      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold px-1">
         Merchant-specific tax exemptions (with certificate upload) are planned for a future release.
       </p>
     </div>
@@ -671,19 +665,13 @@ function AssociationsTab() {
 
 export function TaxConfigPage() {
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
-          <Percent size={20} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          {/* 2026-08-08: page titles match the sidebar label (user rule — applies everywhere). */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Tax Settings</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
-            Define taxes, group them, and map each sale nature — daily subscription, commission, token purchase — to a tax group.
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Percent}
+        iconColor="theme"
+        title="Tax Settings"
+        subtitle="Define taxes, group them, and map each sale nature — daily subscription, commission, token purchase — to a tax group."
+      />
 
       <ATMTabs
         tabs={[

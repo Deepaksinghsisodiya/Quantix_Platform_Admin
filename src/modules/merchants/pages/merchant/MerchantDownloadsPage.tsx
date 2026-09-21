@@ -12,6 +12,8 @@
  */
 import { AlertCircle, Download, Lock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMEmptyState, ATMSkeleton } from '@/shared/ui';
 import {
   useGetSelfDownloadsQuery,
   useLazyGetSelfDownloadUrlQuery,
@@ -52,17 +54,25 @@ export default function MerchantDownloadsPage() {
   const loaded = !downloads.isLoading && !downloads.isError;
 
   return (
-    <div className="w-full space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Downloads</h1>
-        <p className="mt-1 text-sm text-surface-500">
-          Local apps, manuals, and release notes available for your plan.
-        </p>
-      </header>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Download}
+        iconColor="theme"
+        title="Downloads"
+        subtitle="Local apps, manuals, and release notes available for your plan."
+      />
 
       {downloads.isLoading && (
-        <div className="rounded-xl bg-white p-6 text-center text-sm text-surface-500 shadow-sm dark:bg-surface-800">
-          Loading…
+        <div className="space-y-4">
+          {[0, 1, 2].map((g) => (
+            <div key={g} className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 dark:border-gray-800/80 dark:bg-[#13151a]/95">
+              <ATMSkeleton width="30%" height="16px" className="rounded-lg" />
+              <div className="mt-4 space-y-2">
+                <ATMSkeleton height="52px" className="rounded-xl" />
+                <ATMSkeleton height="52px" className="rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -86,23 +96,26 @@ export default function MerchantDownloadsPage() {
       )}
 
       {loaded && packages.length === 0 && (
-        <div className="rounded-xl bg-white p-6 text-center text-sm text-surface-500 shadow-sm dark:bg-surface-800">
-          Nothing has been published for download yet.
+        <div className="rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a]">
+          <ATMEmptyState title="Nothing has been published for download yet." />
         </div>
       )}
 
       {loaded && packages.length > 0 && available.length === 0 && (
-        <div className="rounded-xl bg-white p-6 text-center text-sm text-surface-500 shadow-sm dark:bg-surface-800">
-          No downloads are included in your plan yet — what each one needs is listed below.
+        <div className="rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a]">
+          <ATMEmptyState
+            title="No downloads are included in your plan yet"
+            description="What each one needs is listed below."
+          />
         </div>
       )}
 
       {appNames.map((appName) => (
-        <div key={appName} className="rounded-xl bg-white shadow-sm dark:bg-surface-800">
-          <div className="border-b border-surface-200 p-4 dark:border-surface-700">
-            <h2 className="text-sm font-semibold">{appName}</h2>
+        <div key={appName} className="rounded-xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-[#13151a]">
+          <div className="border-b border-slate-100 p-4 dark:border-slate-800">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{appName}</h2>
           </div>
-          <ul className="divide-y divide-surface-100 dark:divide-surface-700/50">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {grouped[appName]!.map((p) => (
               <li
                 key={p.packageId}
@@ -110,15 +123,15 @@ export default function MerchantDownloadsPage() {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{p.platform}</span>
-                    <span className="font-mono text-xs text-surface-500">v{p.version}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{p.platform}</span>
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">v{p.version}</span>
                     {p.isLatest && (
                       <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
                         Latest
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-surface-500">
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     Released {new Date(p.releasedAt).toLocaleDateString()} · {formatFileSize(p.fileSize)}
                   </p>
                   {p.releaseNotes && (
@@ -126,7 +139,7 @@ export default function MerchantDownloadsPage() {
                       <summary className="cursor-pointer text-xs text-primary-600 hover:underline">
                         Release notes
                       </summary>
-                      <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-surface-50 p-3 text-xs text-surface-600 dark:bg-surface-900">
+                      <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-400">
                         {p.releaseNotes}
                       </pre>
                     </details>

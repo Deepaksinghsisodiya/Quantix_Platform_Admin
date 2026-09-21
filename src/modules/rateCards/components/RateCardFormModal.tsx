@@ -5,9 +5,11 @@ import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
+import { ATMSectionHeader } from '@/shared/ui/ATMSectionHeader';
 import { RateCard } from '../types/rateCard.types';
 import { LIMITS_INFO, SERVICES_INFO } from '../list/RateCardListPage';
 import { cn } from '@/lib/utils/cn';
+import { Receipt, Layers, Activity, Coins, Terminal } from 'lucide-react';
 
 interface RateCardFormModalProps {
   isOpen: boolean;
@@ -47,8 +49,8 @@ const DEFAULT_INITIAL = {
   },
 };
 
-const DollarPrefix = <span className="text-gray-400 font-bold text-xs">$</span>;
-const MoSuffix = <span className="text-gray-400 text-[10px] font-bold">/day</span>;
+const DollarPrefix = <span className="text-slate-400 font-bold text-xs">$</span>;
+const MoSuffix = <span className="text-slate-400 text-[10px] font-bold">/day</span>;
 
 export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
   isOpen,
@@ -85,7 +87,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
       subtitle="Define pricing formulas for tokens, feature toggles, and limits"
       size="2xl"
       footer={
-        <div className="flex items-center justify-end gap-3 w-full border-t border-gray-100 dark:border-gray-800 pt-4">
+        <div className="flex items-center justify-end gap-3 w-full border-t border-slate-100 dark:border-slate-800 pt-4">
           <ATMButton variant="outline" type="button" onClick={onClose}>
             Cancel
           </ATMButton>
@@ -97,7 +99,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
     >
       <div className="space-y-4">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-800 gap-1 overflow-x-auto">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -117,7 +119,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
 
         <form onSubmit={formik.handleSubmit} className="space-y-4 pt-1 max-h-[480px] overflow-y-auto pr-1">
           {/* GENERAL INFO (Always Visible) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-gray-100 dark:border-gray-800/60 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-4">
             <ATMTextField
               name="name"
               label="Rate Card Name"
@@ -127,10 +129,10 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
               required
               error={formik.touched.name && formik.errors.name ? String(formik.errors.name) : undefined}
             />
-            <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-950">
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40">
               <div>
-                <p className="text-xs font-bold text-gray-900 dark:text-white">Default Rate Card</p>
-                <p className="text-[10px] text-gray-500 font-medium">Use to auto-calculate plan pricing</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Default Rate Card</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Use to auto-calculate plan pricing</p>
               </div>
               <ATMSwitch
                 name="isDefault"
@@ -144,9 +146,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
           {/* TAB 1: BASE PRICING */}
           {activeTab === 'base' && (
             <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Base Billing Cycle Pricing
-              </h3>
+              <ATMSectionHeader variant="border-left" color="accent" icon={Receipt} title="Base Billing Cycle Pricing" />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <ATMTextField
                   name="baseDailyPrice"
@@ -191,9 +191,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
           {/* TAB 2: MODULE ADD-ONS */}
           {activeTab === 'features' && (
             <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Module Incremental Pricing
-              </h3>
+              <ATMSectionHeader variant="border-left" color="accent" icon={Layers} title="Module Incremental Pricing" />
               <div className="grid grid-cols-2 gap-4">
                 <ATMTextField
                   name="modulePrices.INV"
@@ -257,10 +255,8 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
               data-driven from SERVICES_INFO (10 canonical codes). */}
           {activeTab === 'services' && (
             <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Operational Service Pricing
-              </h3>
-              <p className="text-[10px] text-gray-400 font-medium">
+              <ATMSectionHeader variant="border-left" color="accent" icon={Activity} title="Operational Service Pricing" />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                 Restaurant-only: DIN, CTR, CTG, WRV. Retail-only: SHP, INS. Others apply to both flavours.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -283,9 +279,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
           {/* TAB: PAYMENT CHANNELS — only the 7 payment codes. */}
           {activeTab === 'payments' && (
             <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Payment Channel Pricing
-              </h3>
+              <ATMSectionHeader variant="border-left" color="emerald" icon={Coins} title="Payment Channel Pricing" />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <ATMTextField
                   name="paymentPrices.CSH"
@@ -357,10 +351,8 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
           {/* TAB 4: LIMIT ADD-ONS — 2026-07-19: data-driven from LIMITS_INFO (16 canonical codes). */}
           {activeTab === 'limits' && (
             <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Incremental Limit Unit Pricing
-              </h3>
-              <p className="text-[10px] text-gray-400 font-medium">
+              <ATMSectionHeader variant="border-left" color="amber" icon={Terminal} title="Incremental Limit Unit Pricing" />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                 Rates are per day per unit — priced from unit 1, no free baseline. MPR bills per block of 100 products; MBR is a hard cap (usually $0).
               </p>
               <div className="grid grid-cols-2 gap-4">

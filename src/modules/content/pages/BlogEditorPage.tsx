@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ATMBadge, ATMButton, ATMCard } from '@/shared/ui';
+import { ATMBadge, ATMButton, ATMCard, ATMTextField, ATMTextArea, ATMSelectField, ATMPageSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Eye, ArrowLeft, Calendar, Loader2, AlertTriangle } from 'lucide-react';
+import { Save, Globe, Calendar, AlertTriangle, FileEdit } from 'lucide-react';
 import { toast } from 'sonner';
 import { MediaPicker } from '../components/MediaPicker';
 import { TemplatePicker } from '../components/TemplatePicker';
@@ -244,33 +245,27 @@ function BlogEditorPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <ATMButton variant="ghost" size="sm" onClick={() => navigate('/content/blog')}>
-            <ArrowLeft className="h-4 w-4" />
-          </ATMButton>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-              {isEditMode ? 'Edit Post' : 'New Post'}
-            </h1>
-            <div className="mt-1 flex items-center gap-2">
-              <ATMBadge variant={STATUS_VARIANT[post.status]} size="sm">{post.status}</ATMBadge>
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
-            </div>
+      <ATMPageHeader
+        icon={FileEdit}
+        iconColor="theme"
+        title={isEditMode ? 'Edit Post' : 'New Post'}
+        subtitle="Draft, review and publish blog posts for the Quantix knowledge hub."
+        onBack={() => navigate('/content/blog')}
+        extraActions={
+          <div className="flex flex-wrap items-center gap-2">
+            <ATMBadge variant={STATUS_VARIANT[post.status]} size="sm">{post.status}</ATMBadge>
+            <TemplatePicker kind="Blog" hasContent={!!post.content.trim()} onApply={applyTemplate} />
+            <ATMButton variant="secondary" size="md" leftIcon={<Save className="h-4 w-4" />} loading={saving} onClick={handleSaveDraft}>
+              Save Draft
+            </ATMButton>
+            <ATMButton variant="primary" size="md" leftIcon={<Globe className="h-4 w-4" />} onClick={handlePublish} loading={saving}>
+              Publish
+            </ATMButton>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <TemplatePicker kind="Blog" hasContent={!!post.content.trim()} onApply={applyTemplate} />
-          <ATMButton variant="secondary" size="md" leftIcon={<Save className="h-4 w-4" />} loading={saving} onClick={handleSaveDraft}>
-            Save Draft
-          </ATMButton>
-          <ATMButton variant="primary" size="md" leftIcon={<Eye className="h-4 w-4" />} onClick={handlePublish} loading={saving}>
-            Publish
-          </ATMButton>
-        </div>
-      </div>
+        }
+      />
 
       {isError && (
         <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
@@ -284,155 +279,131 @@ function BlogEditorPage() {
         </div>
       )}
 
+      {isLoading ? (
+        <ATMPageSkeleton variant="detail" />
+      ) : (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main editor */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Title */}
-          <input
-            type="text"
+          <ATMTextField
+            name="title"
+            label="Title"
             value={post.title}
             onChange={(e) => handleTitleChange(e.target.value)}
             placeholder="Post title..."
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-xl font-bold text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="[&_input]:text-lg [&_input]:font-bold"
           />
 
-          {/* Slug */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Slug:</span>
-            <input
-              type="text"
-              value={post.slug}
-              onChange={(e) => update('slug', e.target.value)}
-              className="flex-1 rounded border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-            />
-          </div>
+          <ATMTextField
+            name="slug"
+            label="Slug"
+            value={post.slug}
+            onChange={(e) => update('slug', e.target.value)}
+            placeholder="post-slug"
+            className="[&_input]:font-mono"
+          />
 
-          {/* Content area */}
-          <textarea
+          <ATMTextArea
+            name="content"
+            label="Body (Markdown)"
+            rows={18}
             value={post.content}
             onChange={(e) => update('content', e.target.value)}
             placeholder="Write your post content in Markdown..."
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 font-mono text-sm leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            style={{ minHeight: '400px' }}
+            className="[&_textarea]:font-mono"
           />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Category & Tags */}
-          <ATMCard padding="md">
-            <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Category & Tags</h3>
+          <ATMCard title="Category & Tags">
             <div className="space-y-3">
               {/* 2026-09-05: real categories, and the choice is now actually saved. */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Category</label>
-                <select
-                  value={post.categoryId}
-                  onChange={(e) => update('categoryId', e.target.value)}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">No category</option>
-                  {blogCategories.map((c) => (
-                    <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
-                  ))}
-                </select>
-                {blogCategories.length === 0 && (
-                  <span className="text-[11px] text-gray-400">
-                    No categories exist yet. Posts can still be saved without one.
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Author</label>
-                <select
-                  value={post.authorId}
-                  onChange={(e) => update('authorId', e.target.value)}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">No author</option>
-                  {blogAuthors.map((a) => (
-                    <option key={a.authorId} value={a.authorId}>{a.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Tags (comma-separated)</label>
-                <input
-                  type="text"
-                  value={post.tags}
-                  onChange={(e) => update('tags', e.target.value)}
-                  placeholder="tag1, tag2, tag3"
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                />
-              </div>
+              <ATMSelectField
+                name="categoryId"
+                label="Category"
+                value={post.categoryId}
+                onChange={(v) => update('categoryId', String(v ?? ''))}
+                options={[
+                  { value: '', label: 'No category' },
+                  ...blogCategories.map((c) => ({ value: c.categoryId, label: c.name })),
+                ]}
+                helperText={blogCategories.length === 0 ? 'No categories exist yet. Posts can still be saved without one.' : undefined}
+              />
+              <ATMSelectField
+                name="authorId"
+                label="Author"
+                value={post.authorId}
+                onChange={(v) => update('authorId', String(v ?? ''))}
+                options={[
+                  { value: '', label: 'No author' },
+                  ...blogAuthors.map((a) => ({ value: a.authorId, label: a.name })),
+                ]}
+              />
+              <ATMTextField
+                name="tags"
+                label="Tags (comma-separated)"
+                value={post.tags}
+                onChange={(e) => update('tags', e.target.value)}
+                placeholder="tag1, tag2, tag3"
+              />
             </div>
           </ATMCard>
 
           {/* Status & Schedule */}
-          <ATMCard padding="md">
-            <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Status & Schedule</h3>
+          <ATMCard title="Status & Schedule">
             <div className="space-y-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                <select
-                  value={post.status}
-                  onChange={(e) => update('status', e.target.value as BlogPostDraft['status'])}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Review">Review</option>
-                  <option value="Published">Published</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Schedule Date</label>
-                <div className="relative">
-                  <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="datetime-local"
-                    value={post.scheduleDate}
-                    onChange={(e) => update('scheduleDate', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                  />
-                </div>
-              </div>
+              <ATMSelectField
+                name="status"
+                label="Status"
+                value={post.status}
+                onChange={(v) => update('status', v as BlogPostDraft['status'])}
+                options={[
+                  { value: 'Draft', label: 'Draft' },
+                  { value: 'Review', label: 'Review' },
+                  { value: 'Published', label: 'Published' },
+                ]}
+              />
+              <ATMTextField
+                name="scheduleDate"
+                label="Schedule Date"
+                type="datetime-local"
+                value={post.scheduleDate}
+                onChange={(e) => update('scheduleDate', e.target.value)}
+                leftIcon={<Calendar className="h-4 w-4" />}
+              />
             </div>
           </ATMCard>
 
           {/* SEO */}
-          <ATMCard padding="md">
-            <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">SEO</h3>
+          <ATMCard title="SEO">
             <div className="space-y-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Meta Title</label>
-                <input
-                  type="text"
-                  value={post.metaTitle}
-                  onChange={(e) => update('metaTitle', e.target.value)}
-                  placeholder="SEO title (max 60 chars)"
-                  maxLength={60}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                />
-                <span className="text-right text-xs text-gray-400">{post.metaTitle.length}/60</span>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Meta Description</label>
-                <textarea
-                  value={post.metaDescription}
-                  onChange={(e) => update('metaDescription', e.target.value)}
-                  placeholder="SEO description (max 160 chars)"
-                  maxLength={160}
-                  rows={3}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                />
-                <span className="text-right text-xs text-gray-400">{post.metaDescription.length}/160</span>
-              </div>
+              <ATMTextField
+                name="metaTitle"
+                label="Meta Title"
+                value={post.metaTitle}
+                onChange={(e) => update('metaTitle', e.target.value)}
+                placeholder="SEO title (max 60 chars)"
+                maxLength={60}
+                helperText={`${post.metaTitle.length}/60`}
+              />
+              <ATMTextArea
+                name="metaDescription"
+                label="Meta Description"
+                rows={3}
+                value={post.metaDescription}
+                onChange={(e) => update('metaDescription', e.target.value)}
+                placeholder="SEO description (max 160 chars)"
+                maxLength={160}
+                helperText={`${post.metaDescription.length}/160`}
+              />
               {/* 2026-09-05 (Phase 1): was a bare text box for a URL the operator had to host
                   somewhere else. Now it picks from the platform's own media library. */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured Image</label>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Featured Image</label>
                 {post.featuredImageAssetId ? (
-                  <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-2 dark:border-gray-700">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2 dark:border-slate-700">
                     <img
                       src={absoluteMediaUrl(`/api/v1/media/${post.featuredImageAssetId}/file`)}
                       alt=""
@@ -442,7 +413,7 @@ function BlogEditorPage() {
                       <button type="button" onClick={() => setPickerOpen(true)} className="text-left text-xs font-semibold text-accent-600 hover:underline">
                         Change image
                       </button>
-                      <button type="button" onClick={() => update('featuredImageAssetId', '')} className="text-left text-xs text-gray-500 hover:underline">
+                      <button type="button" onClick={() => update('featuredImageAssetId', '')} className="text-left text-xs text-slate-500 hover:underline">
                         Remove
                       </button>
                     </div>
@@ -451,31 +422,37 @@ function BlogEditorPage() {
                   <button
                     type="button"
                     onClick={() => setPickerOpen(true)}
-                    className="rounded-lg border border-dashed border-gray-300 px-3 py-4 text-sm text-gray-500 hover:border-accent-400 hover:text-accent-600 dark:border-gray-600"
+                    className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 hover:border-accent-400 hover:text-accent-600 dark:border-slate-600"
                   >
                     Choose from the media library
                   </button>
                 )}
-                <input
-                  type="text"
+                <ATMTextField
+                  name="featuredImage"
                   value={post.featuredImage}
                   onChange={(e) => update('featuredImage', e.target.value)}
                   placeholder="or paste an externally hosted URL"
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">OG Image URL</label>
-                <input type="text" value={post.ogImage} onChange={(e) => update('ogImage', e.target.value)} placeholder="Open Graph image (1200×630 recommended)" className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Canonical URL</label>
-                <input type="text" value={post.canonicalUrl} onChange={(e) => update('canonicalUrl', e.target.value)} placeholder="https://quantix.io/blog/my-post (leave empty for auto)" className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100" />
-              </div>
+              <ATMTextField
+                name="ogImage"
+                label="OG Image URL"
+                value={post.ogImage}
+                onChange={(e) => update('ogImage', e.target.value)}
+                placeholder="Open Graph image (1200×630 recommended)"
+              />
+              <ATMTextField
+                name="canonicalUrl"
+                label="Canonical URL"
+                value={post.canonicalUrl}
+                onChange={(e) => update('canonicalUrl', e.target.value)}
+                placeholder="https://quantix.io/blog/my-post (leave empty for auto)"
+              />
             </div>
           </ATMCard>
         </div>
       </div>
+      )}
 
       <MediaPicker
         open={pickerOpen}

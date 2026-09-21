@@ -18,7 +18,6 @@ import {
   Bell,
   TrendingDown,
   Key,
-  Loader2,
   RefreshCw,
   CreditCard,
   Wallet as WalletIcon,
@@ -75,17 +74,17 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
   isPending,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
-        title={
+        icon={WalletIcon}
+        iconColor="theme"
+        title="Wallet & Token Balance"
+        subtitle={
           <div className="flex items-center gap-2">
-            <WalletIcon className="h-6 w-6 text-indigo-500" />
-            <span>Wallet &amp; Token Balance</span>
-            {isLoadingWallets && <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />}
+            <span>Enterprise wallets (subscription / commission / recharge / withdrawal / bonus / refund / adjustment).</span>
           </div>
         }
-        subtitle="Enterprise wallets (subscription / commission / recharge / withdrawal / bonus / refund / adjustment)."
         extraActions={
           <div className="flex items-center gap-2">
             {criticalCount > 0 && <ATMBadge label={`${criticalCount} critical`} color="danger" />}
@@ -95,7 +94,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
       />
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-100 dark:border-gray-800 pb-px">
+      <div className="flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1 dark:bg-slate-800/60">
         {[
           { key: 'enterprise' as const, label: 'Enterprise Wallets', icon: <TrendingDown className="h-3.5 w-3.5" /> },
           { key: 'recharges' as const, label: 'Recharge History', icon: <CreditCard className="h-3.5 w-3.5" /> },
@@ -105,10 +104,10 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300',
+              'flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300',
               activeTab === tab.key
-                ? 'bg-accent-600 dark:bg-accent-600 text-white shadow-md shadow-accent-500/20'
-                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-900'
+                ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-sm shadow-primary-500/25'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
             )}
           >
             {tab.icon}
@@ -120,15 +119,15 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
       {/* Enterprise Wallets */}
       {activeTab === 'enterprise' && (
         <ATMCard padding="none" className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-950/20">
-            <p className="text-xs font-bold text-accent-700 dark:text-accent-400 uppercase tracking-wider">
+          <div className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+            <p className="text-xs font-bold text-primary-700 dark:text-primary-400 uppercase tracking-wider">
               Enterprise merchants only — Standalone merchants use recharge tokens directly (no wallet).
             </p>
           </div>
           {isErrorWallets ? (
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
               <AlertTriangle className="h-10 w-10 text-red-500" />
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Failed to load wallets.</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Failed to load wallets.</p>
               <ATMButton variant="primary" size="sm" onClick={refetchWallets} icon={RefreshCw}>
                 Retry
               </ATMButton>
@@ -140,7 +139,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                   key: 'merchantId',
                   header: 'Merchant',
                   renderCell: (_val, row) => (
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">{row.merchantId}</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{row.merchantId}</span>
                   ),
                 },
                 {
@@ -148,7 +147,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                   header: 'Balance',
                   align: 'right',
                   renderCell: (_val, row) => (
-                    <span className="font-mono font-bold text-gray-900 dark:text-gray-100">
+                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatTokens(row.tokenBalance)}
                     </span>
                   ),
@@ -167,7 +166,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                   key: 'lastTopUpDate',
                   header: 'Last Top-Up',
                   renderCell: (_val, row) => (
-                    <span className="text-gray-500">{row.lastTopUpDate ? formatDate(row.lastTopUpDate) : '—'}</span>
+                    <span className="text-slate-500">{row.lastTopUpDate ? formatDate(row.lastTopUpDate) : '—'}</span>
                   ),
                   width: '130px',
                 },
@@ -175,7 +174,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                   key: 'lastDeductionDate',
                   header: 'Last Deduction',
                   renderCell: (_val, row) => (
-                    <span className="text-gray-500">{row.lastDeductionDate ? formatDate(row.lastDeductionDate) : '—'}</span>
+                    <span className="text-slate-500">{row.lastDeductionDate ? formatDate(row.lastDeductionDate) : '—'}</span>
                   ),
                   width: '130px',
                 },
@@ -212,7 +211,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                 key: 'createdAt',
                 header: 'Date',
                 renderCell: (_val, row) => (
-                  <span className="text-gray-500">{formatDate(row.createdAt)}</span>
+                  <span className="text-slate-500">{formatDate(row.createdAt)}</span>
                 ),
                 width: '130px',
               },
@@ -220,14 +219,14 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                 key: 'merchantId',
                 header: 'Merchant',
                 renderCell: (_val, row) => (
-                  <span className="font-mono text-xs text-gray-900 dark:text-gray-100">{row.merchantId}</span>
+                  <span className="font-mono text-xs text-slate-900 dark:text-slate-100">{row.merchantId}</span>
                 ),
               },
               {
                 key: 'channel',
                 header: 'Channel',
                 renderCell: (_val, row) => (
-                  <span className="text-gray-900 dark:text-gray-100">{row.channel}</span>
+                  <span className="text-slate-900 dark:text-slate-100">{row.channel}</span>
                 ),
                 width: '110px',
               },
@@ -236,7 +235,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                 header: 'Tokens',
                 align: 'right',
                 renderCell: (_val, row) => (
-                  <span className="font-mono font-bold text-gray-900 dark:text-gray-100">
+                  <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                     {formatTokens(row.tokenAmount)}
                   </span>
                 ),
@@ -247,7 +246,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                 header: 'Currency',
                 align: 'right',
                 renderCell: (_val, row) => (
-                  <span className="text-gray-500">
+                  <span className="text-slate-500">
                     {row.currencyAmount != null ? `${row.currencyAmount.toFixed(2)} ${row.currencyCode ?? ''}` : '—'}
                   </span>
                 ),
@@ -263,7 +262,7 @@ export const WalletListView: React.FC<WalletListViewProps> = ({
                 key: 'paymentReference',
                 header: 'Reference',
                 renderCell: (_val, row) => (
-                  <span className="text-gray-500 truncate block max-w-[12rem]">
+                  <span className="text-slate-500 truncate block max-w-[12rem]">
                     {row.paymentReference ?? row.evidenceNote ?? row.failureReason ?? '—'}
                   </span>
                 ),

@@ -25,13 +25,13 @@ const ROLE_LABELS: Record<string, string> = {
   Merchant: 'Merchant',
 };
 
-const ROLE_COLOR: Record<string, 'accent' | 'info' | 'success' | 'warning' | 'muted'> = {
-  Admin: 'accent',
-  OperationsManager: 'info',
+const ROLE_COLOR: Record<string, 'primary' | 'purple' | 'success' | 'warning' | 'muted' | 'gray'> = {
+  Admin: 'primary',
+  OperationsManager: 'purple',
   FinanceManager: 'success',
   ContentManager: 'warning',
   Operator: 'muted',
-  Merchant: 'muted',
+  Merchant: 'gray',
 };
 
 const ROLE_OPTIONS = [
@@ -119,8 +119,8 @@ export const UserList: React.FC<UserListProps> = ({
           <div className="flex items-center gap-3">
             <ATMAvatar name={row.name} size="sm" />
             <div className="min-w-0">
-              <p className="truncate font-bold text-gray-900 dark:text-white">{row.name}</p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400 font-semibold">{row.email}</p>
+              <p className="truncate font-bold text-slate-900 dark:text-slate-100">{row.name}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400 font-semibold">{row.email}</p>
             </div>
           </div>
         ),
@@ -159,7 +159,7 @@ export const UserList: React.FC<UserListProps> = ({
         header: 'Last Login',
         sortable: true,
         renderCell: (_val, row) => (
-          <span className="text-gray-600 dark:text-gray-400 font-bold">
+          <span className="text-slate-600 dark:text-slate-300 font-bold">
             {row.lastLogin ? new Date(row.lastLogin).toLocaleString() : 'Never'}
           </span>
         ),

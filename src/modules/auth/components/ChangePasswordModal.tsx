@@ -39,7 +39,7 @@ const rules = [
   { label: 'Symbolic', test: (v: string) => /[!@#$%^&*(),.?":{}|<>]/.test(v) },
 ];
 
-const strengthColors = ['bg-slate-200 dark:bg-white/10', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-emerald-500'];
+const strengthColors = ['bg-surface-200 dark:bg-surface-800', 'bg-rose-500', 'bg-orange-500', 'bg-amber-500', 'bg-primary-500', 'bg-emerald-500'];
 const strengthLabels = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
 
 const ChangePasswordModal: React.FC<Props> = ({ isOpen, onClose, isForced = false, onSuccess }) => {
@@ -97,7 +97,7 @@ const ChangePasswordModal: React.FC<Props> = ({ isOpen, onClose, isForced = fals
                   type="button"
                   variant="ghost"
                   onClick={onClose}
-                  className="flex-1 h-11 rounded-xl text-[11px] font-extrabold uppercase tracking-widest text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                  className="flex-1 h-11 rounded-xl text-[11px] font-extrabold uppercase tracking-widest text-surface-400 hover:text-surface-900 dark:hover:text-white transition-all"
                 >
                   Cancel
                 </ATMButton>
@@ -106,7 +106,7 @@ const ChangePasswordModal: React.FC<Props> = ({ isOpen, onClose, isForced = fals
                 type="button"
                 onClick={() => formikProps.submitForm()}
                 isLoading={formikProps.isSubmitting}
-                className={`${isForced ? 'w-full' : 'flex-[2]'} h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-extrabold uppercase tracking-widest active:scale-95 transition-all text-[11px] shadow-lg shadow-slate-900/10 dark:shadow-none`}
+                className={`${isForced ? 'w-full' : 'flex-[2]'} h-11 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-extrabold uppercase tracking-widest active:scale-95 transition-all text-[11px] shadow-lg shadow-accent-500/20 hover:shadow-accent-500/30`}
               >
                 Update Password
               </ATMButton>
@@ -115,7 +115,7 @@ const ChangePasswordModal: React.FC<Props> = ({ isOpen, onClose, isForced = fals
         >
           <Form className="space-y-8">
             {!isForced && (
-              <p className="text-[14px] font-medium text-slate-500 dark:text-gray-400 leading-relaxed px-1">
+              <p className="text-[14px] font-medium text-surface-500 dark:text-surface-400 leading-relaxed px-1">
                 Enter your current and new password below to update your account access.
               </p>
             )}

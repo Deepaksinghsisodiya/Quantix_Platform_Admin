@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useGetBlogPostsQuery, useGetHelpArticlesQuery, useGetFaqsQuery } from '@/modules/content/services/contentApi';
 import { useGetLeadsQuery } from '@/modules/helpdesk/services/helpdeskApi';
-import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMPageSkeleton } from '@/shared/ui';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import ContentManagerDashboard, { type ContentCounts } from './ContentManagerDashboard';
 
@@ -35,28 +35,13 @@ export const ContentManagerDashboardWrapper: React.FC = () => {
   }, [blogQuery, helpQuery, faqQuery, leadsQuery]);
 
   if (isInitialLoading) {
-    return (
-      <div className="flex flex-1 flex-col gap-6 animate-fade-in w-full">
-        <div className="flex justify-between items-baseline pb-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="space-y-2">
-            <ATMSkeleton width="200px" height="24px" />
-            <ATMSkeleton width="300px" height="14px" />
-          </div>
-          <ATMSkeleton width="80px" height="24px" className="rounded-full" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <ATMSkeleton key={i} height="120px" className="rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    );
+    return <ATMPageSkeleton variant="stats" />;
   }
 
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 w-full">
-        <div className="flex flex-col items-center max-w-md text-center p-8 bg-white dark:bg-gray-900 rounded-3xl border border-slate-200 dark:border-gray-800 shadow-sm">
+        <div className="flex flex-col items-center max-w-md text-center p-8 bg-white dark:bg-gray-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="w-16 h-16 bg-rose-50 dark:bg-rose-950/30 rounded-2xl flex items-center justify-center text-rose-500 mb-6">
             <AlertCircle size={32} />
           </div>

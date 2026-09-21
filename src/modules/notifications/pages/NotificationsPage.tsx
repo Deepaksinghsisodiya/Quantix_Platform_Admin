@@ -76,7 +76,7 @@ const NotificationsPage: React.FC = () => {
         'inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-all',
         filter === key
           ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white border-transparent shadow-sm shadow-primary-500/20'
-          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-zinc-950 dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700',
+          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-[#13151a] dark:text-slate-300 dark:border-slate-800 dark:hover:border-slate-700',
       )}
     >
       {Icon && <Icon size={12} strokeWidth={2.5} className={filter === key ? 'text-white' : 'text-slate-400 dark:text-slate-500'} />}
@@ -102,7 +102,7 @@ const NotificationsPage: React.FC = () => {
         className={cn(
           'relative flex items-start gap-3.5 px-4 py-4 cursor-pointer transition-all group',
           n.read
-            ? 'hover:bg-slate-50 dark:hover:bg-zinc-900/50'
+            ? 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
             : 'bg-primary-50/40 hover:bg-primary-50/70 dark:bg-primary-950/10 dark:hover:bg-primary-950/20',
         )}
       >
@@ -169,7 +169,7 @@ const NotificationsPage: React.FC = () => {
         };
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+    <div className="w-full max-w-[1600px] mx-auto space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="Notifications"
@@ -208,7 +208,7 @@ const NotificationsPage: React.FC = () => {
           label="Today"
           value={todayCount}
           icon={Clock3}
-          variant="indigo"
+          variant="accent"
           description="Received in the last 24 hours"
         />
       </div>
@@ -225,7 +225,7 @@ const NotificationsPage: React.FC = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-5">
+        <div className="rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a] p-5">
           <ATMSkeleton variant="card" count={4} className="h-20" />
         </div>
       ) : filtered.length === 0 ? (
@@ -257,7 +257,7 @@ const NotificationsPage: React.FC = () => {
                 </span>
                 <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
               </div>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/60 shadow-sm">
+              <div className="rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a] overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/60 shadow-sm">
                 {g.items.map(renderRow)}
               </div>
             </div>

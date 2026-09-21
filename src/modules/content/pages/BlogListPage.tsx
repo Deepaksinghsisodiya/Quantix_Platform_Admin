@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { ATMButton, ATMModal, ATMTextField } from '@/shared/ui';
+import { ATMButton, ATMModal, ATMTextField, ATMCard, ATMBadge } from '@/shared/ui';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
 import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -107,7 +108,7 @@ function BlogListPage() {
           <button
             type="button"
             onClick={() => navigate(`/content/blog/${row.id}/edit`)}
-            className="text-left font-medium text-gray-900 hover:text-indigo-600 transition-colors dark:text-gray-100 dark:hover:text-indigo-400"
+            className="text-left font-medium text-slate-900 hover:text-primary-600 transition-colors dark:text-slate-100 dark:hover:text-primary-400"
           >
             {row.title}
           </button>
@@ -117,7 +118,7 @@ function BlogListPage() {
         key: 'author',
         header: 'Author',
         renderCell: (val, row) => (
-          <span className="text-sm text-gray-600 dark:text-gray-400">{row.author}</span>
+          <span className="text-sm text-slate-600 dark:text-slate-400">{row.author}</span>
         ),
       },
       {
@@ -130,11 +131,11 @@ function BlogListPage() {
         header: 'Published',
         renderCell: (val, row) => {
           return row.publishDate ? (
-            <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">
+            <span className="text-sm tabular-nums text-slate-600 dark:text-slate-400">
               {formatDate(row.publishDate, 'short')}
             </span>
           ) : (
-            <span className="text-xs text-gray-400 dark:text-gray-500">--</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">--</span>
           );
         },
       },
@@ -143,11 +144,9 @@ function BlogListPage() {
         header: 'Category',
         renderCell: (val, row) =>
           row.categoryName ? (
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              {row.categoryName}
-            </span>
+            <ATMBadge color="muted" size="md">{row.categoryName}</ATMBadge>
           ) : (
-            <span className="text-xs text-gray-400">--</span>
+            <span className="text-xs text-slate-400">--</span>
           ),
       },
     ],
@@ -200,40 +199,37 @@ function BlogListPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-500">
-            Blog
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Manage blog posts for the Quantix knowledge hub.
-          </p>
-        </div>
-        <ATMButton
-          variant="primary"
-          size="md"
-          leftIcon={<Plus className="h-4 w-4" />}
-          onClick={() => navigate('/content/blog/new')}
-        >
-          New Post
-        </ATMButton>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={FileText}
+        iconColor="theme"
+        title="Blog"
+        subtitle="Manage blog posts for the Quantix knowledge hub."
+        extraActions={
+          <ATMButton
+            variant="primary"
+            size="md"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate('/content/blog/new')}
+          >
+            New Post
+          </ATMButton>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1">
+        <div className="inline-flex items-center gap-1 rounded-lg bg-slate-100/80 p-1 dark:bg-slate-900/60">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setStatusFilter(s)}
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150',
+                'rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
                 statusFilter === s
-                  ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
               )}
             >
               {s}
@@ -272,7 +268,7 @@ function BlogListPage() {
       )}
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      <ATMCard padding="none" className="overflow-hidden">
         <ATMTable
           columns={columns}
           data={filteredPosts}
@@ -281,19 +277,19 @@ function BlogListPage() {
           emptyMessage="No blog posts. Create your first post to get started."
           density="compact"
         />
-      </div>
+      </ATMCard>
 
       {/* Delete confirmation modal */}
       <ATMModal
-        open={!!deleteTarget}
+        isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         title="Delete Post"
         size="sm"
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Are you sure you want to delete{' '}
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="font-medium text-slate-900 dark:text-slate-100">
               {deleteTarget?.title}
             </span>
             ? This action cannot be undone.

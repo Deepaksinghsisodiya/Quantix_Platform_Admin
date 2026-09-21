@@ -62,7 +62,7 @@ function formatRiskScore(score: number | undefined): string {
 }
 
 function riskScoreColor(score: number | undefined): string {
-  if (score == null) return 'text-gray-400';
+  if (score == null) return 'text-slate-400';
   if (score >= 75) return 'text-red-600 dark:text-red-400';
   if (score >= 50) return 'text-orange-600 dark:text-orange-400';
   if (score >= 25) return 'text-yellow-600 dark:text-yellow-400';
@@ -91,7 +91,7 @@ export function MerchantHeatmap({ data, loading, onMerchantClick, className }: M
   return (
     <div className={cn('space-y-3', className)}>
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
         {(Object.entries(ACTIVITY_LABELS) as [MerchantActivityLevel, string][]).map(([key, label]) => (
           <span key={key} className="flex items-center gap-1.5">
             <span
@@ -112,10 +112,10 @@ export function MerchantHeatmap({ data, loading, onMerchantClick, className }: M
             className={cn(
               'h-4 w-4 rounded-[3px] transition-all duration-150 cursor-pointer',
               'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
-              'dark:focus:ring-offset-gray-900',
+              'dark:focus:ring-offset-slate-900',
               ACTIVITY_BG[merchant.activity],
               ACTIVITY_BG_HOVER[merchant.activity],
-              hoveredId === merchant.merchantId && 'ring-2 ring-white dark:ring-gray-800 scale-125',
+              hoveredId === merchant.merchantId && 'ring-2 ring-white dark:ring-slate-800 scale-125',
             )}
             title={merchant.name}
             onMouseEnter={() => setHoveredId(merchant.merchantId)}
@@ -129,8 +129,8 @@ export function MerchantHeatmap({ data, loading, onMerchantClick, className }: M
       {/* Hover detail — extended with churn risk + balance/usage */}
       <div
         className={cn(
-          'rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs transition-opacity duration-150',
-          'dark:border-gray-700 dark:bg-gray-800',
+          'rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs transition-opacity duration-150',
+          'dark:border-slate-800 dark:bg-slate-800',
           hovered ? 'opacity-100' : 'opacity-0',
         )}
         aria-live="polite"
@@ -138,9 +138,9 @@ export function MerchantHeatmap({ data, loading, onMerchantClick, className }: M
         {hovered ? (
           <div className="space-y-1">
             <div className="flex items-center gap-4">
-              <span className="font-medium text-gray-900 dark:text-gray-100">{hovered.name}</span>
-              <span className="text-gray-500 dark:text-gray-400">{hovered.merchantType}</span>
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-slate-900 dark:text-slate-100">{hovered.name}</span>
+              <span className="text-slate-500 dark:text-slate-400">{hovered.merchantType}</span>
+              <span className="text-slate-500 dark:text-slate-400">
                 {hovered.transactionsLast7d} txn/7d
               </span>
               <span
@@ -150,13 +150,13 @@ export function MerchantHeatmap({ data, loading, onMerchantClick, className }: M
                 {ACTIVITY_LABELS[hovered.activity]}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400">
               {/* Token balance for Standalone, usage rate for Enterprise */}
               {hovered.merchantType === 'Standalone' && hovered.tokenBalance != null && (
-                <span>Token Balance: <span className="font-medium text-gray-700 dark:text-gray-300">{hovered.tokenBalance} days</span></span>
+                <span>Token Balance: <span className="font-medium text-slate-700 dark:text-slate-300">{hovered.tokenBalance} days</span></span>
               )}
               {hovered.merchantType === 'Enterprise' && hovered.usageRate != null && (
-                <span>Usage Rate: <span className="font-medium text-gray-700 dark:text-gray-300">{hovered.usageRate}%</span></span>
+                <span>Usage Rate: <span className="font-medium text-slate-700 dark:text-slate-300">{hovered.usageRate}%</span></span>
               )}
               {/* Churn risk score */}
               {hovered.churnRiskScore != null && (
@@ -170,7 +170,7 @@ export function MerchantHeatmap({ data, loading, onMerchantClick, className }: M
             </div>
           </div>
         ) : (
-          <span className="text-gray-400">Hover a cell to see merchant details</span>
+          <span className="text-slate-400">Hover a cell to see merchant details</span>
         )}
       </div>
     </div>

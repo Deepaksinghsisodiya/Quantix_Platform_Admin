@@ -95,19 +95,19 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by file name, alt text or caption"
-              className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
             />
           </div>
           <select
             value={folder}
             onChange={(e) => setFolder(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
           >
             <option value="">All folders</option>
             {folders.map((f) => (
@@ -132,7 +132,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
             {Array.from({ length: 8 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="110px" />)}
           </div>
         ) : assets.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex h-48 flex-col items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <ImageOff className="h-7 w-7" />
             <p>{search || folder ? 'Nothing matches that filter.' : 'The library is empty. Upload the first image.'}</p>
           </div>
@@ -144,10 +144,10 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                 type="button"
                 onClick={() => setSelected(a.assetId)}
                 className={cn(
-                  'group relative overflow-hidden rounded-lg border-2 bg-gray-50 text-left transition-colors dark:bg-gray-900',
+                  'group relative overflow-hidden rounded-lg border-2 bg-slate-50 text-left transition-colors dark:bg-slate-900/60',
                   selected === a.assetId
                     ? 'border-accent-500'
-                    : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600',
+                    : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600',
                 )}
               >
                 {a.isVideo ? (
@@ -165,7 +165,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                     <Check className="h-3 w-3" />
                   </span>
                 )}
-                <span className="block truncate px-2 py-1 text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                <span className="block truncate px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300">
                   {a.fileName}
                 </span>
               </button>
@@ -173,7 +173,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+        <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
           <ATMButton variant="ghost" onClick={onClose}>Cancel</ATMButton>
           <ATMButton variant="primary" onClick={confirm} disabled={!selected}>Use this image</ATMButton>
         </div>

@@ -231,9 +231,7 @@ export const MFAForm: React.FC<MFAFormProps> = ({
                     {totpUri ? (
                       <QRCodeSVG value={totpUri} size={170} level="M" />
                     ) : (
-                      <div className="flex h-[170px] w-[170px] items-center justify-center text-xs font-semibold text-surface-400 animate-pulse">
-                        Loading QR code...
-                      </div>
+                      <div className="h-[170px] w-[170px] animate-pulse rounded-xl bg-surface-100 dark:bg-surface-850" aria-hidden="true" />
                     )}
                   </div>
                 </div>
@@ -283,7 +281,7 @@ export const MFAForm: React.FC<MFAFormProps> = ({
             {step === 3 && formik && (
               <Form className="flex flex-col gap-6 animate-fade-in" noValidate>
                 <div className="text-center space-y-1">
-                  <h2 className="text-lg font-bold text-surface-900 dark:text-surface-555">
+                  <h2 className="text-lg font-bold text-surface-900 dark:text-surface-50">
                     Verify Your Code
                   </h2>
                   <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed">

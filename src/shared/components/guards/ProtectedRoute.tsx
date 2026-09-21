@@ -26,13 +26,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { hasPermission } = usePermission();
   const location = useLocation();
 
-  // Show nothing or a global loader while the auth state is being determined
+  // Show nothing while the auth state is being determined
   if (!isInitialized) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return null;
   }
 
   // Redirect to login if not authenticated

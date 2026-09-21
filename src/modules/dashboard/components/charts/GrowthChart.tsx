@@ -238,20 +238,20 @@ export function SourceAttributionChart({ data, conversionRate, loading, classNam
                   className="inline-block h-3 w-3 rounded-full"
                   style={{ backgroundColor: SOURCE_COLORS[entry.source] ?? '#94a3b8' }}
                 />
-                <span className="text-gray-700 dark:text-gray-300">{entry.source}</span>
+                <span className="text-slate-700 dark:text-slate-300">{entry.source}</span>
               </div>
               <div className="text-right">
-                <span className="font-medium text-gray-900 dark:text-gray-100">{entry.count}</span>
-                <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                <span className="font-medium text-slate-900 dark:text-slate-100">{entry.count}</span>
+                <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">
                   ({entry.percentage}%)
                 </span>
               </div>
             </div>
           ))}
           {conversionRate != null && (
-            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Signup → Active Conversion</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-50">{conversionRate}%</p>
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Signup → Active Conversion</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{conversionRate}%</p>
             </div>
           )}
         </div>
@@ -287,22 +287,22 @@ export function CohortRetentionTable({ data, loading, className }: CohortRetenti
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="px-2 py-1.5 text-left font-medium text-gray-500 dark:text-gray-400">Signup Cohort</th>
-              <th className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">Signed Up</th>
-              <th className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">Still Active</th>
-              <th className="px-2 py-1.5 text-center font-medium text-gray-500 dark:text-gray-400">Retention</th>
+              <th className="px-2 py-1.5 text-left font-medium text-slate-500 dark:text-slate-400">Signup Cohort</th>
+              <th className="px-2 py-1.5 text-center font-medium text-slate-500 dark:text-slate-400">Signed Up</th>
+              <th className="px-2 py-1.5 text-center font-medium text-slate-500 dark:text-slate-400">Still Active</th>
+              <th className="px-2 py-1.5 text-center font-medium text-slate-500 dark:text-slate-400">Retention</th>
             </tr>
           </thead>
           <tbody>
             {data.map((row) => (
               <tr key={row.cohort}>
-                <td className="px-2 py-1.5 font-medium text-gray-700 dark:text-gray-300">
+                <td className="px-2 py-1.5 font-medium text-slate-700 dark:text-slate-300">
                   {row.cohort}
                 </td>
-                <td className="px-2 py-1.5 text-center tabular-nums text-gray-600 dark:text-gray-400">
+                <td className="px-2 py-1.5 text-center tabular-nums text-slate-600 dark:text-slate-400">
                   {row.merchantCount}
                 </td>
-                <td className="px-2 py-1.5 text-center tabular-nums text-gray-600 dark:text-gray-400">
+                <td className="px-2 py-1.5 text-center tabular-nums text-slate-600 dark:text-slate-400">
                   {row.stillActive}
                 </td>
                 <td className="px-1 py-1">

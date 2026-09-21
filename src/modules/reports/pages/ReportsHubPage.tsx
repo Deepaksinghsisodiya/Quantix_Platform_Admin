@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils/cn';
 import { usePermission } from '@/shared/hooks/usePermission';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import type { PermissionModule } from '@/lib/utils/permissions';
 import {
   TrendingUp,
@@ -12,6 +13,7 @@ import {
   Key,
   ShieldCheck,
   ArrowRight,
+  BarChart3,
 } from 'lucide-react';
 
 /* ---------------------------------------------------------------------------
@@ -33,7 +35,11 @@ interface ReportCard {
   readonly title: string;
   readonly description: string;
   readonly icon: React.ElementType;
+  /** 2026-09-08: gradient square icon tile, matching the report page's ATMPageHeader
+   *  icon (same style as Growth Report) — white glyph + soft colored glow. */
   readonly color: string;
+  /** Solid top accent bar (gradient start → transparent), matched to the icon tint. */
+  readonly accent: string;
   readonly route: string;
   /** 2026-09-08: the module the report's ROUTE is guarded by, when it is not `reports`. */
   readonly module?: PermissionModule;
@@ -45,7 +51,8 @@ const REPORT_CARDS: ReportCard[] = [
     title: 'Growth Report',
     description: 'Track merchant signups, churns, and net growth over time with source attribution.',
     icon: TrendingUp,
-    color: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/40',
+    color: 'bg-gradient-to-br from-emerald-600 to-emerald-400 shadow-lg shadow-emerald-500/25',
+    accent: 'from-emerald-500 to-emerald-500/0',
     route: '/reports/growth',
   },
   {
@@ -53,7 +60,8 @@ const REPORT_CARDS: ReportCard[] = [
     title: 'Revenue Report',
     description: 'Revenue by stream, MRR/ARR, and average revenue per merchant.',
     icon: DollarSign,
-    color: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/40',
+    color: 'bg-gradient-to-br from-violet-600 to-violet-400 shadow-lg shadow-violet-500/25',
+    accent: 'from-violet-500 to-violet-500/0',
     route: '/reports/revenue',
   },
   {
@@ -61,7 +69,8 @@ const REPORT_CARDS: ReportCard[] = [
     title: 'Usage Report',
     description: 'Enterprise telemetry, Standalone activations, and engagement rates.',
     icon: Activity,
-    color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40',
+    color: 'bg-gradient-to-br from-blue-600 to-blue-400 shadow-lg shadow-blue-500/25',
+    accent: 'from-blue-500 to-blue-500/0',
     route: '/reports/usage',
   },
   {
@@ -69,7 +78,8 @@ const REPORT_CARDS: ReportCard[] = [
     title: 'Churn Analysis',
     description: 'Deboarding, token lapses, and merchants flagged at risk by health score.',
     icon: UserMinus,
-    color: 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/40',
+    color: 'bg-gradient-to-br from-rose-600 to-rose-400 shadow-lg shadow-rose-500/25',
+    accent: 'from-rose-500 to-rose-500/0',
     route: '/reports/churn',
   },
   {
@@ -77,7 +87,8 @@ const REPORT_CARDS: ReportCard[] = [
     title: 'Commission Report',
     description: 'Review commission earnings, settlement status, and rate analysis by merchant.',
     icon: Percent,
-    color: 'text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/40',
+    color: 'bg-gradient-to-br from-amber-500 to-amber-400 shadow-lg shadow-amber-500/25',
+    accent: 'from-amber-500 to-amber-500/0',
     route: '/reports/commission',
   },
   {
@@ -85,15 +96,17 @@ const REPORT_CARDS: ReportCard[] = [
     title: 'Token Report',
     description: 'Token issuance, activation, renewal rate, and revenue by plan.',
     icon: Key,
-    color: 'text-pink-600 bg-pink-100 dark:text-pink-400 dark:bg-pink-900/40',
+    color: 'bg-gradient-to-br from-pink-600 to-pink-400 shadow-lg shadow-pink-500/25',
+    accent: 'from-pink-500 to-pink-500/0',
     route: '/reports/tokens',
   },
   {
     key: 'compliance',
     title: 'Compliance Report',
-    description: 'Data subject requests, their status, and coverage by regulation and region.',
+    description: 'Data subject requests and their status against the response window.',
     icon: ShieldCheck,
-    color: 'text-cyan-600 bg-cyan-100 dark:text-cyan-400 dark:bg-cyan-900/40',
+    color: 'bg-gradient-to-br from-cyan-600 to-cyan-400 shadow-lg shadow-cyan-500/25',
+    accent: 'from-cyan-500 to-cyan-500/0',
     route: '/reports/compliance',
     // The route is guarded by the compliance module; a Finance Manager (reports, no
     // compliance) used to click this card and land on Access Denied.
@@ -112,16 +125,13 @@ function ReportsHubPage() {
   const visibleCards = REPORT_CARDS.filter((c) => !c.module || hasPermission(c.module, 'view'));
 
   return (
-    <div className="w-full space-y-8 animate-fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
-          Reports &amp; Analytics
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Pre-built reports over live platform data. Every report exports to CSV or PDF.
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={BarChart3}
+        iconColor="theme"
+        title="Reports & Analytics"
+        subtitle="Pre-built reports over live platform data. Every report exports to CSV or PDF."
+      />
 
       {/* Report cards grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -132,29 +142,58 @@ function ReportsHubPage() {
               key={report.key}
               to={report.route}
               className={cn(
-                'group flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all duration-200',
-                'hover:shadow-md hover:border-gray-300',
-                'dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600 dark:hover:shadow-gray-800/40',
+                'group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5',
+                'transition-all duration-300 hover:-translate-y-1',
+                'hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/5',
+                'dark:border-slate-800 dark:bg-[#13151a] dark:hover:border-slate-700',
+                'dark:hover:shadow-black/40',
               )}
             >
-              <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-lg', report.color)}>
-                <Icon className="h-5 w-5" />
+              {/* Accent bar — matched to the report's icon tint; fades in on hover */}
+              <div
+                className={cn(
+                  'pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100',
+                  report.accent,
+                )}
+              />
+
+              {/* Icon tile — same gradient style as the report page's ATMPageHeader */}
+              <div className="relative inline-flex">
+                <div
+                  className={cn(
+                    'pointer-events-none absolute -inset-1.5 rounded-2xl bg-gradient-to-b opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-60',
+                    report.accent,
+                  )}
+                />
+                <div
+                  className={cn(
+                    'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-105',
+                    report.color,
+                  )}
+                >
+                  <Icon size={24} strokeWidth={2} />
+                </div>
               </div>
-              <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+
+              <h3 className="mt-4 text-sm font-bold text-slate-900 dark:text-slate-100">
                 {report.title}
               </h3>
-              <p className="mt-1 flex-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1.5 flex-1 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                 {report.description}
               </p>
-              <div className="mt-4 flex items-center gap-1 text-xs font-medium text-blue-600 group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300">
-                View Report
-                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5 dark:border-slate-800">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                  View Report
+                </span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-300 group-hover:bg-primary-600 group-hover:text-white dark:bg-slate-800 dark:text-slate-400">
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
               </div>
             </Link>
           );
         })}
       </div>
-
     </div>
   );
 }

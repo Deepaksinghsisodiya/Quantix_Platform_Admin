@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ATMBadge, ATMButton } from '@/shared/ui';
-import { Loader2, Plus } from 'lucide-react';
+import { ATMBadge, ATMButton, ATMEmptyState, ATMErrorState, ATMSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { Plus, MessageSquare, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCannedResponses } from '@/lib/api/helpdesk';
 import type { CannedResponse } from '@/lib/types/helpdesk';
@@ -38,53 +39,70 @@ function CannedResponsesPage() {
       )
     : items;
 
+  const searchInputClass =
+    'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10';
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Canned Responses</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Reusable response templates for common ticket replies.
-          </p>
-        </div>
-        <ATMButton leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => toast('Create flow lands in next sweep — backend already supports it.')}>
-          New Response
-        </ATMButton>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={MessageSquare}
+        iconColor="theme"
+        title="Canned Responses"
+        subtitle="Reusable response templates for common ticket replies."
+        extraActions={
+          <ATMButton
+            className="h-9"
+            leftIcon={<Plus className="h-3.5 w-3.5" />}
+            onClick={() => toast('Create flow lands in next sweep — backend already supports it.')}
+          >
+            New Response
+          </ATMButton>
+        }
+      />
 
       <input
         type="search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search title, category, or body…"
-        className="w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+        className={`w-full max-w-md h-9 ${searchInputClass}`}
       />
 
       {loading && (
-        <div className="flex items-center gap-2 py-12 text-sm text-gray-400">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading canned responses…
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ATMSkeleton variant="card" height="120px" />
+          <ATMSkeleton variant="card" height="120px" />
         </div>
       )}
 
-      {!loading && error && <div className="py-12 text-center text-sm text-red-600">{error}</div>}
+      {!loading && error && (
+        <ATMErrorState title="The canned responses could not be loaded." message={error} />
+      )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-16 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400">
-          No canned responses yet.
+        <div className="rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a]">
+          <ATMEmptyState
+            icon={Search}
+            title="No canned responses yet."
+            description="Reusable templates you add here appear in the ticket reply composer."
+          />
         </div>
       )}
 
       {!loading && !error && filtered.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {filtered.map((r) => (
-            <div key={r.id ?? r.title} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <div
+              key={r.id ?? r.title}
+              className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-[#13151a]"
+            >
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{r.title}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{r.title}</h3>
                 <ATMBadge variant="default">{r.category}</ATMBadge>
               </div>
-              <p className="whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-400">{r.content}</p>
+              <p className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">{r.content}</p>
               {r.merchantType ? (
-                <div className="text-xs text-gray-500">Scope: {r.merchantType}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">Scope: {r.merchantType}</div>
               ) : null}
             </div>
           ))}

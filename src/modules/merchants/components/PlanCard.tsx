@@ -30,10 +30,10 @@ export function PlanCard({ plan, selected, onSelect }: PlanCardProps) {
       onClick={onSelect}
       className={cn(
         'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-300 w-full',
-        'focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-600/10',
+        'focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-600/10',
         selected
-          ? 'border-accent-600 bg-accent-50/50 shadow-md dark:border-accent-500 dark:bg-accent-950/20'
-          : 'border-surface-200 bg-zen-surface hover:border-accent-300 dark:border-surface-800 dark:hover:border-accent-800',
+          ? 'border-primary-600 bg-primary-50/50 shadow-md dark:border-primary-500 dark:bg-primary-950/20'
+          : 'border-slate-200 bg-white hover:border-primary-300 dark:border-slate-800 dark:hover:border-primary-800',
       )}
     >
       {plan.popular && (
@@ -42,22 +42,22 @@ export function PlanCard({ plan, selected, onSelect }: PlanCardProps) {
         </span>
       )}
       {selected && (
-        <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-accent-600 dark:text-accent-400" />
+        <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-primary-600 dark:text-primary-400" />
       )}
-      <h3 className="text-lg font-extrabold text-surface-900 dark:text-surface-100">{plan.name}</h3>
+      <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{plan.name}</h3>
       <div className="mt-2">
         {plan.price > 0 ? (
-          <span className="text-3xl font-extrabold tabular-nums text-surface-900 dark:text-surface-100">
+          <span className="text-3xl font-extrabold tabular-nums text-slate-900 dark:text-slate-100">
             ${plan.price}
-            <span className="text-sm font-normal text-surface-500 dark:text-surface-400">{plan.period}</span>
+            <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{plan.period}</span>
           </span>
         ) : (
-          <span className="text-xl font-extrabold text-surface-900 dark:text-surface-100">{plan.period}</span>
+          <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100">{plan.period}</span>
         )}
       </div>
       <ul className="mt-4 space-y-2 w-full">
         {plan.features.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-xs font-semibold text-surface-600 dark:text-surface-400">
+          <li key={f} className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
             <Check className="h-3.5 w-3.5 shrink-0 text-success" />
             {f}
           </li>

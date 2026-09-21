@@ -82,9 +82,9 @@ export const ATMAvatar: React.FC<Props> = ({
     <div className={`relative inline-flex items-center justify-center shrink-0 ${className}`}>
       <div
         className={`
-          flex items-center justify-center rounded-full overflow-hidden font-bold select-none border-2 border-white dark:border-gray-800 shadow-sm
+          flex items-center justify-center rounded-full overflow-hidden font-bold select-none border-2 border-white dark:border-[#272a30] shadow-sm
           ${sizeMap[size]}
-          ${!resolvedSrc ? getColorFromName(name) : 'bg-gray-100 dark:bg-gray-800'}
+          ${!resolvedSrc ? getColorFromName(name) : 'bg-gray-100 dark:bg-slate-800'}
         `}
       >
         {resolvedSrc ? (
@@ -97,7 +97,7 @@ export const ATMAvatar: React.FC<Props> = ({
       {status && (
         <span
           className={`
-            absolute bottom-0 right-0 block rounded-full ring-2 ring-white dark:ring-gray-900
+            absolute bottom-0 right-0 block rounded-full ring-2 ring-white dark:ring-[#090a0f]
             ${statusColorMap[status]}
             ${size === 'xs' ? 'w-1.5 h-1.5' : size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5'}
           `}

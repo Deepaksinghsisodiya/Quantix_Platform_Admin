@@ -11,6 +11,8 @@ interface Props {
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
   shadow?: boolean;
+  loading?: boolean;
+  skeleton?: ReactNode;
 }
 
 export const ATMCard: React.FC<Props> = ({
@@ -24,6 +26,8 @@ export const ATMCard: React.FC<Props> = ({
   className = '',
   padding = 'md',
   shadow = true,
+  loading = false,
+  skeleton,
 }) => {
   const effectiveSubtitle = subtitle ?? hint;
   const paddingMap = {
@@ -63,7 +67,17 @@ export const ATMCard: React.FC<Props> = ({
       ) : null}
       
       <div className={`${paddingMap[padding]}`}>
-        {children}
+        {loading ? (
+          skeleton ?? (
+            <div className="animate-pulse space-y-3" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-10 rounded-lg bg-surface-100 dark:bg-surface-850" />
+              ))}
+            </div>
+          )
+        ) : (
+          children
+        )}
       </div>
     </div>
   );

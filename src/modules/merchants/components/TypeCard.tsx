@@ -32,7 +32,7 @@ export function TypeCard({
         'relative flex flex-col items-center gap-5 rounded-3xl border-2 p-6 text-center transition-all duration-300 w-full outline-none',
         selected
           ? 'border-slate-950 bg-slate-50 dark:border-slate-100 dark:bg-slate-900/60 shadow-sm'
-          : 'border-slate-200/60 bg-white hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900/10 dark:hover:border-slate-650',
+          : 'border-slate-200/60 bg-white hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900/10 dark:hover:border-slate-600',
         disabled && 'opacity-40 cursor-not-allowed',
       )}
     >
@@ -57,8 +57,8 @@ export function TypeCard({
         {icon}
       </div>
       <div>
-        <p className="font-extrabold text-sm text-slate-900 dark:text-white">{title}</p>
-        <p className="mt-1.5 text-xs font-semibold text-slate-450 dark:text-slate-400 leading-relaxed max-w-[210px] mx-auto">{description}</p>
+        <p className="font-extrabold text-sm text-slate-900 dark:text-slate-100">{title}</p>
+        <p className="mt-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed max-w-[210px] mx-auto">{description}</p>
       </div>
     </button>
   );

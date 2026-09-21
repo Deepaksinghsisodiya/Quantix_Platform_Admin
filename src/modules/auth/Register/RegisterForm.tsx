@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, type FormikProps } from 'formik';
 import { Link } from 'react-router-dom';
-import { AtSign, Lock, User, UserCheck, Shield } from 'lucide-react';
+import { AtSign, Lock, User, UserCheck } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter/PasswordStrengthMeter';
@@ -13,6 +13,11 @@ interface RegisterFormProps {
   apiError?: string;
 }
 
+const SUBMIT_BUTTON_CLASS =
+  'w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25';
+
+const FIELD_CLASS = '[&_input]:h-11 [&_input]:rounded-xl';
+
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   formikProps,
   isSubmitting,
@@ -20,128 +25,144 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 }) => {
   const brandName = useBrandName();
   const password: string = formikProps.values?.password ?? '';
-  return (
-    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
-      {/* Premium Ambient Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-accent-300/30 to-indigo-400/10 rounded-full blur-[140px] dark:from-accent-900/20 dark:to-indigo-900/5 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-tl from-emerald-300/20 to-accent-400/10 rounded-full blur-[140px] dark:from-emerald-950/15 dark:to-accent-900/10 pointer-events-none" />
-      <div className="absolute top-[30%] right-[-5%] w-[30%] h-[30%] bg-purple-300/15 rounded-full blur-[120px] dark:bg-purple-900/5 pointer-events-none" />
 
-      {/* Main Container */}
-      <div className="relative w-full max-w-[480px] animate-slide-up z-10">
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-12 selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
+      {/* Subtle dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.05] dark:opacity-[0.06]"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.9) 1px, transparent 0)',
+          backgroundSize: '26px 26px',
+        }}
+      />
+
+      {/* Premium ambient glows */}
+      <div className="pointer-events-none absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-accent-300/40 to-indigo-400/10 blur-[120px] dark:from-accent-900/25 dark:to-indigo-900/10" />
+      <div className="pointer-events-none absolute -bottom-40 -right-32 h-[26rem] w-[26rem] rounded-full bg-gradient-to-tl from-emerald-300/25 to-accent-400/15 blur-[120px] dark:from-emerald-950/20 dark:to-accent-900/15" />
+
+      {/* Main container */}
+      <div className="relative z-10 w-full max-w-[480px] animate-slide-up">
         {/* Card */}
-        <div className="rounded-[2rem] border border-white/60 bg-white/80 p-8 md:p-10 shadow-2xl backdrop-blur-xl dark:border-surface-800/40 dark:bg-surface-900/80 shadow-accent-500/5">
+        <div className="relative overflow-hidden rounded-4xl border border-white/70 bg-white/85 p-8 shadow-2xl shadow-slate-900/5 backdrop-blur-2xl sm:p-10 dark:border-slate-800/70 dark:bg-[#0f172a]/85 dark:shadow-black/40">
+          {/* Top accent hairline */}
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-accent-500 to-transparent" />
+
           {/* Logo / header */}
-          <div className="mb-6 flex flex-col items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-600 to-accent-400 shadow-lg shadow-accent-500/20 transition-all duration-300 hover:scale-105">
-              <span className="text-2xl font-black text-white tracking-tighter">Q</span>
+          <div className="mb-8 flex flex-col items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-600 to-accent-400 text-white shadow-lg shadow-accent-500/25 transition-transform duration-300 hover:scale-105">
+              <span className="text-2xl font-black tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
             </div>
-            <div className="text-center space-y-0.5">
-              <h1 className="text-xl font-black tracking-tight text-surface-900 dark:text-surface-555">
-                Create Account
-              </h1>
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
+            <div className="space-y-1 text-center">
+              <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Create your account</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
                 Join {brandName}
               </p>
             </div>
           </div>
 
+          {/* API error */}
+          {apiError && (
+            <div
+              className="mb-6 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+              role="alert"
+            >
+              {apiError}
+            </div>
+          )}
+
           {/* Form */}
-          <div className="transition-all duration-200">
-            {apiError && (
-              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300" role="alert">
-                {apiError}
-              </div>
-            )}
-
-            <Form className="flex flex-col gap-4" noValidate>
-              
-              {/* Names Row */}
-              <div className="grid grid-cols-2 gap-3">
-                <ATMInputField
-                  name="firstName"
-                  label="First Name"
-                  placeholder="First"
-                  required
-                  icon={<User size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                />
-                <ATMInputField
-                  name="lastName"
-                  label="Last Name"
-                  placeholder="Last"
-                  required
-                  icon={<User size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                />
-              </div>
-
-              {/* Username */}
+          <Form className="flex flex-col gap-5" noValidate>
+            {/* Names row */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <ATMInputField
-                name="username"
-                label="Username"
-                placeholder="Choose a username"
+                name="firstName"
+                label="First Name"
+                placeholder="First"
                 required
-                icon={<UserCheck size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                className={FIELD_CLASS}
+                icon={<User size={16} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
               />
-
-              {/* Email */}
               <ATMInputField
-                name="email"
-                label="Email Address"
-                placeholder="name@company.com"
-                type="email"
+                name="lastName"
+                label="Last Name"
+                placeholder="Last"
                 required
-                icon={<AtSign size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                className={FIELD_CLASS}
+                icon={<User size={16} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
               />
+            </div>
 
-              {/* Password */}
-              <div>
-                <ATMInputField
-                  name="password"
-                  label="Password"
-                  type="password"
-                  placeholder="At least 12 characters"
-                  required
-                  icon={<Lock size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                />
-                <PasswordStrengthMeter password={password} minLength={12} />
-              </div>
+            {/* Username */}
+            <ATMInputField
+              name="username"
+              label="Username"
+              placeholder="Choose a username"
+              required
+              className={FIELD_CLASS}
+              icon={<UserCheck size={16} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
+            />
 
-              {/* Confirm Password */}
+            {/* Email */}
+            <ATMInputField
+              name="email"
+              label="Email Address"
+              placeholder="name@company.com"
+              type="email"
+              required
+              className={FIELD_CLASS}
+              icon={<AtSign size={16} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
+            />
+
+            {/* Password */}
+            <div>
               <ATMInputField
-                name="confirmPassword"
-                label="Confirm Password"
+                name="password"
+                label="Password"
                 type="password"
-                placeholder="Repeat password"
+                placeholder="At least 12 characters"
                 required
-                icon={<Lock size={16} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                className={FIELD_CLASS}
+                icon={<Lock size={16} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
               />
+              <PasswordStrengthMeter password={password} minLength={12} />
+            </div>
 
-              {/* Register Button */}
-              <ATMButton
-                type="submit"
-                isLoading={isSubmitting}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/10 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/20 mt-2"
-              >
-                Register
-              </ATMButton>
+            {/* Confirm password */}
+            <ATMInputField
+              name="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              placeholder="Repeat password"
+              required
+              className={FIELD_CLASS}
+              icon={<Lock size={16} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
+            />
 
-              {/* Back to Login */}
-              <div className="text-center mt-3">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  Already have an account?{' '}
-                  <Link
-                    to="/login"
-                    className="font-bold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                </span>
-              </div>
+            {/* Submit */}
+            <ATMButton type="submit" isLoading={isSubmitting} className={SUBMIT_BUTTON_CLASS}>
+              Create Account
+            </ATMButton>
 
-            </Form>
-          </div>
-
+            {/* Sign in link */}
+            <div className="mt-1 text-center">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Already have an account?{' '}
+                <Link
+                  to="/login"
+                  className="font-bold text-accent-600 outline-none transition-colors hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
+                >
+                  Sign In
+                </Link>
+              </span>
+            </div>
+          </Form>
         </div>
+
+        {/* Footer */}
+        <p className="mt-7 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400/80 dark:text-slate-500/60">
+          Secured by two-factor authentication
+        </p>
       </div>
     </div>
   );

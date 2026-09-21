@@ -4,9 +4,10 @@ import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import type { PlatformDashboardDto, MerchantGrowthDto } from '@/lib/api/dashboard';
 import {
-  UserPlus, Users, Clock, AlertCircle, ArrowRight, LogOut, Headphones, ShieldCheck, Hourglass,
+  UserPlus, Users, Clock, AlertCircle, ArrowRight, LogOut, Headphones, ShieldCheck, Hourglass, Briefcase,
 } from 'lucide-react';
 
 interface OperationsManagerDashboardProps {
@@ -43,19 +44,19 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
   const failed = safeQueue.filter((e) => e?.status === 'Failed').length;
 
   return (
-    <div className="space-y-6 w-full">
-      <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Operations Manager</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Merchant lifecycle, tokens, billing, helpdesk, content and platform configuration.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
-          <ATMBadge label="Live" color="primary" />
-        </div>
-      </header>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Briefcase}
+        iconColor="theme"
+        title="Operations Manager"
+        subtitle="Merchant lifecycle, tokens, billing, helpdesk, content and platform configuration."
+        extraActions={
+          <div className="flex items-center gap-3">
+            {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
+            <ATMBadge label="Live" color="primary" />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ATMStatsCard
@@ -132,9 +133,9 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
             </Link>
           }
         >
-          <div className="mt-2 flex items-center justify-between rounded-xl bg-gray-50/60 border border-gray-100 p-4 dark:bg-gray-950/20 dark:border-gray-800">
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Signups in queue</span>
-            <span className="text-sm font-extrabold text-gray-900 dark:text-white">
+          <div className="mt-2 flex items-center justify-between rounded-xl bg-slate-50/60 border border-slate-200/80 p-4 dark:bg-slate-950/20 dark:border-slate-800">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Signups in queue</span>
+            <span className="text-sm font-extrabold text-slate-900 dark:text-white">
               {safeQueue.length.toLocaleString()}
             </span>
           </div>
@@ -151,9 +152,9 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
             </Link>
           }
         >
-          <div className="mt-2 flex items-center justify-between rounded-xl bg-gray-50/60 border border-gray-100 p-4 dark:bg-gray-950/20 dark:border-gray-800">
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Merchants in queue</span>
-            <span className="text-sm font-extrabold text-gray-900 dark:text-white">
+          <div className="mt-2 flex items-center justify-between rounded-xl bg-slate-50/60 border border-slate-200/80 p-4 dark:bg-slate-950/20 dark:border-slate-800">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Merchants in queue</span>
+            <span className="text-sm font-extrabold text-slate-900 dark:text-white">
               {deboardingCount.toLocaleString()}
             </span>
           </div>
@@ -173,9 +174,9 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
 function QuickLink({ to, label }: { to: string; label: string }) {
   return (
     <Link to={to} className="group">
-      <div className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-        <span className="text-sm font-bold text-gray-700 group-hover:text-accent-500 dark:text-gray-200 transition-colors">{label}</span>
-        <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-[#13151a] flex items-center justify-between">
+        <span className="text-sm font-bold text-slate-700 group-hover:text-accent-500 dark:text-slate-200 transition-colors">{label}</span>
+        <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
       </div>
     </Link>
   );

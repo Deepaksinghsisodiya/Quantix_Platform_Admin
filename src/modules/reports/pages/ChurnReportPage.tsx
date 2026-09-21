@@ -1,36 +1,31 @@
 import React, { useMemo, useState } from 'react';
-import { ATMBadge, ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
-import { cn } from '@/lib/utils/cn';
-import { UserMinus, TrendingDown, AlertTriangle, Building2, ShieldAlert } from 'lucide-react';
+import { ATMBadge, ATMCard, ATMStatsCard, ATMSkeleton } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { UserMinus, TrendingDown, Building2, ShieldAlert, HeartPulse } from 'lucide-react';
 import { useChurnReport, useMerchantHealth, reportWindow } from '@/lib/hooks/useReports';
 import type { MerchantHealthRow } from '../services/reportsApi';
 import { ReportExportMenu } from '../components/ReportExportMenu';
+import {
+  ReportWindowTabs,
+  ReportError,
+  ReportEmpty,
+  ReportKpis,
+  WINDOW_DAYS,
+  WINDOW_LABEL,
+  type ReportWindowChoice,
+} from '../components/ReportToolbar';
 
 /* ---------------------------------------------------------------------------
  * FRS-SAP-704 — Churn Reports
  *
- * 2026-08-31 (de-fictioned). This page made ZERO API calls. It rendered:
- *   • a 12-month churn-rate trend invented month by month,
- *   • a churn-reason pie (Price 35% / Features 25% / Service 20% / Competitor 15%)
- *     — the platform captures no churn reasons at all, so every slice was made up,
- *   • an eight-row "At-Risk Merchants" table of invented companies with invented
- *     risk reasons, including "Competitor inquiry detected", a signal the platform
- *     has no way to observe,
- *   • an Export button wired to a no-op.
- *
- * It now renders GET /reports/churn (real cancellation counts and rates) and
- * GET /reports/merchant-health (real per-merchant risk classification and health
- * score). Churn REASONS stay empty until the deboarding flow records them —
- * the panel says that rather than inventing a distribution.
+ * 2026-08-31 (de-fictioned). This page made ZERO API calls (see the removed
+ * narrative). It now renders GET /reports/churn (real cancellation counts and
+ * rates) and GET /reports/merchant-health (real per-merchant risk classification
+ * and health score). Churn REASONS stay empty until the deboarding flow records
+ * them — the panel says that rather than inventing a distribution.
  * ------------------------------------------------------------------------- */
-
-type WindowChoice = '30d' | '90d' | '12m';
-const WINDOW_DAYS: Record<WindowChoice, number> = { '30d': 30, '90d': 90, '12m': 365 };
-const WINDOW_LABEL: Record<WindowChoice, string> = {
-  '30d': 'Last 30 days',
-  '90d': 'Last 90 days',
-  '12m': 'Last 12 months',
-};
 
 const RISK_COLOR: Record<string, string> = {
   Critical: 'danger',
@@ -41,7 +36,7 @@ const RISK_COLOR: Record<string, string> = {
 };
 
 function ChurnReportPage() {
-  const [windowChoice, setWindowChoice] = useState<WindowChoice>('12m');
+  const [windowChoice, setWindowChoice] = useState<ReportWindowChoice>('12m');
   const range = useMemo(() => reportWindow(WINDOW_DAYS[windowChoice]), [windowChoice]);
 
   const churnQuery = useChurnReport(range);
@@ -66,75 +61,143 @@ function ChurnReportPage() {
     (churnQuery.error as any)?.message ||
     'Failed to load the churn report.';
 
-  const windows: WindowChoice[] = ['30d', '90d', '12m'];
+  const reasonColumns: ATMTableColumn<{ reason: string; merchantType: string; count: number }>[] = [
+    {
+      key: 'reason',
+      header: 'Reason',
+      renderCell: (_v, r) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100">{r.reason}</span>
+      ),
+    },
+    {
+      key: 'merchantType',
+      header: 'Merchant type',
+      renderCell: (_v, r) => (
+        <span className="text-slate-600 dark:text-slate-300">{r.merchantType}</span>
+      ),
+    },
+    {
+      key: 'count',
+      header: 'Count',
+      align: 'right',
+      renderCell: (_v, r) => (
+        <span className="font-semibold text-slate-900 dark:text-slate-100">{r.count.toLocaleString()}</span>
+      ),
+    },
+  ];
+
+  const atRiskColumns: ATMTableColumn<MerchantHealthRow>[] = [
+    {
+      key: 'companyName',
+      header: 'Merchant',
+      renderCell: (_v, m) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100">{m.companyName}</span>
+      ),
+    },
+    {
+      key: 'merchantType',
+      header: 'Type',
+      renderCell: (_v, m) => <span className="text-slate-600 dark:text-slate-300">{m.merchantType}</span>,
+      width: '110px',
+    },
+    {
+      key: 'merchantStatus',
+      header: 'Status',
+      renderCell: (_v, m) => <span className="text-slate-600 dark:text-slate-300">{m.merchantStatus}</span>,
+      width: '110px',
+    },
+    {
+      key: 'gracePeriodPhase',
+      header: 'Grace phase',
+      renderCell: (_v, m) => <span className="text-slate-600 dark:text-slate-300">{m.gracePeriodPhase}</span>,
+      width: '130px',
+    },
+    {
+      key: 'healthScore',
+      header: 'Health',
+      align: 'right',
+      renderCell: (_v, m) => (
+        <div className="flex items-center justify-end gap-2">
+          <div className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-800">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500"
+              style={{ width: `${Math.min(100, Math.max(0, m.healthScore))}%` }}
+            />
+          </div>
+          <span className="font-bold text-slate-900 dark:text-slate-100">{m.healthScore}</span>
+        </div>
+      ),
+      width: '120px',
+    },
+    {
+      key: 'riskClassification',
+      header: 'Risk',
+      align: 'right',
+      renderCell: (_v, m) => (
+        <ATMBadge label={m.riskClassification} color={RISK_COLOR[m.riskClassification] ?? 'primary'} size="sm" />
+      ),
+      width: '110px',
+    },
+  ];
 
   return (
     <div className="w-full space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Churn Reports</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Deboarding, token lapses, and at-risk merchants — {WINDOW_LABEL[windowChoice].toLowerCase()}
-          </p>
-        </div>
-        <ReportExportMenu report="churn" window={range} disabled={isLoading || isError} />
-      </div>
+      <ATMPageHeader
+        icon={UserMinus}
+        iconColor="rose"
+        title="Churn Report"
+        subtitle={`Deboarding, token lapses, and at-risk merchants — ${WINDOW_LABEL[windowChoice].toLowerCase()}`}
+        extraActions={
+          <ReportExportMenu report="churn" window={range} disabled={isLoading || isError} />
+        }
+      />
 
       {isError && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
-          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
-            <AlertTriangle className="h-4 w-4" />
-            <span>{errorMessage}</span>
-          </div>
-          <ATMButton variant="ghost" size="sm" onClick={() => { void churnQuery.refetch(); }}>
-            Retry
-          </ATMButton>
-        </div>
+        <ReportError
+          message={errorMessage}
+          onRetry={() => {
+            void churnQuery.refetch();
+          }}
+        />
       )}
 
-      <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
-        {windows.map((w) => (
-          <button
-            key={w}
-            type="button"
-            onClick={() => setWindowChoice(w)}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              windowChoice === w
-                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
-            )}
-          >
-            {WINDOW_LABEL[w]}
-          </button>
-        ))}
-      </div>
+      <ReportWindowTabs value={windowChoice} onChange={setWindowChoice} />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="card" height="100px" />)}
-        </div>
+        <ReportKpis>
+          {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="card" height="118px" />)}
+        </ReportKpis>
       ) : churn ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Tile
-            icon={Building2}
-            label="Enterprise deboarded"
+        <ReportKpis>
+          <ATMStatsCard
+            label="Enterprise Deboaded"
             value={churn.enterpriseCancellations.toLocaleString()}
-            tone="red"
+            icon={Building2}
+            variant="rose"
+            description="Enterprise merchants cancelled in window"
           />
-          <Tile
-            icon={TrendingDown}
-            label="Enterprise churn rate"
+          <ATMStatsCard
+            label="Enterprise Churn Rate"
             value={`${churn.enterpriseChurnRate}%`}
+            icon={TrendingDown}
+            variant="amber"
+            description="Share of Enterprise base this window"
           />
-          <Tile
-            icon={UserMinus}
-            label="Standalone lapses"
+          <ATMStatsCard
+            label="Standalone Lapses"
             value={churn.standaloneLapses.toLocaleString()}
-            tone="red"
+            icon={UserMinus}
+            variant="slate"
+            description="Expired Standalone tokens not renewed"
           />
-          <Tile icon={TrendingDown} label="Standalone lapse rate" value={`${churn.standaloneLapseRate}%`} />
-        </div>
+          <ATMStatsCard
+            label="Standalone Lapse Rate"
+            value={`${churn.standaloneLapseRate}%`}
+            icon={HeartPulse}
+            variant="indigo"
+            description="Share of Standalone tokens lapsed"
+          />
+        </ReportKpis>
       ) : null}
 
       <ATMCard title="Churn Reasons">
@@ -143,95 +206,43 @@ function ChurnReportPage() {
           // The deboarding workflow records a free-text reason on the merchant record
           // but nothing aggregates it into categories yet, so the API returns none.
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-            <ShieldAlert className="h-7 w-7 text-gray-300 dark:text-gray-700" />
-            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+              <ShieldAlert className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+            </div>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
               No churn reasons are categorised yet.
             </p>
-            <p className="max-w-md text-xs text-gray-400 dark:text-gray-500">
+            <p className="max-w-md text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Deboarding captures a free-text reason per merchant; the platform does not yet
               roll those up into reason categories, so there is nothing to chart here.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <Th>Reason</Th>
-                  <Th>Merchant type</Th>
-                  <Th align="right">Count</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {churn!.topReasons.map((r) => (
-                  <tr key={`${r.merchantType}-${r.reason}`}>
-                    <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{r.reason}</td>
-                    <td className="py-3 text-gray-700 dark:text-gray-300">{r.merchantType}</td>
-                    <td className="py-3 text-right text-gray-700 dark:text-gray-300">{r.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ATMTable columns={reasonColumns} data={[...(churn?.topReasons ?? [])]} emptyMessage="No reasons recorded." />
         )}
       </ATMCard>
 
       <ATMCard
         title="At-Risk Merchants"
+        loading={healthQuery.isLoading}
         action={
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             {churn ? `${churn.atRiskMerchants} flagged by wallet grace state` : ''}
           </span>
         }
+        padding="none"
+        className="overflow-hidden"
       >
         {healthQuery.isLoading ? (
           <ATMSkeleton variant="rect" height="220px" />
         ) : healthQuery.isError ? (
-          <div className="flex items-center gap-2 py-6 text-sm text-red-600 dark:text-red-400">
-            <AlertTriangle className="h-4 w-4" />
-            <span>
-              {(healthQuery.error as any)?.data?.message || 'Failed to load merchant health.'}
-            </span>
+          <div className="flex items-center gap-2 px-4 py-6 text-sm text-red-600 dark:text-red-400">
+            <span>{(healthQuery.error as any)?.data?.message || 'Failed to load merchant health.'}</span>
           </div>
         ) : atRisk.length === 0 ? (
-          <div className="flex h-32 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-            No merchant is currently classified as at risk.
-          </div>
+          <ReportEmpty text="No merchant is currently classified as at risk." className="h-32" />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <Th>Merchant</Th>
-                  <Th>Type</Th>
-                  <Th>Status</Th>
-                  <Th>Grace phase</Th>
-                  <Th align="right">Health</Th>
-                  <Th align="right">Risk</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {atRisk.map((m: MerchantHealthRow) => (
-                  <tr key={m.merchantId}>
-                    <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{m.companyName}</td>
-                    <td className="py-3 text-gray-700 dark:text-gray-300">{m.merchantType}</td>
-                    <td className="py-3 text-gray-700 dark:text-gray-300">{m.merchantStatus}</td>
-                    <td className="py-3 text-gray-700 dark:text-gray-300">{m.gracePeriodPhase}</td>
-                    <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
-                      {m.healthScore}
-                    </td>
-                    <td className="py-3 text-right">
-                      <ATMBadge
-                        label={m.riskClassification}
-                        color={RISK_COLOR[m.riskClassification] ?? 'primary'}
-                        size="sm"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ATMTable columns={atRiskColumns} data={atRisk} emptyMessage="No at-risk merchants." />
         )}
       </ATMCard>
 
@@ -240,48 +251,6 @@ function ChurnReportPage() {
           the old chart plotted twelve invented data points. Change the window above
           to compare periods. */}
     </div>
-  );
-}
-
-function Tile({
-  icon: Icon,
-  label,
-  value,
-  tone = 'default',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  tone?: 'default' | 'red';
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <p
-        className={cn(
-          'mt-1 text-2xl font-bold',
-          tone === 'red' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-50',
-        )}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
-  return (
-    <th
-      className={cn(
-        'pb-2 text-xs font-medium text-gray-500 dark:text-gray-400',
-        align === 'right' ? 'text-right' : 'text-left',
-      )}
-    >
-      {children}
-    </th>
   );
 }
 

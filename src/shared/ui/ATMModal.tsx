@@ -33,7 +33,7 @@ export const ATMModal: React.FC<Props> = ({
   footer,
   size = 'md',
   closeOnEsc = true,
-  closeOnOutsideClick = true,
+  closeOnOutsideClick = false,
   showCloseButton = true,
 }) => {
   const isOpen = !!(externalIsOpen ?? open);

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { Newspaper, MessageSquare, FileText, ArrowRight, HelpCircle, Clock } from 'lucide-react';
 
 export interface ContentCounts {
@@ -26,19 +27,19 @@ export const ContentManagerDashboard: React.FC<ContentManagerDashboardProps> = (
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6 w-full">
-      <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Content Manager</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Manage public website pages, blog entries, FAQ lists, help articles, and CRM leads.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
-          <ATMBadge label="Live" color="primary" />
-        </div>
-      </header>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Newspaper}
+        iconColor="theme"
+        title="Content Manager"
+        subtitle="Manage public website pages, blog entries, FAQ lists, help articles, and CRM leads."
+        extraActions={
+          <div className="flex items-center gap-3">
+            {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
+            <ATMBadge label="Live" color="primary" />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ATMStatsCard

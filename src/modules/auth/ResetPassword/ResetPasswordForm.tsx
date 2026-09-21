@@ -44,7 +44,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
               <span className="text-3xl font-black text-white tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
             </div>
             <div className="text-center space-y-1">
-              <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-555">
+              <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-50">
                 {brandName}
               </h1>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
@@ -55,7 +55,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
           <Form className="flex flex-col gap-6" noValidate>
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-surface-900 dark:text-surface-555">
+              <h3 className="text-base font-bold text-surface-900 dark:text-surface-50">
                 Reset Password
               </h3>
               <p className="text-xs text-surface-400 dark:text-surface-500 px-2 leading-relaxed">

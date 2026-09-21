@@ -142,7 +142,7 @@ function ActionItem({
   variant?: 'default' | 'warning' | 'danger';
 }) {
   const colorMap = {
-    default: 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/50',
+    default: 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/50',
     warning: 'text-amber-600 hover:bg-amber-50/50 dark:text-amber-400 dark:hover:bg-amber-950/20',
     danger: 'text-red-600 hover:bg-red-50/50 dark:text-red-400 dark:hover:bg-red-950/20',
   };
@@ -171,10 +171,10 @@ function MerchantTypeBadge({ type }: { type: MerchantType }) {
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 py-1.5">
-      <span className="mt-0.5 shrink-0 text-gray-400 dark:text-gray-500">{icon}</span>
+      <span className="mt-0.5 shrink-0 text-slate-400 dark:text-slate-500">{icon}</span>
       <div className="min-w-0 flex-1">
-        <dt className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{label}</dt>
-        <dd className="mt-0.5 text-sm font-bold text-gray-950 dark:text-white break-words">{value}</dd>
+        <dt className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</dt>
+        <dd className="mt-0.5 text-sm font-bold text-slate-950 dark:text-slate-100 break-words">{value}</dd>
       </div>
     </div>
   );
@@ -195,9 +195,9 @@ function OnboardingChecklistPanel({ checklist }: { checklist: OnboardingChecklis
   return (
     <ATMCard title="Onboarding Checklist" className="glass-card">
       <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-gray-400">
+        <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-400">
           <span>Progress</span>
-          <span className="text-gray-900 dark:text-white font-black">{progress}%</span>
+          <span className="text-slate-900 dark:text-slate-100 font-black">{progress}%</span>
         </div>
         <ATMProgressBar
           value={progress}
@@ -212,9 +212,9 @@ function OnboardingChecklistPanel({ checklist }: { checklist: OnboardingChecklis
                 {done ? (
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                 ) : (
-                  <Circle className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
+                  <Circle className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-700" />
                 )}
-                <span className={cn('font-semibold', done ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100')}>
+                <span className={cn('font-semibold', done ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-900 dark:text-slate-100')}>
                   {item.label}
                 </span>
               </li>
@@ -222,7 +222,7 @@ function OnboardingChecklistPanel({ checklist }: { checklist: OnboardingChecklis
           })}
         </ul>
         {checklist.completedAt && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold italic mt-2">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold italic mt-2">
             Completed {formatDate(checklist.completedAt, 'relative')}
           </p>
         )}
@@ -319,9 +319,9 @@ function DeboardingWorkflowCard({
       <div className="space-y-4 pt-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-gray-900 dark:text-white">Deboarding</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Deboarding</span>
             <span
-              className="font-mono text-[11px] uppercase text-gray-400 dark:text-gray-500"
+              className="font-mono text-[11px] uppercase text-slate-400 dark:text-slate-500"
               title={deboarding.deboardingId}
             >
               {deboarding.deboardingId.slice(0, 8)}
@@ -340,7 +340,7 @@ function DeboardingWorkflowCard({
 
         {/* Steps List */}
         <div className="relative pl-8 pt-2 space-y-5">
-          <div className="absolute left-[13px] top-3 bottom-3 w-px bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute left-[13px] top-3 bottom-3 w-px bg-slate-200 dark:bg-slate-800" />
           {steps.map((step) => {
             const isCompleted = step.status === 'Completed';
             const isInProgress = step.status === 'InProgress';
@@ -349,14 +349,14 @@ function DeboardingWorkflowCard({
             return (
               <div key={step.stepKey} className={cn('relative flex gap-3 items-start animate-fade-in', isNotApplicable && 'opacity-60')}>
                 <span className={cn(
-                  "absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white dark:border-gray-950 text-white",
-                  isCompleted ? "bg-emerald-500" : isInProgress ? "bg-amber-500" : isNotApplicable ? "bg-slate-300 dark:bg-slate-700" : "bg-gray-200 dark:bg-gray-800"
+                  "absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white dark:border-slate-950 text-white",
+                  isCompleted ? "bg-emerald-500" : isInProgress ? "bg-amber-500" : isNotApplicable ? "bg-slate-300 dark:bg-slate-700" : "bg-slate-200 dark:bg-slate-800"
                 )}>
                   {isCompleted ? <Check className="h-3 w-3" /> : <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">{step.stepLabel}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{step.stepLabel}</p>
                     <ATMBadge
                       size="sm"
                       color={isCompleted ? 'success' : isInProgress ? 'warning' : 'muted'}
@@ -364,18 +364,18 @@ function DeboardingWorkflowCard({
                     />
                   </div>
                   {!isCompleted && STEP_DESCRIPTION[step.stepKey] && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-md">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-md">
                       {STEP_DESCRIPTION[step.stepKey]}
                     </p>
                   )}
                   {step.completedAt && (
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mt-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">
                       Completed {formatDate(step.completedAt, 'datetime')}
                       {step.completedByName ? <> &middot; by {step.completedByName}</> : null}
                     </p>
                   )}
                   {step.note && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
                       Note: {step.note}
                     </p>
                   )}
@@ -479,7 +479,7 @@ function DeboardingWorkflowCard({
       {/* Cancel Deboarding Dialog */}
       <ATMModal isOpen={cancelOpen} onClose={() => setCancelOpen(false)} title="Cancel Deboarding">
         <div className="space-y-4">
-          <p className="text-sm text-surface-500 font-medium">
+          <p className="text-sm text-slate-500 font-medium">
             Are you sure you want to cancel the deboarding process? This will resume normal billing.
           </p>
           <ATMTextField
@@ -514,7 +514,7 @@ function DeboardingWorkflowCard({
       {/* Soft-Delete Confirmation — the point of no return */}
       <ATMModal isOpen={softDeleteOpen} onClose={() => setSoftDeleteOpen(false)} title="Soft-Delete Merchant">
         <div className="space-y-3">
-          <p className="text-sm text-surface-500 font-medium">
+          <p className="text-sm text-slate-500 font-medium">
             This completes the deboarding. The merchant record is soft-deleted: their login is
             disabled, the row disappears from All Merchants, and the deboarding can no longer
             be cancelled or reversed.
@@ -544,7 +544,7 @@ function DeboardingWorkflowCard({
       {/* Request Recharge Dialog */}
       <ATMModal isOpen={rechargeOpen} onClose={() => setRechargeOpen(false)} title="Request Shortfall Recharge">
         <div className="space-y-4">
-          <p className="text-sm text-surface-500 font-medium">
+          <p className="text-sm text-slate-500 font-medium">
             Enter the shortfall amount the merchant needs to deposit to complete settlement.
           </p>
           <ATMTextField
@@ -644,7 +644,7 @@ const NotesTabSection: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
     <div className="space-y-6 pt-2">
       <form onSubmit={handleSubmit} className="space-y-3">
         <textarea
-          className="w-full rounded-xl border border-[var(--zen-border)] bg-zen-surface px-4 py-3 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-accent-500 focus:ring-4 focus:ring-accent-500/10 dark:text-white"
+          className="w-full rounded-xl border border-[var(--zen-border)] bg-zen-surface px-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:text-slate-100"
           rows={3}
           placeholder="Add an internal staff note..."
           value={noteContent}
@@ -658,21 +658,21 @@ const NotesTabSection: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
       </form>
 
       {notes.length === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500 font-semibold">No notes yet.</p>
+        <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500 font-semibold">No notes yet.</p>
       ) : (
         <ul className="space-y-4">
           {notes.map((note) => (
-            <li key={note.id} className="rounded-xl border border-gray-200 p-4 dark:border-gray-800/80 bg-gray-50/20 dark:bg-gray-900/10">
-              <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold whitespace-pre-wrap">{note.content}</p>
-              <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 font-bold">
+            <li key={note.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/10">
+              <p className="text-sm text-slate-900 dark:text-slate-100 font-semibold whitespace-pre-wrap">{note.content}</p>
+              <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 font-bold">
                 <User className="h-3.5 w-3.5" />
-                <span className="text-gray-600 dark:text-gray-300">{note.authorName}</span>
+                <span className="text-slate-600 dark:text-slate-300">{note.authorName}</span>
                 <span>&middot;</span>
                 <span>{formatDate(note.createdAt, 'datetime')}</span>
                 {note.updatedAt && (
                   <>
                     <span>&middot;</span>
-                    <span className="italic font-medium text-gray-400">edited</span>
+                    <span className="italic font-medium text-slate-400">edited</span>
                   </>
                 )}
               </div>
@@ -779,7 +779,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 mb-3">
           <AlertCircle className="h-8 w-8" />
         </div>
-        <p className="text-base font-bold text-slate-900 dark:text-white">
+        <p className="text-base font-bold text-slate-900 dark:text-slate-100">
           {merchantError ? 'Error loading merchant details' : 'Merchant not found'}
         </p>
         <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1 max-w-sm">
@@ -793,7 +793,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
   }
 
   return (
-    <div className="flex flex-col space-y-5 animate-fade-in w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Premium Unified Header */}
       <ATMPageHeader
         onBack={onBack}
@@ -801,7 +801,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         iconColor="theme"
         title={
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-extrabold tracking-tight text-slate-900 dark:text-white">{merchant.businessName}</span>
+            <span className="font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{merchant.businessName}</span>
             <StatusBadge status={merchant.status} />
             <MerchantTypeBadge type={merchant.merchantType} />
             {merchant.businessNature && (
@@ -826,7 +826,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
               Actions
             </ATMButton>
             {menuOpen && (
-              <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white/95 py-1.5 shadow-xl dark:border-gray-800 dark:bg-gray-950/95 backdrop-blur-xl">
+              <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 py-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-950/95">
                 {merchant.status === 'Pending' && (
                   <ActionItem icon={<PlayCircle className="h-4 w-4" />} label="Activate" onClick={() => handleAction('activate')} />
                 )}
@@ -847,7 +847,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                   <ActionItem icon={<RefreshCw className="h-4 w-4" />} label="Retry Provisioning" onClick={() => handleAction('retry-provisioning')} />
                 )}
 
-                <div className="my-1.5 border-t border-gray-100 dark:border-gray-800" />
+                <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
 
                 {merchant.status === 'Active' && (
                   <ActionItem
@@ -861,7 +861,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 {merchant.merchantType === 'Standalone' && (
                   <ActionItem icon={<Monitor className="h-4 w-4" />} label="Manage Terminals" onClick={() => handleAction('terminals')} />
                 )}
-                <div className="my-1.5 border-t border-gray-100 dark:border-gray-800" />
+                <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
                 <ActionItem icon={<Pencil className="h-4 w-4" />} label="Edit Details" onClick={() => handleAction('edit')} />
               </div>
             )}
@@ -898,7 +898,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                     )}
 
                     {/* Profile Identity Card matching UserDetailPage (Image 1) */}
-                    <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden relative group">
+                    <div className="bg-zen-card p-8 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden relative group">
                       <div className="absolute top-0 right-0 p-10 opacity-[0.03] dark:opacity-[0.05] grayscale pointer-events-none group-hover:opacity-[0.05] dark:group-hover:opacity-[0.08] transition-opacity">
                         <Building2 size={200} className="dark:text-white" />
                       </div>
@@ -908,7 +908,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                           <ATMAvatar
                             name={merchant.businessName}
                             size="xl"
-                            className="ring-4 ring-slate-50 dark:ring-gray-800 shadow-xl"
+                            className="ring-4 ring-slate-50 dark:ring-slate-800 shadow-xl"
                           />
                           <div className="absolute -bottom-2 -right-2">
                             <StatusBadge status={merchant.status} />
@@ -917,14 +917,14 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
 
                         <div className="flex-1 text-center md:text-left space-y-4">
                           <div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
                               {merchant.businessName}
                             </h2>
                             <div className="flex items-center justify-center md:justify-start gap-3 mt-3">
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-800 px-3 py-1 rounded border border-slate-200 dark:border-gray-700 uppercase tracking-widest font-mono">
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded border border-slate-200 dark:border-slate-700 uppercase tracking-widest font-mono">
                                 ID: {merchant.id.slice(0, 8)}
                               </span>
-                              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-gray-700" />
+                              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
                               <MerchantTypeBadge type={merchant.merchantType} />
                               {merchant.businessNature && (
                                 <ATMBadge label={merchant.businessNature} color="purple" variant="outline" size="sm" />
@@ -933,16 +933,16 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                           </div>
 
                           <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-2">
-                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 min-w-0">
-                              <User size={14} className="text-slate-400 dark:text-gray-500 shrink-0" />
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 min-w-0">
+                              <User size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                               <span className="text-xs font-bold tracking-tight break-words">{merchant.contactPerson}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 min-w-0">
-                              <Mail size={14} className="text-slate-400 dark:text-gray-500 shrink-0" />
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 min-w-0">
+                              <Mail size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                               <span className="text-xs font-bold lowercase tracking-tight break-words">{merchant.email}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 min-w-0">
-                              <Globe size={14} className="text-slate-400 dark:text-gray-500 shrink-0" />
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 min-w-0">
+                              <Globe size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                               <span className="text-xs font-bold uppercase tracking-tight break-words">{merchant.country}</span>
                             </div>
                           </div>
@@ -953,7 +953,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                     {/* 2-Column Grid matching UserDetailPage (Image 1) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Business Contact Metadata */}
-                      <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
+                      <div className="bg-zen-card p-8 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
                         <ATMSectionHeader title="Contact & Business Metadata" />
                         <div className="space-y-1">
                           <ATMDetailRow icon={Building2} label="Business Name" value={merchant.businessName} />
@@ -974,7 +974,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                       </div>
 
                       {/* Infrastructure & Subscription Details */}
-                      <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
+                      <div className="bg-zen-card p-8 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
                         <ATMSectionHeader title="Infrastructure & Subscription" />
                         <div className="space-y-1">
                           <ATMDetailRow icon={Cloud} label="Merchant Model" value={merchant.merchantType} />
@@ -1008,30 +1008,30 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                     </div>
 
                     {/* System Health Status Card matching UserDetailPage Security & Auth */}
-                    <div className="bg-zen-card p-8 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm">
+                    <div className="bg-zen-card p-8 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
                       <ATMSectionHeader title="System & Health Status" />
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                         <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Cloud API Health</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cloud API Health</p>
                           <div className="flex items-center gap-3">
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">Connected (99.97% Uptime)</span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Connected (99.97% Uptime)</span>
                           </div>
                         </div>
 
                         <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Sync Pipeline</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sync Pipeline</p>
                           <div className="flex items-center gap-3">
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">Real-Time Sync Active</span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Real-Time Sync Active</span>
                           </div>
                         </div>
 
                         <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Merchant Status</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Merchant Status</p>
                           <div className="flex items-center gap-3">
                             <div className={`w-2.5 h-2.5 rounded-full ${merchant.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">{merchant.status}</span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">{merchant.status}</span>
                           </div>
                         </div>
                       </div>
@@ -1062,12 +1062,12 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 content: (
                   <div className="space-y-6">
                     <ATMCard title="Invoices" className="glass-card">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold pt-2">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold pt-2">
                         Invoice history and payment records will appear here once billing statements are generated.
                       </p>
                     </ATMCard>
                     <ATMCard title="Payment Methods" className="glass-card">
-                      <div className="py-6 text-center text-sm text-gray-400 dark:text-gray-500 font-semibold">
+                      <div className="py-6 text-center text-sm text-slate-400 dark:text-slate-500 font-semibold">
                         No credit card or payment methods configured.
                       </div>
                     </ATMCard>
@@ -1079,20 +1079,20 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 content: (
                   <ATMCard title="Audit Log" className="glass-card">
                     {timeline.length === 0 ? (
-                      <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-6 font-semibold">No activity logs found.</p>
+                      <p className="text-center text-sm text-slate-500 dark:text-slate-400 py-6 font-semibold">No activity logs found.</p>
                     ) : (
                       <div className="relative pl-6 pt-2">
-                        <div className="absolute left-2.5 top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-800" />
+                        <div className="absolute left-2.5 top-2 bottom-2 w-px bg-slate-200 dark:bg-slate-800" />
                         <ul className="space-y-6">
                           {timeline.map((entry, index) => (
                             <li key={entry.id || entry.eventId || `timeline-entry-${index}`} className="relative flex gap-4">
-                              <span className="absolute -left-3.5 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-accent-500 dark:border-gray-900">
+                              <span className="absolute -left-3.5 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-primary-500 dark:border-slate-900">
                                 <span className="h-2 w-2 rounded-full bg-white" />
                               </span>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">{entry.event}</p>
-                                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 font-semibold">{entry.description}</p>
-                                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 font-bold">
+                                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{entry.event}</p>
+                                <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400 font-semibold">{entry.description}</p>
+                                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 font-bold">
                                   {formatDate(entry.timestamp, 'datetime')} &middot; {entry.performedBy}
                                 </p>
                               </div>
@@ -1117,12 +1117,12 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                 content: (
                   <div className="space-y-6">
                     <ATMCard title="GDPR & Data Rights" className="glass-card">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold pt-2">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold pt-2">
                         No GDPR compliance requests or data subject access requests (DSAR) recorded.
                       </p>
                     </ATMCard>
                     <ATMCard title="Platform Consent Records" className="glass-card">
-                      <div className="py-6 text-center text-sm text-gray-400 dark:text-gray-500 font-semibold">
+                      <div className="py-6 text-center text-sm text-slate-400 dark:text-slate-500 font-semibold">
                         Merchant has consented to standard End User License Agreements.
                       </div>
                     </ATMCard>
@@ -1136,9 +1136,9 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         {/* Right Column Sidebar matching UserDetailPage (Image 1) */}
         <div className="space-y-6">
           {/* Management Actions Card matching Image 1 */}
-          <div className="bg-zen-card border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            <div className="bg-slate-50 dark:bg-gray-950 px-6 py-4 border-b border-slate-200 dark:border-gray-800">
-              <h3 className="text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em]">Management & Actions</h3>
+          <div className="bg-zen-card border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-[10px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em]">Management & Actions</h3>
             </div>
 
             <div className="p-6 space-y-3">
@@ -1217,7 +1217,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         onClose={() => setSuspendModal(false)}
         title="Suspend Merchant"
       >
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold mb-4">
           Temporarily deactivate API access and suspend active terminals.
         </p>
         <div className="space-y-4">
@@ -1257,7 +1257,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         onClose={() => setReactivateModal(false)}
         title="Reactivate Merchant"
       >
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold mb-4">
           Restore full API access, token sync, and resume monthly subscription billing cycles.
         </p>
         <div>
@@ -1286,13 +1286,13 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         title="Initiate Deboarding"
       >
         <div className="space-y-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold">
             Records the Admin consent that starts the deboarding workflow for{' '}
-            <strong className="text-gray-900 dark:text-white">{merchant.businessName}</strong>.
+            <strong className="text-slate-900 dark:text-slate-100">{merchant.businessName}</strong>.
             Operations then executes the checklist: deactivate, final invoice, settlement,
             refund, and finally soft-delete.
           </p>
-          <p className="text-xs text-gray-400 font-medium">
+          <p className="text-xs text-slate-400 font-medium">
             Reversible at every step until the final soft-delete — cancelling restores billing
             and access.
           </p>
@@ -1328,19 +1328,19 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
+          <p className="text-sm text-slate-600 dark:text-slate-400 font-semibold">
             Current plan:{' '}
-            <strong className="text-gray-900 dark:text-white font-bold">
+            <strong className="text-slate-900 dark:text-slate-100 font-bold">
               {detail?.activeSubscription?.planDisplayName || merchant.plan || '—'}
             </strong>
             {typeof detail?.activeSubscription?.dailySubscriptionPrice === 'number' && (
-              <span className="ml-1.5 text-gray-500 dark:text-gray-400 font-medium">
+              <span className="ml-1.5 text-slate-500 dark:text-slate-400 font-medium">
                 ({formatCurrencyOrDash(detail.activeSubscription.dailySubscriptionPrice, platformCurrency)}/day)
               </span>
             )}
           </p>
           {planOptions.length === 0 ? (
-            <p className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60 px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-medium">
+            <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-4 py-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
               No other active plan of this deployment kind exists in the catalog. Create one
               under Plans first, then change the merchant to it.
             </p>
@@ -1354,19 +1354,19 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                   className={cn(
                     'flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all font-bold',
                     selectedNewPlan === plan.planId
-                      ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
-                      : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
+                      ? 'border-primary-500 bg-primary-50/50 dark:border-primary-500 dark:bg-primary-950/20'
+                      : 'border-slate-100 hover:border-slate-200 dark:border-slate-800/80 dark:hover:border-slate-700',
                   )}
                 >
-                  <span className="min-w-0 truncate text-sm text-gray-900 dark:text-white">
+                  <span className="min-w-0 truncate text-sm text-slate-900 dark:text-slate-100">
                     {plan.displayName}
                     {plan.flavour && plan.flavour !== 'BOT' && (
-                      <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         {plan.flavour === 'RES' ? 'Restaurant' : 'Retail'}
                       </span>
                     )}
                   </span>
-                  <span className="shrink-0 text-sm text-gray-600 dark:text-gray-400">
+                  <span className="shrink-0 text-sm text-slate-600 dark:text-slate-400">
                     {formatCurrencyOrDash(plan.planPricePerDay ?? 0, platformCurrency)}/day
                   </span>
                 </button>
@@ -1374,7 +1374,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
             </div>
           )}
           {merchant.merchantType === 'Standalone' && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Tokens issued from now on derive from the new plan. Already-issued tokens keep
               the grants they were minted with.
             </p>
@@ -1395,14 +1395,14 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
               if (!sel) {
                 return (
                   <ATMFieldCell label="Effective daily rate">
-                    <p className="px-0.5 pt-1 text-sm font-bold text-gray-400 dark:text-gray-500">Select a plan</p>
+                    <p className="px-0.5 pt-1 text-sm font-bold text-slate-400 dark:text-slate-500">Select a plan</p>
                   </ATMFieldCell>
                 );
               }
               const eff = Number(((sel.planPricePerDay ?? 0) * (1 - (planDiscountPct || 0) / 100)).toFixed(2));
               return (
                 <ATMFieldCell label="Effective daily rate">
-                  <p className={cn('px-0.5 pt-0.5 text-lg font-black', planDiscountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white')}>
+                  <p className={cn('px-0.5 pt-0.5 text-lg font-black', planDiscountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100')}>
                     {formatCurrencyOrDash(eff, platformCurrency)}/day
                   </p>
                 </ATMFieldCell>

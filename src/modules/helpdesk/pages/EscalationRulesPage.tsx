@@ -9,9 +9,12 @@
  * this page edits. Title is the sidebar label, verbatim.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { Loader2, RefreshCw, Save } from 'lucide-react';
+import { Save, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import { ATMButton } from '@/shared/ui';
+import { ATMCard, ATMButton, ATMErrorState } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { getEscalationRules, updateEscalationRules, type SlaPolicy } from '@/lib/api/helpdesk';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 
@@ -82,98 +85,109 @@ function EscalationRulesPage() {
     }
   };
 
+  const columns: ATMTableColumn<SlaPolicy>[] = [
+    {
+      key: 'priority',
+      header: 'Priority',
+      renderCell: (_v, row) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100">{row.priority}</span>
+      ),
+    },
+    {
+      key: 'slaHours',
+      header: 'SLA (hours)',
+      renderCell: (_v, row) => {
+        const bad = invalid.includes(row);
+        return (
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MAX_HOURS}
+            step={1}
+            value={Number.isFinite(row.slaHours) ? row.slaHours : ''}
+            onChange={(e) => setHours(row.priority, e.target.value)}
+            aria-label={`${row.priority} SLA hours`}
+            aria-invalid={bad}
+            className={
+              'w-28 rounded-lg border bg-white px-3 py-1.5 text-sm tabular-nums text-slate-900 dark:bg-slate-900/60 dark:text-slate-100 ' +
+              (bad ? 'border-rose-500 focus:ring-2 focus:ring-rose-500' : 'border-slate-200 dark:border-slate-700 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10')
+            }
+          />
+        );
+      },
+    },
+    {
+      key: '_deadline',
+      header: 'Deadline',
+      renderCell: (_v, row) => (
+        <span className="text-slate-600 dark:text-slate-300">{describeWindow(row.slaHours)}</span>
+      ),
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Escalation Rules</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          The SLA window per priority. A ticket&apos;s deadline is its creation time plus this window;
-          tickets past it appear in the overdue list and count against SLA compliance.
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={ShieldAlert}
+        iconColor="theme"
+        title="Escalation Rules"
+        subtitle="The SLA window per priority. A ticket&apos;s deadline is its creation time plus this window; tickets past it appear in the overdue list and count against SLA compliance."
+      />
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading SLA policy…
-        </div>
+        <ATMCard title="SLA window by priority">
+          {/* Table-shaped skeleton: mirrors the three columns (priority, hours, deadline). */}
+          <div className="space-y-2.5" role="status" aria-label="Loading SLA policy">
+            <div className="grid grid-cols-12 items-center gap-3 px-3 py-1">
+              <div className="col-span-4 h-3 w-20 rounded bg-slate-200/80 dark:bg-slate-800 animate-pulse" />
+              <div className="col-span-4 h-3 w-14 rounded bg-slate-200/80 dark:bg-slate-800 animate-pulse" />
+              <div className="col-span-4 h-3 w-28 rounded bg-slate-200/80 dark:bg-slate-800 animate-pulse" />
+            </div>
+            {Array.from({ length: 4 }, (_, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-12 items-center gap-3 rounded-lg border border-slate-200/80 bg-slate-50/60 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/40"
+              >
+                <div className="col-span-4 h-4 w-24 rounded bg-slate-200/80 dark:bg-slate-800 animate-pulse" />
+                <div className="col-span-4 h-8 w-24 rounded-lg bg-slate-200/80 dark:bg-slate-800 animate-pulse" />
+                <div className="col-span-4 h-4 w-32 rounded bg-slate-200/80 dark:bg-slate-800 animate-pulse" />
+              </div>
+            ))}
+            <span className="sr-only">Loading...</span>
+          </div>
+        </ATMCard>
       )}
 
       {!loading && error && (
-        <div
-          role="alert"
-          className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/30"
-        >
-          <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-red-700 underline dark:text-red-300"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Try again
-          </button>
-        </div>
+        <ATMErrorState
+          title="The SLA policy could not be loaded."
+          message={error}
+          onRetry={() => void load()}
+        />
       )}
 
       {!loading && !error && policy && (
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">SLA window by priority</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Whole hours, 1–{MAX_HOURS}. Applies to tickets created after you save.
-          </p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                  <th className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Priority</th>
-                  <th className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">SLA (hours)</th>
-                  <th className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Deadline</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {policy.map((row) => {
-                  const bad = invalid.includes(row);
-                  return (
-                    <tr key={row.priority}>
-                      <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-gray-100">{row.priority}</td>
-                      <td className="px-4 py-2.5">
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          max={MAX_HOURS}
-                          step={1}
-                          value={Number.isFinite(row.slaHours) ? row.slaHours : ''}
-                          onChange={(e) => setHours(row.priority, e.target.value)}
-                          aria-label={`${row.priority} SLA hours`}
-                          aria-invalid={bad}
-                          className={
-                            'w-28 rounded-lg border bg-white px-3 py-1.5 text-sm tabular-nums dark:bg-gray-800 dark:text-gray-100 ' +
-                            (bad ? 'border-red-500' : 'border-gray-300 dark:border-gray-600')
-                          }
-                        />
-                      </td>
-                      <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{describeWindow(row.slaHours)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 flex justify-end">
+        <ATMCard
+          title="SLA window by priority"
+          subtitle={`Whole hours, 1–${MAX_HOURS}. Applies to tickets created after you save.`}
+          padding="none"
+          className="overflow-hidden"
+        >
+          <ATMTable columns={columns} data={policy} emptyMessage="No SLA policy configured." />
+          <div className="flex justify-end border-t border-slate-200/80 px-5 py-4 dark:border-slate-800">
             <ATMButton variant="primary" size="sm" icon={Save} isLoading={saving} onClick={() => void onSave()}>
               Save
             </ATMButton>
           </div>
-        </section>
+        </ATMCard>
       )}
 
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">How tickets are assigned and escalated</h2>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      <ATMCard title="How tickets are assigned and escalated">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           What the platform does today — nothing here is configurable beyond the SLA window above.
         </p>
-        <ul className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <ul className="mt-4 space-y-2 text-sm text-slate-700 dark:text-slate-300">
           <li>
             <span className="font-semibold">Manual assignment</span> — any agent, from the ticket.
           </li>
@@ -194,7 +208,7 @@ function EscalationRulesPage() {
             Auto-Close page, when it is enabled.
           </li>
         </ul>
-      </section>
+      </ATMCard>
     </div>
   );
 }

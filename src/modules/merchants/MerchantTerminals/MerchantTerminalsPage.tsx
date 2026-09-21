@@ -104,7 +104,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
         key: 'terminalCode',
         header: 'Code',
         renderCell: (val) => (
-          <span className="font-mono text-xs text-surface-700 dark:text-surface-300">{val}</span>
+          <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{val}</span>
         ),
         width: '120px',
       },
@@ -112,7 +112,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
         key: 'terminalName',
         header: 'Name',
         renderCell: (val) => (
-          <span className="text-surface-900 dark:text-surface-100 font-bold">{val}</span>
+          <span className="text-slate-900 dark:text-slate-100 font-bold">{val}</span>
         ),
       },
       {
@@ -176,7 +176,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
   );
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Premium Page Header */}
       <ATMPageHeader
         title="Standalone Terminals"
@@ -316,7 +316,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
           </div>
         }
       >
-        <p className="text-sm text-surface-500 font-medium">
+        <p className="text-sm text-slate-500 font-medium">
           Deactivate <strong>{deleteTarget?.terminalName}</strong>? The record will be soft-deleted
           and any pending pairing codes invalidated. Applied tokens remain in active history.
         </p>
@@ -340,9 +340,9 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
       >
         {pairingCode && (
           <div className="space-y-4">
-            <p className="text-sm text-surface-500 font-medium">
+            <p className="text-sm text-slate-500 font-medium">
               Share this 6-digit code with whoever is installing{' '}
-              <strong className="text-surface-900 dark:text-surface-100">{pairingCode.terminalName}</strong>.
+              <strong className="text-slate-900 dark:text-slate-100">{pairingCode.terminalName}</strong>.
               They must enter this code in the installer setup.
             </p>
 

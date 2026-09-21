@@ -1,5 +1,6 @@
 import React from 'react';
 import { toast } from 'sonner';
+import { Megaphone } from 'lucide-react';
 
 import { WebsiteContentCollection, type CollectionDescriptor } from '../components/WebsiteContentCollection';
 import {
@@ -25,6 +26,8 @@ const formatWhen = (value: string | null) =>
 const descriptor: CollectionDescriptor<Announcement> = {
   title: 'Announcements',
   subtitle: 'News, events and notices published on the website.',
+  icon: Megaphone,
+  iconColor: 'theme',
   noun: 'announcement',
   idOf: (a) => a.announcementId,
   subtitleOf: (a) => {

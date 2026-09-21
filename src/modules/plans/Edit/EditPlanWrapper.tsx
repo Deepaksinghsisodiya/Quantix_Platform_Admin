@@ -4,6 +4,7 @@ import * as Yup from 'yup';
 import { toast } from 'sonner';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMButton } from '@/shared/ui/ATMButton';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { Pencil } from 'lucide-react';
 import { PlanForm } from '../Form/PlanForm';
 import { useUpdatePlanHook, usePlan } from '../services/usePlans';
@@ -215,8 +216,17 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
       }
     >
       {detailQuery.isLoading ? (
-        <div className="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          Loading plan details…
+        <div className="p-2 space-y-5 animate-pulse">
+          <ATMSkeleton height="16px" width="45%" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+          <ATMSkeleton height="16px" width="30%" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+          <ATMSkeleton height="16px" width="36%" />
+          <ATMSkeleton height="72px" className="rounded-lg" />
+          <div className="grid grid-cols-2 gap-4">
+            <ATMSkeleton height="42px" className="rounded-lg" />
+            <ATMSkeleton height="42px" className="rounded-lg" />
+          </div>
         </div>
       ) : detailQuery.isError ? (
         <div className="py-12 text-center text-sm text-red-500">

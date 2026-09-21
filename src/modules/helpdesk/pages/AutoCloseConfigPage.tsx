@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Save } from 'lucide-react';
+import { Save, Timer } from 'lucide-react';
 import { toast } from 'sonner';
-import { ATMButton } from '@/shared/ui';
+import { ATMCard, ATMButton, ATMSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { getAutoCloseConfig, updateAutoCloseConfig } from '@/lib/api/helpdesk';
 
 /**
@@ -53,56 +54,75 @@ function AutoCloseConfigPage() {
     }
   };
 
+  const inputClass =
+    'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10';
+
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Auto-Close</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Tickets in <span className="font-mono">Resolved</span> for longer than this window are automatically closed.
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Timer}
+        iconColor="theme"
+        title="Auto-Close"
+        subtitle={
+          <>Tickets in <span className="font-mono">Resolved</span> for longer than this window are automatically closed.</>
+        }
+      />
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        <div className="max-w-2xl">
+          <ATMCard title="Auto-close configuration">
+            <div className="grid gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 animate-pulse rounded border border-slate-200 bg-surface-100 dark:bg-surface-850" />
+                <ATMSkeleton width="50%" height="14px" className="rounded" />
+              </div>
+              <div className="space-y-2">
+                <ATMSkeleton width="35%" height="14px" className="rounded" />
+                <ATMSkeleton height="40px" className="rounded-lg" />
+              </div>
+              <ATMSkeleton width="120px" height="40px" className="rounded-lg" />
+            </div>
+          </ATMCard>
         </div>
       )}
 
-      {!loading && error && <div className="text-sm text-red-600">{error}</div>}
+      {!loading && error && <div className="text-sm text-rose-600">{error}</div>}
 
       {!loading && !error && (
-        <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Enable auto-close
-            </span>
-          </label>
+        <ATMCard title="Auto-close configuration" className="max-w-2xl">
+          <div className="grid gap-4">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                Enable auto-close
+              </span>
+            </label>
 
-          <label className="grid max-w-xs gap-1 text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Days before auto-close (1–365)</span>
-            <input
-              type="number"
-              min={1}
-              max={365}
-              value={days}
-              onChange={(e) => setDays(parseInt(e.target.value, 10) || 0)}
-              disabled={!enabled}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            />
-          </label>
+            <label className="grid max-w-xs gap-1 text-sm">
+              <span className="text-slate-600 dark:text-slate-400">Days before auto-close (1–365)</span>
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={days}
+                onChange={(e) => setDays(parseInt(e.target.value, 10) || 0)}
+                disabled={!enabled}
+                className={`${inputClass} disabled:opacity-50`}
+              />
+            </label>
 
-          <div className="flex justify-end">
-            <ATMButton onClick={onSave} loading={saving} leftIcon={<Save className="h-3.5 w-3.5" />}>
-              Save changes
-            </ATMButton>
+            <div className="flex justify-end">
+              <ATMButton onClick={onSave} loading={saving} leftIcon={<Save className="h-3.5 w-3.5" />}>
+                Save changes
+              </ATMButton>
+            </div>
           </div>
-        </div>
+        </ATMCard>
       )}
     </div>
   );

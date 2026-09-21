@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ATMBadge, ATMButton } from '@/shared/ui';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ATMBadge, ATMButton, ATMCard, ATMSkeleton, ATMSelectField, ATMTextArea } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Save, UserRound, Mail, Phone, Building2, Calendar, MessageSquare, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateLead } from '@/lib/api/helpdesk';
 import { get } from '@/lib/api/client';
@@ -16,17 +17,24 @@ import { ROUTES } from '@/lib/config/routes';
 
 const LEAD_STATUSES = ['New', 'Contacted', 'Qualified', 'Converted', 'Lost', 'Spam'] as const;
 
-const STATUS_VARIANT: Record<string, 'success' | 'info' | 'danger' | 'default' | 'warning'> = {
-  New: 'info',
+const STATUS_COLOR: Record<string, 'success' | 'primary' | 'danger' | 'muted' | 'warning'> = {
+  New: 'primary',
   Contacted: 'warning',
   Qualified: 'success',
   Converted: 'success',
-  Lost: 'default',
+  Lost: 'muted',
   Spam: 'danger',
 };
 
+function formatDateTime(value?: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+}
+
 function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,96 +80,143 @@ function LeadDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-24 text-sm text-gray-400">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading lead…
+      <div className="w-full space-y-6 animate-fade-in">
+        <ATMSkeleton variant="text" width="40%" height="32px" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <ATMSkeleton variant="card" height="300px" />
+            <ATMSkeleton variant="card" height="180px" />
+          </div>
+          <ATMSkeleton variant="card" height="300px" />
+        </div>
       </div>
     );
   }
 
   if (error || !lead) {
     return (
-      <div className="flex flex-col items-center gap-3 py-24 text-sm text-red-600">
+      <div className="flex w-full flex-col items-center gap-4 py-24 text-sm text-slate-500 dark:text-slate-400">
         {error ?? 'Lead not found.'}
-        <Link to={ROUTES.CONTENT.LEADS}>
-          <ATMButton variant="secondary" size="sm" leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}>Back to leads</ATMButton>
-        </Link>
+        <ATMButton
+          variant="secondary"
+          size="sm"
+          leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}
+          onClick={() => navigate(ROUTES.CONTENT.LEADS)}
+        >
+          Back to leads
+        </ATMButton>
       </div>
     );
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <Link to={ROUTES.CONTENT.LEADS}>
-          <ATMButton variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}>Back</ATMButton>
-        </Link>
-        <ATMBadge variant={STATUS_VARIANT[lead.status] ?? 'default'}>{lead.status}</ATMBadge>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={UserRound}
+        iconColor="theme"
+        title={lead.name}
+        subtitle={lead.companyName ?? 'No company'}
+        extraActions={<ATMBadge color={STATUS_COLOR[lead.status] ?? 'muted'} size="md">{lead.status}</ATMBadge>}
+        onBack={() => navigate(ROUTES.CONTENT.LEADS)}
+      />
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">{lead.name}</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{lead.companyName ?? '—'}</p>
-      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Contact details */}
+        <div className="space-y-6 lg:col-span-2">
+          <ATMCard title="Contact details">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <InfoRow icon={Mail} label="Email" value={lead.email} href={`mailto:${lead.email}`} />
+              <InfoRow icon={Phone} label="Phone" value={lead.phone ?? '—'} href={lead.phone ? `tel:${lead.phone}` : undefined} />
+              <InfoRow icon={Building2} label="Company" value={lead.companyName ?? '—'} />
+              <InfoRow icon={Tag} label="Source" value={lead.source ?? lead.leadType ?? '—'} />
+              <InfoRow icon={Calendar} label="Created" value={formatDateTime(lead.createdAt)} />
+              <InfoRow icon={Calendar} label="Updated" value={formatDateTime(lead.updatedAt)} />
+            </div>
+          </ATMCard>
 
-      <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:grid-cols-2">
-        <Field label="Email" value={lead.email} />
-        <Field label="Phone" value={lead.phone ?? '—'} />
-        <Field label="Source" value={lead.source ?? lead.leadType ?? '—'} />
-        <Field label="Type" value={lead.leadType ?? '—'} />
-        <Field label="Created" value={new Date(lead.createdAt).toLocaleString()} />
-        <Field label="Updated" value={lead.updatedAt ? new Date(lead.updatedAt).toLocaleString() : '—'} />
-      </div>
-
-      {lead.message ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-          <h2 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Notes / Message</h2>
-          <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{lead.message}</pre>
+          <ATMCard title="Notes / Message" subtitle={lead.message ? undefined : 'No message was submitted with this lead.'}>
+            {lead.message ? (
+              <div className="flex gap-3">
+                <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{lead.message}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
+            )}
+          </ATMCard>
         </div>
-      ) : null}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Update lead</h2>
-        <div className="grid gap-4">
-          <label className="grid gap-1 text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Status</span>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            >
-              {LEAD_STATUSES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Append note (optional)</span>
-            <textarea
-              rows={4}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              placeholder="Add a contact note, follow-up reminder, or qualification detail…"
-            />
-          </label>
-          <div className="flex justify-end">
-            <ATMButton onClick={onSave} loading={saving} leftIcon={<Save className="h-3.5 w-3.5" />}>
-              Save changes
-            </ATMButton>
-          </div>
+        {/* Update panel */}
+        <div className="space-y-6">
+          <ATMCard title="Update lead">
+            <div className="space-y-4">
+              <ATMSelectField
+                name="status"
+                label="Status"
+                value={status}
+                onChange={(v) => setStatus(String(v ?? 'New'))}
+                options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))}
+              />
+
+              <ATMTextArea
+                name="note"
+                label="Append note (optional)"
+                rows={4}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Add a contact note, follow-up reminder, or qualification detail…"
+                helperText="Appended to the lead history on save."
+              />
+
+              <ATMButton
+                variant="primary"
+                size="md"
+                className="w-full"
+                onClick={() => { void onSave(); }}
+                loading={saving}
+                leftIcon={<Save className="h-4 w-4" />}
+              >
+                Save changes
+              </ATMButton>
+            </div>
+          </ATMCard>
         </div>
       </div>
     </div>
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">{value}</p>
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const body = (
+    <div className="flex items-start gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</p>
+        <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{value}</p>
+      </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <a href={href} className="block rounded-xl -mx-2 px-2 py-1 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60">
+        {body}
+      </a>
+    );
+  }
+  return <div className="-mx-2 px-2 py-1">{body}</div>;
 }
 
 export default LeadDetailPage;

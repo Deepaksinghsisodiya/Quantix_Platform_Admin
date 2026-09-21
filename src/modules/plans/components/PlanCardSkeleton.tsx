@@ -32,7 +32,7 @@ export const PlanCardSkeleton: React.FC = () => (
     {/* Info tiles */}
     <div className="mt-4 grid grid-cols-2 gap-3">
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 flex items-start gap-3">
+        <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#13151a] flex items-start gap-3">
           <div className={cn(shimmer, 'h-8 w-8 rounded-lg shrink-0 mt-0.5')} />
           <div className="flex-1 min-w-0 space-y-2">
             <div className={cn(shimmer, 'h-2.5 w-16 rounded')} />

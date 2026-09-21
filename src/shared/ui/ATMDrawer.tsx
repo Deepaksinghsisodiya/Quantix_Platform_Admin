@@ -75,8 +75,7 @@ export const ATMDrawer: React.FC<Props> = ({
     <div className="fixed inset-0 z-[9999] flex overflow-hidden">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300 cursor-pointer"
-        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300 cursor-default"
       />
 
       {/* Drawer Container - Zen Perfection Edition */}

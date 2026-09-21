@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ATMBadge, ATMButton, ATMModal, ATMTextArea, ATMTextField } from '@/shared/ui';
-import { Search, X, Plus, Shield, Loader2, AlertTriangle, Check, XCircle, Download, Trash2 } from 'lucide-react';
+import { ATMBadge, ATMButton, ATMCard, ATMSkeleton, ATMModal, ATMTextArea, ATMTextField, ATMSelectField } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { Search, X, Plus, Shield, AlertTriangle, Check, XCircle, Download, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
@@ -131,6 +134,43 @@ function DataRequestsPage() {
 
   const busy = approveState.isLoading || rejectState.isLoading || exportState.isLoading || deletionState.isLoading;
 
+  const columns: ATMTableColumn<ComplianceRequest>[] = [
+    {
+      key: 'merchantName',
+      header: 'Merchant',
+      renderCell: (_v, r) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-900 dark:text-slate-100">{r.merchantName || r.merchantId.slice(0, 8)}</span>
+          {r.merchantType && <ATMBadge variant={r.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">{r.merchantType.charAt(0)}</ATMBadge>}
+        </div>
+      ),
+    },
+    {
+      key: 'requestType',
+      header: 'Type',
+      renderCell: (_v, r) => <ATMBadge variant={TYPE_VARIANT[r.requestType]} size="sm">{COMPLIANCE_TYPE_LABEL[r.requestType]}</ATMBadge>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      renderCell: (_v, r) => <ATMBadge variant={STATUS_VARIANT[r.status]} size="sm">{COMPLIANCE_STATUS_LABEL[r.status]}</ATMBadge>,
+    },
+    {
+      key: 'requestedBy',
+      header: 'Requested by',
+      renderCell: (_v, r) => <span className="text-slate-600 dark:text-slate-300">{r.requestedBy}</span>,
+    },
+    {
+      key: 'dueAt',
+      header: 'Due',
+      renderCell: (_v, r) => (
+        <span className={cn('tabular-nums', r.isOverdue ? 'font-semibold text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300')}>
+          {formatDate(r.dueAt, 'short')}{r.isOverdue ? ' · overdue' : ''}
+        </span>
+      ),
+    },
+  ];
+
   const decide = async (isApproved: boolean) => {
     if (!selected) return;
     if (!isApproved && !decisionNote.trim()) {
@@ -188,21 +228,19 @@ function DataRequestsPage() {
     }
   };
 
-  const selectClass = 'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100';
-
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Data Requests</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Record, approve and execute data export, deletion and consent-withdrawal requests.
-          </p>
-        </div>
-        <ATMButton variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setCreateOpen(true)}>
-          Record Request
-        </ATMButton>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Shield}
+        iconColor="theme"
+        title="Data Requests"
+        subtitle="Record, approve and execute data export, deletion and consent-withdrawal requests."
+        extraActions={
+          <ATMButton variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setCreateOpen(true)}>
+            Record Request
+          </ATMButton>
+        }
+      />
 
       {listQuery.isError && (
         <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
@@ -214,91 +252,91 @@ function DataRequestsPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[260px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
+      {/* Filters */}
+      <ATMCard padding="md">
+        <div className="mb-1 flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Filters
+          </p>
+          {search || statusFilter || typeFilter ? (
+            <button
+              type="button"
+              onClick={() => { setSearch(''); setStatusFilter(''); setTypeFilter(''); }}
+              className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear all
+            </button>
+          ) : (
+            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+              {filtered.length} of {requests.length} requests
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ATMTextField
+            name="search"
+            label="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by merchant, requester or id…"
-            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-8 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            size="md"
+            prefix={<Search className="h-4 w-4 text-slate-400" />}
+            className="sm:col-span-2 lg:col-span-2"
           />
-          {search && (
-            <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <ATMSelectField
+            name="statusFilter"
+            label="Status"
+            value={statusFilter}
+            onChange={(val) => setStatusFilter((val as ComplianceStatus) || '')}
+            options={[
+              { label: 'All statuses', value: '' },
+              ...COMPLIANCE_STATUSES.map((s) => ({ label: COMPLIANCE_STATUS_LABEL[s], value: s })),
+            ]}
+            size="md"
+          />
+          <ATMSelectField
+            name="typeFilter"
+            label="Type"
+            value={typeFilter}
+            onChange={(val) => setTypeFilter((val as ComplianceRequestType) || '')}
+            options={[
+              { label: 'All types', value: '' },
+              ...COMPLIANCE_REQUEST_TYPES.map((t) => ({ label: COMPLIANCE_TYPE_LABEL[t], value: t })),
+            ]}
+            size="md"
+          />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as ComplianceStatus | '')} className={selectClass}>
-          <option value="">All statuses</option>
-          {COMPLIANCE_STATUSES.map((s) => <option key={s} value={s}>{COMPLIANCE_STATUS_LABEL[s]}</option>)}
-        </select>
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as ComplianceRequestType | '')} className={selectClass}>
-          <option value="">All types</option>
-          {COMPLIANCE_REQUEST_TYPES.map((t) => <option key={t} value={t}>{COMPLIANCE_TYPE_LABEL[t]}</option>)}
-        </select>
-        <span className="text-xs text-gray-400">{filtered.length} of {requests.length}</span>
-      </div>
+      </ATMCard>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                    {['Merchant', 'Type', 'Status', 'Requested by', 'Due'].map((h) => (
-                      <th key={h} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {listQuery.isLoading && (
-                    <tr><td colSpan={5} className="px-4 py-12 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" /></td></tr>
-                  )}
-                  {!listQuery.isLoading && filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-                        {requests.length === 0 ? 'No data requests recorded. Use Record Request when a data subject asks for an export, a deletion or to withdraw consent.' : 'No requests match the filters.'}
-                      </td>
-                    </tr>
-                  )}
-                  {!listQuery.isLoading && filtered.map((r) => (
-                    <tr
-                      key={r.requestId}
-                      className={cn('cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40', selectedId === r.requestId && 'bg-indigo-50 dark:bg-indigo-900/10')}
-                      onClick={() => setSelectedId(r.requestId)}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900 dark:text-gray-100">{r.merchantName || r.merchantId.slice(0, 8)}</span>
-                          {r.merchantType && <ATMBadge variant={r.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">{r.merchantType.charAt(0)}</ATMBadge>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3"><ATMBadge variant={TYPE_VARIANT[r.requestType]} size="sm">{COMPLIANCE_TYPE_LABEL[r.requestType]}</ATMBadge></td>
-                      <td className="px-4 py-3"><ATMBadge variant={STATUS_VARIANT[r.status]} size="sm">{COMPLIANCE_STATUS_LABEL[r.status]}</ATMBadge></td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{r.requestedBy}</td>
-                      <td className={cn('px-4 py-3 tabular-nums', r.isOverdue ? 'font-semibold text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400')}>
-                        {formatDate(r.dueAt, 'short')}{r.isOverdue ? ' · overdue' : ''}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <ATMCard className="xl:col-span-2 overflow-hidden" padding="none" loading={listQuery.isLoading}>
+          {listQuery.isLoading ? (
+            <ATMSkeleton variant="rect" height="280px" />
+          ) : filtered.length === 0 ? (
+            <div className="m-4 rounded-xl border border-slate-200/80 bg-slate-50/60 px-4 py-10 text-center text-sm font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
+              {requests.length === 0 ? 'No data requests recorded. Use Record Request when a data subject asks for an export, a deletion or to withdraw consent.' : 'No requests match the filters.'}
             </div>
-          </div>
-        </div>
+          ) : (
+            <ATMTable
+              columns={columns}
+              data={filtered}
+              emptyMessage="No requests match the filters."
+              onRowClick={(r) => setSelectedId(r.requestId)}
+            />
+          )}
+        </ATMCard>
 
         <div className="xl:col-span-1">
           {selected ? (
-            <div className="sticky top-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <ATMCard className="sticky top-6">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{selected.merchantName || selected.merchantId}</h3>
-                  <p className="font-mono text-[11px] text-gray-400">{selected.requestId}</p>
+                  <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{selected.merchantName || selected.merchantId}</h3>
+                  <p className="font-mono text-[11px] text-slate-400 dark:text-slate-500">{selected.requestId}</p>
                 </div>
-                <button type="button" onClick={() => setSelectedId(null)} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setSelectedId(null)} className="text-slate-400 hover:text-slate-600"><X className="h-4 w-4" /></button>
               </div>
 
               <div className="space-y-3 text-sm">
@@ -309,44 +347,44 @@ function DataRequestsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Requested by</p>
-                    <p className="text-gray-900 dark:text-gray-100">{selected.requestedBy}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Requested by</p>
+                    <p className="text-slate-900 dark:text-slate-100">{selected.requestedBy}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Scope</p>
-                    <p className="text-gray-900 dark:text-gray-100">{selected.dataScope ? (SCOPE_LABEL[selected.dataScope as ComplianceDataScope] ?? selected.dataScope) : 'All data'}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Scope</p>
+                    <p className="text-slate-900 dark:text-slate-100">{selected.dataScope ? (SCOPE_LABEL[selected.dataScope as ComplianceDataScope] ?? selected.dataScope) : 'All data'}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Received</p>
-                    <p className="tabular-nums text-gray-900 dark:text-gray-100">{formatDate(selected.createdAt, 'datetime')}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Received</p>
+                    <p className="tabular-nums text-slate-900 dark:text-slate-100">{formatDate(selected.createdAt, 'datetime')}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Due</p>
-                    <p className={cn('tabular-nums', selected.isOverdue ? 'font-semibold text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100')}>{formatDate(selected.dueAt, 'short')}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Due</p>
+                    <p className={cn('tabular-nums', selected.isOverdue ? 'font-semibold text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100')}>{formatDate(selected.dueAt, 'short')}</p>
                   </div>
                   {selected.approvedBy && (
                     <div>
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{selected.status === 'Rejected' ? 'Rejected by' : 'Approved by'}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selected.approvedBy}</p>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{selected.status === 'Rejected' ? 'Rejected by' : 'Approved by'}</p>
+                      <p className="text-slate-900 dark:text-slate-100">{selected.approvedBy}</p>
                     </div>
                   )}
                   {selected.completedAt && (
                     <div>
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Completed</p>
-                      <p className="tabular-nums text-gray-900 dark:text-gray-100">{formatDate(selected.completedAt, 'datetime')}</p>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Completed</p>
+                      <p className="tabular-nums text-slate-900 dark:text-slate-100">{formatDate(selected.completedAt, 'datetime')}</p>
                     </div>
                   )}
                 </div>
                 {selected.notes && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Notes</p>
-                    <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{selected.notes}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Notes</p>
+                    <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{selected.notes}</p>
                   </div>
                 )}
 
                 {selected.status === 'Pending' && (
-                  <div className="space-y-2 border-t border-gray-200 pt-3 dark:border-gray-700">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Decision</p>
+                  <div className="space-y-2 border-t border-slate-200/80 pt-3 dark:border-slate-800">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Decision</p>
                     <ATMTextArea
                       name="decisionNote"
                       value={decisionNote}
@@ -366,8 +404,8 @@ function DataRequestsPage() {
                 )}
 
                 {selected.status === 'InProgress' && selected.requestType === 'DataExport' && (
-                  <div className="space-y-2 border-t border-gray-200 pt-3 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="space-y-2 border-t border-slate-200/80 pt-3 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Approved. Executing marks the export complete and returns a reference for the record.
                     </p>
                     <ATMButton variant="primary" size="sm" className="w-full" disabled={busy} onClick={() => setConfirm({ kind: 'export', request: selected })}>
@@ -377,7 +415,7 @@ function DataRequestsPage() {
                 )}
 
                 {selected.status === 'InProgress' && selected.requestType === 'RightToDelete' && (
-                  <div className="space-y-2 border-t border-gray-200 pt-3 dark:border-gray-700">
+                  <div className="space-y-2 border-t border-slate-200/80 pt-3 dark:border-slate-800">
                     <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                       <Shield className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                       <p className="text-xs text-red-700 dark:text-red-300">
@@ -389,21 +427,21 @@ function DataRequestsPage() {
                         <Trash2 className="mr-1 h-3.5 w-3.5" /> Execute Deletion
                       </ATMButton>
                     ) : (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Only an Admin can execute a deletion.</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Only an Admin can execute a deletion.</p>
                     )}
                   </div>
                 )}
 
                 {selected.status === 'InProgress' && selected.requestType === 'ConsentWithdrawal' && (
-                  <p className="border-t border-gray-200 pt-3 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                  <p className="border-t border-slate-200/80 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
                     Approved and recorded. Consent withdrawals have nothing further to execute; the consent register reflects the change.
                   </p>
                 )}
               </div>
-            </div>
+            </ATMCard>
           ) : (
-            <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-              <p className="text-sm text-gray-400 dark:text-gray-500">Select a request to view details</p>
+            <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+              <p className="text-sm text-slate-400 dark:text-slate-500">Select a request to view details</p>
             </div>
           )}
         </div>
@@ -411,35 +449,46 @@ function DataRequestsPage() {
 
       <ATMModal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Record a data request" size="md">
         <div className="space-y-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Merchant</label>
-            <select value={draft.merchantId} onChange={(e) => setDraft((d) => ({ ...d, merchantId: e.target.value }))} className={selectClass}>
-              <option value="">{merchantsQuery.isLoading ? 'Loading merchants…' : 'Choose a merchant'}</option>
-              {merchants.map((m) => (
-                <option key={m.merchantId} value={m.merchantId}>{m.companyName}{m.merchantType ? ` (${m.merchantType})` : ''}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Request type</label>
-            <select value={draft.requestType} onChange={(e) => setDraft((d) => ({ ...d, requestType: e.target.value as ComplianceRequestType }))} className={selectClass}>
-              {COMPLIANCE_REQUEST_TYPES.map((t) => <option key={t} value={t}>{COMPLIANCE_TYPE_LABEL[t]}</option>)}
-            </select>
-          </div>
+          <ATMSelectField
+            name="merchantId"
+            label="Merchant"
+            value={draft.merchantId}
+            onChange={(val) => setDraft((d) => ({ ...d, merchantId: val ? String(val) : '' }))}
+            options={[
+              { value: '', label: 'Choose a merchant' },
+              ...merchants.map((m) => ({ value: m.merchantId, label: m.companyName + (m.merchantType ? ` (${m.merchantType})` : '') })),
+            ]}
+            loading={merchantsQuery.isLoading}
+            disabled={merchantsQuery.isLoading && merchants.length === 0}
+            size="md"
+          />
+          <ATMSelectField
+            name="requestType"
+            label="Request type"
+            value={draft.requestType}
+            onChange={(val) => setDraft((d) => ({ ...d, requestType: (val as ComplianceRequestType) || 'DataExport' }))}
+            options={COMPLIANCE_REQUEST_TYPES.map((t) => ({ value: t, label: COMPLIANCE_TYPE_LABEL[t] }))}
+            size="md"
+          />
           <ATMTextField
             name="requestedBy"
             label="Requested by"
             value={draft.requestedBy}
             onChange={(e) => setDraft((d) => ({ ...d, requestedBy: e.target.value }))}
             helperText="The data subject, or the person acting for them."
+            size="md"
           />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Data scope</label>
-            <select value={draft.dataScope} onChange={(e) => setDraft((d) => ({ ...d, dataScope: e.target.value as ComplianceDataScope | '' }))} className={selectClass}>
-              <option value="">All data</option>
-              {COMPLIANCE_DATA_SCOPES.map((s) => <option key={s} value={s}>{SCOPE_LABEL[s]}</option>)}
-            </select>
-          </div>
+          <ATMSelectField
+            name="dataScope"
+            label="Data scope"
+            value={draft.dataScope}
+            onChange={(val) => setDraft((d) => ({ ...d, dataScope: (val as ComplianceDataScope) || '' }))}
+            options={[
+              { value: '', label: 'All data' },
+              ...COMPLIANCE_DATA_SCOPES.map((s) => ({ value: s, label: SCOPE_LABEL[s] })),
+            ]}
+            size="md"
+          />
           <ATMTextArea
             name="notes"
             label="Notes"
@@ -462,7 +511,7 @@ function DataRequestsPage() {
       >
         {confirm && (
           <div className="space-y-4 text-sm">
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-slate-700 dark:text-slate-300">
               {confirm.kind === 'delete'
                 ? <>This removes <strong>{confirm.request.merchantName}</strong> from the platform and marks the request completed. It cannot be undone from here.</>
                 : <>This marks the data export for <strong>{confirm.request.merchantName}</strong> as completed and records an export reference.</>}

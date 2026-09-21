@@ -23,7 +23,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useGetSetupStatusQuery } from '../services/settingsApi';
 
 /** How long the gate may block the whole portal before it gives up and opens. */
@@ -44,11 +44,7 @@ export const PlatformSetupGuard: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [isLoading]);
 
   if (isLoading && !waitedTooLong) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
+    return null;
   }
 
   const isConfigured = data?.data?.isConfigured ?? true; // fail-open on fetch error — don't brick the app

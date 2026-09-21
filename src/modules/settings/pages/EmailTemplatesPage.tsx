@@ -8,6 +8,7 @@ import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMTextArea } from '@/shared/ui/ATMTextArea';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { get, put, post } from '@/lib/api/client';
 import type { ApiResponse } from '@/lib/types/common';
 import { cn } from '@/lib/utils/cn';
@@ -52,7 +53,7 @@ function CardHeader({ icon: Icon, title, subtitle, trailing }: { icon: LucideIco
         </div>
         <div className="min-w-0">
           <h3 className="font-mono text-sm font-bold text-slate-900 dark:text-white tracking-tight">{title}</h3>
-          {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{subtitle}</p>}
         </div>
       </div>
       {trailing}
@@ -136,31 +137,30 @@ export function EmailTemplatesPage() {
   }, {});
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
-          <Mail size={20} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          {/* Title matches the sidebar label. */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Email Templates</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
-            The templates every transactional email is composed from — edits apply to the very
-            next send. Placeholders: {'{{key}}'}, optional {'{{key:default}}'}, conditional{' '}
-            {'{{#if key}}…{{/if}}'}.
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Mail}
+        iconColor="theme"
+        title="Email Templates"
+        subtitle={`The templates every transactional email is composed from — edits apply to the very next send. Placeholders: {{key}}, optional {{key:default}}, conditional {{#if key}}…{{/if}}.`}
+      />
 
       {loading ? (
-        <ATMSkeleton className="h-72 w-full" />
+        <div className="space-y-4 animate-pulse">
+          <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+          <ATMSkeleton width="60%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="110px" className="rounded-lg" />
+          <ATMSkeleton width="35%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Template list, grouped by category */}
           <div className="lg:col-span-1 flex flex-col gap-4">
             {Object.entries(grouped).map(([category, items]) => (
               <div key={category}>
-                <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-gray-500">
+                <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                   <span className="h-1 w-1 rounded-full bg-primary-500/70" />
                   {category}
                 </p>
@@ -174,7 +174,7 @@ export function EmailTemplatesPage() {
                         'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
                         selectedId === t.templateId
                           ? 'border-accent-500 bg-accent-50/10 dark:border-accent-400 dark:bg-accent-950/10 shadow-sm shadow-accent-500/10'
-                          : 'border-slate-200 bg-white hover:bg-slate-55/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80',
+                          : 'border-slate-200 bg-white hover:bg-slate-50/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80',
                       )}
                     >
                       <div
@@ -249,14 +249,14 @@ export function EmailTemplatesPage() {
 
                     {extractPlaceholders(selected).length > 0 && (
                       <div>
-                        <label className="text-xs font-bold text-slate-550 dark:text-gray-400">Insert placeholder</label>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Insert placeholder</label>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {extractPlaceholders(selected).map((v) => (
                             <button
                               key={v}
                               type="button"
                               onClick={() => insertMergeVar(v)}
-                              className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] font-semibold text-slate-700 hover:bg-primary-100 hover:text-primary-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750"
+                              className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] font-semibold text-slate-700 hover:bg-primary-100 hover:text-primary-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                             >
                               {v}
                             </button>
@@ -280,7 +280,7 @@ export function EmailTemplatesPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-slate-200 bg-slate-55/20 p-6 dark:border-slate-800 dark:bg-slate-900/10">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/20 p-6 dark:border-slate-800 dark:bg-slate-900/10">
                     <div className="mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
                       <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Subject:</p>
                       <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">{editSubject}</p>
@@ -301,7 +301,7 @@ export function EmailTemplatesPage() {
               </ATMCard>
             ) : (
               <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40">
-                <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-550">
+                <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-500">
                   <Mail className="h-8 w-8 opacity-50" strokeWidth={1.8} />
                   <p className="text-sm font-bold">Select a template to edit</p>
                 </div>

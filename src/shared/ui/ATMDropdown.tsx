@@ -66,14 +66,14 @@ export const ATMDropdown: React.FC<Props> = ({
             zIndex: 1000,
           }}
           className={`
-            w-[200px] bg-zen-card border border-gray-100 dark:border-gray-800 rounded-xl shadow-2xl overflow-hidden
+            w-[200px] bg-zen-card border border-[var(--zen-border)] rounded-2xl shadow-2xl overflow-hidden
             animate-in fade-in zoom-in-95 duration-200
           `}
         >
           <div className="py-1.5">
             {items.map((item, index) => (
               <React.Fragment key={index}>
-                {item.divider && <hr className="my-1.5 border-gray-100 dark:border-gray-800" />}
+                {item.divider && <hr className="my-1.5 border-slate-100 dark:border-slate-800/60" />}
                 <button
                   disabled={item.disabled}
                   onClick={() => {
@@ -84,11 +84,11 @@ export const ATMDropdown: React.FC<Props> = ({
                   }}
                   className={`
                     w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200
-                    ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}
-                    ${item.variant === 'danger' ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-gray-700 dark:text-gray-300'}
+                    ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-white/[0.05]'}
+                    ${item.variant === 'danger' ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10' : 'text-slate-700 dark:text-slate-200'}
                   `}
                 >
-                  {item.icon && <span className="shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-current">{item.icon}</span>}
+                  {item.icon && <span className="shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-current">{item.icon}</span>}
                   <span className="font-semibold">{item.label}</span>
                 </button>
               </React.Fragment>

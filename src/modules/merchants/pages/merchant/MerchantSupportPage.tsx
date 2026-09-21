@@ -9,14 +9,18 @@
  */
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, LifeBuoy, Plus, X } from 'lucide-react';
+import { AlertTriangle, LifeBuoy, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMCard, ATMButton, ATMModal, ATMSkeleton } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import {
   useGetSelfTicketsQuery,
   useCreateSelfTicketMutation,
 } from '@/modules/merchants/services/merchantSelfApi';
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/modules/helpdesk/ticketPresentation';
-import { OPEN_TICKET_STATUSES, type TicketCategory, type TicketPriority } from '@/lib/types/helpdesk';
+import { OPEN_TICKET_STATUSES, type TicketCategory, type TicketListItem, type TicketPriority } from '@/lib/types/helpdesk';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatDate } from '@/lib/utils/formatDate';
 import { cn } from '@/lib/utils/cn';
@@ -31,7 +35,7 @@ const BADGE: Record<string, string> = {
   warning: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
   info: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
   success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-  default: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 };
 
 interface Draft {
@@ -75,25 +79,64 @@ export default function MerchantSupportPage() {
     }
   };
 
-  const field = 'w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm dark:border-surface-600 dark:bg-surface-900 dark:text-gray-100';
+  const field = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10';
+
+  const columns: ATMTableColumn<TicketListItem>[] = [
+    {
+      key: 'ticketNumber',
+      header: 'Ticket',
+      renderCell: (_v, t) => (
+        <Link to={`/merchant/support/${t.ticketId}`} className="font-mono text-xs text-primary-600 hover:underline">{t.ticketNumber}</Link>
+      ),
+    },
+    {
+      key: 'subject',
+      header: 'Subject',
+      renderCell: (_v, t) => (
+        <Link to={`/merchant/support/${t.ticketId}`} className="font-medium text-slate-900 hover:underline dark:text-slate-100">{t.subject}</Link>
+      ),
+    },
+    {
+      key: 'category',
+      header: 'Category',
+      renderCell: (_v, t) => <span className="text-slate-500 dark:text-slate-400">{t.category || '—'}</span>,
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+      renderCell: (_v, t) => {
+        const priority = PRIORITY_CONFIG[t.priority] ?? PRIORITY_CONFIG.Medium;
+        return <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', BADGE[priority.variant])}>{priority.label}</span>;
+      },
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      renderCell: (_v, t) => {
+        const status = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.Open;
+        return <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', BADGE[status.variant])}>{status.label}</span>;
+      },
+    },
+    {
+      key: 'createdAt',
+      header: 'Opened',
+      renderCell: (_v, t) => <span className="text-slate-500 dark:text-slate-400">{formatDate(t.createdAt, 'short')}</span>,
+    },
+  ];
 
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Support</h1>
-          <p className="mt-1 text-sm text-surface-500">
-            Your tickets with the support team. Open one for billing, licence, technical or account questions.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4" /> Open a ticket
-        </button>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={LifeBuoy}
+        iconColor="theme"
+        title="Support"
+        subtitle="Your tickets with the support team. Open one for billing, licence, technical or account questions."
+        extraActions={
+          <ATMButton onClick={() => setOpen(true)} variant="primary" icon={Plus}>
+            Open a ticket
+          </ATMButton>
+        }
+      />
 
       {ticketsQuery.isError && (
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/30">
@@ -105,118 +148,87 @@ export default function MerchantSupportPage() {
         </div>
       )}
 
-      <div className="rounded-xl bg-white dark:bg-surface-800 shadow-sm">
-        <div className="flex items-center justify-between border-b border-surface-200 px-4 py-3 dark:border-surface-700">
-          <p className="text-sm text-surface-500">
-            {ticketsQuery.isLoading ? 'Loading…' : `${tickets.length} shown of ${total}`}
-          </p>
-          <label className="flex items-center gap-2 text-xs text-surface-500">
-            <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} />
-            Show resolved and closed
-          </label>
-        </div>
-        {ticketsQuery.isLoading ? (
-          <div className="p-6 text-center text-sm text-surface-500">Loading tickets…</div>
-        ) : tickets.length === 0 ? (
-          <div className="p-12 text-center">
-            <LifeBuoy className="mx-auto h-8 w-8 text-surface-300" />
-            <p className="mt-3 text-sm text-surface-500">
-              {total === 0 ? 'You have not opened any tickets yet.' : 'No open tickets. Tick "Show resolved and closed" to see the rest.'}
-            </p>
-            {total === 0 && (
-              <button type="button" onClick={() => setOpen(true)} className="mt-3 text-sm font-medium text-primary-600 hover:underline">
-                Open your first ticket
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200 dark:border-surface-700 text-left text-xs uppercase tracking-wide text-surface-500">
-                  <th className="px-4 py-3">Ticket</th>
-                  <th className="px-4 py-3">Subject</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Priority</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Opened</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-100 dark:divide-surface-700">
-                {tickets.map((t) => {
-                  const status = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.Open;
-                  const priority = PRIORITY_CONFIG[t.priority] ?? PRIORITY_CONFIG.Medium;
-                  return (
-                    <tr key={t.ticketId} className="hover:bg-surface-50 dark:hover:bg-surface-700/40">
-                      <td className="px-4 py-3 font-mono text-xs">
-                        <Link to={`/merchant/support/${t.ticketId}`} className="text-primary-600 hover:underline">{t.ticketNumber}</Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link to={`/merchant/support/${t.ticketId}`} className="font-medium hover:underline">{t.subject}</Link>
-                      </td>
-                      <td className="px-4 py-3 text-surface-500">{t.category || '—'}</td>
-                      <td className="px-4 py-3"><span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', BADGE[priority.variant])}>{priority.label}</span></td>
-                      <td className="px-4 py-3"><span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', BADGE[status.variant])}>{status.label}</span></td>
-                      <td className="px-4 py-3 text-surface-500">{formatDate(t.createdAt, 'short')}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-surface-800" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Open a ticket</h2>
-              <button type="button" onClick={() => setOpen(false)} className="text-surface-400 hover:text-surface-600"><X className="h-4 w-4" /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-surface-500">Subject</label>
-                <input className={field} value={draft.subject} onChange={(e) => setDraft((d) => ({ ...d, subject: e.target.value }))} placeholder="One line that says what is wrong" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-surface-500">Category</label>
-                  <select className={field} value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as TicketCategory }))}>
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-surface-500">Priority</label>
-                  <select className={field} value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value as TicketPriority }))}>
-                    {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-surface-500">What happened?</label>
-                <textarea
-                  className={cn(field, 'min-h-[140px]')}
-                  value={draft.description}
-                  onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                  placeholder="What you were doing, what you expected, and what you saw. Include a terminal id or invoice number if there is one."
+      <ATMCard padding="none" className="overflow-hidden">
+        <ATMTable
+          columns={columns}
+          data={tickets}
+          isLoading={ticketsQuery.isLoading}
+          emptyMessage={
+            total === 0
+              ? 'You have not opened any tickets yet.'
+              : 'No open tickets. Tick "Show resolved and closed" to see the rest.'
+          }
+          onEmptyAction={total === 0 ? () => setOpen(true) : undefined}
+          emptyActionLabel="Open your first ticket"
+          extraHeaderActions={
+            <div className="flex items-center gap-4">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {ticketsQuery.isLoading ? (
+                  <ATMSkeleton className="h-3.5 w-24 !bg-slate-200 dark:!bg-slate-700" />
+                ) : `${tickets.length} shown of ${total}`}
+              </span>
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={showClosed}
+                  onChange={(e) => setShowClosed(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-600"
                 />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setOpen(false)} className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-medium dark:border-surface-600">Cancel</button>
-                <button
-                  type="button"
-                  onClick={() => { void submit(); }}
-                  disabled={createState.isLoading}
-                  className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-                >
-                  {createState.isLoading ? 'Opening…' : 'Open ticket'}
-                </button>
-              </div>
+                Show resolved and closed
+              </label>
+            </div>
+          }
+        />
+      </ATMCard>
+
+      <ATMModal open={open} onClose={() => setOpen(false)} title="Open a ticket" size="lg">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Subject</label>
+            <input className={field} value={draft.subject} onChange={(e) => setDraft((d) => ({ ...d, subject: e.target.value }))} placeholder="One line that says what is wrong" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Category</label>
+              <select className={field} value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as TicketCategory }))}>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Priority</label>
+              <select className={field} value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value as TicketPriority }))}>
+                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
             </div>
           </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">What happened?</label>
+            <textarea
+              className={cn(field, 'min-h-[140px]')}
+              value={draft.description}
+              onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+              placeholder="What you were doing, what you expected, and what you saw. Include a terminal id or invoice number if there is one."
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </button>
+            <ATMButton
+              type="button"
+              onClick={() => { void submit(); }}
+              variant="primary"
+              isLoading={createState.isLoading}
+            >
+              {createState.isLoading ? 'Opening…' : 'Open ticket'}
+            </ATMButton>
+          </div>
         </div>
-      )}
+      </ATMModal>
     </div>
   );
 }

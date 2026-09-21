@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, EyeOff, AlertTriangle, ImageOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, EyeOff, AlertTriangle, ImageOff, Megaphone } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge, ATMTextArea, ATMCheckbox } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
 import { MediaPicker } from '../components/MediaPicker';
 import { absoluteMediaUrl } from '../services/mediaApi';
@@ -155,6 +155,8 @@ function MarketingContentPage() {
       <ATMPageHeader
         title="Marketing Content"
         subtitle="Blocks the public website renders: banners, feature highlights, case studies and more. Testimonials have their own page."
+        icon={Megaphone}
+        iconColor="theme"
         action={{ label: `Add ${CMS_TYPE_LABEL[type]}`, onClick: () => setDraft(emptyDraft(type)), icon: Plus }}
       />
 
@@ -168,7 +170,7 @@ function MarketingContentPage() {
         </div>
       )}
 
-      <div className="inline-flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="inline-flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-[#13151a]">
         {CMS_CONTENT_TYPES.map((t) => (
           <button
             key={t}
@@ -177,8 +179,8 @@ function MarketingContentPage() {
             className={cn(
               'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
               type === t
-                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
             )}
           >
             {CMS_TYPE_LABEL[t]}
@@ -192,12 +194,12 @@ function MarketingContentPage() {
             {Array.from({ length: 3 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="72px" />)}
           </div>
         ) : blocks.length === 0 ? (
-          <div className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <ImageOff className="h-7 w-7" />
             <p>No {CMS_TYPE_LABEL[type].toLowerCase()} blocks yet.</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {blocks.map((b) => (
               <div key={b.contentId} className={cn('flex items-start gap-3 py-3', !b.isActive && 'opacity-60')}>
                 {b.imageAssetId ? (
@@ -207,38 +209,36 @@ function MarketingContentPage() {
                     className="h-12 w-16 rounded object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-16 items-center justify-center rounded bg-gray-100 dark:bg-gray-800">
-                    <ImageOff className="h-4 w-4 text-gray-400" />
+                  <div className="flex h-12 w-16 items-center justify-center rounded bg-slate-100 dark:bg-slate-800">
+                    <ImageOff className="h-4 w-4 text-slate-400" />
                   </div>
                 )}
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{b.title}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{b.title}</span>
                     <ATMBadge color="default" label={`#${b.sortOrder}`} />
                     {b.pageSlug && <ATMBadge color="primary" label={b.pageSlug} />}
                     {!b.isActive && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
-                        <EyeOff className="h-3 w-3" /> Hidden
-                      </span>
+                      <ATMBadge color="warning" icon={<EyeOff className="h-3 w-3" />} label="Hidden" />
                     )}
                   </div>
                   {b.body && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{b.body}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{b.body}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button type="button" onClick={() => { void togglePublished(b); }}
-                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                     aria-label={b.isActive ? 'Hide' : 'Publish'}>
                     <EyeOff className="h-4 w-4" />
                   </button>
                   <button type="button" onClick={() => openEdit(b)}
-                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                     aria-label={`Edit ${b.title}`}>
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button type="button" onClick={() => setDeleteTarget(b)}
-                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                    className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                     aria-label={`Delete ${b.title}`}>
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -263,32 +263,30 @@ function MarketingContentPage() {
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
             />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Body</label>
-              <textarea
-                rows={5}
-                value={draft.body}
-                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              />
-            </div>
+            <ATMTextArea
+              name="body"
+              label="Body"
+              rows={5}
+              value={draft.body}
+              onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+            />
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Image</label>
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Image</label>
               {draft.imageAssetId ? (
-                <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-2 dark:border-gray-700">
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2 dark:border-slate-800">
                   <img src={absoluteMediaUrl(`/api/v1/media/${draft.imageAssetId}/file`)} alt=""
                     className="h-14 w-20 rounded object-cover" />
                   <div className="flex flex-1 flex-col gap-1">
                     <button type="button" onClick={() => setPickerOpen(true)}
                       className="text-left text-xs font-semibold text-accent-600 hover:underline">Change image</button>
                     <button type="button" onClick={() => setDraft({ ...draft, imageAssetId: '' })}
-                      className="text-left text-xs text-gray-500 hover:underline">Remove</button>
+                      className="text-left text-xs text-slate-500 hover:underline">Remove</button>
                   </div>
                 </div>
               ) : (
                 <button type="button" onClick={() => setPickerOpen(true)}
-                  className="rounded-lg border border-dashed border-gray-300 px-3 py-4 text-sm text-gray-500 hover:border-accent-400 hover:text-accent-600 dark:border-gray-600">
+                  className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 hover:border-accent-400 hover:text-accent-600 dark:border-slate-700">
                   Choose from the media library
                 </button>
               )}
@@ -304,12 +302,12 @@ function MarketingContentPage() {
                 onChange={(e) => setDraft({ ...draft, sortOrder: parseInt(e.target.value, 10) || 0 })} />
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" checked={draft.isActive}
-                onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300" />
-              Published to the website
-            </label>
+            <ATMCheckbox
+              name="isActive"
+              label="Published to the website"
+              checked={draft.isActive}
+              onChange={(checked) => setDraft({ ...draft, isActive: checked })}
+            />
 
             <div className="flex justify-end gap-2">
               <ATMButton variant="ghost" onClick={() => setDraft(null)}>Cancel</ATMButton>
@@ -331,7 +329,7 @@ function MarketingContentPage() {
 
       <ATMModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete this block?" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             &ldquo;{deleteTarget?.title}&rdquo; will stop appearing on the website.
           </p>
           <div className="flex justify-end gap-2">

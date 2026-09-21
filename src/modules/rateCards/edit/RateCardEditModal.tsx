@@ -114,7 +114,7 @@ function PriceItemCell({
   chipColor: SectionColor;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-zinc-900/30 p-3">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className={cn('font-mono text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-md uppercase', sectionChip[chipColor])}>
           {code}

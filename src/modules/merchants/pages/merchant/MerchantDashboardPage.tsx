@@ -25,16 +25,18 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   CreditCard,
   Download,
   FileText,
   Key,
+  LayoutDashboard,
   ShieldCheck,
   User,
   Wallet,
 } from 'lucide-react';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMStatsCard, ATMSkeleton } from '@/shared/ui';
 import {
   useGetSelfProfileQuery,
   useGetSelfTokensQuery,
@@ -136,15 +138,18 @@ export default function MerchantDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header — the title is the nav label, verbatim; the merchant's name lives in the shell. */}
-      <header>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Dashboard</h1>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
-          {loadingProfile && 'Loading your account…'}
-          {merchant && (
-            <>
-              <span className="font-semibold text-gray-700 dark:text-gray-200">
+      <ATMPageHeader
+        icon={LayoutDashboard}
+        iconColor="theme"
+        title="Dashboard"
+        subtitle={
+          loadingProfile ? (
+            <ATMSkeleton width="220px" height="14px" />
+          ) : merchant ? (
+            <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
                 {merchant.displayName || merchant.companyName}
               </span>
               <Dot />
@@ -153,10 +158,10 @@ export default function MerchantDashboardPage() {
               <span>{merchant.merchantType === 'Enterprise' ? 'Enterprise Cloud' : 'Standalone'}</span>
               <Dot />
               <StatusPill status={merchant.merchantStatus} />
-            </>
-          )}
-        </p>
-      </header>
+            </span>
+          ) : null
+        }
+      />
 
       {/* The one thing that matters most, stated first */}
       {!loadingProfile && !isEnterprise && <LicenceBanner licence={licence} loading={tokensQuery.isLoading} />}
@@ -165,115 +170,119 @@ export default function MerchantDashboardPage() {
       {/* Summary tiles */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isEnterprise ? (
-          <Tile
-            icon={Wallet}
-            label="Wallet balance"
-            value={wallet ? `${wallet.tokenBalance.toFixed(2)} tokens` : '—'}
-            note={
-              wallet
-                ? wallet.runwayBasis === 'Usage'
-                  ? `≈ ${Math.floor(wallet.projectedDepletionDays)} days at current usage`
-                  : wallet.runwayBasis === 'Plan'
-                    ? `≈ ${Math.floor(wallet.projectedDepletionDays)} days at your plan's daily charge`
-                    : 'No daily charge recorded yet'
-                : 'Enterprise wallet'
-            }
-            loading={walletQuery.isLoading}
-            to="/merchant/wallet"
-          />
+          <Link to="/merchant/wallet" className="block">
+            <ATMStatsCard
+              label="Wallet balance"
+              value={wallet ? `${wallet.tokenBalance.toFixed(2)} tokens` : '—'}
+              icon={Wallet}
+              variant="accent"
+              description={
+                wallet
+                  ? wallet.runwayBasis === 'Usage'
+                    ? `≈ ${Math.floor(wallet.projectedDepletionDays)} days at current usage`
+                    : wallet.runwayBasis === 'Plan'
+                      ? `≈ ${Math.floor(wallet.projectedDepletionDays)} days at your plan's daily charge`
+                      : 'No daily charge recorded yet'
+                  : 'Enterprise wallet'
+              }
+            />
+          </Link>
         ) : (
-          <Tile
-            icon={Key}
-            label="Licence remaining"
-            value={
-              licence.daysRemaining !== null
-                ? `${Math.max(0, licence.daysRemaining)} days`
-                : licence.inHand.length > 0
-                  ? 'Not applied'
-                  : '—'
-            }
-            note={
-              licence.daysRemaining !== null
-                ? 'On the token running now'
-                : licence.inHand.length > 0
-                  ? 'Apply a token on your POS to start it'
-                  : 'No active licence'
-            }
-            loading={tokensQuery.isLoading}
-            to="/merchant/tokens"
-          />
+          <Link to="/merchant/tokens" className="block">
+            <ATMStatsCard
+              label="Licence remaining"
+              value={
+                licence.daysRemaining !== null
+                  ? `${Math.max(0, licence.daysRemaining)} days`
+                  : licence.inHand.length > 0
+                    ? 'Not applied'
+                    : '—'
+              }
+              icon={Key}
+              variant="accent"
+              description={
+                licence.daysRemaining !== null
+                  ? 'On the token running now'
+                  : licence.inHand.length > 0
+                    ? 'Apply a token on your POS to start it'
+                    : 'No active licence'
+              }
+            />
+          </Link>
         )}
 
         {isEnterprise ? (
           // 2026-09-04: "Coverage in hand" is the Standalone unapplied-token concept; an
           // Enterprise merchant saw "0 days · Nothing held in reserve" beside a funded wallet.
           // What matters to them is runway: balance ÷ the daily charge.
-          <Tile
-            icon={ShieldCheck}
-            label="Runway"
-            value={
-              wallet && wallet.runwayBasis !== 'None'
-                ? `${Math.max(0, Math.floor(wallet.projectedDepletionDays))} days`
-                : '—'
-            }
-            note={
-              wallet
-                ? wallet.runwayBasis === 'Usage'
-                  ? 'At your average daily usage'
-                  : wallet.runwayBasis === 'Plan'
-                    ? 'At your subscription’s daily charge'
-                    : 'No daily charge recorded yet'
-                : 'Enterprise wallet'
-            }
-            tone={wallet && wallet.runwayBasis !== 'None' && wallet.projectedDepletionDays <= 7 ? 'warn' : 'ok'}
-            loading={walletQuery.isLoading}
-            to="/merchant/wallet"
-          />
+          <Link to="/merchant/wallet" className="block">
+            <ATMStatsCard
+              label="Runway"
+              value={
+                wallet && wallet.runwayBasis !== 'None'
+                  ? `${Math.max(0, Math.floor(wallet.projectedDepletionDays))} days`
+                  : '—'
+              }
+              icon={ShieldCheck}
+              variant={wallet && wallet.runwayBasis !== 'None' && wallet.projectedDepletionDays <= 7 ? 'amber' : 'slate'}
+              description={
+                wallet
+                  ? wallet.runwayBasis === 'Usage'
+                    ? 'At your average daily usage'
+                    : wallet.runwayBasis === 'Plan'
+                      ? 'At your subscription’s daily charge'
+                      : 'No daily charge recorded yet'
+                  : 'Enterprise wallet'
+              }
+            />
+          </Link>
         ) : (
-          <Tile
-            icon={ShieldCheck}
-            label="Coverage in hand"
-            value={licence.inHand.length > 0 ? `${licence.daysInHand} days` : '0 days'}
-            note={
-              licence.inHand.length > 0
-                ? `${licence.inHand.length} token${licence.inHand.length === 1 ? '' : 's'} bought, not applied`
-                : 'Nothing held in reserve'
-            }
-            loading={tokensQuery.isLoading}
-            to="/merchant/tokens"
-          />
+          <Link to="/merchant/tokens" className="block">
+            <ATMStatsCard
+              label="Coverage in hand"
+              value={licence.inHand.length > 0 ? `${licence.daysInHand} days` : '0 days'}
+              icon={ShieldCheck}
+              variant="slate"
+              description={
+                licence.inHand.length > 0
+                  ? `${licence.inHand.length} token${licence.inHand.length === 1 ? '' : 's'} bought, not applied`
+                  : 'Nothing held in reserve'
+              }
+            />
+          </Link>
         )}
 
-        <Tile
-          icon={CreditCard}
-          label="Outstanding"
-          value={
-            billing.unpaid.length > 0
-              ? formatCurrencyOrDash(billing.outstanding, billing.currency)
-              : formatCurrencyOrDash(0, billing.currency)
-          }
-          note={
-            billing.unpaid.length > 0
-              ? `${billing.unpaid.length} unpaid invoice${billing.unpaid.length === 1 ? '' : 's'}`
-              : 'All invoices settled'
-          }
-          tone={billing.unpaid.length > 0 ? 'warn' : 'ok'}
-          loading={invoicesQuery.isLoading}
-          to="/merchant/invoices"
-        />
+        <Link to="/merchant/invoices" className="block">
+          <ATMStatsCard
+            label="Outstanding"
+            value={
+              billing.unpaid.length > 0
+                ? formatCurrencyOrDash(billing.outstanding, billing.currency)
+                : formatCurrencyOrDash(0, billing.currency)
+            }
+            icon={CreditCard}
+            variant={billing.unpaid.length > 0 ? 'amber' : 'accent'}
+            description={
+              billing.unpaid.length > 0
+                ? `${billing.unpaid.length} unpaid invoice${billing.unpaid.length === 1 ? '' : 's'}`
+                : 'All invoices settled'
+            }
+          />
+        </Link>
 
-        <Tile
-          icon={Download}
-          label="Downloads"
-          value={packages.length > 0 ? `${packages.length} available` : 'None yet'}
-          note={
-            packages.length > 0
-              ? 'Installers and manuals for your plan'
-              : 'Nothing released for your plan yet'
-          }
-          loading={downloadsQuery.isLoading}
-          to="/merchant/downloads"
-        />
+        <Link to="/merchant/downloads" className="block">
+          <ATMStatsCard
+            label="Downloads"
+            value={packages.length > 0 ? `${packages.length} available` : 'None yet'}
+            icon={Download}
+            variant="accent"
+            description={
+              packages.length > 0
+                ? 'Installers and manuals for your plan'
+                : 'Nothing released for your plan yet'
+            }
+          />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -281,14 +290,14 @@ export default function MerchantDashboardPage() {
         <Panel
           title={isEnterprise ? 'Your subscription' : 'Your licence'}
           action={
-            <Link to="/merchant/tokens" className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            <Link to="/merchant/tokens" className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">
               {isEnterprise ? 'View tokens' : 'View all tokens'}
             </Link>
           }
         >
           {isEnterprise ? (
             subscriptionQuery.isLoading ? (
-              <Skeleton lines={4} />
+              <ATMSkeleton count={4} variant="text" />
             ) : subscription ? (
               <dl className="space-y-2.5 text-sm">
                 <Row label="Plan" value={subscription.planDisplayName} />
@@ -306,7 +315,7 @@ export default function MerchantDashboardPage() {
               <Empty text="No active subscription is attached to your account." />
             )
           ) : tokensQuery.isLoading ? (
-            <Skeleton lines={4} />
+            <ATMSkeleton count={4} variant="text" />
           ) : licence.current ? (
             <dl className="space-y-2.5 text-sm">
               <Row label="Plan" value={licence.current.planName || planLabel(licence.current.plan)} />
@@ -322,7 +331,7 @@ export default function MerchantDashboardPage() {
                 )}
               />
               {/* What happens when it runs out — the merchant's real next step. */}
-              <div className="!mt-4 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2.5 text-xs leading-relaxed text-gray-600 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-400">
+              <div className="!mt-4 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2.5 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
                 {licence.inHand.length > 0 ? (
                   <>
                     You hold {licence.inHand.length} more token
@@ -346,7 +355,7 @@ export default function MerchantDashboardPage() {
             </dl>
           ) : licence.inHand.length > 0 ? (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 You have {licence.inHand.length} token{licence.inHand.length === 1 ? '' : 's'} ready to
                 use. A token&apos;s validity starts the day you apply it on your POS, so nothing is
                 counting down yet.
@@ -355,12 +364,12 @@ export default function MerchantDashboardPage() {
                 {licence.inHand.slice(0, 4).map((t) => (
                   <li
                     key={t.tokenId}
-                    className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-xs dark:border-gray-800"
+                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-xs dark:border-slate-800"
                   >
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
                       {t.planName || planLabel(t.plan)} · {t.validityDays} days
                     </span>
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-slate-500 dark:text-slate-400">
                       bought {formatDate(t.createdAt)}
                     </span>
                   </li>
@@ -382,29 +391,29 @@ export default function MerchantDashboardPage() {
         <Panel
           title="Recent invoices"
           action={
-            <Link to="/merchant/invoices" className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            <Link to="/merchant/invoices" className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">
               View all
             </Link>
           }
         >
           {invoicesQuery.isLoading ? (
-            <Skeleton lines={4} />
+            <ATMSkeleton count={4} variant="text" />
           ) : billing.recent.length === 0 ? (
             <Empty text="No invoices have been issued to your account yet." />
           ) : (
-            <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
               {billing.recent.map((inv: MerchantSelfInvoice) => (
                 <li key={inv.invoiceId} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-xs font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="truncate font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">
                       {inv.invoiceNumber}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                       {inv.invoiceType} · {formatDate(inv.invoiceDate)}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrencyOrDash(inv.totalCurrency, inv.currencyCode)}
                     </p>
                     <InvoiceStatus status={inv.status} />
@@ -553,49 +562,6 @@ function Banner({
 
 /* ── Pieces ──────────────────────────────────────────────────────────────── */
 
-function Tile({
-  icon: Icon,
-  label,
-  value,
-  note,
-  to,
-  tone = 'ok',
-  loading,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  note: string;
-  to: string;
-  tone?: 'ok' | 'warn';
-  loading?: boolean;
-}) {
-  return (
-    <Link
-      to={to}
-      className="group rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600"
-    >
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <p
-        className={cn(
-          'mt-1 text-2xl font-bold',
-          tone === 'warn' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-gray-50',
-        )}
-      >
-        {loading ? '…' : value}
-      </p>
-      <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{note}</p>
-      <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 group-hover:gap-1.5 dark:text-blue-400">
-        Open
-        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-      </span>
-    </Link>
-  );
-}
-
 function Panel({
   title,
   action,
@@ -606,9 +572,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+    <section className="rounded-xl border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-[#13151a]">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h2>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h2>
         {action}
       </div>
       {children}
@@ -628,9 +594,9 @@ function ActionLink({
   return (
     <Link
       to={to}
-      className="flex items-center gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-blue-400 hover:bg-blue-50/40 dark:border-gray-700 dark:text-gray-300 dark:hover:border-blue-500/60 dark:hover:bg-blue-950/20"
+      className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:border-primary-400 hover:bg-primary-50/40 dark:border-slate-700 dark:text-slate-300 dark:hover:border-primary-500/60 dark:hover:bg-primary-950/20"
     >
-      <Icon className="h-4 w-4 text-gray-400" />
+      <Icon className="h-4 w-4 text-slate-400" />
       {label}
     </Link>
   );
@@ -639,8 +605,8 @@ function ActionLink({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className="font-semibold text-gray-900 dark:text-gray-100">{value}</dd>
+      <dt className="text-slate-500 dark:text-slate-400">{label}</dt>
+      <dd className="font-semibold text-slate-900 dark:text-slate-100">{value}</dd>
     </div>
   );
 }
@@ -672,21 +638,11 @@ function InvoiceStatus({ status }: { status: string }) {
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="py-4 text-sm text-gray-500 dark:text-gray-400">{text}</p>;
-}
-
-function Skeleton({ lines }: { lines: number }) {
-  return (
-    <div className="space-y-2.5">
-      {Array.from({ length: lines }, (_, i) => (
-        <div key={i} className="h-4 w-full animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
-      ))}
-    </div>
-  );
+  return <p className="py-4 text-sm text-slate-500 dark:text-slate-400">{text}</p>;
 }
 
 function Dot() {
-  return <span className="text-gray-300 dark:text-gray-600">·</span>;
+  return <span className="text-slate-300 dark:text-slate-600">·</span>;
 }
 
 /* ── Formatting ──────────────────────────────────────────────────────────── */

@@ -17,11 +17,13 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ExternalLink, Package, Pencil, Plus, Power, RotateCcw } from 'lucide-react';
-import { ATMBadge, ATMButton, ATMEmptyState, ATMErrorState } from '@/shared/ui';
+import { ATMBadge, ATMButton, ATMCard, ATMEmptyState, ATMErrorState, ATMSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { usePermission } from '@/shared/hooks/usePermission';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatFileSize } from '@/shared/utils/formatFileSize';
-import { cn } from '@/lib/utils/cn';
 import { PackageFormModal } from '../components/PackageFormModal';
 import {
   toSavePayload,
@@ -101,37 +103,194 @@ function DownloadsPage() {
     }
   }
 
+  const columns: ATMTableColumn<DownloadPackage>[] = [
+    {
+      key: 'platform',
+      header: 'Platform',
+      renderCell: (_v, p) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100">{p.platform}</span>
+      ),
+    },
+    {
+      key: 'version',
+      header: 'Version',
+      renderCell: (_v, p) => (
+        <>
+          <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{p.version}</span>
+          {p.isLatest && (
+            <ATMBadge variant="success" size="sm" className="ml-2">
+              Latest
+            </ATMBadge>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'releasedAt',
+      header: 'Released',
+      renderCell: (_v, p) => (
+        <span className="tabular-nums text-slate-600 dark:text-slate-400">
+          {new Date(p.releasedAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'fileSize',
+      header: 'Size',
+      renderCell: (_v, p) => (
+        <span className="tabular-nums text-slate-600 dark:text-slate-400">{formatFileSize(p.fileSize)}</span>
+      ),
+    },
+    {
+      key: 'requiredFeatures',
+      header: 'Requires',
+      renderCell: (_v, p) =>
+        p.requiredFeatures.length === 0 ? (
+          <span className="text-xs text-slate-500 dark:text-slate-400">Every merchant</span>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {p.requiredFeatures.map((g) => (
+              <ATMBadge key={g.featureCode} variant="info" size="sm">
+                {g.featureName}
+              </ATMBadge>
+            ))}
+          </div>
+        ),
+    },
+    {
+      key: 'isActive',
+      header: 'Status',
+      renderCell: (_v, p) => (
+        <ATMBadge variant={p.isActive ? 'success' : 'default'} size="sm" dot>
+          {p.isActive ? 'Active' : 'Inactive'}
+        </ATMBadge>
+      ),
+    },
+    {
+      key: '',
+      header: '',
+      align: 'right',
+      width: '240px',
+      renderCell: (_v, p) => (
+        <div className="flex items-center justify-end gap-1">
+          <a
+            href={p.downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={p.downloadUrl}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/30"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Open file
+          </a>
+          {canManage && (
+            <>
+              <ATMButton
+                variant="ghost"
+                size="sm"
+                leftIcon={<Pencil className="h-3.5 w-3.5" />}
+                onClick={() => openEdit(p)}
+                disabled={busy}
+              >
+                Edit
+              </ATMButton>
+              {p.isActive ? (
+                confirmId === p.packageId ? (
+                  <>
+                    <ATMButton
+                      variant="danger"
+                      size="sm"
+                      onClick={() => void handleDeactivate(p)}
+                      loading={deactivateState.isLoading}
+                    >
+                      Confirm deactivate
+                    </ATMButton>
+                    <ATMButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmId(null)}
+                      disabled={deactivateState.isLoading}
+                    >
+                      Keep
+                    </ATMButton>
+                  </>
+                ) : (
+                  <ATMButton
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Power className="h-3.5 w-3.5" />}
+                    onClick={() => setConfirmId(p.packageId)}
+                    disabled={busy}
+                  >
+                    Deactivate
+                  </ATMButton>
+                )
+              ) : (
+                <ATMButton
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
+                  onClick={() => void handleReactivate(p)}
+                  disabled={busy}
+                >
+                  Reactivate
+                </ATMButton>
+              )}
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="flex w-full flex-col gap-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Downloads</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <ATMPageHeader
+        icon={Package}
+        iconColor="theme"
+        title="Downloads"
+        subtitle={
+          <>
             Installers, manuals and release notes published to merchants. Merchants see active
             packages whose feature gates they satisfy.
             {packages.length > 0 && (
               <>
                 {' '}
-                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
                   {activeCount} active
                 </span>{' '}
                 of {packages.length}.
               </>
             )}
-          </p>
-        </div>
-        {canManage && (
-          <ATMButton variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={openPublish}>
-            Publish package
-          </ATMButton>
-        )}
-      </div>
+          </>
+        }
+        extraActions={
+          canManage && (
+            <ATMButton variant="primary" size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={openPublish}>
+              Publish package
+            </ATMButton>
+          )
+        }
+      />
 
       {list.isLoading && (
-        <div className="space-y-3" aria-busy="true" aria-label="Loading packages">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+        <div className="space-y-4" aria-busy="true" aria-label="Loading packages">
+          {[0, 1, 2].map((g) => (
+            <div key={g} className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 dark:border-gray-800/80 dark:bg-[#13151a]/95">
+              <ATMSkeleton width="200px" height="16px" className="rounded-lg" />
+              <div className="mt-4 space-y-3">
+                {[0, 1, 2].map((r) => (
+                  <div key={r} className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <ATMSkeleton width="60%" height="14px" className="rounded" />
+                      <ATMSkeleton width="35%" height="12px" className="mt-1.5 rounded" />
+                    </div>
+                    <ATMSkeleton width="80px" height="30px" className="rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -155,141 +314,24 @@ function DownloadsPage() {
       )}
 
       {groups.map(({ appName, items }) => (
-        <section
+        <ATMCard
           key={appName}
-          className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
-        >
-          <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{appName}</h2>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+          title={appName}
+          action={
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               {items.length} {items.length === 1 ? 'package' : 'packages'}
             </span>
-          </header>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                  {['Platform', 'Version', 'Released', 'Size', 'Requires', 'Status', ''].map((h, i) => (
-                    <th
-                      key={i}
-                      className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {items.map((p) => (
-                  <tr key={p.packageId} className={cn(!p.isActive && 'opacity-60')}>
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-gray-100">{p.platform}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{p.version}</span>
-                      {p.isLatest && (
-                        <ATMBadge variant="success" size="sm" className="ml-2">
-                          Latest
-                        </ATMBadge>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 tabular-nums text-gray-600 dark:text-gray-400">
-                      {new Date(p.releasedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2.5 tabular-nums text-gray-600 dark:text-gray-400">
-                      {formatFileSize(p.fileSize)}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {p.requiredFeatures.length === 0 ? (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Every merchant</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {p.requiredFeatures.map((g) => (
-                            <ATMBadge key={g.featureCode} variant="info" size="sm">
-                              {g.featureName}
-                            </ATMBadge>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <ATMBadge variant={p.isActive ? 'success' : 'default'} size="sm" dot>
-                        {p.isActive ? 'Active' : 'Inactive'}
-                      </ATMBadge>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <a
-                          href={p.downloadUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={p.downloadUrl}
-                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          Open file
-                        </a>
-                        {canManage && (
-                          <>
-                            <ATMButton
-                              variant="ghost"
-                              size="sm"
-                              leftIcon={<Pencil className="h-3.5 w-3.5" />}
-                              onClick={() => openEdit(p)}
-                              disabled={busy}
-                            >
-                              Edit
-                            </ATMButton>
-                            {p.isActive ? (
-                              confirmId === p.packageId ? (
-                                <>
-                                  <ATMButton
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={() => void handleDeactivate(p)}
-                                    loading={deactivateState.isLoading}
-                                  >
-                                    Confirm deactivate
-                                  </ATMButton>
-                                  <ATMButton
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setConfirmId(null)}
-                                    disabled={deactivateState.isLoading}
-                                  >
-                                    Keep
-                                  </ATMButton>
-                                </>
-                              ) : (
-                                <ATMButton
-                                  variant="ghost"
-                                  size="sm"
-                                  leftIcon={<Power className="h-3.5 w-3.5" />}
-                                  onClick={() => setConfirmId(p.packageId)}
-                                  disabled={busy}
-                                >
-                                  Deactivate
-                                </ATMButton>
-                              )
-                            ) : (
-                              <ATMButton
-                                variant="ghost"
-                                size="sm"
-                                leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
-                                onClick={() => void handleReactivate(p)}
-                                disabled={busy}
-                              >
-                                Reactivate
-                              </ATMButton>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+          }
+          padding="none"
+          className="overflow-hidden"
+        >
+          <ATMTable
+            columns={columns}
+            data={items}
+            density="compact"
+            emptyMessage="No packages."
+          />
+        </ATMCard>
       ))}
 
       <PackageFormModal open={modal.open} editing={modal.editing} suggestions={suggestions} onClose={closeModal} />

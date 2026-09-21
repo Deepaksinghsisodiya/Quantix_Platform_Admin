@@ -11,7 +11,7 @@ import {
   useGetTokenMetricsQuery,
   useGetCommissionSummaryQuery,
 } from '../services/dashboardApi';
-import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMPageSkeleton } from '@/shared/ui';
 import AdminDashboard from './AdminDashboard';
 
 type DateRangeKey = '7d' | '30d' | '90d' | '12m';
@@ -90,38 +90,17 @@ export const AdminDashboardWrapper: React.FC = () => {
     commissionQuery.isError;
 
   const isInitialLoading =
-    summaryQuery.isLoading &&
-    growthQuery.isLoading &&
-    revenueQuery.isLoading;
+    summaryQuery.isLoading ||
+    growthQuery.isLoading ||
+    revenueQuery.isLoading ||
+    systemHealthQuery.isLoading ||
+    usageQuery.isLoading ||
+    merchantHealthQuery.isLoading ||
+    tokenMetricsQuery.isLoading ||
+    commissionQuery.isLoading;
 
   if (isInitialLoading) {
-    return (
-      <div className="flex flex-1 flex-col gap-6 animate-fade-in w-full">
-        <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="space-y-2">
-            <ATMSkeleton width="180px" height="24px" />
-            <ATMSkeleton width="280px" height="14px" />
-          </div>
-          <div className="flex gap-2">
-            <ATMSkeleton width="100px" height="36px" className="rounded-xl" />
-            <ATMSkeleton width="120px" height="36px" className="rounded-xl" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <ATMSkeleton key={i} height="130px" className="rounded-2xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ATMSkeleton height="360px" className="rounded-3xl" />
-          </div>
-          <div className="lg:col-span-1">
-            <ATMSkeleton height="360px" className="rounded-3xl" />
-          </div>
-        </div>
-      </div>
-    );
+    return <ATMPageSkeleton variant="dashboard" cards={6} />;
   }
 
   return (

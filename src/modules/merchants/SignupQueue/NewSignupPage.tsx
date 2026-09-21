@@ -60,7 +60,7 @@ export function NewSignupPage() {
   const natureSuggestions = ['Restaurant', 'Retail', 'Restaurant & Retail', 'Enterprise SaaS', 'Quick Service'];
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1280px] mx-auto animate-page-enter">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Page Header */}
       <ATMPageHeader
         title="New Merchant Signup"
@@ -95,7 +95,7 @@ export function NewSignupPage() {
                       ? 'bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-md shadow-primary-500/30'
                       : s.state === 'done'
                         ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
-                        : 'bg-slate-100 text-slate-400 dark:bg-zinc-800/60 dark:text-slate-600',
+                        : 'bg-slate-100 text-slate-400 dark:bg-slate-800/60 dark:text-slate-600',
                   )}
                 >
                   {s.state === 'done' ? <Check size={13} strokeWidth={3} /> : <s.icon size={14} />}
@@ -133,10 +133,10 @@ export function NewSignupPage() {
                   <Building2 size={18} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900 dark:text-white">Business Identity</h2>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">Business Identity</h2>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">Legal entity name and operating sector</p>
                 </div>
-                <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-zinc-800/70 px-2 py-1 rounded-md">
+                <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-2 py-1 rounded-md">
                   Step 1 of 2
                 </span>
               </div>
@@ -173,7 +173,7 @@ export function NewSignupPage() {
                         className={`text-[11px] px-2 py-0.5 rounded-md font-medium transition-all ${
                           form.businessNature === item
                             ? 'bg-primary-600 text-white shadow-xs'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-slate-300'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
                         }`}
                       >
                         {item}
@@ -183,7 +183,7 @@ export function NewSignupPage() {
                 </ATMFieldCell>
 
                 <ATMFieldCell label="Operating Country" hint="Single-country deployment — set once in Global Settings.">
-                  <div className="flex items-center justify-between px-3.5 py-3 rounded-xl border border-zinc-200/90 dark:border-white/[0.08] bg-slate-50/80 dark:bg-zinc-900/40 shadow-sm">
+                  <div className="flex items-center justify-between px-3.5 py-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 shadow-sm">
                     <div className="flex items-center gap-2.5">
                       <Globe size={16} className="text-slate-400 shrink-0" />
                       <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{countryLabel}</span>
@@ -203,10 +203,10 @@ export function NewSignupPage() {
                   <User size={18} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900 dark:text-white">Authorized Representative</h2>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">Authorized Representative</h2>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">Primary point of contact for onboarding & account delivery</p>
                 </div>
-                <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-zinc-800/70 px-2 py-1 rounded-md">
+                <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-2 py-1 rounded-md">
                   Step 2 of 2
                 </span>
               </div>

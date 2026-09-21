@@ -8,6 +8,7 @@ import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { get, put, post } from '@/lib/api/client';
 import type { ApiResponse } from '@/lib/types/common';
 
@@ -48,7 +49,7 @@ function CardHeader({ icon: Icon, title, subtitle }: { icon: LucideIcon; title: 
       </div>
       <div className="min-w-0">
         <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h3>
-        {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{subtitle}</p>}
       </div>
     </div>
   );
@@ -143,31 +144,33 @@ export function SmsIntegrationPage() {
     configured ? '•••••••• (configured — type to replace)' : 'Not configured';
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
-          <MessageSquare size={20} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          {/* Title matches the sidebar label. */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">SMS Integration</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
-            Text-message notifications to merchant contact phones — suspension, reactivation,
-            low wallet balance, invoices. Off by default; every SMS costs money with a real provider.
-          </p>
-        </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <ATMButton variant="outline" size="md" icon={PlugZap} isLoading={testing} onClick={handleTest}>
-            Test
-          </ATMButton>
-          <ATMButton variant="primary" size="md" icon={Save} isLoading={saving} disabled={loading} onClick={handleSave}>
-            Save
-          </ATMButton>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={MessageSquare}
+        iconColor="theme"
+        title="SMS Integration"
+        subtitle="Text-message notifications to merchant contact phones — suspension, reactivation, low wallet balance, invoices. Off by default; every SMS costs money with a real provider."
+        extraActions={
+          <div className="flex shrink-0 items-center gap-2">
+            <ATMButton variant="outline" size="md" icon={PlugZap} isLoading={testing} onClick={handleTest}>
+              Test
+            </ATMButton>
+            <ATMButton variant="primary" size="md" icon={Save} isLoading={saving} disabled={loading} onClick={handleSave}>
+              Save
+            </ATMButton>
+          </div>
+        }
+      />
 
       {loading ? (
-        <ATMSkeleton className="h-72 w-full" />
+        <div className="space-y-4 animate-pulse">
+          <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+          <ATMSkeleton width="60%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="110px" className="rounded-lg" />
+          <ATMSkeleton width="35%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+        </div>
       ) : (
         <>
           <ATMCard
@@ -246,7 +249,7 @@ export function SmsIntegrationPage() {
             </div>
           </ATMCard>
 
-          <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold px-1">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold px-1">
             Message bodies are edited on Settings → SMS Templates. Push-notification providers
             (Firebase / APNs) will get their own screen once a mobile consumer exists.
           </p>

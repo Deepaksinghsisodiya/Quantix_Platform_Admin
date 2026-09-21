@@ -17,29 +17,7 @@ import { usePermission } from '@/shared/hooks/usePermission';
 import type { PermissionModule } from '@/lib/utils/permissions';
 // 2026-08-07: first-run platform setup gate — forces Global Settings before any activity.
 import PlatformSetupGuard from '@/modules/settings/components/PlatformSetupGuard';
-
-/* -------------------------------------------------------------------------- */
-/*  Skeleton fallback for lazy-loaded pages                                   */
-/* -------------------------------------------------------------------------- */
-
-function PageSkeleton() {
-  return (
-    <div className="flex flex-1 flex-col gap-6 p-6 animate-fade-in">
-      <div className="h-8 w-64 rounded-lg bg-surface-200 animate-shimmer dark:bg-surface-700" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-28 rounded-xl bg-surface-200 animate-shimmer dark:bg-surface-700"
-          />
-        ))}
-      </div>
-      <div className="h-64 rounded-xl bg-surface-200 animate-shimmer dark:bg-surface-700" />
-    </div>
-  );
-}
-
-
+import { RateCardListSkeleton } from '@/modules/rateCards/list/RateCardListSkeleton';
 
 /* -------------------------------------------------------------------------- */
 /*  Merchant Guard — gates merchant-only routes                               */
@@ -256,7 +234,7 @@ const MerchantShell = React.lazy(() => import('@/layout/MerchantShell/MerchantSh
 
 export function AppRouter() {
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <Suspense fallback={null}>
       <Routes>
         {/* ---- Public + first-login routes (outside ProtectedRoute) ---- */}
         <Route element={<PublicRoute />}>
@@ -327,7 +305,13 @@ export function AppRouter() {
             <Route path="billing/invoices" element={<RoleGuard module="billing"><InvoiceListPage /></RoleGuard>} />
             <Route path="billing/invoices/:id" element={<RoleGuard module="billing"><InvoiceDetailPage /></RoleGuard>} />
             <Route path="billing/plans" element={<RoleGuard module="billing"><PlanManagementPage /></RoleGuard>} />
-            <Route path="billing/rate-cards" element={<RoleGuard module="billing"><RateCardListPage /></RoleGuard>} />
+            <Route path="billing/rate-cards" element={
+              <RoleGuard module="billing">
+                <Suspense fallback={<RateCardListSkeleton />}>
+                  <RateCardListPage />
+                </Suspense>
+              </RoleGuard>
+            } />
             <Route path="billing/wallets" element={<RoleGuard module="billing"><WalletListPage /></RoleGuard>} />
 
             {/* Commission (Pass 35/36: ledger/settlement/disputes/rates routes removed; collections kept) */}

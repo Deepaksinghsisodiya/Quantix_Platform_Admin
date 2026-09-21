@@ -9,6 +9,7 @@ import { Plus, Download, Eye, Ban, CheckCircle2, AlertTriangle, Key, Coins, Mail
 import clsx from 'clsx';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
@@ -153,11 +154,11 @@ export const TokenList: React.FC<TokenListProps> = ({
             <span className={clsx(
               'h-1.5 w-1.5 rounded-full shrink-0',
               row.status === 'Active' ? 'bg-emerald-500'
-                : row.status === 'Expired' ? 'bg-slate-300 dark:bg-gray-600'
+                : row.status === 'Expired' ? 'bg-slate-300 dark:bg-slate-600'
                   : row.status === 'Revoked' ? 'bg-rose-500'
-                    : row.status === 'Superseded' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-gray-600',
+                    : row.status === 'Superseded' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600',
             )} />
-            <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100" title={row.tokenId}>
+            <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100" title={row.tokenId}>
               {row.tokenId.slice(0, 8)}...
             </span>
           </span>
@@ -169,14 +170,14 @@ export const TokenList: React.FC<TokenListProps> = ({
         sortable: true,
         renderCell: (_val, row) => (
           <div className="flex items-center gap-3 min-w-0 py-1">
-            <div className="shrink-0 ring-2 ring-white dark:ring-gray-800 rounded-xl shadow-sm">
+            <div className="shrink-0 ring-2 ring-white dark:ring-slate-800 rounded-xl shadow-sm">
               <ATMAvatar name={row.merchantName} size="sm" className="rounded-xl" />
             </div>
             <div className="min-w-0">
-              <p className="truncate max-w-[190px] text-[13px] font-black text-slate-900 dark:text-white tracking-tight" title={row.merchantName}>
+              <p className="truncate max-w-[190px] text-[13px] font-black text-slate-900 dark:text-slate-100 tracking-tight" title={row.merchantName}>
                 {row.merchantName}
               </p>
-              <p className="truncate max-w-[190px] mt-0.5 font-mono text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest" title={row.merchantCode}>
+              <p className="truncate max-w-[190px] mt-0.5 font-mono text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest" title={row.merchantCode}>
                 {row.merchantCode}
               </p>
             </div>
@@ -196,21 +197,21 @@ export const TokenList: React.FC<TokenListProps> = ({
         key: 'sequence',
         header: 'Seq',
         renderCell: (_val, row) => (
-          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">#{row.sequence}</span>
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">#{row.sequence}</span>
         ),
       },
       {
         key: 'validityDays',
         header: 'Validity',
         renderCell: (_val, row) => (
-          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">{row.validityDays}d</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">{row.validityDays}d</span>
         ),
       },
       {
         key: 'expiresAt',
         header: 'Activated → Expires',
         renderCell: (_val, row) => (
-          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
             {row.activatedAt
               ? `${formatDate(row.activatedAt, 'short')} → ${row.expiresAt ? formatDate(row.expiresAt, 'short') : '—'}`
               : 'Not applied yet'}
@@ -223,11 +224,11 @@ export const TokenList: React.FC<TokenListProps> = ({
         sortable: true,
         renderCell: (_val, row) => (
           <span className="block">
-            <span className="block text-xs text-gray-600 dark:text-gray-400 font-medium">
+            <span className="block text-xs text-slate-600 dark:text-slate-400 font-medium">
               {formatDate(row.createdAt, 'short')}
             </span>
             {row.generatedBy && (
-              <span className="block mt-0.5 text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate max-w-[120px]" title={row.generatedBy}>
+              <span className="block mt-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate max-w-[120px]" title={row.generatedBy}>
                 {row.generatedBy}
               </span>
             )}
@@ -289,11 +290,12 @@ export const TokenList: React.FC<TokenListProps> = ({
   );
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Token History"
         subtitle="Every recharge token ever generated, across all Standalone merchants."
         icon={Key}
+        iconColor="indigo"
         action={{
           label: 'Generate Token',
           onClick: () => navigate('/tokens/generate'),
@@ -306,28 +308,28 @@ export const TokenList: React.FC<TokenListProps> = ({
         }}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ATMStatsCard
           label="Active Tokens"
-          value={metrics ? metrics.activeTokens : (isLoading ? '...' : 0)}
+          value={metrics ? metrics.activeTokens : (isLoading ? <ATMSkeleton width="84px" height="26px" /> : 0)}
           icon={CheckCircle2}
           variant="emerald"
         />
         <ATMStatsCard
           label="Total Generated"
-          value={metrics ? metrics.totalGenerated : (isLoading ? '...' : 0)}
+          value={metrics ? metrics.totalGenerated : (isLoading ? <ATMSkeleton width="84px" height="26px" /> : 0)}
           icon={Coins}
           variant="accent"
         />
         <ATMStatsCard
           label="Token Revenue"
-          value={metrics ? `${metrics.revenueFromTokens.toFixed(2)} ${metrics.revenueCurrency}` : (isLoading ? '...' : 0)}
+          value={metrics ? `${metrics.revenueFromTokens.toFixed(2)} ${metrics.revenueCurrency}` : (isLoading ? <ATMSkeleton width="84px" height="26px" /> : 0)}
           icon={AlertTriangle}
           variant="purple"
         />
         <ATMStatsCard
           label="Expired / Revoked"
-          value={metrics ? metrics.expiredTokens + metrics.revokedTokens : (isLoading ? '...' : 0)}
+          value={metrics ? metrics.expiredTokens + metrics.revokedTokens : (isLoading ? <ATMSkeleton width="84px" height="26px" /> : 0)}
           icon={Ban}
           variant="rose"
         />
@@ -495,7 +497,7 @@ export const TokenList: React.FC<TokenListProps> = ({
             value={markDate}
             onChange={(e) => onMarkDateChange(e.target.value)}
           />
-          <p className="text-[11px] text-gray-400 font-medium">
+          <p className="text-[11px] text-slate-400 font-medium">
             Standalone Local-Only terminals apply tokens offline and never report back —
             recording the date here keeps Token Validity and expiry reminders accurate.
           </p>

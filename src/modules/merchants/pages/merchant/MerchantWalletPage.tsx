@@ -6,7 +6,12 @@
  */
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { Coins, Gauge, Hourglass, Plus, Wallet } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMCard, ATMButton, ATMStatsCard, ATMSkeleton } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import {
   useGetSelfProfileQuery,
   useGetSelfWalletQuery,
@@ -52,11 +57,13 @@ export default function MerchantWalletPage() {
   if (m && !isEnterprise) {
     return (
       <div className="w-full">
-        <h1 className="text-xl font-semibold">Wallet not applicable</h1>
-        <p className="mt-2 text-sm text-surface-500">
-          Standalone merchants don't use a wallet. License tokens are purchased per period via{' '}
-          <a href="/merchant/tokens" className="text-primary-600 hover:underline">Tokens</a>.
-        </p>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-6 dark:border-slate-800 dark:bg-[#13151a]">
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Wallet not applicable</h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Standalone merchants don't use a wallet. License tokens are purchased per period via{' '}
+            <a href="/merchant/tokens" className="text-primary-600 hover:underline">Tokens</a>.
+          </p>
+        </div>
       </div>
     );
   }
@@ -65,36 +72,96 @@ export default function MerchantWalletPage() {
   const rawTxns = txns.data?.data;
   const transactions = Array.isArray(rawTxns) ? (rawTxns as WalletTransactionDto[]) : [];
 
+  const transactionColumns: ATMTableColumn<WalletTransactionDto>[] = [
+    {
+      key: 'createdAt',
+      header: 'Date',
+      renderCell: (_v, t) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {new Date(t.createdAt).toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </span>
+      ),
+    },
+    {
+      key: 'transactionType',
+      header: 'Type',
+      renderCell: (_v, t) => (
+        <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+          {t.transactionType}
+        </span>
+      ),
+    },
+    {
+      key: 'description',
+      header: 'Description',
+      renderCell: (_v, t) => (
+        <span className="text-slate-600 dark:text-slate-300">{t.description ?? t.reason ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'tokenAmount',
+      header: 'Tokens',
+      align: 'right',
+      renderCell: (_v, t) => {
+        const isDebit = t.tokenAmount < 0;
+        return (
+          <span className={`font-mono ${isDebit ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            {isDebit ? '' : '+'}
+            {t.tokenAmount.toFixed(2)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'tokenBalanceAfter',
+      header: 'Balance',
+      align: 'right',
+      renderCell: (_v, t) => (
+        <span className="font-mono text-slate-700 dark:text-slate-300">{t.tokenBalanceAfter.toFixed(2)}</span>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Wallet</h1>
-          <p className="mt-1 text-sm text-surface-500">
-            Subscription is deducted daily; commission is charged at cycle end.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setRechargeOpen(true)}
-          className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-        >
-          Recharge wallet
-        </button>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Wallet}
+        iconColor="theme"
+        title="Wallet"
+        subtitle="Subscription is deducted daily; commission is charged at cycle end."
+        extraActions={
+          <ATMButton onClick={() => setRechargeOpen(true)} variant="primary" icon={Plus}>
+            Recharge wallet
+          </ATMButton>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard label="Token balance" value={wallet.isLoading ? '…' : (w?.tokenBalance ?? 0).toFixed(2)} accent="primary" />
-        <StatCard
-          label="Daily charge"
-          value={wallet.isLoading ? '…' : dailyChargeText(w)}
-          note={dailyChargeNote(w)}
+        <ATMStatsCard
+          label="Token balance"
+          value={wallet.isLoading ? <ATMSkeleton width="84px" height="26px" /> : (w?.tokenBalance ?? 0).toFixed(2)}
+          icon={Coins}
+          variant="accent"
         />
-        <StatCard
+        <ATMStatsCard
+          label="Daily charge"
+          value={wallet.isLoading ? <ATMSkeleton width="84px" height="26px" /> : dailyChargeText(w)}
+          icon={Gauge}
+          variant="slate"
+          description={dailyChargeNote(w)}
+        />
+        <ATMStatsCard
           label="Projected runway"
-          value={wallet.isLoading ? '…' : formatRunway(w)}
-          note={runwayNote(w)}
-          accent={w && w.runwayBasis !== 'None' && w.projectedDepletionDays < 7 ? 'warning' : 'default'}
+          value={wallet.isLoading ? <ATMSkeleton width="84px" height="26px" /> : formatRunway(w)}
+          icon={Hourglass}
+          variant={w && w.runwayBasis !== 'None' && w.projectedDepletionDays < 7 ? 'amber' : 'slate'}
+          description={runwayNote(w)}
         />
       </div>
 
@@ -109,102 +176,15 @@ export default function MerchantWalletPage() {
         </div>
       )}
 
-      <div className="rounded-xl bg-white dark:bg-surface-800 shadow-sm">
-        <div className="border-b border-surface-200 dark:border-surface-700 p-4">
-          <h2 className="text-sm font-semibold">Transaction history</h2>
-          <p className="mt-1 text-xs text-surface-500">Recent wallet activity</p>
-        </div>
-        {txns.isLoading ? (
-          <div className="p-6 text-center text-sm text-surface-500">Loading transactions…</div>
-        ) : transactions.length === 0 ? (
-          <div className="p-6 text-center text-sm text-surface-500">No transactions yet.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200 dark:border-surface-700 text-left text-xs uppercase tracking-wide text-surface-500">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3 text-right">Tokens</th>
-                  <th className="px-4 py-3 text-right">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((t) => {
-                  const isDebit = t.tokenAmount < 0;
-                  return (
-                    <tr
-                      key={t.walletTransactionId}
-                      className="border-b border-surface-100 dark:border-surface-700/50 last:border-0"
-                    >
-                      <td className="px-4 py-3 text-surface-600">
-                        {new Date(t.createdAt).toLocaleString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-surface-100 dark:bg-surface-700 px-2 py-0.5 text-xs">
-                          {t.transactionType}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-surface-600">
-                        {t.description ?? t.reason ?? '—'}
-                      </td>
-                      <td
-                        className={`px-4 py-3 text-right font-mono ${
-                          isDebit ? 'text-red-600' : 'text-green-600'
-                        }`}
-                      >
-                        {isDebit ? '' : '+'}
-                        {t.tokenAmount.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-surface-700">
-                        {t.tokenBalanceAfter.toFixed(2)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ATMCard title="Transaction history" subtitle="Recent wallet activity" padding="none" className="overflow-hidden">
+        <ATMTable columns={transactionColumns} data={transactions} isLoading={txns.isLoading} emptyMessage="No transactions yet." />
+      </ATMCard>
 
       <RechargeDialog
         open={rechargeOpen}
         onClose={() => setRechargeOpen(false)}
         suggestedTokens={w && w.plannedDailyCharge > 0 ? w.plannedDailyCharge * 30 : undefined}
       />
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  note,
-  accent = 'default',
-}: {
-  label: string;
-  value: string;
-  note?: string;
-  accent?: 'default' | 'primary' | 'warning';
-}) {
-  const accentClass = {
-    default: 'text-surface-900 dark:text-surface-100',
-    primary: 'text-primary-600',
-    warning: 'text-amber-600',
-  }[accent];
-  return (
-    <div className="rounded-xl bg-white dark:bg-surface-800 p-4 shadow-sm">
-      <p className="text-sm text-surface-500">{label}</p>
-      <p className={`mt-2 text-2xl font-semibold ${accentClass}`}>{value}</p>
-      {note && <p className="mt-1 text-xs text-surface-500">{note}</p>}
     </div>
   );
 }

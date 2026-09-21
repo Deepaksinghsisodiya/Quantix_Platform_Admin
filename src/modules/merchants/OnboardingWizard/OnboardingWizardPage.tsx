@@ -18,9 +18,10 @@ import {
   Building2, CreditCard, ShieldCheck, Wallet, KeyRound, Database, Globe,
   Store, Cloud, Server,
   CheckCircle2, Circle, MinusCircle, ArrowRight, ArrowLeft, Copy,
-  Loader2, PartyPopper, RefreshCw, Upload, Eye, X as XIcon,
+  PartyPopper, RefreshCw, Upload, Eye, X as XIcon,
 } from 'lucide-react';
 
+import { ATMPageSkeleton, ATMSkeleton } from '@/shared/ui';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
@@ -163,7 +164,7 @@ function StepperSidebar({
   const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <div className="bg-white/75 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 backdrop-blur-md shadow-sm lg:sticky lg:top-24">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm lg:sticky lg:top-24">
       <div className="flex items-center justify-between px-2 pb-1">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
           Onboarding Steps
@@ -221,7 +222,7 @@ function StepperSidebar({
                   className={cn(
                     'flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black',
                     isActive
-                      ? 'bg-white text-slate-900 dark:bg-slate-900 dark:text-white'
+                      ? 'bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100'
                       : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600',
                   )}
                 >
@@ -273,7 +274,7 @@ function WizardStepCard({
               Step {stepNo} of {Object.keys(STEP_META).length}
             </span>
           </div>
-          <h3 className="text-[15px] font-black text-slate-900 dark:text-white tracking-tight truncate mt-0.5">
+          <h3 className="text-[15px] font-black text-slate-900 dark:text-slate-100 tracking-tight truncate mt-0.5">
             {title}
           </h3>
           {description && (
@@ -710,11 +711,7 @@ const OnboardingWizardPage: React.FC = () => {
 
   // ── Loading / resume list ──
   if (!isNew && isStateLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
+    return <ATMPageSkeleton variant="detail" />;
   }
 
   const isActive = state?.merchantStatus === 'Active';
@@ -723,7 +720,7 @@ const OnboardingWizardPage: React.FC = () => {
   if (isNew) return <Navigate to="/merchants/signups" replace />;
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="Merchant Onboarding"
@@ -777,7 +774,7 @@ const OnboardingWizardPage: React.FC = () => {
                 </ATMFieldCell>
                 {/* Single-country deployment — configured once in Global Settings, not editable per merchant. */}
                 <ATMFieldCell label="Country">
-                  <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl border border-zinc-200/90 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/40 shadow-sm">
+                  <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 shadow-sm">
                     <Globe size={15} className="text-slate-400 shrink-0" />
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{countryLabel}</span>
                   </div>
@@ -826,13 +823,13 @@ const OnboardingWizardPage: React.FC = () => {
                         'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
                         kindKey === k.key
                           ? 'bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-md shadow-primary-500/25'
-                          : 'bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-slate-500',
+                          : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500',
                       )}
                     >
                       <k.icon size={18} />
                     </span>
                     <div>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">{k.title}</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-slate-100">{k.title}</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">{k.desc}</p>
                     </div>
                   </button>
@@ -897,10 +894,13 @@ const OnboardingWizardPage: React.FC = () => {
 
               {/* Plan contents preview — operator sees exactly what this plan grants. */}
               {planId && (
-                <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-zinc-900/30 p-4 space-y-3">
+                <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30 p-4 space-y-3">
                   {planDetailLoading || !planDetail ? (
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <Loader2 size={13} className="animate-spin" /> Loading plan contents…
+                    <div className="space-y-2">
+                      <ATMSkeleton width="150px" height="12px" />
+                      <ATMSkeleton height="18px" />
+                      <ATMSkeleton height="18px" />
+                      <ATMSkeleton width="80%" height="18px" />
                     </div>
                   ) : (
                     <>
@@ -919,7 +919,7 @@ const OnboardingWizardPage: React.FC = () => {
                         <div className="flex flex-wrap gap-1.5">
                           {(planDetail.limits ?? []).map((l: any) => (
                             <span key={l.limitCode} title={l.limitName}
-                              className="px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
+                              className="px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
                               {l.limitCode}:{l.maxValue}
                             </span>
                           ))}
@@ -951,7 +951,7 @@ const OnboardingWizardPage: React.FC = () => {
                       {/* Pricing + per-merchant discount */}
                       <ATMFormGrid cols={3} className="border-t border-slate-200 dark:border-slate-800 pt-4">
                         <ATMFieldCell label="Plan Rate">
-                          <p className="px-0.5 text-lg font-black text-slate-900 dark:text-white">${baseDaily.toFixed(2)}<span className="text-xs font-bold text-slate-400">/day</span></p>
+                          <p className="px-0.5 text-lg font-black text-slate-900 dark:text-slate-100">${baseDaily.toFixed(2)}<span className="text-xs font-bold text-slate-400">/day</span></p>
                         </ATMFieldCell>
                         <ATMFieldCell label="Merchant Discount (%)">
                           <ATMTextField
@@ -961,7 +961,7 @@ const OnboardingWizardPage: React.FC = () => {
                           />
                         </ATMFieldCell>
                         <ATMFieldCell label="This Merchant Pays">
-                          <p className={cn('px-0.5 text-lg font-black', discountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white')}>
+                          <p className={cn('px-0.5 text-lg font-black', discountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100')}>
                             ${effectiveDaily.toFixed(2)}<span className="text-xs font-bold text-slate-400">/day</span>
                           </p>
                         </ATMFieldCell>
@@ -1164,7 +1164,11 @@ const OnboardingWizardPage: React.FC = () => {
               <div className="mt-5">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Payment Method</p>
                 {methodsQuery.isLoading ? (
-                  <p className="py-2 text-xs font-semibold text-slate-400">Loading payment methods…</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[0, 1, 2].map((i) => (
+                      <ATMSkeleton key={i} height="88px" className="rounded-xl" />
+                    ))}
+                  </div>
                 ) : enabledMethods.length === 0 ? (
                   <p className="py-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
                     No payment methods are enabled — enable at least one under System Setup → Payment Methods.
@@ -1263,7 +1267,7 @@ const OnboardingWizardPage: React.FC = () => {
                     </p>
                     {state.paymentIntent.paymentLinkUrl && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <code className="text-[11px] px-2 py-1 rounded bg-white dark:bg-zinc-950 border border-slate-200 dark:border-slate-800 break-all">
+                        <code className="text-[11px] px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 break-all">
                           {state.paymentIntent.paymentLinkUrl}
                         </code>
                         <ATMButton
@@ -1314,8 +1318,8 @@ const OnboardingWizardPage: React.FC = () => {
                   {(terminalsQuery.data?.data ?? []).map((t) => (
                     <div key={t.terminalId} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2.5">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">{t.terminalName}</span>
-                        <code className="text-[11px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-slate-800">{t.terminalCode}</code>
+                        <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{t.terminalName}</span>
+                        <code className="text-[11px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">{t.terminalCode}</code>
                       </div>
                       <ATMBadge size="sm" color={t.isRegistered ? 'success' : 'gray'} label={t.isRegistered ? 'Paired' : 'Not paired yet'} />
                     </div>
@@ -1394,7 +1398,7 @@ const OnboardingWizardPage: React.FC = () => {
               }
             >
               {state.paymentRecord && (
-                <div className="mb-4 px-3 py-2 rounded-lg bg-slate-50 dark:bg-zinc-900/40 text-xs text-slate-600 dark:text-slate-300">
+                <div className="mb-4 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 text-xs text-slate-600 dark:text-slate-300">
                   Recorded payment: <b>${state.paymentRecord.amount.toFixed(2)}</b> via {state.paymentRecord.paymentMethod}
                   {state.paymentRecord.paymentReference ? ` (ref ${state.paymentRecord.paymentReference})` : ''} ·
                   period <b>{state.paymentRecord.periodDays}d</b>
@@ -1408,7 +1412,7 @@ const OnboardingWizardPage: React.FC = () => {
                     <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/40">
                       <Wallet className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                       <div className="text-sm">
-                        <p className="font-bold text-slate-900 dark:text-white">Wallet funded</p>
+                        <p className="font-bold text-slate-900 dark:text-slate-100">Wallet funded</p>
                         <p className="text-xs text-slate-600 dark:text-slate-300">
                           Balance ${state.fundSummary.walletBalance?.toFixed(2)} · Security deposit ${state.fundSummary.securityDeposit?.toFixed(2)}
                         </p>
@@ -1419,7 +1423,7 @@ const OnboardingWizardPage: React.FC = () => {
                       <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/40">
                         <KeyRound className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                         <div className="text-sm">
-                          <p className="font-bold text-slate-900 dark:text-white">First token generated</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100">First token generated</p>
                           <p className="text-xs text-slate-600 dark:text-slate-300">
                             {state.fundSummary.validityDays} days validity — it will be emailed to the merchant at Activate &amp; Notify.
                           </p>
@@ -1430,8 +1434,9 @@ const OnboardingWizardPage: React.FC = () => {
                       {fundTokenQuery.data?.data ? (
                         <TokenDisplay token={fundTokenQuery.data.data} />
                       ) : fundTokenQuery.isFetching ? (
-                        <div className="flex items-center gap-2 text-xs text-slate-400 px-1 py-3">
-                          <Loader2 size={13} className="animate-spin" /> Loading token details…
+                        <div className="space-y-2 px-1 py-3">
+                          <ATMSkeleton width="170px" height="12px" />
+                          <ATMSkeleton height="64px" />
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -1443,10 +1448,10 @@ const OnboardingWizardPage: React.FC = () => {
                           <div className="relative">
                             <textarea
                               readOnly rows={3}
-                              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3 py-2 font-mono text-[10px] text-slate-600 dark:text-slate-400"
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 font-mono text-[10px] text-slate-600 dark:text-slate-400"
                               value={state.fundSummary.encodedToken ?? ''}
                             />
-                            <button onClick={copyToken} className="absolute top-2 right-2 p-1.5 rounded-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white" title="Copy token">
+                            <button onClick={copyToken} className="absolute top-2 right-2 p-1.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100" title="Copy token">
                               <Copy size={12} />
                             </button>
                           </div>
@@ -1577,7 +1582,7 @@ const OnboardingWizardPage: React.FC = () => {
                   <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-400 text-white shadow-lg shadow-emerald-500/30">
                     <PartyPopper className="h-8 w-8" />
                   </span>
-                  <p className="text-base font-black text-slate-900 dark:text-white">
+                  <p className="text-base font-black text-slate-900 dark:text-slate-100">
                     {state.companyName} is live!
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">

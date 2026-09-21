@@ -21,7 +21,7 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({ steps, step, maxRe
       const done = s.id < step;
       return (
         <React.Fragment key={s.id}>
-          {idx > 0 && <div className="h-px w-8 bg-gray-200 dark:bg-gray-700" />}
+          {idx > 0 && <div className="h-px w-8 bg-slate-200 dark:bg-slate-700" />}
           <button
             type="button"
             disabled={!reachable}
@@ -30,12 +30,12 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({ steps, step, maxRe
             className={cn(
               'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
               active
-                ? 'bg-accent-600 text-white'
+                ? 'bg-primary-600 text-white'
                 : done
                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
                   : reachable
-                    ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                    : 'bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed',
+                    ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                    : 'bg-slate-50 text-slate-300 dark:bg-slate-900 dark:text-slate-600 cursor-not-allowed',
             )}
           >
             <span className={cn(

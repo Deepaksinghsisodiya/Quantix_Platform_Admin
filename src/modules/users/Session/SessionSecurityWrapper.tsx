@@ -8,7 +8,7 @@ import {
 } from '../services/userApi';
 import type { SessionPolicy, ActiveSession } from '../types/user.types';
 import SessionSecurityPage from './SessionSecurityPage';
-import { Loader2 } from 'lucide-react';
+import { ATMPageSkeleton } from '@/shared/ui';
 
 export const SessionSecurityWrapper: React.FC = () => {
   const { data: sessionsResponse, isLoading: isSessionsLoading, isError: isSessionsError, refetch: refetchSessions } = useGetActiveSessionsQuery();
@@ -62,11 +62,7 @@ export const SessionSecurityWrapper: React.FC = () => {
   const isError = isSessionsError || isPolicyError;
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-      </div>
-    );
+    return <ATMPageSkeleton variant="table" />;
   }
 
   if (isError) {

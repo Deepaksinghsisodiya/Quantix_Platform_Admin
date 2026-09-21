@@ -3,7 +3,6 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { setCredentials, logout, setInitialized, selectIsInitialized } from './slices/authSlice';
 import { useRefreshTokenMutation } from './services/authApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { ATMPageLoader } from '../../shared/ui';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -66,11 +65,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [dispatch, isInitialized, refreshToken]);
 
   if (!isInitialized) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#050505]">
-        <ATMPageLoader message="Verifying secure session..." />
-      </div>
-    );
+    return null;
   }
 
   return <>{children}</>;

@@ -1,12 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Monitor, Clock, Shield, LogOut, Save } from 'lucide-react';
+import { Monitor, Clock, Shield, LogOut, Save } from 'lucide-react';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import type { SessionPolicy, ActiveSession } from '../types/user.types';
 
 interface SessionSecurityPageProps {
@@ -45,29 +46,22 @@ export const SessionSecurityPage: React.FC<SessionSecurityPageProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in w-full">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <ATMButton variant="ghost" size="sm" onClick={() => navigate('/users')}>
-          <ArrowLeft className="h-4 w-4" />
-        </ATMButton>
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            Session Security
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Manage active sessions, timeout policies, and IP restrictions.
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Shield}
+        iconColor="theme"
+        title="Session Security"
+        subtitle="Manage active sessions, timeout policies, and IP restrictions."
+        onBack={() => navigate('/users')}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Policy Settings */}
         <div className="space-y-6">
           <ATMCard className="glass-card">
             <div className="flex items-center gap-2 mb-6">
-              <Clock className="h-5 w-5 text-gray-400" />
-              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Session Policy</h3>
+              <Clock className="h-5 w-5 text-slate-400" />
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Session Policy</h3>
             </div>
 
             <div className="space-y-5">
@@ -82,7 +76,7 @@ export const SessionSecurityPage: React.FC<SessionSecurityPageProps> = ({
                 max={480}
                 size="sm"
               />
-              <p className="text-xs text-gray-400 dark:text-gray-550 font-semibold px-1">
+              <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold px-1">
                 Default: 30 minutes. Range: 5–480 minutes.
               </p>
 
@@ -105,10 +99,10 @@ export const SessionSecurityPage: React.FC<SessionSecurityPageProps> = ({
               />
 
               {/* Force logout toggle */}
-              <div className="flex items-center justify-between py-3 border-t border-gray-150 dark:border-gray-800">
+              <div className="flex items-center justify-between py-3 border-t border-slate-200/70 dark:border-slate-800">
                 <div className="max-w-[70%]">
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">Force logout on password change</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-550 font-semibold mt-0.5">Terminate all sessions when a user changes their password</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Force logout on password change</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">Terminate all sessions when a user changes their password</p>
                 </div>
                 <ATMSwitch
                   name="forceLogoutOnPasswordChange"
@@ -134,14 +128,14 @@ export const SessionSecurityPage: React.FC<SessionSecurityPageProps> = ({
           {/* IP Allowlist information card */}
           <ATMCard className="glass-card">
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="h-5 w-5 text-gray-400" />
-              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">IP Allowlist</h3>
+              <Shield className="h-5 w-5 text-slate-400" />
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider">IP Allowlist</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
               IP allowlist is configured <strong>per user</strong> — open a user from
               the directory and edit their allowlist field on the detail page.
               Empty allowlist = unrestricted (any IP). Enforcement is in
-              <code className="mx-1 rounded bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-1 py-0.5 font-mono text-[10px]">SessionValidationMiddleware</code>.
+              <code className="mx-1 rounded bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-1 py-0.5 font-mono text-[10px]">SessionValidationMiddleware</code>.
             </p>
             <ATMButton
               variant="outline"
@@ -159,34 +153,34 @@ export const SessionSecurityPage: React.FC<SessionSecurityPageProps> = ({
           <ATMCard className="glass-card">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Monitor className="h-5 w-5 text-gray-400" />
-                <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Active Sessions</h3>
+                <Monitor className="h-5 w-5 text-slate-400" />
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Active Sessions</h3>
                 <ATMBadge color="primary" label={String(sessions.length)} />
               </div>
             </div>
 
             <div className="space-y-4">
               {sessions.length === 0 && (
-                <p className="text-center py-8 text-sm font-semibold text-gray-400 dark:text-gray-500">No active sessions.</p>
+                <p className="text-center py-8 text-sm font-semibold text-slate-400 dark:text-slate-500">No active sessions.</p>
               )}
               {sessions.map((session) => (
                 <div
                   key={session.sessionId}
-                  className="flex items-center gap-4 rounded-2xl border border-gray-150 bg-gray-50/10 p-4 dark:border-gray-800 dark:bg-gray-900/10 hover:bg-gray-50/30 dark:hover:bg-gray-900/20 transition-colors"
+                  className="flex items-center gap-4 rounded-2xl border border-slate-200/70 bg-slate-50/10 p-4 dark:border-slate-800 dark:bg-slate-900/10 hover:bg-slate-50/30 dark:hover:bg-slate-900/20 transition-colors"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-50 text-xs font-black text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 border border-accent-100/50">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-xs font-black text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 border border-primary-100/50">
                     {(session.username || '?').slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-extrabold text-gray-900 dark:text-white">
+                    <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
                       {session.username}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-550 font-semibold truncate mt-0.5">
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold truncate mt-0.5">
                       {session.userAgent || 'Unknown agent'}
                     </p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-gray-500 font-bold mt-1.5">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 dark:text-slate-500 font-bold mt-1.5">
                       {session.ipAddress && (
-                        <span className="font-mono bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-1 py-0.5 rounded text-[10px]">
+                        <span className="font-mono bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-1 py-0.5 rounded text-[10px]">
                           {session.ipAddress}
                         </span>
                       )}
@@ -209,8 +203,8 @@ export const SessionSecurityPage: React.FC<SessionSecurityPageProps> = ({
           </ATMCard>
 
           <ATMCard className="glass-card">
-            <h3 className="mb-2 text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Session Activity Log</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold">
+            <h3 className="mb-2 text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Session Activity Log</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
               Login / logout / password-change / force-logout events live in the audit log.
             </p>
             <ATMButton

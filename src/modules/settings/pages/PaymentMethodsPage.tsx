@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 
 import { ATMCard, ATMBadge, ATMSkeleton } from '@/shared/ui';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import {
   useGetPaymentMethodsQuery,
   useSetPaymentMethodEnabledMutation,
@@ -27,7 +28,7 @@ function CardHeader({ icon: Icon, title, subtitle }: { icon: LucideIcon; title: 
       </div>
       <div className="min-w-0">
         <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h3>
-        {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{subtitle}</p>}
       </div>
     </div>
   );
@@ -54,20 +55,13 @@ export const PaymentMethodsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
-          <Wallet size={20} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          {/* Title matches the sidebar label. */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Payment Methods</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
-            Master availability switch per payment method — only enabled methods are offered
-            when the platform takes a payment (e.g. recharge token purchases).
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Wallet}
+        iconColor="theme"
+        title="Payment Methods"
+        subtitle="Master availability switch per payment method — only enabled methods are offered when the platform takes a payment (e.g. recharge token purchases)."
+      />
 
       <ATMCard
         className="glass-card"
@@ -76,7 +70,11 @@ export const PaymentMethodsPage: React.FC = () => {
         }
       >
         {methodsQuery.isLoading ? (
-          <ATMSkeleton className="h-48 w-full" />
+          <div className="space-y-3 animate-pulse">
+            <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+          </div>
         ) : methodsQuery.isError ? (
           <div className="flex items-center justify-center gap-3 py-6">
             <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -102,7 +100,7 @@ export const PaymentMethodsPage: React.FC = () => {
                       <Wallet size={16} strokeWidth={2.2} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-bold text-slate-900 dark:text-gray-100">{m.displayName}</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{m.displayName}</span>
                       {meta && <ATMBadge size="sm" color={meta.color} label={meta.label} />}
                     </div>
                   </div>
@@ -119,7 +117,7 @@ export const PaymentMethodsPage: React.FC = () => {
         )}
 
         <div className="mt-4 rounded-xl border border-[var(--zen-border)] bg-slate-50/60 dark:bg-slate-900/40 p-3.5">
-          <p className="text-[11px] leading-relaxed text-slate-500 dark:text-gray-400 font-medium">
+          <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
             External means the payment is collected outside the platform (bank transfer,
             outside settlement, a card not linked to this system…) — only a reference number
             is recorded, and it is mandatory: that reference is the accounting trail. Every

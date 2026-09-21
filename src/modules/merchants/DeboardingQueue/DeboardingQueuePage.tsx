@@ -91,12 +91,12 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
           <div className="min-w-0">
             <Link
               to={`/merchants/${row.merchantId || (row as any).id || ''}`}
-              className="block max-w-[220px] truncate font-bold text-accent-600 hover:underline dark:text-accent-400"
+              className="block max-w-[220px] truncate font-bold text-primary-600 hover:underline dark:text-primary-400"
               title={val || (row as any).businessName || 'Merchant'}
             >
               {val || (row as any).businessName || 'Merchant'}
             </Link>
-            <div className="text-xs text-surface-400 font-mono mt-0.5">{(row.merchantId || (row as any).id || 'N/A').slice(0, 8)}...</div>
+            <div className="text-xs text-slate-400 font-mono mt-0.5">{(row.merchantId || (row as any).id || 'N/A').slice(0, 8)}...</div>
           </div>
         ),
       },
@@ -120,7 +120,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
         key: 'consentGivenAt',
         header: 'Consent Given',
         renderCell: (val) => (
-          <span className="text-sm font-semibold text-surface-500 dark:text-surface-400">
+          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
             {formatDate(val)}
           </span>
         ),
@@ -130,7 +130,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
         key: 'lastActivity',
         header: 'Last Activity',
         renderCell: (_, row) => (
-          <span className="text-sm font-semibold text-surface-500 dark:text-surface-400">
+          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
             {formatDate(latestActivity(row))}
           </span>
         ),
@@ -156,13 +156,12 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
   );
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Premium Unified Header */}
       <ATMPageHeader
         title={
           <div className="flex items-center gap-2 flex-wrap">
             <span>Merchant Deboarding</span>
-            {(isLoading || isFetching) && <Loader2 className="h-5 w-5 animate-spin text-accent-500 shrink-0" />}
           </div>
         }
         subtitle="Active workflows + escalation queue + closed history."
@@ -209,7 +208,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-surface-200 dark:border-surface-800">
+      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
         {[
           { key: 'active' as const, label: `Active (${activeCount})`, icon: <Clock className="h-3.5 w-3.5" /> },
           { key: 'escalated' as const, label: `Escalated (${escalatedCount})`, icon: <AlertTriangle className="h-3.5 w-3.5" /> },
@@ -222,8 +221,8 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
             className={cn(
               'flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px focus:outline-none',
               tab === t.key
-                ? 'border-accent-600 text-accent-600 dark:border-accent-500 dark:text-accent-400'
-                : 'border-transparent text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200',
+                ? 'border-primary-600 text-primary-600 dark:border-primary-500 dark:text-primary-400'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
             )}
           >
             {t.icon}
@@ -237,7 +236,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
         {isError ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <AlertTriangle className="h-10 w-10 text-danger" />
-            <p className="text-sm font-bold text-surface-700 dark:text-surface-200">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
               Failed to load deboardings.
             </p>
             <ATMButton variant="outline" size="sm" onClick={refetch} icon={RefreshCw} disabled={isLoading || isFetching}>

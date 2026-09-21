@@ -5,6 +5,11 @@
  * Enterprise: read-only list (tokens issued by Platform admin).
  */
 import { useState } from 'react';
+import { Key, Plus } from 'lucide-react';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMCard, ATMButton } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import {
   useGetSelfProfileQuery,
   useGetSelfTokensQuery,
@@ -43,89 +48,81 @@ export default function MerchantTokensPage() {
   const rawRows = tokens.data?.data;
   const rows = Array.isArray(rawRows) ? (rawRows as RechargeTokenDto[]) : [];
 
+  const columns: ATMTableColumn<RechargeTokenDto>[] = [
+    {
+      key: 'sequence',
+      header: 'Seq',
+      renderCell: (_v, t) => <span className="font-mono text-xs text-slate-500 dark:text-slate-400">#{t.sequence}</span>,
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      renderCell: (_v, t) => <span className="font-medium text-slate-900 dark:text-slate-100">{t.plan}</span>,
+    },
+    { key: 'validityDays', header: 'Validity', renderCell: (_v, t) => <span className="text-slate-600 dark:text-slate-300">{t.validityDays} days</span> },
+    { key: 'status', header: 'Status', renderCell: (_v, t) => <StatusBadge status={t.status} /> },
+    {
+      key: 'activatedAt',
+      header: 'Activated',
+      renderCell: (_v, t) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {t.activatedAt
+            ? new Date(t.activatedAt).toLocaleDateString()
+            : <span className="text-slate-400 dark:text-slate-500">Not yet</span>}
+        </span>
+      ),
+    },
+    {
+      key: 'expiresAt',
+      header: 'Expires',
+      renderCell: (_v, t) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {t.expiresAt ? new Date(t.expiresAt).toLocaleDateString() : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'priceCurrency',
+      header: 'Price',
+      align: 'right',
+      renderCell: (_v, t) => (
+        <span className="font-mono text-slate-900 dark:text-slate-100">
+          {t.priceCurrency > 0 ? t.priceCurrency.toFixed(2) : '—'}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">License Tokens</h1>
-          <p className="mt-1 text-sm text-surface-500">
-            {isStandalone
-              ? 'Purchase a new license token whenever you need to extend or renew your terminal.'
-              : `Tokens issued to your account by the ${brandName} operations team.`}
-          </p>
-        </div>
-        {isStandalone && (
-          <button
-            type="button"
-            onClick={() => setPurchaseOpen(true)}
-            className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-          >
-            Buy a token
-          </button>
-        )}
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Key}
+        iconColor="theme"
+        title="License Tokens"
+        subtitle={
+          isStandalone
+            ? 'Purchase a new license token whenever you need to extend or renew your terminal.'
+            : `Tokens issued to your account by the ${brandName} operations team.`
+        }
+        extraActions={
+          isStandalone ? (
+            <ATMButton onClick={() => setPurchaseOpen(true)} variant="primary" icon={Plus}>
+              Buy a token
+            </ATMButton>
+          ) : undefined
+        }
+      />
 
-      <div className="rounded-xl bg-white dark:bg-surface-800 shadow-sm">
-        {tokens.isLoading ? (
-          <div className="p-6 text-center text-sm text-surface-500">Loading tokens…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-sm text-surface-500">No tokens issued yet.</p>
-            {isStandalone && (
-              <button
-                type="button"
-                onClick={() => setPurchaseOpen(true)}
-                className="mt-3 text-sm font-medium text-primary-600 hover:underline"
-              >
-                Buy your first token â†'
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200 dark:border-surface-700 text-left text-xs uppercase tracking-wide text-surface-500">
-                  <th className="px-4 py-3">Seq</th>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Validity</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Activated</th>
-                  <th className="px-4 py-3">Expires</th>
-                  <th className="px-4 py-3 text-right">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((t) => (
-                  <tr
-                    key={t.tokenId}
-                    className="border-b border-surface-100 dark:border-surface-700/50 last:border-0"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-surface-500">#{t.sequence}</td>
-                    <td className="px-4 py-3 font-medium">{t.plan}</td>
-                    <td className="px-4 py-3">{t.validityDays} days</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={t.status} />
-                    </td>
-                    <td className="px-4 py-3 text-surface-600">
-                      {t.activatedAt
-                        ? new Date(t.activatedAt).toLocaleDateString()
-                        : <span className="text-surface-400">Not yet</span>}
-                    </td>
-                    <td className="px-4 py-3 text-surface-600">
-                      {t.expiresAt ? new Date(t.expiresAt).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {t.priceCurrency > 0 ? t.priceCurrency.toFixed(2) : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ATMCard padding="none" className="overflow-hidden">
+        <ATMTable
+          columns={columns}
+          data={rows}
+          isLoading={tokens.isLoading}
+          emptyMessage="No tokens issued yet."
+          onEmptyAction={isStandalone ? () => setPurchaseOpen(true) : undefined}
+          emptyActionLabel={isStandalone ? 'Buy your first token' : undefined}
+        />
+      </ATMCard>
 
       <TokenPurchaseDialog
         open={purchaseOpen}
@@ -139,10 +136,10 @@ export default function MerchantTokensPage() {
 function StatusBadge({ status }: { status: string }) {
   const tone =
     status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-    status === 'Consumed' ? 'bg-surface-100 text-surface-700 dark:bg-surface-700 dark:text-surface-300' :
+    status === 'Consumed' ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' :
     status === 'Expired' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
     status === 'Revoked' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-    'bg-surface-100 text-surface-700';
+    'bg-slate-100 text-slate-700';
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
       {status}

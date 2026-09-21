@@ -22,11 +22,11 @@ export const PlanStatsSummary: React.FC<PlanStatsSummaryProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#13151a]/80 p-5 shadow-sm"
+            className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-[#13151a]/80 p-5 shadow-sm"
           >
             <div className="space-y-3">
               <div className={cn(shimmer, 'h-10 w-10 rounded-xl')} />
@@ -42,7 +42,7 @@ export const PlanStatsSummary: React.FC<PlanStatsSummaryProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <ATMStatsCard
         label="Configured Plans"
         value={totalPlans}

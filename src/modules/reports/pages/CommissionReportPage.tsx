@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
-import { cn } from '@/lib/utils/cn';
+import { ATMCard, ATMStatsCard, ATMSkeleton } from '@/shared/ui';
+import { ChartSkeleton } from '../../dashboard/components/charts/ChartSkeleton';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import {
   BarChart,
@@ -11,36 +14,34 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Percent, TrendingUp, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Percent, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
 import { useCommissionReport, reportWindow } from '@/lib/hooks/useReports';
 import { useDeploymentCurrency } from '@/lib/hooks/useDeploymentCurrency';
 import { ReportExportMenu } from '../components/ReportExportMenu';
+import {
+  ReportWindowTabs,
+  ReportError,
+  ReportEmpty,
+  ReportKpis,
+  WINDOW_DAYS,
+  WINDOW_LABEL,
+  type ReportWindowChoice,
+} from '../components/ReportToolbar';
 
 /* ---------------------------------------------------------------------------
  * FRS-SAP-708 — Commission Report
  *
- * 2026-08-31 (de-fictioned). This page made ZERO API calls. It showed a 12-month
- * commission curve invented month by month, a ten-row per-merchant table of
- * invented companies (Metro Hospitality Group, Coastal Dining Co, …) with invented
- * transaction counts and invented commission, a settlement-status pie with invented
- * 65/22/13 percentages, and hardcoded 3.5% / 5.0% / 7.0% rate statistics. None of
- * it moved when the database changed.
- *
- * It now renders GET /reports/commission-detailed: real commission charges grouped
- * by merchant, by plan and by period, with the real pending/settled split derived
- * from invoice linkage.
+ * 2026-08-31 (de-fictioned). This page made ZERO API calls (see the removed
+ * narrative). It now renders GET /reports/commission-detailed: real commission
+ * charges grouped by merchant, by plan and by period, with the real
+ * pending/settled split derived from invoice linkage.
  * ------------------------------------------------------------------------- */
 
-type WindowChoice = '30d' | '90d' | '12m';
-const WINDOW_DAYS: Record<WindowChoice, number> = { '30d': 30, '90d': 90, '12m': 365 };
-const WINDOW_LABEL: Record<WindowChoice, string> = {
-  '30d': 'Last 30 days',
-  '90d': 'Last 90 days',
-  '12m': 'Last 12 months',
-};
+const CHART_GRID = 'var(--zen-border)';
+const CHART_TICK = '#94a3b8';
 
 function CommissionReportPage() {
-  const [windowChoice, setWindowChoice] = useState<WindowChoice>('12m');
+  const [windowChoice, setWindowChoice] = useState<ReportWindowChoice>('12m');
   const range = useMemo(() => reportWindow(WINDOW_DAYS[windowChoice]), [windowChoice]);
 
   const query = useCommissionReport(range);
@@ -65,99 +66,166 @@ function CommissionReportPage() {
     (query.error as any)?.message ||
     'Failed to load the commission report.';
 
-  const windows: WindowChoice[] = ['30d', '90d', '12m'];
   const hasData = (report?.byMerchant.length ?? 0) > 0 || (report?.totalEarned ?? 0) > 0;
+
+  const merchantColumns: ATMTableColumn<{
+    merchantId: string;
+    companyName: string;
+    transactionCount: number;
+    ratePercent: number;
+    totalCommission: number;
+  }>[] = [
+    {
+      key: 'companyName',
+      header: 'Merchant',
+      renderCell: (_v, m) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100">{m.companyName}</span>
+      ),
+    },
+    {
+      key: 'transactionCount',
+      header: 'Charges',
+      align: 'right',
+      renderCell: (_v, m) => <span className="text-slate-600 dark:text-slate-300">{m.transactionCount.toLocaleString()}</span>,
+    },
+    {
+      key: 'ratePercent',
+      header: 'Rate',
+      align: 'right',
+      renderCell: (_v, m) => <span className="text-slate-600 dark:text-slate-300">{m.ratePercent}%</span>,
+      width: '90px',
+    },
+    {
+      key: 'totalCommission',
+      header: 'Commission',
+      align: 'right',
+      renderCell: (_v, m) => (
+        <span className="font-bold text-slate-900 dark:text-slate-100">
+          {formatCurrencyOrDash(m.totalCommission, currency)}
+        </span>
+      ),
+    },
+  ];
+
+  const planColumns: ATMTableColumn<{
+    planName: string;
+    merchantCount: number;
+    totalCommission: number;
+  }>[] = [
+    {
+      key: 'planName',
+      header: 'Plan',
+      renderCell: (_v, p) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100">{p.planName}</span>
+      ),
+    },
+    {
+      key: 'merchantCount',
+      header: 'Merchants',
+      align: 'right',
+      renderCell: (_v, p) => <span className="text-slate-600 dark:text-slate-300">{p.merchantCount}</span>,
+    },
+    {
+      key: 'totalCommission',
+      header: 'Commission',
+      align: 'right',
+      renderCell: (_v, p) => (
+        <span className="font-bold text-slate-900 dark:text-slate-100">
+          {formatCurrencyOrDash(p.totalCommission, currency)}
+        </span>
+      ),
+    },
+  ];
+
+  const tooltipStyle = {
+    backgroundColor: 'var(--zen-card, #fff)',
+    border: '1px solid var(--zen-border)',
+    borderRadius: '0.75rem',
+    fontSize: '12px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+  };
 
   return (
     <div className="w-full space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Commission Report</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Commission charged to merchants — {WINDOW_LABEL[windowChoice].toLowerCase()}
-          </p>
-        </div>
-        <ReportExportMenu report="commission" window={range} disabled={isLoading || isError} />
-      </div>
+      <ATMPageHeader
+        icon={Percent}
+        iconColor="amber"
+        title="Commission Report"
+        subtitle={`Commission charged to merchants — ${WINDOW_LABEL[windowChoice].toLowerCase()}`}
+        extraActions={
+          <ReportExportMenu report="commission" window={range} disabled={isLoading || isError} />
+        }
+      />
 
       {isError && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
-          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
-            <AlertTriangle className="h-4 w-4" />
-            <span>{errorMessage}</span>
-          </div>
-          <ATMButton variant="ghost" size="sm" onClick={() => { void query.refetch(); }}>
-            Retry
-          </ATMButton>
-        </div>
+        <ReportError
+          message={errorMessage}
+          onRetry={() => {
+            void query.refetch();
+          }}
+        />
       )}
 
-      <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
-        {windows.map((w) => (
-          <button
-            key={w}
-            type="button"
-            onClick={() => setWindowChoice(w)}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              windowChoice === w
-                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
-            )}
-          >
-            {WINDOW_LABEL[w]}
-          </button>
-        ))}
-      </div>
+      <ReportWindowTabs value={windowChoice} onChange={setWindowChoice} />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="card" height="100px" />)}
-        </div>
+        <ReportKpis>
+          {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="card" height="118px" />)}
+        </ReportKpis>
       ) : report ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Tile icon={TrendingUp} label="Total charged" value={formatCurrencyOrDash(report.totalEarned, currency)} />
-          <Tile
-            icon={CheckCircle2}
+        <ReportKpis>
+          <ATMStatsCard
+            label="Total Charged"
+            value={formatCurrencyOrDash(report.totalEarned, currency)}
+            icon={TrendingUp}
+            variant="amber"
+            description="Commission earned, this window"
+          />
+          <ATMStatsCard
             label="Settled"
             value={formatCurrencyOrDash(report.settledAmount, currency)}
-            tone="emerald"
+            icon={CheckCircle2}
+            variant="emerald"
+            description="Invoiced and cleared"
           />
-          <Tile
-            icon={Clock}
-            label="Pending invoice"
+          <ATMStatsCard
+            label="Pending Invoice"
             value={formatCurrencyOrDash(report.pendingSettlement, currency)}
+            icon={Clock}
+            variant="slate"
+            description="Charged but not yet invoiced"
           />
-          <Tile icon={Percent} label="Average rate" value={`${report.averageRate}%`} />
-        </div>
+          <ATMStatsCard
+            label="Average Rate"
+            value={`${report.averageRate}%`}
+            icon={Percent}
+            variant="indigo"
+            description="Weighted commission rate"
+          />
+        </ReportKpis>
       ) : null}
 
       {!isLoading && report && !hasData && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-4 py-3 text-sm font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
           No commission was charged in this window. Commission is pulled from merchant
           revenue collections; a deployment with no Enterprise merchants trading records none.
         </div>
       )}
 
-      <ATMCard title="Commission Over Time">
+      <ATMCard title="Commission Over Time" loading={isLoading} skeleton={<ChartSkeleton height="300px" />}>
         {isLoading ? (
           <ATMSkeleton variant="rect" height="300px" />
         ) : periodChart.length === 0 ? (
-          <Empty text="No commission charges in this window." />
+          <ReportEmpty text="No commission charges in this window." className="h-[300px]" />
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={periodChart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-              <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: CHART_TICK }} stroke={CHART_TICK} />
+              <YAxis tick={{ fontSize: 12, fill: CHART_TICK }} stroke={CHART_TICK} width={70} />
               <Tooltip
                 formatter={(v) => formatCurrencyOrDash(Number(v ?? 0), currency)}
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface, #fff)',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.5rem',
-                  fontSize: '12px',
-                }}
+                contentStyle={tooltipStyle}
               />
               <Bar dataKey="commission" name="Commission" fill="#f59e0b" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -166,67 +234,33 @@ function CommissionReportPage() {
       </ATMCard>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ATMCard title="By Merchant">
+        <ATMCard
+          title="By Merchant"
+          padding="none"
+          className="overflow-hidden"
+          loading={isLoading}
+        >
           {isLoading ? (
             <ATMSkeleton variant="rect" height="220px" />
           ) : (report?.byMerchant.length ?? 0) === 0 ? (
-            <Empty text="No merchant was charged commission in this window." />
+            <ReportEmpty text="No merchant was charged commission in this window." className="h-[220px]" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <Th>Merchant</Th>
-                    <Th align="right">Charges</Th>
-                    <Th align="right">Rate</Th>
-                    <Th align="right">Commission</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {(report?.byMerchant ?? []).map((m) => (
-                    <tr key={m.merchantId}>
-                      <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{m.companyName}</td>
-                      <td className="py-3 text-right text-gray-700 dark:text-gray-300">{m.transactionCount}</td>
-                      <td className="py-3 text-right text-gray-700 dark:text-gray-300">{m.ratePercent}%</td>
-                      <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
-                        {formatCurrencyOrDash(m.totalCommission, currency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ATMTable columns={merchantColumns} data={[...(report?.byMerchant ?? [])]} emptyMessage="No data." />
           )}
         </ATMCard>
 
-        <ATMCard title="By Plan">
+        <ATMCard
+          title="By Plan"
+          padding="none"
+          className="overflow-hidden"
+          loading={isLoading}
+        >
           {isLoading ? (
             <ATMSkeleton variant="rect" height="220px" />
           ) : (report?.byPlan.length ?? 0) === 0 ? (
-            <Empty text="No commission by plan in this window." />
+            <ReportEmpty text="No commission by plan in this window." className="h-[220px]" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <Th>Plan</Th>
-                    <Th align="right">Merchants</Th>
-                    <Th align="right">Commission</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {(report?.byPlan ?? []).map((p) => (
-                    <tr key={p.planName}>
-                      <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{p.planName}</td>
-                      <td className="py-3 text-right text-gray-700 dark:text-gray-300">{p.merchantCount}</td>
-                      <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
-                        {formatCurrencyOrDash(p.totalCommission, currency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ATMTable columns={planColumns} data={[...(report?.byPlan ?? [])]} emptyMessage="No data." />
           )}
         </ATMCard>
       </div>
@@ -234,56 +268,6 @@ function CommissionReportPage() {
       {/* 2026-08-31: the settlement-status pie is gone. The API reports two real
           buckets — pending invoice and settled — shown as tiles above; the old chart
           added a third "Approved" state that the commission model does not have. */}
-    </div>
-  );
-}
-
-function Tile({
-  icon: Icon,
-  label,
-  value,
-  tone = 'default',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  tone?: 'default' | 'emerald';
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <p
-        className={cn(
-          'mt-1 text-2xl font-bold',
-          tone === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-gray-50',
-        )}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
-  return (
-    <th
-      className={cn(
-        'pb-2 text-xs font-medium text-gray-500 dark:text-gray-400',
-        align === 'right' ? 'text-right' : 'text-left',
-      )}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Empty({ text }: { text: string }) {
-  return (
-    <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-      {text}
     </div>
   );
 }

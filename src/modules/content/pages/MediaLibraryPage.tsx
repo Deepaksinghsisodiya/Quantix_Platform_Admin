@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Upload, Search, ImageOff, Trash2, AlertTriangle, Film } from 'lucide-react';
+import { Upload, Search, ImageOff, Trash2, AlertTriangle, Film, Images } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMSelectField, ATMBadge } from '@/shared/ui';
 import { useAppDispatch } from '@/app/hooks';
 import { formatDate } from '@/lib/utils/formatDate';
 import {
@@ -113,6 +113,8 @@ function MediaLibraryPage() {
       <ATMPageHeader
         title="Media Library"
         subtitle="Images and clips hosted by the platform for website content."
+        icon={Images}
+        iconColor="theme"
       />
 
       {isError && (
@@ -126,25 +128,25 @@ function MediaLibraryPage() {
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by file name, alt text or caption"
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm dark:border-gray-700 dark:bg-gray-900"
-          />
-        </div>
-        <select
+        <ATMTextField
+          name="search"
+          className="flex-1"
+          leftIcon={<Search className="h-4 w-4" />}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by file name, alt text or caption"
+        />
+        <ATMSelectField
+          name="folder"
+          className="sm:w-56"
           value={folder}
-          onChange={(e) => setFolder(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <option value="">All folders</option>
-          {folders.map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">
+          onChange={(v) => setFolder(String(v ?? ''))}
+          options={[
+            { value: '', label: 'All folders' },
+            ...folders.map((f) => ({ value: f, label: f })),
+          ]}
+        />
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-accent-600 px-4 py-3 text-sm font-semibold text-white hover:bg-accent-700">
           <Upload className="h-4 w-4" />
           {uploading ? 'Uploading…' : 'Upload'}
           <input
@@ -156,7 +158,7 @@ function MediaLibraryPage() {
         </label>
       </div>
 
-      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+      <p className="text-[11px] text-slate-500 dark:text-slate-400">
         PNG, JPEG, GIF and WebP images up to 10 MB; MP4 and WebM clips up to 100 MB. The file type
         is checked from the file itself, not its name. SVG is not accepted because it can carry
         script and these files are served from the API&apos;s own address.
@@ -168,15 +170,15 @@ function MediaLibraryPage() {
             {Array.from({ length: 10 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="140px" />)}
           </div>
         ) : assets.length === 0 ? (
-          <div className="flex h-56 flex-col items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex h-56 flex-col items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <ImageOff className="h-8 w-8" />
             <p>{search || folder ? 'Nothing matches that filter.' : 'No files yet. Upload the first one.'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {assets.map((a) => (
-              <div key={a.assetId} className="group overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                <button type="button" onClick={() => openEditor(a)} className="block w-full bg-gray-50 dark:bg-gray-900">
+              <div key={a.assetId} className="group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                <button type="button" onClick={() => openEditor(a)} className="block w-full bg-slate-50 dark:bg-[#13151a]">
                   {a.isVideo ? (
                     <div className="relative">
                       <video src={absoluteMediaUrl(a.url)} className="h-28 w-full object-cover" muted />
@@ -192,21 +194,21 @@ function MediaLibraryPage() {
                   )}
                 </button>
                 <div className="space-y-1 px-2.5 py-2">
-                  <p className="truncate text-xs font-semibold text-gray-900 dark:text-gray-100">{a.fileName}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                  <p className="truncate text-xs font-semibold text-slate-900 dark:text-slate-100">{a.fileName}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
                     {a.width && a.height ? `${a.width}×${a.height} · ` : ''}{humanSize(a.sizeBytes)} · {a.folder}
                   </p>
                   {/* Alt text is an accessibility requirement, so its absence is surfaced rather
                       than left for someone to notice on the live site. */}
                   {!a.altText && !a.isVideo && (
-                    <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">No alt text</p>
+                    <ATMBadge color="warning" label="No alt text" />
                   )}
                   <div className="flex items-center justify-between pt-0.5">
-                    <span className="text-[10px] text-gray-400">{formatDate(a.createdAt)}</span>
+                    <span className="text-[10px] text-slate-400">{formatDate(a.createdAt)}</span>
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(a)}
-                      className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                       aria-label={`Delete ${a.fileName}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -259,7 +261,7 @@ function MediaLibraryPage() {
 
       <ATMModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete this file?" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             {deleteTarget?.fileName} will be removed from the library and from the server&apos;s disk.
             If any published content still uses it the delete is refused and you will be told where.
           </p>

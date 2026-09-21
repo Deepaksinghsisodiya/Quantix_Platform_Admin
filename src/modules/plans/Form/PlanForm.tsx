@@ -108,9 +108,9 @@ const ToggleGrid: React.FC<{
   formik: any;
 }> = ({ label, count, items, field, formik }) => (
   <div className="space-y-1">
-    <div className="flex items-center justify-between px-1 border-b border-gray-100 dark:border-gray-800/65 pb-1">
-      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{label}</p>
-      <span className="text-[10px] text-gray-400 font-bold">{count}</span>
+    <div className="flex items-center justify-between px-1 border-b border-slate-100 dark:border-slate-800/65 pb-1">
+      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{label}</p>
+      <span className="text-[10px] text-slate-400 font-bold">{count}</span>
     </div>
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
       {items.map(({ key, label: name }) => {
@@ -118,9 +118,9 @@ const ToggleGrid: React.FC<{
         return (
           <div
             key={key}
-            className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-950/20"
+            className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-[#13151a]/20"
           >
-            <span className={cn('text-xs font-semibold', isOn ? 'text-gray-900 dark:text-white' : 'text-gray-400')}>
+            <span className={cn('text-xs font-semibold', isOn ? 'text-slate-900 dark:text-white' : 'text-slate-400')}>
               {name}
             </span>
             <ATMSwitch
@@ -264,7 +264,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         <div className="p-3.5 rounded-lg border border-[var(--zen-border)] bg-[var(--zen-surface)] flex items-center justify-between">
           <div>
             <p className="text-xs font-extrabold text-slate-900 dark:text-white">Auto-calculate from Rate Card</p>
-            <p className="text-[10px] text-gray-400 font-bold">Use active Rate Card formulas to calculate prices</p>
+            <p className="text-[10px] text-slate-400 font-bold">Use active Rate Card formulas to calculate prices</p>
           </div>
           <ATMSwitch
             name="autoCalcToggle"
@@ -284,7 +284,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-extrabold text-amber-700 dark:text-amber-500">Enable Manual Price Override</p>
-              <p className="text-[10px] text-gray-400 font-bold">Manually override calculated cycle prices with a custom price</p>
+              <p className="text-[10px] text-slate-400 font-bold">Manually override calculated cycle prices with a custom price</p>
             </div>
             <ATMSwitch
               name="isManualPrice"
@@ -324,7 +324,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             }}
             disabled={autoCalculate}
             required
-            className="bg-slate-50/50 dark:bg-zinc-950/20 font-semibold"
+            className="bg-slate-50/50 dark:bg-[#13151a]/20 font-semibold"
           />
           <ATMTextField
             name="priceVariation"
@@ -334,12 +334,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             value={formik.values.priceVariation}
             onChange={formik.handleChange}
             disabled={!autoCalculate}
-            className="bg-slate-50/50 dark:bg-zinc-950/20 font-semibold"
+            className="bg-slate-50/50 dark:bg-[#13151a]/20 font-semibold"
           />
         </div>
 
         <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)]">
-          <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">Active — Available for signups</p>
+          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Active — Available for signups</p>
           <ATMSwitch
             name="statusSwitch"
             checked={formik.values.status === 'Active'}
@@ -350,35 +350,35 @@ export const PlanForm: React.FC<PlanFormProps> = ({
 
         {/* Access Configuration — 2026-07-25: reordered to match Rate Card layout:
             Capacity & Limits → Operational Services → Payment Methods → Premium Modules. */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-4">
-          <p className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-4">
+          <p className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">
             Access Configuration — mirrors the V3 token dictionaries
           </p>
 
           {/* 1. Capacity & Limits */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between px-1 border-b border-gray-100 dark:border-gray-800/65 pb-1">
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Capacity & Limits</p>
-              <span className="text-[10px] text-gray-400 font-bold">0 = unlimited where applicable</span>
+            <div className="flex items-center justify-between px-1 border-b border-slate-100 dark:border-slate-800/65 pb-1">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Capacity & Limits</p>
+              <span className="text-[10px] text-slate-400 font-bold">0 = unlimited where applicable</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               {ALL_LIMITS.map(({ key, label: name }) => (
                 <div
                   key={key}
-                  className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-950/20"
+                  className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-[#13151a]/20"
                 >
                   <div className="min-w-0 flex-1">
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">
                       {name}
                     </span>
-                    <span className="text-[9px] font-mono text-gray-400 tracking-wider">{key}</span>
+                    <span className="text-[9px] font-mono text-slate-400 tracking-wider">{key}</span>
                   </div>
                   <input
                     type="number"
                     min={0}
                     value={formik.values.planLimits?.[key] ?? 0}
                     onChange={(e) => formik.setFieldValue(`planLimits.${key}`, Number(e.target.value) || 0)}
-                    className="w-20 h-8 text-center text-xs font-mono font-bold px-2 py-1 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all ml-2"
+                    className="w-20 h-8 text-center text-xs font-mono font-bold px-2 py-1 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-[#13151a] text-slate-900 dark:text-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all ml-2"
                   />
                 </div>
               ))}
@@ -414,9 +414,9 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         </div>
 
         {/* Display Features (marketing labels) */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+            <p className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Marketing Bullet Points ({formik.values.features.length})
             </p>
             <ATMButton
@@ -441,7 +441,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                     'h-7 w-7 rounded-lg flex items-center justify-center shrink-0 border transition-all cursor-pointer',
                     feat.included
                       ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-800'
                   )}
                 >
                   {feat.included ? <Check className="h-3 w-3 stroke-[3]" /> : <X className="h-3 w-3 stroke-[2]" />}

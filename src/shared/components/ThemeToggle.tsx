@@ -8,7 +8,7 @@ export const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-full text-gray-500 hover:text-accent-600 dark:text-gray-400 dark:hover:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-950/30 transition-all duration-300 active:scale-95 relative flex items-center justify-center"
+      className="p-2 rounded-xl text-slate-400 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/30 transition-all duration-300 active:scale-95 relative flex items-center justify-center"
       aria-label="Toggle Theme"
     >
       <div className="relative w-5 h-5">
@@ -21,7 +21,7 @@ export const ThemeToggle: React.FC = () => {
         <Moon
           className={`absolute inset-0 transform transition-all duration-500 ${
             theme === 'dark' ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
-          } text-accent-500 dark:text-accent-400`}
+          } text-primary-500 dark:text-primary-400`}
           size={20}
         />
       </div>

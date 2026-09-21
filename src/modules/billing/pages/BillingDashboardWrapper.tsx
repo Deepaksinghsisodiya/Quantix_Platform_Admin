@@ -71,10 +71,10 @@ export interface EscalationStep {
 }
 
 const REVENUE_TYPE_COLORS: Record<string, string> = {
-  Subscription: '#8b5cf6',
-  Subscriptions: '#8b5cf6',
-  TokenPurchase: '#22c55e',
-  'Token Sales': '#22c55e',
+  Subscription: '#0f62fe',
+  Subscriptions: '#0f62fe',
+  TokenPurchase: '#10b981',
+  'Token Sales': '#10b981',
   Commission: '#f59e0b',
   Usage: '#06b6d4',
   AddOn: '#ec4899',

@@ -25,7 +25,6 @@ import {
   CreditCard,
   CheckCircle2,
   AlertTriangle,
-  Loader2,
   RefreshCw,
 } from 'lucide-react';
 
@@ -131,7 +130,7 @@ export function InvoiceDetailPage() {
         date: issuedDate,
         by: 'System',
         icon: <FileText className="h-4 w-4" />,
-        color: 'text-gray-500',
+        color: 'text-slate-500',
       },
       ...(paidDate
         ? [
@@ -227,7 +226,7 @@ export function InvoiceDetailPage() {
         <ATMCard>
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <AlertTriangle className="h-10 w-10 text-red-500" />
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               {isError ? 'Failed to load invoice.' : 'Invoice not found.'}
             </p>
             <ATMButton
@@ -245,15 +244,17 @@ export function InvoiceDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
+        icon={FileText}
+        iconColor="theme"
         title={
           <div className="flex items-center gap-3">
             <span>{invoice.invoiceNumber}</span>
             <StatusBadge status={invoice.status} size="md" />
             {invoiceQuery.isFetching && !invoiceQuery.isLoading && (
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+              <ATMSkeleton width="72px" height="22px" className="rounded-full" />
             )}
           </div>
         }
@@ -297,63 +298,63 @@ export function InvoiceDetailPage() {
           {/* Line items */}
           <ATMCard title="Line Items">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead>
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50">
                       Description
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50">
                       Qty
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50">
                       Unit Price
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50">
                       Total
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                   {invoice.lineItems.map((item) => (
                     <tr key={item.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
                         {item.description}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-slate-300">
                         {item.quantity}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-slate-300">
                         {formatCurrencyOrDash(item.unitPrice, invoice.currency)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
                         {formatCurrencyOrDash(item.total, invoice.currency)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-gray-300 dark:border-gray-600">
-                    <td colSpan={3} className="px-4 py-2 text-right text-sm text-gray-500 dark:text-gray-400">
+                  <tr className="border-t-2 border-slate-300 dark:border-slate-600">
+                    <td colSpan={3} className="px-4 py-2 text-right text-sm text-slate-500 dark:text-slate-400">
                       Subtotal
                     </td>
-                    <td className="px-4 py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-2 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
                       {formatCurrencyOrDash(invoice.subtotal, invoice.currency)}
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan={3} className="px-4 py-2 text-right text-sm text-gray-500 dark:text-gray-400">
+                    <td colSpan={3} className="px-4 py-2 text-right text-sm text-slate-500 dark:text-slate-400">
                       Tax ({invoice.taxRate}%)
                     </td>
-                    <td className="px-4 py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-2 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
                       {formatCurrencyOrDash(invoice.tax, invoice.currency)}
                     </td>
                   </tr>
-                  <tr className="border-t border-gray-200 dark:border-gray-700">
-                    <td colSpan={3} className="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <tr className="border-t border-slate-200 dark:border-slate-700">
+                    <td colSpan={3} className="px-4 py-3 text-right text-sm font-bold text-slate-900 dark:text-slate-100">
                       Grand Total
                     </td>
-                    <td className="px-4 py-3 text-right text-lg font-bold text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-3 text-right text-lg font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrencyOrDash(invoice.grandTotal, invoice.currency)}
                     </td>
                   </tr>
@@ -368,18 +369,18 @@ export function InvoiceDetailPage() {
               {invoice.timeline.map((event, idx) => (
                 <div key={event.id} className="flex gap-3">
                   <div className="relative flex flex-col items-center">
-                    <div className={cn('flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800', event.color)}>
+                    <div className={cn('flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800', event.color)}>
                       {event.icon}
                     </div>
                     {idx < invoice.timeline.length - 1 && (
-                      <div className="mt-1 h-full w-px bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-1 h-full w-px bg-slate-200 dark:bg-slate-700" />
                     )}
                   </div>
                   <div className="pb-4">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {event.event}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {formatDate(event.date, 'datetime')} by {event.by}
                     </p>
                   </div>
@@ -395,26 +396,26 @@ export function InvoiceDetailPage() {
           <ATMCard title="Invoice Details">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Invoice #</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{invoice.invoiceNumber}</span>
+                <span className="text-slate-500 dark:text-slate-400">Invoice #</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{invoice.invoiceNumber}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Issued</span>
-                <span className="text-gray-700 dark:text-gray-300">{formatDate(invoice.issuedDate)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Issued</span>
+                <span className="text-slate-700 dark:text-slate-300">{formatDate(invoice.issuedDate)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Due Date</span>
-                <span className="text-gray-700 dark:text-gray-300">{formatDate(invoice.dueDate)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Due Date</span>
+                <span className="text-slate-700 dark:text-slate-300">{formatDate(invoice.dueDate)}</span>
               </div>
               {invoice.paidDate && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Paid</span>
+                  <span className="text-slate-500 dark:text-slate-400">Paid</span>
                   <span className="text-emerald-600 dark:text-emerald-400">{formatDate(invoice.paidDate)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Merchant</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{invoice.merchantName}</span>
+                <span className="text-slate-500 dark:text-slate-400">Merchant</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{invoice.merchantName}</span>
               </div>
             </div>
           </ATMCard>
@@ -423,28 +424,28 @@ export function InvoiceDetailPage() {
           <ATMCard title="Payment Information">
             {invoice.payment ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
-                  <CreditCard className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                  <CreditCard className="h-5 w-5 text-slate-500 dark:text-slate-400" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {invoice.payment.method}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {invoice.payment.transactionId}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Date</span>
-                  <span className="text-gray-700 dark:text-gray-300">{formatDate(invoice.payment.date, 'datetime')}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Date</span>
+                  <span className="text-slate-700 dark:text-slate-300">{formatDate(invoice.payment.date, 'datetime')}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Status</span>
+                  <span className="text-slate-500 dark:text-slate-400">Status</span>
                   <StatusBadge status={invoice.payment.status} />
                 </div>
               </div>
             ) : (
-              <p className="py-3 text-sm text-gray-500 dark:text-gray-400">
+              <p className="py-3 text-sm text-slate-500 dark:text-slate-400">
                 No payment recorded yet.
               </p>
             )}
@@ -492,7 +493,7 @@ export function InvoiceDetailPage() {
             placeholder={invoice.grandTotal.toFixed(2)}
             max={invoice.grandTotal}
             step="0.01"
-            prefix={<span className="text-sm font-semibold text-gray-400">$</span>}
+            prefix={<span className="text-sm font-semibold text-slate-400">{invoice.currency}</span>}
             error={parseFloat(refundAmount) > invoice.grandTotal ? "Cannot exceed grand total" : undefined}
           />
           <ATMTextArea

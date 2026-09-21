@@ -18,7 +18,6 @@ import {
   Key,
   LayoutDashboard,
   LifeBuoy,
-  Loader2,
   LogOut,
   User,
   Wallet,
@@ -123,13 +122,7 @@ const MerchantShell: React.FC = () => {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <Suspense
-          fallback={
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-            </div>
-          }
-        >
+        <Suspense fallback={null}>
           <div key={location.pathname}>
             <Outlet />
           </div>

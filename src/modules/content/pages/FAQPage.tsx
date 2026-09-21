@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronUp, Trash2, Pencil, AlertTriangle, GripVertical, EyeOff } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Trash2, Pencil, AlertTriangle, GripVertical, EyeOff, HelpCircle } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge, ATMTextArea, ATMSelectField } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
 import type { FAQ } from '@/lib/types';
 import {
@@ -167,6 +167,8 @@ function FAQPage() {
       <ATMPageHeader
         title="FAQ"
         subtitle="Questions and answers published on the website help centre."
+        icon={HelpCircle}
+        iconColor="theme"
         action={{ label: 'Add FAQ', onClick: openCreate, icon: Plus }}
       />
 
@@ -182,15 +184,15 @@ function FAQPage() {
 
       {/* Categories come from the API. The old page hardcoded four, so a FAQ filed under
           anything else was unreachable. */}
-      <div className="inline-flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="inline-flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-[#13151a]">
         <button
           type="button"
           onClick={() => setCategory(ALL)}
           className={cn(
             'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
             category === ALL
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
+              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
           )}
         >
           All ({faqs.length})
@@ -203,8 +205,8 @@ function FAQPage() {
             className={cn(
               'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
               category === c
-                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
             )}
           >
             {c} ({faqs.filter((f) => f.category === c).length})
@@ -218,11 +220,11 @@ function FAQPage() {
             {Array.from({ length: 5 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="56px" />)}
           </div>
         ) : visible.length === 0 ? (
-          <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex h-40 items-center justify-center text-sm text-slate-500 dark:text-slate-400">
             {faqs.length === 0 ? 'No FAQs yet. Add the first one.' : 'No FAQs in this category.'}
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {visible.map((faq) => (
               <div
                 key={faq.faqId}
@@ -233,24 +235,22 @@ function FAQPage() {
                 className={cn(
                   'py-3 transition-colors',
                   dragId === faq.faqId && 'opacity-50',
-                  !faq.isActive && 'bg-gray-50/60 dark:bg-gray-900/40',
+                  !faq.isActive && 'bg-slate-50/60 dark:bg-[#13151a]/40',
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <GripVertical className="mt-1 h-4 w-4 cursor-grab text-gray-300 dark:text-gray-600" />
+                  <GripVertical className="mt-1 h-4 w-4 cursor-grab text-slate-300 dark:text-slate-600" />
                   <button
                     type="button"
                     className="flex-1 text-left"
                     onClick={() => setExpandedId(expandedId === faq.faqId ? null : faq.faqId)}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{faq.question}</span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{faq.question}</span>
                       {faq.category && <ATMBadge color="default" label={faq.category} />}
                       {faq.merchantType && <ATMBadge color="primary" label={faq.merchantType} />}
                       {!faq.isActive && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
-                          <EyeOff className="h-3 w-3" /> Hidden
-                        </span>
+                        <ATMBadge color="warning" icon={<EyeOff className="h-3 w-3" />} label="Hidden" />
                       )}
                     </div>
                   </button>
@@ -258,7 +258,7 @@ function FAQPage() {
                     <button
                       type="button"
                       onClick={() => { void togglePublished(faq); }}
-                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+                      className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
                       aria-label={faq.isActive ? 'Hide from the website' : 'Publish to the website'}
                     >
                       <EyeOff className="h-4 w-4" />
@@ -266,7 +266,7 @@ function FAQPage() {
                     <button
                       type="button"
                       onClick={() => openEdit(faq)}
-                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+                      className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
                       aria-label={`Edit ${faq.question}`}
                     >
                       <Pencil className="h-4 w-4" />
@@ -274,7 +274,7 @@ function FAQPage() {
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(faq)}
-                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                      className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                       aria-label={`Delete ${faq.question}`}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -282,7 +282,7 @@ function FAQPage() {
                     <button
                       type="button"
                       onClick={() => setExpandedId(expandedId === faq.faqId ? null : faq.faqId)}
-                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                       aria-label="Toggle answer"
                     >
                       {expandedId === faq.faqId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -290,7 +290,7 @@ function FAQPage() {
                   </div>
                 </div>
                 {expandedId === faq.faqId && (
-                  <p className="ml-7 mt-2 whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300">{faq.answer}</p>
+                  <p className="ml-7 mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{faq.answer}</p>
                 )}
               </div>
             ))}
@@ -311,15 +311,13 @@ function FAQPage() {
             value={draft.question}
             onChange={(e) => setDraft((d) => ({ ...d, question: e.target.value }))}
           />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Answer</label>
-            <textarea
-              rows={6}
-              value={draft.answer}
-              onChange={(e) => setDraft((d) => ({ ...d, answer: e.target.value }))}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            />
-          </div>
+          <ATMTextArea
+            name="answer"
+            label="Answer"
+            rows={6}
+            value={draft.answer}
+            onChange={(e) => setDraft((d) => ({ ...d, answer: e.target.value }))}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <ATMTextField
               name="category"
@@ -328,18 +326,17 @@ function FAQPage() {
               onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
               helperText="Groups the accordion. Leave blank for none."
             />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Applies to</label>
-              <select
-                value={draft.merchantType}
-                onChange={(e) => setDraft((d) => ({ ...d, merchantType: e.target.value }))}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              >
-                <option value="">Every merchant</option>
-                <option value="Enterprise">Enterprise only</option>
-                <option value="Standalone">Standalone only</option>
-              </select>
-            </div>
+            <ATMSelectField
+              name="merchantType"
+              label="Applies to"
+              value={draft.merchantType}
+              onChange={(v) => setDraft((d) => ({ ...d, merchantType: String(v ?? '') }))}
+              options={[
+                { value: '', label: 'Every merchant' },
+                { value: 'Enterprise', label: 'Enterprise only' },
+                { value: 'Standalone', label: 'Standalone only' },
+              ]}
+            />
             <ATMTextField
               name="sortOrder"
               label="Order"
@@ -363,7 +360,7 @@ function FAQPage() {
 
       <ATMModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete this FAQ?" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             &ldquo;{deleteTarget?.question}&rdquo; will be removed from the website help centre.
           </p>
           <div className="flex justify-end gap-2">

@@ -30,7 +30,7 @@ export const ATMConfirmModal: React.FC<Props> = ({
   isLoading = false,
   variant = 'info',
   size = 'md',
-  closeOnOutsideClick = true,
+  closeOnOutsideClick = false,
 }) => {
   return (
     <ATMModal

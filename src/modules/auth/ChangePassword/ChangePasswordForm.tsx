@@ -36,7 +36,7 @@ export const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isSubmit
 
           {/* Title Header */}
           <div className="text-center mb-8 space-y-2">
-            <h1 className="text-xl font-bold text-surface-900 dark:text-surface-555">
+            <h1 className="text-xl font-bold text-surface-900 dark:text-surface-50">
               Set a New Password
             </h1>
             <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed px-2">

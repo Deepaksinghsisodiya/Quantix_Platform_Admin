@@ -6,6 +6,7 @@ import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { cn } from '@/lib/utils/cn';
 import {
   useGetGracePeriodsQuery,
@@ -129,7 +130,7 @@ function PolicyCard({ policy, label, icon: Icon }: { policy: GracePeriodPolicy; 
           </div>
           <div className="min-w-0">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{label}</h3>
-            <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Grace period policy — stamped into tokens at issuance</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Grace period policy — stamped into tokens at issuance</p>
           </div>
           <ATMButton
             variant="primary"
@@ -222,29 +223,31 @@ export function GracePeriodConfigPage() {
   const policies = data?.data ?? [];
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
-      {/* Header — title matches the sidebar label. */}
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
-          <Clock size={20} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            Grace Period
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
-            Four stages anchored to the token expiry date — Warning before expiry; Degraded, Restricted
-            and Suspended after it. Configured per plan type, stamped into tokens at issuance, and
-            overridable in Token Config.
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Clock}
+        iconColor="theme"
+        title="Grace Period"
+        subtitle="Four stages anchored to the token expiry date — Warning before expiry; Degraded, Restricted and Suspended after it. Configured per plan type, stamped into tokens at issuance, and overridable in Token Config."
+      />
 
       {isLoading ? (
         <div className="space-y-4">
-          <ATMSkeleton className="h-48 w-full" />
-          <ATMSkeleton className="h-48 w-full" />
-          <ATMSkeleton className="h-48 w-full" />
+          <div className="space-y-3 animate-pulse">
+            <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+          </div>
+          <div className="space-y-3 animate-pulse">
+            <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+          </div>
+          <div className="space-y-3 animate-pulse">
+            <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+          </div>
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-200/80 dark:border-red-900/50 bg-red-50/60 dark:bg-red-950/20 p-8 text-center">

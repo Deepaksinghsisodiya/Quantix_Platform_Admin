@@ -12,7 +12,8 @@ import { ROUTES } from '@/lib/config/routes';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
-import { ATMButton } from '@/shared/ui/ATMButton';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import {
   RevenueChart,
   GrowthChart,
@@ -54,14 +55,15 @@ import {
   Pause,
   Play,
   LayoutGrid,
+  LayoutDashboard,
   Eye,
   EyeOff,
-  ExternalLink,
   Wrench,
   Globe,
   CreditCard,
   Percent,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type DateRangeKey = '7d' | '30d' | '90d' | '12m';
 
@@ -107,13 +109,14 @@ interface AdminDashboardProps {
   hasError: boolean;
 }
 
+type KpiVariant = 'accent' | 'emerald' | 'amber' | 'rose' | 'slate' | 'indigo' | 'purple';
+
 interface KpiCardData {
   title: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   value: string;
-  trend?: { value: number; direction: 'up' | 'down' };
-  details: { label: string; value: string }[];
-  color: string;
+  description: string;
+  variant: KpiVariant;
 }
 
 interface QuickAction {
@@ -240,78 +243,6 @@ function StaggeredFadeIn({ index, children, className }: { index: number; childr
   );
 }
 
-// KPI widget card
-function KpiCard({ card, index }: { card: KpiCardData; index: number }) {
-  const isPositive = card.trend?.direction === 'up';
-  return (
-    <StaggeredFadeIn index={index}>
-      <div
-        className={cn(
-          'group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/90 p-5 backdrop-blur-xl',
-          'dark:border-white/[0.07] dark:bg-zinc-900/70',
-          'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/40 hover:border-zinc-300 dark:hover:border-white/[0.14]',
-        )}
-      >
-        {/* Top glowing accent border */}
-        <div
-          className="absolute inset-x-0 top-0 h-[2.5px] opacity-80 transition-all duration-300 group-hover:h-[3.5px] group-hover:opacity-100"
-          style={{
-            background: `linear-gradient(90deg, ${card.color}, transparent 80%)`,
-          }}
-        />
-
-        {/* Ambient background glow spotlight */}
-        <div
-          className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full blur-2xl opacity-10 transition-opacity duration-500 group-hover:opacity-20"
-          style={{ backgroundColor: card.color }}
-        />
-
-        <div className="relative flex items-start justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-lg border border-zinc-200/60 bg-zinc-100/80 dark:border-zinc-700/60 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 transition-transform duration-300 group-hover:scale-110"
-                style={{ color: card.color }}
-              >
-                {card.icon}
-              </span>
-              <span>{card.title}</span>
-            </div>
-            <p className="font-mono text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-white pt-0.5">
-              {card.value}
-            </p>
-          </div>
-          {card.trend && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-xs',
-                isPositive
-                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400'
-                  : 'bg-red-500/10 text-red-600 border border-red-500/20 dark:bg-red-500/15 dark:text-red-400',
-              )}
-            >
-              {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-              {Math.abs(card.trend.value)}%
-            </span>
-          )}
-        </div>
-
-        <div className="relative mt-4 space-y-1.5 pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
-          {card.details.map((d, dIdx) => (
-            <div
-              key={`${d.label}-${dIdx}`}
-              className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400"
-            >
-              <span className="font-medium">{d.label}</span>
-              <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">{d.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </StaggeredFadeIn>
-  );
-}
-
 // Service status widget card
 function ServiceCard({ service }: { service: ServiceStatus }) {
   const statusConfig = {
@@ -324,17 +255,17 @@ function ServiceCard({ service }: { service: ServiceStatus }) {
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/90 px-4 py-3.5 backdrop-blur-xl',
-        'dark:border-white/[0.07] dark:bg-zinc-900/70',
-        'transition-all duration-300 hover:shadow-md hover:border-zinc-300 dark:hover:border-white/[0.14]',
+        'flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3.5',
+        'dark:border-gray-800/80 dark:bg-[#13151a]/95',
+        'transition-all duration-300 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700',
       )}
     >
       {config.icon}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
           {service.name}
         </p>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium font-mono">
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium font-mono">
           {service.responseTimeMs > 0 ? `${service.responseTimeMs}ms · ` : ''}{service.uptime} uptime
         </p>
       </div>
@@ -354,10 +285,10 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <ATMCard title="Configure Widgets" extra={<button type="button" onClick={onClose} className="text-xs font-bold text-gray-400 hover:text-gray-600">Close</button>}>
+    <ATMCard title="Configure Widgets" extra={<button type="button" onClick={onClose} className="text-xs font-bold text-slate-400 hover:text-slate-600">Close</button>}>
       <div className="space-y-4">
         <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Views</p>
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Views</p>
           <div className="flex flex-wrap gap-1.5">
             {VIEW_PRESETS.map((preset) => (
               <button
@@ -368,7 +299,7 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
                   'rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-300',
                   activePreset === preset
                     ? 'bg-accent-600 text-white shadow-md shadow-accent-500/25'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800',
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800',
                 )}
               >
                 {preset}
@@ -378,24 +309,24 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Sections (top to bottom)</p>
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Sections (top to bottom)</p>
           <ul className="space-y-1">
             {ordered.map((widget, idx) => (
               <li
                 key={widget.id}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-300 dark:bg-gray-950/40 dark:hover:bg-gray-900/60 transition-colors"
+                className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50/50 hover:bg-slate-100/50 dark:text-slate-300 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 transition-colors"
               >
                 <input
                   type="checkbox"
                   checked={widget.visible}
                   onChange={() => toggleWidget(widget.id)}
-                  className="h-4 w-4 rounded border-gray-300 text-accent-600 focus:ring-accent-500 dark:border-gray-800"
+                  className="h-4 w-4 rounded border-slate-300 text-accent-600 focus:ring-accent-500 dark:border-slate-800"
                   aria-label={`${widget.visible ? 'Hide' : 'Show'} ${widget.label}`}
                 />
                 {widget.visible ? (
-                  <Eye className="h-4 w-4 text-gray-400" />
+                  <Eye className="h-4 w-4 text-slate-400" />
                 ) : (
-                  <EyeOff className="h-4 w-4 text-gray-400" />
+                  <EyeOff className="h-4 w-4 text-slate-400" />
                 )}
                 <span className="flex-1 truncate">{widget.label}</span>
                 <div className="flex items-center gap-1">
@@ -404,10 +335,10 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
                     onClick={() => reorderWidget(widget.id, idx - 1)}
                     disabled={idx === 0}
                     className={cn(
-                      'rounded p-1 text-gray-400 transition-colors',
+                      'rounded p-1 text-slate-400 transition-colors',
                       idx === 0
                         ? 'cursor-not-allowed opacity-30'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200',
+                        : 'hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200',
                     )}
                     aria-label={`Move ${widget.label} up`}
                     title="Move up"
@@ -419,10 +350,10 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
                     onClick={() => reorderWidget(widget.id, idx + 1)}
                     disabled={idx === ordered.length - 1}
                     className={cn(
-                      'rounded p-1 text-gray-400 transition-colors',
+                      'rounded p-1 text-slate-400 transition-colors',
                       idx === ordered.length - 1
                         ? 'cursor-not-allowed opacity-30'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200',
+                        : 'hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200',
                     )}
                     aria-label={`Move ${widget.label} down`}
                     title="Move down"
@@ -450,9 +381,9 @@ function WidgetConfigPanel({ onClose }: { onClose: () => void }) {
 // Mini stat displays
 function StatMini({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div className={cn('text-center bg-gray-50/50 dark:bg-gray-950/20 p-2.5 rounded-xl border border-gray-200/50 dark:border-gray-800', className)}>
-      <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className="text-base font-extrabold text-gray-900 dark:text-white mt-0.5">{value}</p>
+    <div className={cn('text-center bg-slate-50/50 dark:bg-slate-950/20 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800', className)}>
+      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</p>
+      <p className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5">{value}</p>
     </div>
   );
 }
@@ -506,56 +437,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return [
       {
         title: 'Total Active Merchants',
-        icon: <Users className="h-3.5 w-3.5" />,
+        icon: Users,
         value: (summary?.activeMerchants ?? 0).toLocaleString(),
-        details: [
-          { label: 'Enterprise', value: (summary?.enterpriseMerchants ?? 0).toLocaleString() },
-          { label: 'Standalone', value: (summary?.standaloneMerchants ?? 0).toLocaleString() },
-          { label: 'Total', value: (summary?.totalMerchants ?? 0).toLocaleString() },
-        ],
-        color: '#3b82f6',
+        description: `Enterprise ${(summary?.enterpriseMerchants ?? 0).toLocaleString()} · Standalone ${(summary?.standaloneMerchants ?? 0).toLocaleString()} · Total ${(summary?.totalMerchants ?? 0).toLocaleString()}`,
+        variant: 'accent',
       },
       {
         title: 'New Signups (Month)',
-        icon: <UserPlus className="h-3.5 w-3.5" />,
+        icon: UserPlus,
         value: (summary?.newSignupsThisMonth ?? 0).toLocaleString(),
-        details: [
-          { label: 'Enterprise', value: (summary?.enterpriseSignupsThisMonth ?? 0).toLocaleString() },
-          { label: 'Standalone', value: (summary?.standaloneSignupsThisMonth ?? 0).toLocaleString() },
-        ],
-        color: '#06b6d4',
+        description: `Enterprise ${(summary?.enterpriseSignupsThisMonth ?? 0).toLocaleString()} · Standalone ${(summary?.standaloneSignupsThisMonth ?? 0).toLocaleString()}`,
+        variant: 'indigo',
       },
       {
         title: 'Total Revenue (Month)',
-        icon: <DollarSign className="h-3.5 w-3.5" />,
+        icon: DollarSign,
         value: formatCurrencyOrDash(summary?.totalRevenueThisMonth ?? 0, currency),
-        details: [
-          { label: 'Subscription', value: formatCurrencyOrDash(summary?.subscriptionRevenue ?? 0, currency) },
-          { label: 'Token Sales', value: formatCurrencyOrDash(summary?.tokenRevenue ?? 0, currency) },
-          { label: 'Commission', value: formatCurrencyOrDash(summary?.commissionRevenue ?? 0, currency) },
-        ],
-        color: '#8b5cf6',
+        description: `Subscription ${formatCurrencyOrDash(summary?.subscriptionRevenue ?? 0, currency)} · Token sales ${formatCurrencyOrDash(summary?.tokenRevenue ?? 0, currency)} · Commission ${formatCurrencyOrDash(summary?.commissionRevenue ?? 0, currency)}`,
+        variant: 'purple',
       },
       {
         title: 'MRR / ARR',
-        icon: <Activity className="h-3.5 w-3.5" />,
+        icon: Activity,
         value: formatCurrencyOrDash(summary?.mrr ?? 0, currency),
-        details: [
-          { label: 'ARR', value: formatCurrencyOrDash(summary?.arr ?? 0, currency) },
-          { label: 'Enterprise ARPU', value: formatCurrencyOrDash(revenue?.enterpriseARPU ?? 0, currency) },
-          { label: 'Standalone ARPU', value: formatCurrencyOrDash(revenue?.standaloneARPU ?? 0, currency) },
-        ],
-        color: '#22c55e',
+        description: `ARR ${formatCurrencyOrDash(summary?.arr ?? 0, currency)} · Enterprise ARPU ${formatCurrencyOrDash(revenue?.enterpriseARPU ?? 0, currency)} · Standalone ARPU ${formatCurrencyOrDash(revenue?.standaloneARPU ?? 0, currency)}`,
+        variant: 'emerald',
       },
       {
         title: 'Open Tickets',
-        icon: <TicketCheck className="h-3.5 w-3.5" />,
+        icon: TicketCheck,
         value: (summary?.openSupportTickets ?? 0).toLocaleString(),
-        details: [
-          { label: 'In Grace Period', value: (summary?.merchantsInGracePeriod ?? 0).toLocaleString() },
-          { label: 'Compliance Pending', value: (summary?.pendingComplianceRequests ?? 0).toLocaleString() },
-        ],
-        color: '#f59e0b',
+        description: `In grace period ${(summary?.merchantsInGracePeriod ?? 0).toLocaleString()} · Compliance pending ${(summary?.pendingComplianceRequests ?? 0).toLocaleString()}`,
+        variant: 'amber',
       },
       // 2026-08-30: tokens exist only for Standalone merchants, and the token-metrics
       // endpoint is platform-wide (no type filter). Under an Enterprise filter this card
@@ -565,14 +478,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         ? []
         : [{
             title: 'Token Generation',
-            icon: <Key className="h-3.5 w-3.5" />,
+            icon: Key,
             value: (tokenMetrics?.totalGenerated ?? 0).toLocaleString(),
-            details: [
-              { label: 'Active', value: (tokenMetrics?.activeTokens ?? 0).toLocaleString() },
-              { label: 'Expired', value: (tokenMetrics?.expiredTokens ?? 0).toLocaleString() },
-              { label: 'Revenue', value: formatCurrencyOrDash(tokenMetrics?.revenueFromTokens ?? 0, tokenMetrics?.revenueCurrency ?? platformCurrency) },
-            ],
-            color: '#ec4899',
+            description: `Active ${(tokenMetrics?.activeTokens ?? 0).toLocaleString()} · Expired ${(tokenMetrics?.expiredTokens ?? 0).toLocaleString()} · Revenue ${formatCurrencyOrDash(tokenMetrics?.revenueFromTokens ?? 0, tokenMetrics?.revenueCurrency ?? platformCurrency)}`,
+            variant: 'rose' as const,
           }]),
     ];
   }, [summary, revenue, tokenMetrics, platformCurrency, merchantTypeFilter]);
@@ -585,7 +494,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         label: 'New Merchant Signup',
         icon: <Plus className="h-4 w-4" />,
         route: '/merchants/signups/new',
-        color: 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm',
+        color: 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm',
         permission: { module: 'merchants', action: 'create' },
       },
       {
@@ -599,35 +508,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         label: 'View Open Tickets',
         icon: <TicketCheck className="h-4 w-4" />,
         route: ROUTES.SUPPORT.QUEUE,
-        color: 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60',
+        color: 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 dark:bg-slate-800/70 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60',
         permission: { module: 'tickets', action: 'view' },
       },
       {
         label: 'View Overdue Invoices',
         icon: <CreditCard className="h-4 w-4" />,
         route: ROUTES.BILLING.INVOICES,
-        color: 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60',
+        color: 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 dark:bg-slate-800/70 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60',
         permission: { module: 'invoices', action: 'view' },
       },
       {
         label: 'View Commission Overview',
         icon: <Percent className="h-4 w-4" />,
         route: ROUTES.COMMISSION.OVERVIEW,
-        color: 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60',
+        color: 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 dark:bg-slate-800/70 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60',
         permission: { module: 'commission', action: 'view' },
       },
       {
         label: 'Trigger Maintenance',
         icon: <Wrench className="h-4 w-4" />,
         route: ROUTES.SETTINGS.PLATFORM,
-        color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200',
+        color: 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200',
         permission: { module: 'settings', action: 'update' },
       },
       {
         label: 'Platform Settings',
         icon: <Settings className="h-4 w-4" />,
         route: ROUTES.SETTINGS.PLATFORM,
-        color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200',
+        color: 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200',
         permission: { module: 'settings', action: 'update' },
       },
     ],
@@ -684,17 +593,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {isLoadingHeader
           ? Array.from({ length: 6 }, (_, i) => (
-              <ATMSkeleton key={i} height="140px" className="rounded-2xl animate-pulse" />
+              <ATMSkeleton key={i} height="150px" className="rounded-2xl animate-pulse" />
             ))
           : kpiCards.map((card, i) => (
-              <KpiCard key={card.title} card={card} index={i} />
+              <StaggeredFadeIn key={card.title} index={i}>
+                <ATMStatsCard
+                  label={card.title}
+                  value={card.value}
+                  icon={card.icon}
+                  variant={card.variant}
+                  description={card.description}
+                />
+              </StaggeredFadeIn>
             ))}
       </div>
     ),
     'revenue-chart': (
       <ATMCard
         title="Revenue Trend"
-        extra={<span className="text-xs font-semibold text-gray-500">By period</span>}
+        extra={<span className="text-xs font-semibold text-slate-500">By period</span>}
       >
         <RevenueChart
           data={revenueData}
@@ -716,13 +633,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className={cn(
                 'rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all duration-300',
                 showTypeBreakdown
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400',
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-400',
               )}
             >
               By Type
             </button>
-            <span className="text-xs font-medium text-gray-500">
+            <span className="text-xs font-medium text-slate-500">
               Signups vs Churns
             </span>
           </div>
@@ -740,7 +657,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <ATMCard
         title="Signup Source Attribution"
         extra={
-          <span className="text-xs font-semibold text-gray-500">
+          <span className="text-xs font-semibold text-slate-500">
             {sourceAttribution.length} sources tracked
           </span>
         }
@@ -755,7 +672,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <ATMCard
         title="Active Users & Usage"
         extra={
-          <span className="text-xs font-semibold text-gray-500">
+          <span className="text-xs font-semibold text-slate-500">
             {usage?.fromDate ? `${dateRange} window` : 'Live'}
           </span>
         }
@@ -780,8 +697,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             } />
           </div>
 
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Globe className="h-3.5 w-3.5 text-accent-500" />
               <span>Top Merchants by Transaction Volume</span>
             </p>
@@ -791,18 +708,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 const pct = Math.min(100, Math.round((Number(t.transactions) / total) * 100));
                 return (
                   <div key={t.merchantId} className="flex items-center gap-3 text-xs font-semibold">
-                    <span className="w-32 text-gray-700 dark:text-gray-300 truncate">{t.companyName}</span>
-                    <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <span className="w-32 text-slate-700 dark:text-slate-300 truncate">{t.companyName}</span>
+                    <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       <div className="h-full rounded-full bg-accent-600" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="w-16 text-right text-gray-500 dark:text-gray-400">
+                    <span className="w-16 text-right text-slate-500 dark:text-slate-400">
                       {Number(t.transactions).toLocaleString()}
                     </span>
                   </div>
                 );
               })}
               {(!usage || (usage.perMerchant?.length ?? 0) === 0) && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 italic">No usage data in this window.</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic">No usage data in this window.</p>
               )}
             </div>
           </div>
@@ -813,7 +730,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <ATMCard
         title="Merchant Health"
         extra={
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
             <span>{filteredHeatmapData.length} merchants</span>
             <ATMBadge color="success" label={`${filteredHeatmapData.filter((t) => t.activity === 'active').length} active`} />
             <ATMBadge color="danger" label={`${filteredHeatmapData.filter((t) => t.activity === 'atRisk').length} at risk`} />
@@ -848,31 +765,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
         <CommissionChart data={commissionTrend} loading={commissionQuery.isLoading} currency={platformCurrency} />
 
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Top Earning Merchants</p>
+        <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Top Earning Merchants</p>
           <div className="space-y-1.5">
             {(commission?.byMerchant ?? []).slice(0, 5).map((m, i) => (
               <div key={m.merchantId} className="flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-2">
-                  <span className="w-4 text-gray-400 dark:text-gray-500">{i + 1}.</span>
-                  <span className="text-gray-700 dark:text-gray-300">{m.companyName}</span>
+                  <span className="w-4 text-slate-400 dark:text-slate-500">{i + 1}.</span>
+                  <span className="text-slate-700 dark:text-slate-300">{m.companyName}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-500 dark:text-gray-400 font-medium">{m.transactionCount} txns</span>
-                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">{m.transactionCount} txns</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
                     {formatCurrencyOrDash(m.totalCommission, platformCurrency)}
                   </span>
                 </div>
               </div>
             ))}
             {(!commission || (commission.byMerchant?.length ?? 0) === 0) && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 italic">No commission earned yet.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 italic">No commission earned yet.</p>
             )}
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-550 uppercase tracking-wider mb-2">Rate Distribution</p>
+        <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Rate Distribution</p>
           <div className="flex gap-2">
             {/* 2026-08-30: `d.bucket` did not exist on the wire (server sends rateBucket),
                 so every row rendered a blank label AND carried key={undefined} — the
@@ -880,14 +797,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {(commission?.rateDistribution ?? []).map((d) => (
               <div
                 key={d.rateBucket}
-                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-center dark:border-gray-800 dark:bg-gray-950/20"
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-center dark:border-slate-800 dark:bg-slate-950/20"
               >
-                <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{d.rateBucket}</p>
-                <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{d.merchantCount} merchants</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{d.rateBucket}</p>
+                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{d.merchantCount} merchants</p>
               </div>
             ))}
             {(!commission || (commission.rateDistribution?.length ?? 0) === 0) && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 italic">No rate buckets configured.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 italic">No rate buckets configured.</p>
             )}
           </div>
         </div>
@@ -926,7 +843,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {tokenChartData.length > 0 ? (
               <TokenMetricsChart data={tokenChartData} period={dateRange} loading={tokenMetricsQuery.isLoading} />
             ) : (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-8 text-center text-xs font-semibold text-gray-500 dark:border-gray-800 dark:bg-gray-950/20">
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-950/20">
                 Per-tier time series not yet exposed by the server.
                 Summary KPIs above reflect current totals.
               </div>
@@ -934,13 +851,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Renewal Rate</p>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950/20">
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Renewal Rate</p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/20">
               <p className="text-2xl font-extrabold text-accent-600 dark:text-accent-400">
                 {((tokenMetrics?.renewalRate ?? 0) * 100).toFixed(1)}%
               </p>
-              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                Projected depletion: <span className="font-bold text-gray-700 dark:text-gray-300">{(tokenMetrics?.projectedDepletionDays ?? 0).toFixed(0)} days</span>
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Projected depletion: <span className="font-bold text-slate-700 dark:text-slate-300">{(tokenMetrics?.projectedDepletionDays ?? 0).toFixed(0)} days</span>
               </p>
             </div>
           </div>
@@ -962,30 +879,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       >
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Enterprise Revenue Split</p>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Enterprise Revenue Split</p>
             <div className="space-y-2.5">
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-650 dark:text-gray-400">Subscription</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-500 dark:text-slate-400">Subscription</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.subscriptionRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-655 dark:text-gray-400">Usage</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-500 dark:text-slate-400">Usage</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.usageRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-655 dark:text-gray-400">Commission</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-500 dark:text-slate-400">Commission</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.commissionRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
-              <hr className="border-gray-200 dark:border-gray-800" />
+              <hr className="border-slate-200 dark:border-slate-800" />
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-655 dark:text-gray-400">Standalone Token Sales</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-500 dark:text-slate-400">Standalone Token Sales</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.tokenSalesRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
@@ -993,24 +910,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Per-Merchant Averages (ARPU)</p>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Per-Merchant Averages (ARPU)</p>
             <div className="space-y-2.5">
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-650 dark:text-gray-400">Enterprise ARPU</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-500 dark:text-slate-400">Enterprise ARPU</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.enterpriseARPU ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-655 dark:text-gray-400">Standalone ARPU</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-500 dark:text-slate-400">Standalone ARPU</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.standaloneARPU ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
-              <hr className="border-gray-200 dark:border-gray-800" />
+              <hr className="border-slate-200 dark:border-slate-800" />
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-gray-700 dark:text-gray-300">Total in Window</span>
-                <span className="font-bold text-gray-900 dark:text-white">
+                <span className="text-slate-700 dark:text-slate-300">Total in Window</span>
+                <span className="font-bold text-slate-900 dark:text-white">
                   {formatCurrencyOrDash(revenue?.totalRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
@@ -1018,12 +935,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Revenue Movement</p>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Revenue Movement</p>
             <div className="space-y-2.5">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-1.5">
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  <span className="text-gray-655 dark:text-gray-400">MRR (current)</span>
+                  <span className="text-slate-500 dark:text-slate-400">MRR (current)</span>
                 </div>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {formatCurrencyOrDash(revenue?.mrr ?? 0, revenue?.currencyCode ?? platformCurrency)}
@@ -1032,15 +949,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-1.5">
                   <TrendingDown className="h-4 w-4 text-red-500" />
-                  <span className="text-gray-655 dark:text-gray-400">Churn</span>
+                  <span className="text-slate-500 dark:text-slate-400">Churn</span>
                 </div>
                 <span className="font-bold text-red-600 dark:text-red-400">
                   -{formatCurrencyOrDash(revenue?.churnRevenue ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <span>ARR (annualised)</span>
-                <span className="font-bold text-gray-700 dark:text-gray-200">
+                <span className="font-bold text-slate-700 dark:text-slate-200">
                   {formatCurrencyOrDash(revenue?.arr ?? 0, revenue?.currencyCode ?? platformCurrency)}
                 </span>
               </div>
@@ -1053,7 +970,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <ATMCard
         title="Cohort Retention"
         extra={
-          <span className="text-xs font-semibold text-gray-500">
+          <span className="text-xs font-semibold text-slate-500">
             % of merchants retained per cohort
           </span>
         }
@@ -1086,28 +1003,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         title="System Health"
         extra={
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-gray-500">
+            <span className="text-xs font-semibold text-slate-500">
               {(systemHealth?.activeIncidents ?? 0)} active incident{(systemHealth?.activeIncidents ?? 0) !== 1 ? 's' : ''}
               {systemHealth?.uptimePercent != null && (
                 <> &middot; uptime {systemHealth.uptimePercent.toFixed(2)}%</>
               )}
             </span>
-            <StatusBadge
-              status={
-                services.every((s) => s.status === 'Healthy')
-                  ? 'success'
-                  : services.some((s) => s.status === 'Unhealthy')
-                    ? 'danger'
-                    : 'warning'
-              }
-              label={
-                services.length === 0
-                  ? 'Loading…'
-                  : services.every((s) => s.status === 'Healthy')
+            {services.length === 0 ? (
+              <ATMSkeleton width="90px" height="22px" className="rounded-full" />
+            ) : (
+              <StatusBadge
+                status={
+                  services.every((s) => s.status === 'Healthy')
+                    ? 'success'
+                    : services.some((s) => s.status === 'Unhealthy')
+                      ? 'danger'
+                      : 'warning'
+                }
+                label={
+                  services.every((s) => s.status === 'Healthy')
                     ? 'Operational'
                     : 'Degraded'
-              }
-            />
+                }
+              />
+            )}
           </div>
         }
       >
@@ -1133,75 +1052,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .filter((w) => w.visible);
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 dark:border-white/[0.06] pb-5">
-        <div>
-          <h1 className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Platform overview and real-time operational metrics
-          </p>
-        </div>
+      <ATMPageHeader
+        icon={LayoutDashboard}
+        iconColor="theme"
+        title="Dashboard"
+        subtitle="Platform overview and real-time operational metrics"
+        extraActions={
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-white/80 dark:bg-[#13151a]/80 px-2.5 h-9 rounded-xl border border-slate-200/80 dark:border-slate-800 backdrop-blur-xl shadow-xs">
+              <button
+                type="button"
+                onClick={toggleRefresh}
+                className="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                title={paused ? 'Resume auto-refresh' : 'Pause auto-refresh'}
+              >
+                {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={refreshNow}
+                className="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors animate-in duration-300"
+                title="Refresh now"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+              {!paused && <span className="tabular-nums font-mono text-slate-400 dark:text-slate-500 text-[11px]">{secondsUntilRefresh}s</span>}
+            </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 bg-white/80 dark:bg-zinc-900/80 px-2.5 h-9 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-xs">
             <button
               type="button"
-              onClick={toggleRefresh}
-              className="rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-              title={paused ? 'Resume auto-refresh' : 'Pause auto-refresh'}
+              onClick={() => setShowWidgetConfig((v) => !v)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl border px-3 h-9 text-xs font-bold transition-all duration-200 shadow-xs',
+                showWidgetConfig
+                  ? 'border-primary-500/40 bg-primary-500/10 text-primary-600 dark:text-primary-400 dark:border-primary-500/30'
+                  : 'border-slate-200/80 bg-white/80 text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#13151a]/80 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200 backdrop-blur-xl',
+              )}
             >
-              {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Customize
             </button>
-            <button
-              type="button"
-              onClick={refreshNow}
-              className="rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors animate-in duration-300"
-              title="Refresh now"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-            {!paused && <span className="tabular-nums font-mono text-zinc-400 dark:text-zinc-500 text-[11px]">{secondsUntilRefresh}s</span>}
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setShowWidgetConfig((v) => !v)}
-            className={cn(
-              'flex items-center gap-1.5 rounded-xl border px-3 h-9 text-xs font-bold transition-all duration-200 shadow-xs',
-              showWidgetConfig
-                ? 'border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 dark:border-blue-500/30'
-                : 'border-zinc-200/80 bg-white/80 text-zinc-600 hover:bg-zinc-50 dark:border-white/[0.08] dark:bg-zinc-900/80 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200 backdrop-blur-xl',
-            )}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Customize
-          </button>
-
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center justify-center h-9 w-9 rounded-xl border border-zinc-200/80 bg-white/80 dark:border-white/[0.08] dark:bg-zinc-900/80 text-zinc-400 dark:text-zinc-500 backdrop-blur-xl shadow-xs">
-              <Calendar className="h-4 w-4" />
-            </div>
-            <div className="inline-flex rounded-xl border border-zinc-200/80 bg-white/80 p-0.5 dark:border-white/[0.08] dark:bg-zinc-900/80 h-9 items-center backdrop-blur-xl shadow-xs">
-              {DATE_RANGES.map((range) => (
-                <button
-                  key={range.key}
-                  type="button"
-                  onClick={() => setDateRange(range.key)}
-                  className={cn(
-                    'rounded-lg px-2.5 h-7 flex items-center justify-center text-[11px] font-bold transition-all duration-200 uppercase tracking-wider',
-                    dateRange === range.key
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100',
-                  )}
-                >
-                  {range.label}
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-center h-9 w-9 rounded-xl border border-slate-200/80 bg-white/80 dark:border-slate-800 dark:bg-[#13151a]/80 text-slate-400 dark:text-slate-500 backdrop-blur-xl shadow-xs">
+                <Calendar className="h-4 w-4" />
+              </div>
+              <div className="inline-flex rounded-xl border border-slate-200/80 bg-white/80 p-0.5 dark:border-slate-800 dark:bg-[#13151a]/80 h-9 items-center backdrop-blur-xl shadow-xs">
+                {DATE_RANGES.map((range) => (
+                  <button
+                    key={range.key}
+                    type="button"
+                    onClick={() => setDateRange(range.key)}
+                    className={cn(
+                      'rounded-lg px-2.5 h-7 flex items-center justify-center text-[11px] font-bold transition-all duration-200 uppercase tracking-wider',
+                      dateRange === range.key
+                        ? 'bg-primary-600 text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100',
+                    )}
+                  >
+                    {range.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {hasError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-2.5">
@@ -1218,8 +1136,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* Type filter pills */}
-      <div className="inline-flex items-center gap-1 bg-white/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] h-9 backdrop-blur-xl shadow-xs">
-        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-2">Filter:</span>
+      <div className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#13151a]/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800 h-9 backdrop-blur-xl shadow-xs">
+        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2">Filter:</span>
         {TYPE_FILTERS.map((filter) => (
           <button
             key={filter.value}
@@ -1228,8 +1146,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             className={cn(
               'rounded-lg px-3 h-7 flex items-center justify-center text-[11px] font-bold transition-all duration-200 uppercase tracking-wider',
               merchantTypeFilter === filter.value
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100',
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100',
             )}
           >
             {filter.label}

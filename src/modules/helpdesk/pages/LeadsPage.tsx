@@ -1,6 +1,24 @@
 import React, { useMemo, useState } from 'react';
-import { ATMBadge, ATMButton } from '@/shared/ui';
-import { Search, X, Eye, Pencil, Users, AlertTriangle, Loader2 } from 'lucide-react';
+import { ATMBadge, ATMButton, ATMCard, ATMStatsCard, ATMTextField, ATMSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import {
+  Search,
+  X,
+  Eye,
+  Pencil,
+  Users,
+  AlertTriangle,
+  UserPlus,
+  PhoneCall,
+  BadgeCheck,
+  Mail,
+  Phone,
+  Building2,
+  Calendar,
+  ExternalLink,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils/cn';
@@ -19,31 +37,33 @@ interface LeadVM {
   name: string;
   email: string;
   phone: string;
+  company: string;
   source: LeadSource;
   interest: LeadInterest;
   status: LeadStatus;
   createdDate: string;
   notes: string;
-  followUpDate: string;
 }
 
-const SOURCE_VARIANT: Record<LeadSource, 'success' | 'info' | 'warning'> = {
+const STATUS_COLOR: Record<LeadStatus, 'primary' | 'warning' | 'success' | 'muted'> = {
+  New: 'primary',
+  Contacted: 'warning',
+  Qualified: 'success',
+  Lost: 'muted',
+};
+
+const SOURCE_COLOR: Record<LeadSource, 'success' | 'primary' | 'warning'> = {
   Organic: 'success',
-  Paid: 'info',
+  Paid: 'primary',
   Referral: 'warning',
 };
 
-const INTEREST_VARIANT: Record<LeadInterest, 'enterprise' | 'standalone'> = {
-  Enterprise: 'enterprise',
-  Standalone: 'standalone',
+const INTEREST_COLOR: Record<LeadInterest, 'purple' | 'primary'> = {
+  Enterprise: 'purple',
+  Standalone: 'primary',
 };
 
-const STATUS_VARIANT: Record<LeadStatus, 'info' | 'warning' | 'success' | 'default'> = {
-  New: 'info',
-  Contacted: 'warning',
-  Qualified: 'success',
-  Lost: 'default',
-};
+const STATUS_FILTERS: Array<'All' | LeadStatus> = ['All', 'New', 'Contacted', 'Qualified', 'Lost'];
 
 function mapSource(source?: string | null): LeadSource {
   if (source === 'Paid' || source === 'Paid Ads' || source === 'Ads') return 'Paid';
@@ -62,6 +82,13 @@ function mapInterest(interest?: string | null): LeadInterest {
   return interest === 'Standalone' ? 'Standalone' : 'Enterprise';
 }
 
+function formatDate(value?: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -69,6 +96,7 @@ function mapInterest(interest?: string | null): LeadInterest {
 function LeadsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'All' | LeadStatus>('All');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const leadsQuery = useLeads({ page: 1, pageSize: 100, search: search.trim() || undefined });
@@ -77,38 +105,37 @@ function LeadsPage() {
   const leads = useMemo<LeadVM[]>(() => {
     const items = leadsQuery.data?.data ?? [];
     return items.map((l: any) => ({
-      id: l.leadId,
+      id: l.leadId ?? l.id,
       name: l.name || l.contactPerson || '(no name)',
-      email: l.email,
+      email: l.email ?? '—',
       phone: l.phone ?? '',
+      company: l.companyName ?? '',
       source: mapSource(l.source),
       interest: mapInterest(l.merchantType ?? null),
       status: mapStatus(l.status),
-      createdDate: l.createdAt.slice(0, 10),
+      createdDate: formatDate(l.createdAt),
       notes: l.message ?? l.notes ?? '',
-      followUpDate: '',
     }));
   }, [leadsQuery.data]);
 
   const isLoading = leadsQuery.isLoading;
   const isError = leadsQuery.isError;
+  const totalCount = leadsQuery.data?.totalCount ?? leads.length;
 
-  const selected = leads.find((l) => l.id === selectedId) ?? null;
-
-  // Derive a simple funnel from the loaded leads
-  const funnelStages = useMemo(() => {
-    const counts: Record<LeadStatus, number> = { New: 0, Contacted: 0, Qualified: 0, Lost: 0 };
+  const counts = useMemo(() => {
+    const c: Record<LeadStatus, number> = { New: 0, Contacted: 0, Qualified: 0, Lost: 0 };
     leads.forEach((l) => {
-      counts[l.status] += 1;
+      c[l.status] += 1;
     });
-    const max = Math.max(counts.New, counts.Contacted, counts.Qualified, counts.Lost, 1);
-    return [
-      { name: 'New', count: counts.New, color: 'bg-blue-500', width: `${(counts.New / max) * 100}%` },
-      { name: 'Contacted', count: counts.Contacted, color: 'bg-amber-500', width: `${(counts.Contacted / max) * 100}%` },
-      { name: 'Qualified', count: counts.Qualified, color: 'bg-emerald-500', width: `${(counts.Qualified / max) * 100}%` },
-      { name: 'Lost', count: counts.Lost, color: 'bg-gray-400', width: `${(counts.Lost / max) * 100}%` },
-    ];
+    return c;
   }, [leads]);
+
+  const filteredLeads = useMemo(
+    () => (statusFilter === 'All' ? leads : leads.filter((l) => l.status === statusFilter)),
+    [leads, statusFilter],
+  );
+
+  const selected = selectedId ? leads.find((l) => l.id === selectedId) ?? null : null;
 
   const updateLeadStatus = (id: string, status: LeadStatus) => {
     updateMut.mutate(
@@ -120,21 +147,63 @@ function LeadsPage() {
     );
   };
 
+  const columns: ATMTableColumn<LeadVM>[] = [
+    {
+      key: 'name',
+      header: 'Lead',
+      renderCell: (_v, l) => (
+        <div className="min-w-0">
+          <span className={cn('block truncate font-semibold text-slate-900 dark:text-slate-100', selectedId === l.id && 'text-primary-600 dark:text-primary-400')}>
+            {l.name}
+          </span>
+          <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">{l.email}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'company',
+      header: 'Company',
+      renderCell: (_v, l) => <span className="text-slate-600 dark:text-slate-300">{l.company || '—'}</span>,
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      renderCell: (_v, l) => <span className="tabular-nums text-slate-600 dark:text-slate-300">{l.phone || '—'}</span>,
+    },
+    {
+      key: 'source',
+      header: 'Source',
+      renderCell: (_v, l) => <ATMBadge color={SOURCE_COLOR[l.source]} size="sm">{l.source}</ATMBadge>,
+    },
+    {
+      key: 'interest',
+      header: 'Interest',
+      renderCell: (_v, l) => <ATMBadge color={INTEREST_COLOR[l.interest]} size="sm">{l.interest}</ATMBadge>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      renderCell: (_v, l) => <ATMBadge color={STATUS_COLOR[l.status]} size="sm">{l.status}</ATMBadge>,
+    },
+    {
+      key: 'createdDate',
+      header: 'Created',
+      renderCell: (_v, l) => <span className="whitespace-nowrap tabular-nums text-slate-500 dark:text-slate-400">{l.createdDate}</span>,
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-          Leads
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Track and manage sales leads from all channels.
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Users}
+        iconColor="theme"
+        title="Leads"
+        subtitle="Track and manage sales leads from every channel."
+      />
 
       {isError && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
-          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900/40 dark:bg-rose-950/40">
+          <div className="flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
             <AlertTriangle className="h-4 w-4" />
             <span>Failed to load leads.</span>
           </div>
@@ -144,160 +213,205 @@ function LeadsPage() {
         </div>
       )}
 
-      {/* Lead funnel */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Lead Funnel</h3>
-        <div className="flex flex-col items-center gap-2">
-          {funnelStages.map((stage) => (
-            <div key={stage.name} className="flex w-full items-center gap-3">
-              <span className="w-24 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{stage.name}</span>
-              <div className="flex-1">
-                <div className={cn('h-8 rounded-lg flex items-center justify-center transition-all', stage.color)} style={{ width: stage.width }}>
-                  <span className="text-xs font-bold text-white">{stage.count}</span>
-                </div>
-              </div>
-            </div>
+      {/* Pipeline summary */}
+      {leadsQuery.isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <ATMSkeleton key={i} variant="card" height="118px" />)}
+        </div>
+      ) : (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ATMStatsCard label="Total Leads" value={totalCount} icon={Users} variant="accent" description="All leads captured" />
+        <ATMStatsCard label="New" value={counts.New} icon={UserPlus} variant="indigo" description="Awaiting first contact" onClick={() => setStatusFilter('New')} />
+        <ATMStatsCard label="Contacted" value={counts.Contacted} icon={PhoneCall} variant="amber" description="In conversation" onClick={() => setStatusFilter('Contacted')} />
+        <ATMStatsCard label="Qualified" value={counts.Qualified} icon={BadgeCheck} variant="emerald" description="Ready to convert" onClick={() => setStatusFilter('Qualified')} />
+      </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex flex-wrap items-center gap-1 rounded-xl bg-slate-100/80 p-1 dark:bg-slate-900/60">
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatusFilter(s)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                statusFilter === s
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
+              )}
+            >
+              {s}
+              {s !== 'All' && (
+                <span className="ml-1.5 tabular-nums text-slate-400 dark:text-slate-500">{counts[s]}</span>
+              )}
+            </button>
           ))}
         </div>
-      </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
+        <ATMTextField
+          className="w-full sm:w-72"
+          size="md"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search leads..."
-          className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-8 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          placeholder="Search by name or email..."
+          leftIcon={<Search className="h-4 w-4" />}
+          rightIcon={
+            search ? (
+              <button type="button" onClick={() => setSearch('')} className="cursor-pointer" aria-label="Clear search">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : undefined
+          }
         />
-        {search && (
-          <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Table */}
         <div className="xl:col-span-2">
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Name</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Email</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Phone</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Source</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Interest</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Created</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {isLoading && (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center">
-                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
-                      </td>
-                    </tr>
-                  )}
-                  {!isLoading && leads.map((lead) => (
-                    <tr
-                      key={lead.id}
-                      className={cn(
-                        'cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40',
-                        selectedId === lead.id && 'bg-indigo-50 dark:bg-indigo-900/10',
-                      )}
-                      onClick={() => setSelectedId(lead.id)}
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{lead.name}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{lead.email}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{lead.phone}</td>
-                      <td className="px-4 py-3"><ATMBadge variant={SOURCE_VARIANT[lead.source]} size="sm">{lead.source}</ATMBadge></td>
-                      <td className="px-4 py-3"><ATMBadge variant={INTEREST_VARIANT[lead.interest]} size="sm">{lead.interest}</ATMBadge></td>
-                      <td className="px-4 py-3"><ATMBadge variant={STATUS_VARIANT[lead.status]} size="sm">{lead.status}</ATMBadge></td>
-                      <td className="px-4 py-3 tabular-nums text-gray-500 dark:text-gray-400">{lead.createdDate}</td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-1">
-                          <ATMButton variant="ghost" size="sm" onClick={() => setSelectedId(lead.id)}><Eye className="h-3.5 w-3.5" /></ATMButton>
-                          <ATMButton variant="ghost" size="sm" onClick={() => navigate(`/content/leads/${lead.id}`)}><Pencil className="h-3.5 w-3.5" /></ATMButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {!isLoading && leads.length === 0 && (
-              <div className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">No leads match your search.</div>
-            )}
-          </div>
+          <ATMCard padding="none" className="overflow-hidden">
+            <ATMTable
+              columns={columns}
+              data={filteredLeads}
+              isLoading={isLoading}
+              onRowClick={(l) => setSelectedId(l.id)}
+              rowActions={(l) => [
+                { label: 'View', icon: Eye, onClick: () => setSelectedId(l.id) },
+                { label: 'Open', icon: Pencil, onClick: () => navigate(`/content/leads/${l.id}`) },
+              ]}
+              emptyMessage={
+                leads.length === 0
+                  ? 'No leads yet. New enquiries from the website will appear here.'
+                  : 'No leads match this filter.'
+              }
+            />
+          </ATMCard>
+          {!isLoading && filteredLeads.length > 0 && (
+            <p className="mt-2 px-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+              Showing {filteredLeads.length} of {totalCount} leads
+            </p>
+          )}
         </div>
 
-        {/* Detail drawer */}
+        {/* Detail panel */}
         <div className="xl:col-span-1">
           {selected ? (
-            <div className="sticky top-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{selected.name}</h3>
-                <button type="button" onClick={() => setSelectedId(null)} className="text-gray-400 hover:text-gray-600">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Email</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selected.email}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selected.phone}</p>
-                </div>
-                <div className="flex gap-2">
-                  <ATMBadge variant={SOURCE_VARIANT[selected.source]} size="sm">{selected.source}</ATMBadge>
-                  <ATMBadge variant={INTEREST_VARIANT[selected.interest]} size="sm">{selected.interest}</ATMBadge>
-                  <ATMBadge variant={STATUS_VARIANT[selected.status]} size="sm">{selected.status}</ATMBadge>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Notes</p>
-                  <p className="text-gray-700 dark:text-gray-300">{selected.notes || '(none)'}</p>
-                </div>
-
-                {/* Status update */}
-                <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Update Status</p>
+            <div className="sticky top-6">
+              <ATMCard
+                title={selected.name}
+                subtitle={selected.company || 'No company'}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    aria-label="Close details"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                }
+              >
+                <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
-                    {(['New', 'Contacted', 'Qualified', 'Lost'] as LeadStatus[]).map((status) => (
-                      <ATMButton
-                        key={status}
-                        variant={selected.status === status ? 'primary' : 'secondary'}
-                        size="sm"
-                        onClick={() => updateLeadStatus(selected.id, status)}
-                        disabled={updateMut.isPending}
-                      >
-                        {status}
-                      </ATMButton>
-                    ))}
+                    <ATMBadge color={STATUS_COLOR[selected.status]}>{selected.status}</ATMBadge>
+                    <ATMBadge color={SOURCE_COLOR[selected.source]}>{selected.source}</ATMBadge>
+                    <ATMBadge color={INTEREST_COLOR[selected.interest]}>{selected.interest}</ATMBadge>
                   </div>
+
+                  <div className="space-y-3">
+                    <ContactRow icon={Mail} label="Email" value={selected.email} href={`mailto:${selected.email}`} />
+                    <ContactRow icon={Phone} label="Phone" value={selected.phone || '—'} href={selected.phone ? `tel:${selected.phone}` : undefined} />
+                    <ContactRow icon={Building2} label="Company" value={selected.company || '—'} />
+                    <ContactRow icon={Calendar} label="Captured" value={selected.createdDate} />
+                  </div>
+
+                  {selected.notes && (
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Notes</p>
+                      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">{selected.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="border-t border-slate-200/80 pt-4 dark:border-slate-800">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Update status</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(['New', 'Contacted', 'Qualified', 'Lost'] as LeadStatus[]).map((status) => (
+                        <ATMButton
+                          key={status}
+                          variant={selected.status === status ? 'primary' : 'secondary'}
+                          size="sm"
+                          onClick={() => updateLeadStatus(selected.id, status)}
+                          disabled={updateMut.isPending}
+                        >
+                          {status}
+                        </ATMButton>
+                      ))}
+                    </div>
+                  </div>
+
+                  <ATMButton
+                    variant="outline"
+                    size="md"
+                    className="w-full"
+                    rightIcon={<ExternalLink className="h-4 w-4" />}
+                    onClick={() => navigate(`/content/leads/${selected.id}`)}
+                  >
+                    Open full record
+                  </ATMButton>
                 </div>
-              </div>
+              </ATMCard>
             </div>
           ) : (
-            <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-              <div className="text-center">
-                <Users className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600" />
-                <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">ATMSelect a lead to view details</p>
+            <ATMCard>
+              <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+                  <Users className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                </div>
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Select a lead</p>
+                <p className="max-w-[200px] text-xs text-slate-400 dark:text-slate-500">
+                  Choose a row to see contact details, notes and update the pipeline status.
+                </p>
               </div>
-            </div>
+            </ATMCard>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+function ContactRow({
+  icon: Icon,
+  label,
+  value,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const content = (
+    <div className="flex items-center gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</p>
+        <p className="truncate text-[13px] font-medium text-slate-800 dark:text-slate-200">{value}</p>
+      </div>
+    </div>
+  );
+
+  if (href) {
+    return (
+      <a href={href} className="block rounded-lg -mx-1 px-1 py-0.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60">
+        {content}
+      </a>
+    );
+  }
+  return content;
 }
 
 export default LeadsPage;

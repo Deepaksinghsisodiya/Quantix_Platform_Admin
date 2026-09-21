@@ -9,7 +9,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { ATMButton, ATMCheckbox, ATMModal, ATMTextArea, ATMTextField } from '@/shared/ui';
+import { ATMButton, ATMCheckbox, ATMModal, ATMTextArea, ATMTextField, ATMSkeleton } from '@/shared/ui';
 import { useGetFeatureCatalogQuery } from '@/modules/settings/services/settingsApi';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatFileSize } from '@/shared/utils/formatFileSize';
@@ -204,7 +204,7 @@ export function PackageFormModal({ open, onClose, editing, suggestions }: Props)
     <ATMModal
       open={open}
       onClose={onClose}
-      closeOnOutsideClick={!saving}
+      closeOnOutsideClick={false}
       closeOnEsc={!saving}
       title={editing ? 'Edit package' : 'Publish package'}
       subtitle={
@@ -316,18 +316,22 @@ export function PackageFormModal({ open, onClose, editing, suggestions }: Props)
           />
         </div>
 
-        <fieldset className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-          <legend className="px-1 text-[13px] font-semibold text-gray-700 dark:text-gray-300">
+        <fieldset className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+          <legend className="px-1 text-[13px] font-semibold text-slate-700 dark:text-slate-300">
             Required features
           </legend>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Leave every box unticked to publish to all merchants. Otherwise a merchant must hold
             every ticked feature to see and download the package. Standalone merchants hold
             features only after applying a licence token on their POS — so a base installer
             should not be gated.
           </p>
           {catalog.isLoading && (
-            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Loading feature catalog…</p>
+            <div className="mt-3 space-y-2">
+              <ATMSkeleton height="28px" />
+              <ATMSkeleton height="28px" width="80%" />
+              <ATMSkeleton height="28px" width="60%" />
+            </div>
           )}
           {catalog.isError && (
             <p role="alert" className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
@@ -344,9 +348,9 @@ export function PackageFormModal({ open, onClose, editing, suggestions }: Props)
                   key={f.featureCode}
                   name={`feature-${f.featureCode}`}
                   label={
-                    <span className="text-sm text-gray-800 dark:text-gray-200">
+                    <span className="text-sm text-slate-800 dark:text-slate-200">
                       {f.featureName}{' '}
-                      <span className="font-mono text-xs text-gray-400">{f.featureCode}</span>
+                      <span className="font-mono text-xs text-slate-400">{f.featureCode}</span>
                     </span>
                   }
                   checked={form.requiredFeatureCodes.includes(f.featureCode)}
@@ -377,7 +381,7 @@ export function PackageFormModal({ open, onClose, editing, suggestions }: Props)
           ))}
         </datalist>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
           <ATMButton type="button" variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </ATMButton>

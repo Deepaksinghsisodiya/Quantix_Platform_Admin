@@ -57,18 +57,7 @@ const AppShell: React.FC = () => {
           <div
             className="flex-1 flex flex-col overflow-y-auto relative z-10 custom-scrollbar px-4 py-4 lg:px-6 lg:py-6"
           >
-            <Suspense fallback={
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-600/20 overflow-hidden z-[100]">
-                <div className="h-full bg-gradient-to-r from-blue-600 to-sky-400 animate-[loading_1.5s_infinite_ease-in-out]" style={{ width: '30%' }}></div>
-                <style>{`
-                  @keyframes loading {
-                    0% { transform: translateX(-100%); width: 30%; }
-                    50% { width: 60%; }
-                    100% { transform: translateX(400%); width: 30%; }
-                  }
-                `}</style>
-              </div>
-            }>
+            <Suspense fallback={null}>
               <div key={location.pathname} className="animate-page-enter flex-1 flex flex-col min-h-full">
                 <Outlet />
               </div>

@@ -3,17 +3,19 @@
  * Step 1 Merchant & Batch · Step 2 Payment (batch total, shared PaymentStep) ·
  * Step 3 Generate (summary + per-terminal-type dry-run previews).
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Coins, Download, AlertTriangle, Layers, Store, Wallet, Sparkles } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard, ATMButton, ATMBadge, ATMTextField, ATMSelectField, ATMBreadcrumbs, ATMSkeleton } from '@/shared/ui';
 import { ATMFieldCell, ATMFormGrid } from '@/shared/components/form';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { PLAN_TYPE_LABEL } from '@/lib/types/platform-enums';
 import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { FLAVOUR_LABELS } from '@/lib/types/licensing';
-import type { BulkTokenResult } from '@/lib/types';
+import type { BulkTokenResult, RechargeTokenDetail } from '@/lib/types';
 import type { MerchantTerminal } from '@/modules/merchants/types/merchant.types';
 import type { PlatformPaymentMethod } from '@/modules/settings/services/settingsApi';
 import { usePreviewTokenQuery, type MerchantSubscriptionInfo, type CardChargeResult } from '../services/tokenApi';
@@ -41,7 +43,7 @@ const BulkPreviewSection: React.FC<{
   return (
     <div className="rounded-xl border border-[var(--zen-border)] p-4">
       <div className="flex items-center gap-3 mb-3">
-        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{label}</h4>
+        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{label}</h4>
         {q.data?.data && (
           <ATMBadge color="primary" label={FLAVOUR_LABELS[q.data.data.flavour] ?? q.data.data.flavour} />
         )}
@@ -144,8 +146,62 @@ export interface BulkTokenPageProps {
 export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
   const maxReachable: BulkWizardStep = !p.step1Valid ? 1 : !p.step2Valid && !p.result ? 2 : 3;
 
+  const resultColumns = useMemo<ATMTableColumn<RechargeTokenDetail>[]>(
+    () => [
+      {
+        key: 'sequence',
+        header: 'Seq',
+        width: '70px',
+        renderCell: (_val, t) => (
+          <span className="text-xs font-bold text-slate-900 dark:text-slate-100">#{t.sequence}</span>
+        ),
+      },
+      {
+        key: 'tokenId',
+        header: 'Token ID',
+        renderCell: (_val, t) => (
+          <span className="block truncate font-mono text-[11px] text-slate-600 dark:text-slate-300 max-w-[140px]" title={t.tokenId}>
+            {t.tokenId.slice(0, 8)}…
+          </span>
+        ),
+      },
+      {
+        key: 'plan',
+        header: 'Plan',
+        renderCell: (_val, t) => (
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {t.planName || (PLAN_TYPE_LABEL[t.plan] ?? t.plan)}
+          </span>
+        ),
+      },
+      {
+        key: 'validityDays',
+        header: 'Validity',
+        width: '80px',
+        renderCell: (_val, t) => (
+          <span className="text-xs text-slate-600 dark:text-slate-400">{t.validityDays}d</span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        renderCell: (_val, t) => <TokenStatusBadge status={t.status} />,
+      },
+      {
+        key: 'encodedToken',
+        header: 'Token String',
+        renderCell: (_val, t) => (
+          <span className="block truncate font-mono text-[10px] text-slate-500 max-w-[220px]" title={t.encodedToken}>
+            {t.encodedToken}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
+
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3">
         <ATMBreadcrumbs />
         <ATMPageHeader
@@ -203,21 +259,21 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
                     ) : p.subscription ? (
                       <div className="flex flex-wrap items-center gap-6">
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Plan</span>
-                          <span className="mt-1 block text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Plan</span>
+                          <span className="mt-1 block text-sm font-extrabold text-slate-900 dark:text-slate-100">
                             {p.subscription.planDisplayName}
                           </span>
                         </div>
                         <ATMBadge color="primary" label={PLAN_TYPE_LABEL[p.subscription.planType] ?? p.subscription.planType} />
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Daily Price</span>
-                          <span className="mt-1 block text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Daily Price</span>
+                          <span className="mt-1 block text-sm font-extrabold text-slate-900 dark:text-slate-100">
                             {formatCurrencyOrDash(p.subscription.dailySubscriptionPrice, p.currency)}/day
                           </span>
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Batch Total</span>
-                          <span className="mt-1 block text-sm font-extrabold text-accent-600 dark:text-accent-400">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Batch Total</span>
+                          <span className="mt-1 block text-sm font-extrabold text-primary-600 dark:text-primary-400">
                             {formatCurrencyOrDash(p.expectedTotal, p.currency)}
                           </span>
                         </div>
@@ -261,11 +317,11 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
 
                       <div className="rounded-xl border border-[var(--zen-border)] p-4">
                         {p.isPos ? (
-                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                             Select terminals — one token is generated per terminal
                           </span>
                         ) : (
-                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                             Standalone Cloud — tokens apply to the cloud instance; no terminal binding.
                           </p>
                         )}
@@ -284,18 +340,18 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
                             {p.terminals.map((t) => (
                               <label
                                 key={t.terminalId}
-                                className="flex items-center gap-2 rounded-lg border border-[var(--zen-border)] px-3 py-2 cursor-pointer hover:bg-gray-50/60 dark:hover:bg-zinc-900/40"
+                                className="flex items-center gap-2 rounded-lg border border-[var(--zen-border)] px-3 py-2 cursor-pointer hover:bg-slate-50/60 dark:hover:bg-slate-900/40"
                               >
                                 <input
                                   type="checkbox"
                                   checked={p.selectedTerminalIds.includes(t.terminalId)}
                                   onChange={() => p.onToggleTerminal(t.terminalId)}
-                                  className="h-4 w-4 shrink-0 rounded border-slate-300 accent-accent-600 dark:border-slate-600"
+                                  className="h-4 w-4 shrink-0 rounded border-slate-300 accent-primary-600 dark:border-slate-600"
                                 />
-                                <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{t.terminalName}</span>
-                                <span className="text-[10px] font-mono text-gray-400">{t.terminalCode}</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{t.terminalName}</span>
+                                <span className="text-[10px] font-mono text-slate-400">{t.terminalCode}</span>
                                 {t.terminalType && (
-                                  <span className="ml-auto text-[10px] font-semibold text-gray-400">{t.terminalType}</span>
+                                  <span className="ml-auto text-[10px] font-semibold text-slate-400">{t.terminalType}</span>
                                 )}
                               </label>
                             ))}
@@ -383,31 +439,31 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
                 <TokenWizardSection title="Summary">
                   <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Merchant</dt>
-                      <dd className="mt-1 text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Merchant</dt>
+                      <dd className="mt-1 text-sm font-extrabold text-slate-900 dark:text-slate-100">
                         {p.merchantOptions.find((o) => o.value === p.merchantId)?.label ?? '—'}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Plan</dt>
-                      <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">{p.subscription?.planDisplayName}</dd>
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plan</dt>
+                      <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">{p.subscription?.planDisplayName}</dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Tokens</dt>
-                      <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tokens</dt>
+                      <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                         {p.effectiveQuantity} × {p.validityDays} days
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment</dt>
-                      <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Payment</dt>
+                      <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                         {p.paymentMethod} · {formatCurrencyOrDash(Number(p.amountReceived), p.currency)}
                       </dd>
                     </div>
                     {p.paymentReference && (
                       <div>
-                        <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Reference</dt>
-                        <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 break-all">{p.paymentReference}</dd>
+                        <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Reference</dt>
+                        <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 break-all">{p.paymentReference}</dd>
                       </div>
                     )}
                   </dl>
@@ -419,7 +475,7 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
                       Generate {p.effectiveQuantity} Token{p.effectiveQuantity === 1 ? '' : 's'}
                     </ATMButton>
                   </div>
-                  <p className="mt-3 text-[11px] text-gray-400 font-medium text-right">
+                  <p className="mt-3 text-[11px] text-slate-400 font-medium text-right">
                     Creates every token and its paid Token Purchase invoice against this payment.
                   </p>
                 </TokenWizardSection>
@@ -451,10 +507,10 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
             <ATMCard title="Generated Tokens" padding="md">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     {p.result.totalGenerated} token(s) issued
                   </p>
-                  <p className="mt-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  <p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     {p.result.totalCharged.toFixed(2)} {p.result.currencyCode} collected ·{' '}
                     {p.result.invoiceNumbers.length} invoice(s) marked paid
                     {p.result.invoiceNumbers.length > 0 && ` (${p.result.invoiceNumbers.join(', ')})`}
@@ -464,35 +520,12 @@ export const BulkTokenPage: React.FC<BulkTokenPageProps> = (p) => {
                   Download CSV
                 </ATMButton>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-[var(--zen-border)]">
-                      {['Seq', 'Token ID', 'Plan', 'Validity', 'Status', 'Token String'].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 dark:divide-gray-800/40">
-                    {p.result.tokens.map((t) => (
-                      <tr key={t.tokenId}>
-                        <td className="px-3 py-2.5 text-xs font-bold text-gray-900 dark:text-gray-100">#{t.sequence}</td>
-                        <td className="px-3 py-2.5 font-mono text-[11px] text-gray-600 dark:text-gray-300" title={t.tokenId}>
-                          {t.tokenId.slice(0, 8)}…
-                        </td>
-                        <td className="px-3 py-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                          {t.planName || (PLAN_TYPE_LABEL[t.plan] ?? t.plan)}
-                        </td>
-                        <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400">{t.validityDays}d</td>
-                        <td className="px-3 py-2.5"><TokenStatusBadge status={t.status} /></td>
-                        <td className="px-3 py-2.5 font-mono text-[10px] text-gray-500 max-w-[220px] truncate" title={t.encodedToken}>
-                          {t.encodedToken}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ATMTable
+                columns={resultColumns}
+                data={p.result.tokens}
+                density="compact"
+                emptyMessage="No tokens in this batch."
+              />
             </ATMCard>
 
             <div className="flex items-center gap-3 pt-2">

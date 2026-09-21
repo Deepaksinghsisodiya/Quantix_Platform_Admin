@@ -48,7 +48,7 @@ const InfoTile: React.FC<{
   label: string;
   value: React.ReactNode;
 }> = ({ icon: Icon, tint, label, value }) => (
-  <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+  <div className="p-4 rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a] flex items-start gap-3">
     <div className={cn('p-2 rounded-lg mt-0.5', tint)}>
       <Icon size={16} />
     </div>
@@ -76,8 +76,8 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
 
   const pricingTiles = [
     { label: 'Daily Price', value: formatCurrencyOrDash(plan.dailyPrice, currency), icon: Coins, tint: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400' },
-    { label: 'Weekly Price', value: formatCurrencyOrDash(plan.weeklyPrice, currency), icon: CalendarDays, tint: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' },
-    { label: 'Monthly Price', value: formatCurrencyOrDash(plan.monthlyPrice, currency), icon: Banknote, tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' },
+    { label: 'Weekly Price', value: formatCurrencyOrDash(plan.weeklyPrice, currency), icon: CalendarDays, tint: 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400' },
+    { label: 'Monthly Price', value: formatCurrencyOrDash(plan.monthlyPrice, currency), icon: Banknote, tint: 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400' },
     { label: 'Yearly Price', value: formatCurrencyOrDash(plan.yearlyPrice, currency), icon: CalendarRange, tint: 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400' },
   ];
 
@@ -155,7 +155,7 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
 
           <div className="flex items-center gap-2.5 shrink-0">
             <StatusBadge status={plan.status} />
-            <div className="flex items-center gap-2 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm px-3 py-2 rounded-xl border border-[var(--zen-border)]">
+            <div className="flex items-center gap-2 bg-white/60 dark:bg-[#13151a]/60 backdrop-blur-sm px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800">
               <p className="text-xs font-black text-slate-800 dark:text-slate-200">
                 {isMuted ? 'Disabled' : 'Enabled'}
               </p>
@@ -170,7 +170,7 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
         </div>
 
         {/* Emphasis price + quick capacity chips */}
-        <div className="rounded-2xl border border-[var(--zen-border)] bg-white/70 dark:bg-[#13151a]/80 p-5 flex flex-col xl:flex-row gap-5 xl:items-center justify-between">
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 dark:border-slate-800 dark:bg-[#13151a]/80 p-5 flex flex-col xl:flex-row gap-5 xl:items-center justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Monthly Subscription</p>
             <div className="flex items-end gap-1.5 mt-1.5">
@@ -190,13 +190,13 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
           <div className="grid grid-cols-3 gap-3 flex-1 max-w-lg">
             <InfoTile
               icon={MapPin}
-              tint="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+              tint="bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400"
               label="Stores"
               value={plan.maxLocations === 0 ? 'Unlimited' : plan.maxLocations}
             />
             <InfoTile
               icon={Monitor}
-              tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400"
+              tint="bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400"
               label="Registers"
               value={plan.maxTerminals === 0 ? 'Unlimited' : plan.maxTerminals}
             />
@@ -232,7 +232,7 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
               />
               <InfoTile
                 icon={Clock}
-                tint="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                tint="bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400"
                 label="Free Trial"
                 value={plan.trialPeriod ? `${plan.trialPeriod} days` : 'No free trial'}
               />

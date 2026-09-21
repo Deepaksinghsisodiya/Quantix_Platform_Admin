@@ -122,21 +122,21 @@ export const AllMerchantsWrapper: React.FC = () => {
           return (
             <div className="flex items-center gap-4 py-2">
               <div className="relative group shrink-0">
-                <div className="w-11 h-11 rounded-2xl bg-accent-50 dark:bg-accent-500/10 flex items-center justify-center border border-accent-100 dark:border-accent-900/30 overflow-hidden ring-2 ring-white dark:ring-gray-800 shadow-sm transition-transform group-hover:scale-105 duration-300">
+                <div className="w-11 h-11 rounded-2xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center border border-primary-100 dark:border-primary-900/30 overflow-hidden ring-2 ring-white dark:ring-slate-800 shadow-sm transition-transform group-hover:scale-105 duration-300">
                   <ATMAvatar
                     name={bizName}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 {isActive && (
-                  <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-emerald-500 border-2 border-white dark:border-gray-950 rounded-full shadow-sm" />
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-emerald-500 border-2 border-white dark:border-slate-950 rounded-full shadow-sm" />
                 )}
               </div>
               <div className="min-w-0">
-                <p className="truncate max-w-[220px] text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors" title={bizName}>
+                <p className="truncate max-w-[220px] text-[13px] font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" title={bizName}>
                   {bizName}
                 </p>
-                <p className="truncate max-w-[220px] text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none" title={email}>
+                <p className="truncate max-w-[220px] text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-2 leading-none" title={email}>
                   {email}
                 </p>
               </div>
@@ -172,7 +172,7 @@ export const AllMerchantsWrapper: React.FC = () => {
         // 2026-08-13: real plan display name — the old "Standard" fallback was a plan that
         // never existed.
         renderCell: (_val, row) => (
-          <span className="text-gray-700 dark:text-gray-300 font-semibold text-xs">
+          <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs">
             {(row as any).planName || row.plan || '—'}
           </span>
         ),
@@ -197,7 +197,7 @@ export const AllMerchantsWrapper: React.FC = () => {
         renderCell: (_val, row) => {
           const d = (row as any).activatedAt || row.signupDate || (row as any).createdAt;
           return (
-            <span className="text-gray-500 dark:text-gray-400 font-semibold tabular-nums text-xs">
+            <span className="text-slate-500 dark:text-slate-400 font-semibold tabular-nums text-xs">
               {d ? formatDate(d, 'short') : '—'}
             </span>
           );
@@ -238,7 +238,7 @@ export const AllMerchantsWrapper: React.FC = () => {
   }, [params]);
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Page header and Stats Cards */}
       <div className="flex-shrink-0">
         <ATMPageHeader

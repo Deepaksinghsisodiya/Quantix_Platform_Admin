@@ -38,12 +38,12 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/40 dark:border-gray-800 dark:bg-[#13151a]',
+        'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/40 dark:border-slate-800 dark:bg-[#13151a]',
         className,
       )}
     >
       <div className="flex items-center justify-between border-b border-[var(--zen-border)] px-5 py-4">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Generated Token</h3>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Generated Token</h3>
         <TokenStatusBadge status={token.status} />
       </div>
 
@@ -53,21 +53,21 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
             <div className="rounded-2xl border border-[var(--zen-border)] bg-white p-4 dark:bg-white shadow-md">
               <QRCodeSVG value={token.encodedToken} size={160} level="H" includeMargin={false} />
             </div>
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
               Scan to apply
             </span>
           </div>
 
           <div className="flex-1 space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <label className="mb-1.5 block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Token String
               </label>
               <div className="flex items-center gap-3">
                 <code
                   className={cn(
-                    'flex-1 overflow-x-auto rounded-xl border border-[var(--zen-border)] bg-gray-50/50 px-4 py-3 font-bold',
-                    'font-mono text-xs text-gray-900 dark:bg-gray-900 dark:text-gray-100 shadow-inner',
+                    'flex-1 overflow-x-auto rounded-xl border border-[var(--zen-border)] bg-slate-50/50 px-4 py-3 font-bold',
+                    'font-mono text-xs text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-inner',
                     'select-all break-all',
                   )}
                 >
@@ -85,43 +85,43 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
 
             <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Token ID
                 </span>
-                <span className="mt-1 block truncate font-mono text-xs font-bold text-gray-900 dark:text-gray-100">
+                <span className="mt-1 block truncate font-mono text-xs font-bold text-slate-900 dark:text-slate-100">
                   {token.tokenId}
                 </span>
               </div>
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Plan
                 </span>
                 <ATMBadge color="primary" label={token.planName || (PLAN_TYPE_LABEL[token.plan] ?? token.plan)} className="mt-1" />
               </div>
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Sequence
                 </span>
-                <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">#{token.sequence}</span>
+                <span className="mt-1 block text-xs font-bold text-slate-900 dark:text-slate-100">#{token.sequence}</span>
               </div>
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Validity
                 </span>
-                <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">
+                <span className="mt-1 block text-xs font-bold text-slate-900 dark:text-slate-100">
                   {token.validityDays} days from activation
                 </span>
               </div>
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Generated
                 </span>
-                <span className="mt-1 block text-xs font-bold text-gray-900 dark:text-gray-100">
+                <span className="mt-1 block text-xs font-bold text-slate-900 dark:text-slate-100">
                   {formatDate(token.createdAt, 'short')}
                 </span>
               </div>
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Status
                 </span>
                 <TokenStatusBadge status={token.status} className="mt-1" />
@@ -133,7 +133,7 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
         {/* 2026-08-29 (user-locked): the complete token in human-readable form — every
             limit count, enabled features and grace phases the merchant is getting. */}
         <div className="mt-6 border-t border-[var(--zen-border)] pt-5">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">What this token grants</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">What this token grants</h3>
           <TokenBreakdown
             limitsPayload={token.limitsPayload}
             featurePayload={token.featurePayload}

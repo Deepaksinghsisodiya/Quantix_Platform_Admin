@@ -3,8 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { ATMErrorState } from '@/shared/ui';
+import { ATMErrorState, ATMPageSkeleton } from '@/shared/ui';
 import { UserForm } from '../Form/UserForm';
 import { useGetUserByIdQuery, useUpdateUserMutation, useGetUserGrantsQuery, useSetUserGrantsMutation } from '../services/userApi';
 import { ROLE_ID_MAP, type PlatformRole, type UserStatus } from '../types/user.types';
@@ -90,11 +89,7 @@ export const UserEditWrapper: React.FC = () => {
   };
 
   if (isUserLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-600" />
-      </div>
-    );
+    return <ATMPageSkeleton variant="detail" />;
   }
 
   if (isUserError || !user) {

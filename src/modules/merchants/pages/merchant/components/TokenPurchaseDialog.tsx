@@ -22,7 +22,7 @@ import {
   useGetSelfTokenQuoteQuery,
   usePurchaseSelfTokenMutation,
 } from '@/modules/merchants/services/merchantSelfApi';
-import { ATMModal } from '@/shared/ui';
+import { ATMModal, ATMSkeleton } from '@/shared/ui';
 import PspMount from './PspMount';
 
 const VALIDITY_OPTIONS = [
@@ -140,7 +140,7 @@ export default function TokenPurchaseDialog({ open, onClose, onPurchased }: Prop
                 </div>
                 <div className="mt-1 flex justify-between">
                   <span className="text-surface-500">You will be charged</span>
-                  <strong>{quoting || !quote ? '…' : money(quote.amount)}</strong>
+                  <strong>{quoting || !quote ? <ATMSkeleton width="70px" height="16px" className="inline-block align-middle" /> : money(quote.amount)}</strong>
                 </div>
                 {quote && !quoting && (
                   <div className="mt-1 text-xs text-surface-500">

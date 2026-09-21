@@ -10,11 +10,11 @@ import {
 } from 'lucide-react';
 import { Breadcrumb } from './Breadcrumb';
 import { ATMAvatar } from '../../shared/ui/ATMAvatar';
-import { ATMDropdown } from '../../shared/ui/ATMDropdown';
 import { User as UserType } from '../../modules/auth';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { navItems, NavItem } from '../Sidebar/navConfig';
 import { NotificationBell } from './NotificationBell';
+import clsx from 'clsx';
 
 interface SearchResult {
   id: string;
@@ -44,9 +44,11 @@ export const Topbar: React.FC<Props> = ({
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const [searchValue, setSearchValue] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const triggerSearch = (query: string) => { };
   const apiResults: any[] = [];
   const isFetching = false;
@@ -100,6 +102,9 @@ export const Topbar: React.FC<Props> = ({
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowResults(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -123,22 +128,28 @@ export const Topbar: React.FC<Props> = ({
       case 'Project': return <FolderKanban size={14} className="text-slate-900 dark:text-white" />;
       case 'Task': return <CheckSquare size={14} className="text-slate-900 dark:text-white" />;
       case 'User': return <UsersIcon size={14} className="text-slate-900 dark:text-white" />;
-      case 'Navigation': return <Navigation size={14} className="text-slate-950 dark:text-white" />;
+      case 'Navigation': return <Navigation size={14} className="text-slate-900 dark:text-white" />;
       default: return <Search size={14} />;
     }
   };
 
+  const iconBtn =
+    'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white';
+
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
+  const roleLabel = user?.roleName || 'Admin';
+
   return (
     <header
-      className={`fixed top-0 right-0 h-16 bg-white/75 dark:bg-[#09090b]/80 backdrop-blur-2xl border-b border-zinc-200/70 dark:border-white/[0.06] z-40 px-4 md:px-6 flex items-center justify-between transition-[left] duration-300 ease-in-out left-0 ${isCollapsed ? 'lg:left-[76px]' : 'lg:left-[270px]'
+      className={`fixed top-0 right-0 h-16 bg-white/85 dark:bg-[#0d0f14]/85 backdrop-blur-2xl border-b border-[var(--zen-border)] z-40 px-4 md:px-6 flex items-center justify-between gap-3 transition-[left] duration-300 ease-in-out left-0 ${isCollapsed ? 'lg:left-[76px]' : 'lg:left-[270px]'
         }`}
     >
       {/* Left Section */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
         <button
           onClick={onMenuToggle}
           aria-label="Open menu"
-          className="p-2 -ml-2 text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60 rounded-xl transition-all lg:hidden shrink-0"
+          className="p-2 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/[0.06] transition-all active:scale-95 lg:hidden shrink-0"
         >
           <Menu size={20} />
         </button>
@@ -147,34 +158,35 @@ export const Topbar: React.FC<Props> = ({
           <button
             onClick={onCollapseToggle}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 text-zinc-400 hover:text-zinc-950 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/60 dark:hover:text-white rounded-xl transition-all mr-1 shrink-0"
+            className="p-1.5 mr-0.5 shrink-0 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/[0.06] dark:hover:text-white transition-all active:scale-95"
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             {isCollapsed ? <ChevronsRight size={17} strokeWidth={2.2} /> : <ChevronsLeft size={17} strokeWidth={2.2} />}
           </button>
+          <span className="h-5 w-px bg-slate-200/80 dark:bg-slate-800" />
           <Breadcrumb />
         </div>
       </div>
 
-      {/* Middle Section: Global Search with glass container */}
-      <div className="hidden md:flex flex-1 max-w-sm relative" ref={searchRef}>
+      {/* Middle Section: Global Search */}
+      <div className="hidden md:flex flex-1 max-w-sm lg:max-w-md relative" ref={searchRef}>
         <div className="relative w-full group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors duration-200">
-            {isFetching ? <Loader2 size={15} className="animate-spin text-blue-500" /> : <Search size={15} />}
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400 transition-colors duration-200">
+            {isFetching ? <Loader2 size={15} className="animate-spin text-primary-500" /> : <Search size={15} />}
           </div>
           <input
             ref={inputRef}
             type="text"
             role="searchbox"
             aria-label="Global search"
-            className="block w-full pl-9 pr-12 py-2 bg-zinc-100/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 focus:border-blue-500/60 dark:focus:border-blue-400/60 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-xs transition-all duration-200 outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 font-medium"
+            className="block w-full h-9 pl-9 pr-12 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-primary-500 dark:focus:border-primary-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-primary-500/10 dark:focus:ring-primary-400/10 rounded-xl text-xs transition-all duration-200 outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 font-medium"
             placeholder="Search pages, merchants, tickets... (⌘K)"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onFocus={() => searchValue.trim().length >= 2 && setShowResults(true)}
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none">
-            <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xs font-mono">
+            <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-xs font-mono">
               <Command size={10} /> K
             </kbd>
           </div>
@@ -182,16 +194,16 @@ export const Topbar: React.FC<Props> = ({
 
         {/* Search Results Dropdown */}
         {showResults && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 py-2.5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
-            <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800/80 mb-1.5 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Quick Jump</span>
-              {isFetching && <Loader2 size={12} className="animate-spin text-blue-500" />}
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#13151a] rounded-2xl shadow-2xl border border-[var(--zen-border)] py-2.5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
+            <div className="px-3.5 py-1.5 border-b border-slate-100 dark:border-slate-800/60 mb-1.5 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Quick Jump</span>
+              {isFetching && <Loader2 size={12} className="animate-spin text-primary-500" />}
             </div>
 
             <div className="max-h-[300px] overflow-y-auto custom-scrollbar px-1.5">
               {combinedResults.length === 0 ? (
                 <div className="py-7 text-center">
-                  <p className="text-xs font-medium text-zinc-400 italic">No results found for "{searchValue}"</p>
+                  <p className="text-xs font-medium text-slate-400 italic">No results found for "{searchValue}"</p>
                 </div>
               ) : (
                 combinedResults.map((res: SearchResult) => (
@@ -202,75 +214,135 @@ export const Topbar: React.FC<Props> = ({
                       setShowResults(false);
                       setSearchValue('');
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-blue-50/60 dark:hover:bg-blue-950/25 rounded-xl transition-all duration-150 group text-left border border-transparent hover:border-blue-500/20"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all duration-150 group text-left"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition-colors shrink-0 text-zinc-600 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-300">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/40 transition-colors shrink-0 text-slate-600 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-300">
                       {getIcon(res.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-white truncate leading-none">{res.title}</p>
-                        <ChevronRight size={12} className="text-zinc-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                        <p className="text-xs font-semibold text-slate-900 dark:text-white truncate leading-none">{res.title}</p>
+                        <ChevronRight size={12} className="text-slate-400 group-hover:text-primary-500 transition-colors shrink-0" />
                       </div>
-                      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate mt-1">{res.subtitle}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-1">{res.subtitle}</p>
                     </div>
                   </button>
                 ))
               )}
             </div>
 
-            <div className="px-3.5 py-1.5 bg-zinc-50/50 dark:bg-zinc-900/40 border-t border-zinc-100 dark:border-zinc-800/60 mt-1.5">
-              <p className="text-[9px] text-zinc-400 text-center tracking-wider uppercase font-semibold">Press ESC to dismiss</p>
+            <div className="px-3.5 py-1.5 bg-slate-50/60 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800/60 mt-1.5">
+              <p className="text-[9px] text-slate-400 text-center tracking-wider uppercase font-semibold">Press ESC to dismiss · ↑↓ to navigate</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
+      <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
         <ThemeToggle />
+
+        <span className="hidden sm:block h-5 w-px bg-slate-200/80 dark:bg-slate-800 mx-0.5" />
 
         <NotificationBell />
 
-        <ATMDropdown
-          trigger={
-            <button className="flex items-center gap-2.5 p-1.5 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-700/60">
-              <div className="relative">
+        <span className="hidden sm:block h-5 w-px bg-slate-200/80 dark:bg-slate-800 mx-0.5" />
+
+        {/* Profile Menu */}
+        <div className="relative" ref={profileRef}>
+          <button
+            onClick={() => setProfileOpen((v) => !v)}
+            aria-expanded={profileOpen}
+            aria-haspopup="menu"
+            className={clsx(
+              'flex items-center gap-2.5 rounded-xl p-1 transition-all duration-200',
+              profileOpen
+                ? 'bg-slate-100 dark:bg-white/[0.06]'
+                : 'hover:bg-slate-100 dark:hover:bg-white/[0.06]'
+            )}
+          >
+            <div className="relative">
+              <ATMAvatar
+                src={user?.profilePictureUrl || user?.profilePicture || user?.avatar}
+                name={fullName}
+                size="sm"
+                className="shadow-sm flex-shrink-0"
+              />
+              <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0d0f14] shadow-sm shadow-emerald-500/50" />
+            </div>
+            <div className="hidden xl:flex flex-col items-start leading-none gap-1 shrink-0 text-left">
+              <span className="text-xs font-bold text-slate-900 dark:text-white">{fullName}</span>
+              <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{roleLabel}</span>
+            </div>
+            <ChevronDown
+              size={13}
+              strokeWidth={2.2}
+              className={clsx(
+                'text-slate-400 ml-0.5 shrink-0 transition-transform duration-200',
+                profileOpen && 'rotate-180'
+              )}
+            />
+          </button>
+
+          {profileOpen && (
+            <div
+              role="menu"
+              aria-label="Profile menu"
+              className="absolute right-0 top-full mt-2 w-64 origin-top-right rounded-2xl bg-white dark:bg-[#13151a] shadow-2xl border border-[var(--zen-border)] overflow-hidden z-[60] animate-in fade-in zoom-in-95 duration-200"
+            >
+              {/* User header */}
+              <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/60 dark:bg-slate-900/40">
                 <ATMAvatar
                   src={user?.profilePictureUrl || user?.profilePicture || user?.avatar}
-                  name={`${user?.firstName} ${user?.lastName}`}
-                  size="sm"
-                  className="shadow-sm flex-shrink-0 ring-2 ring-blue-500/20"
+                  name={fullName}
+                  size="md"
+                  className="shrink-0"
                 />
-                <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900 shadow-sm shadow-emerald-500/50" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{fullName}</p>
+                  <p className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{user?.email || roleLabel}</p>
+                </div>
               </div>
-              <div className="hidden xl:flex flex-col items-start leading-none gap-1 shrink-0">
-                <span className="text-xs font-bold text-zinc-900 dark:text-white">{user?.firstName} {user?.lastName}</span>
-                <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{user?.roleName || 'Admin'}</span>
+
+              <div className="p-1.5">
+                <button
+                  role="menuitem"
+                  onClick={() => { setProfileOpen(false); navigate('/profile'); }}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-white/[0.05] dark:hover:text-white"
+                >
+                  <span className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    <User size={15} />
+                  </span>
+                  Profile Settings
+                </button>
+
+                <button
+                  role="menuitem"
+                  onClick={() => { setProfileOpen(false); onChangePassword(); }}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-white/[0.05] dark:hover:text-white"
+                >
+                  <span className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    <Key size={15} />
+                  </span>
+                  Update Password
+                </button>
+
+                <div className="my-1.5 h-px bg-slate-100 dark:bg-slate-800/60" />
+
+                <button
+                  role="menuitem"
+                  onClick={() => { setProfileOpen(false); onLogout(); }}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-all duration-150 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                >
+                  <span className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                    <LogOut size={15} />
+                  </span>
+                  Sign Out
+                </button>
               </div>
-              <ChevronDown size={13} className="text-zinc-400 ml-0.5 shrink-0" />
-            </button>
-          }
-          items={[
-            {
-              label: 'Profile Settings',
-              icon: <User size={15} />,
-              onClick: () => navigate('/profile'),
-            },
-            {
-              label: 'Update Password',
-              icon: <Key size={15} />,
-              onClick: onChangePassword,
-            },
-            {
-              label: 'Sign Out',
-              icon: <LogOut size={15} />,
-              onClick: onLogout,
-              variant: 'danger',
-              divider: true,
-            },
-          ]}
-        />
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

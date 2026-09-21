@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Save } from 'lucide-react';
+import { BookOpen, Save } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { TemplatePicker } from '../components/TemplatePicker';
 import type { ArticleTemplate } from '../services/templatesApi';
-import { ATMButton, ATMCard, ATMTextField, ATMSkeleton } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMTextField, ATMSkeleton, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
 import {
   useGetHelpArticleQuery,
   useCreateHelpArticleMutation,
@@ -142,9 +142,15 @@ function HelpArticleEditorPage() {
 
   if (isEdit && articleQuery.isLoading) {
     return (
-      <div className="w-full space-y-4">
-        <ATMSkeleton variant="rect" height="60px" />
-        <ATMSkeleton variant="rect" height="360px" />
+      <div className="w-full space-y-5">
+        <div className="space-y-2">
+          <ATMSkeleton width="30%" height="14px" className="rounded" />
+          <ATMSkeleton height="44px" className="rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <ATMSkeleton width="25%" height="14px" className="rounded" />
+          <ATMSkeleton height="360px" className="rounded-lg" />
+        </div>
       </div>
     );
   }
@@ -152,14 +158,23 @@ function HelpArticleEditorPage() {
   return (
     <div className="w-full space-y-6 animate-fade-in">
       <ATMPageHeader
+        icon={BookOpen}
+        iconColor="theme"
         title={isEdit ? 'Edit Help Article' : 'New Help Article'}
         subtitle="Published on the website help centre."
-        action={{ label: 'Save', onClick: () => { void save(); }, icon: Save }}
+        onBack={() => navigate('/content/help')}
+        extraActions={
+          <ATMButton
+            variant="primary"
+            size="md"
+            icon={Save}
+            loading={createState.isLoading || updateState.isLoading}
+            onClick={() => { void save(); }}
+          >
+            {isEdit ? 'Save changes' : 'Create article'}
+          </ATMButton>
+        }
       />
-
-      <ATMButton variant="ghost" icon={ArrowLeft} onClick={() => navigate('/content/help')}>
-        Back to Help Articles
-      </ATMButton>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -178,17 +193,18 @@ function HelpArticleEditorPage() {
                 onChange={(e) => { setSlugTouched(true); update('slug', e.target.value); }}
                 helperText="The article's address on the help centre."
               />
-              <div className="flex flex-col gap-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Body (Markdown)</label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-end">
                   <TemplatePicker kind="HelpArticle" hasContent={!!draft.body.trim()} onApply={applyTemplate} />
                 </div>
-                <textarea
+                <ATMTextArea
+                  name="body"
+                  label="Body (Markdown)"
                   rows={18}
                   value={draft.body}
                   onChange={(e) => update('body', e.target.value)}
                   placeholder="Write the article in Markdown..."
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="[&_textarea]:font-mono"
                 />
               </div>
             </div>
@@ -197,23 +213,20 @@ function HelpArticleEditorPage() {
 
         <div className="space-y-4">
           <ATMCard padding="md">
-            <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Placement</h3>
+            <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Placement</h3>
             <div className="space-y-3">
               {/* Categories come from the API. The list page hardcoded four, which made every
                   article filed elsewhere invisible and unreachable. */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Category</label>
-                <select
-                  value={draft.categoryId}
-                  onChange={(e) => update('categoryId', e.target.value)}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">No category</option>
-                  {categories.map((c) => (
-                    <option key={c.contentId} value={c.contentId}>{c.title}</option>
-                  ))}
-                </select>
-              </div>
+              <ATMSelectField
+                name="categoryId"
+                label="Category"
+                value={draft.categoryId}
+                onChange={(v) => update('categoryId', String(v ?? ''))}
+                options={[
+                  { value: '', label: 'No category' },
+                  ...categories.map((c) => ({ value: c.contentId, label: c.title })),
+                ]}
+              />
               <ATMTextField
                 name="tags"
                 label="Tags"
@@ -228,27 +241,14 @@ function HelpArticleEditorPage() {
                 value={String(draft.sortOrder)}
                 onChange={(e) => update('sortOrder', parseInt(e.target.value, 10) || 0)}
               />
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={draft.isActive}
-                  onChange={(e) => update('isActive', e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                Published on the help centre
-              </label>
+              <ATMCheckbox
+                name="isActive"
+                label="Published on the help centre"
+                checked={draft.isActive}
+                onChange={(checked) => update('isActive', checked)}
+              />
             </div>
           </ATMCard>
-
-          <ATMButton
-            variant="primary"
-            icon={Save}
-            className="w-full"
-            isLoading={createState.isLoading || updateState.isLoading}
-            onClick={() => { void save(); }}
-          >
-            {isEdit ? 'Save changes' : 'Create article'}
-          </ATMButton>
         </div>
       </div>
     </div>

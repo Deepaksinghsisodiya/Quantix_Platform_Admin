@@ -46,10 +46,9 @@ export const ATMTableFilterDrawer: React.FC<Props> = ({
       {/* 🎭 Premium Glass Backdrop */}
       <div 
         className={clsx(
-          "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] transition-all duration-500 ease-in-out",
+          "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] transition-all duration-500 ease-in-out cursor-default",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
-        onClick={onClose}
       />
 
       {/* 🏛️ The Pro Drawer */}

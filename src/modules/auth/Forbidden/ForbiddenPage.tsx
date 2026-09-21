@@ -10,7 +10,7 @@ export const ForbiddenPage: React.FC = () => {
         <h2 className="text-2xl font-black text-surface-900 dark:text-surface-100">Forbidden</h2>
         <p className="mt-2 text-sm text-surface-500 mb-6">You do not have the required permissions to access this page.</p>
         <ATMButton 
-          className="w-full h-11 bg-accent-600 hover:bg-accent-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all"
+          className="w-full h-12 bg-accent-600 hover:bg-accent-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all"
           onClick={() => navigate(-1)}
         >
           Go Back

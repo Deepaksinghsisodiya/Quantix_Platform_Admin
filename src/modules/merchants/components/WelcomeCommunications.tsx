@@ -81,10 +81,16 @@ export function WelcomeCommunications({ merchantId }: WelcomeCommunicationsProps
   if (isLoading) {
     return (
       <ATMCard title="Welcome Communications" padding="md">
-        <div className="space-y-2.5 pt-1">
-          <ATMSkeleton className="h-11 w-full rounded-xl" />
-          <ATMSkeleton className="h-16 w-full rounded-xl" />
-          <ATMSkeleton className="h-16 w-full rounded-xl" />
+        <div className="space-y-3 pt-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1 space-y-2">
+                <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+                <ATMSkeleton width="65%" height="12px" className="rounded-lg" />
+              </div>
+              <ATMSkeleton width="64px" height="30px" className="rounded-lg" />
+            </div>
+          ))}
         </div>
       </ATMCard>
     );
@@ -116,19 +122,19 @@ export function WelcomeCommunications({ merchantId }: WelcomeCommunicationsProps
     <ATMCard title="Welcome Communications" padding="md">
       <div className="space-y-4 pt-1">
         {/* Recipient */}
-        <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 px-3.5 py-2.5">
-          <User className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
-          <div className="text-xs flex items-center gap-2 flex-wrap font-semibold text-gray-600 dark:text-gray-300">
-            <span className="font-bold text-gray-900 dark:text-white">{contactName || '—'}</span>
-            <span className="text-gray-400 dark:text-gray-600">&middot;</span>
-            <span className="font-mono text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 px-3.5 py-2.5">
+          <User className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" />
+          <div className="text-xs flex items-center gap-2 flex-wrap font-semibold text-slate-600 dark:text-slate-300">
+            <span className="font-bold text-slate-900 dark:text-slate-100">{contactName || '—'}</span>
+            <span className="text-slate-400 dark:text-slate-600">&middot;</span>
+            <span className="font-mono text-slate-500 dark:text-slate-400">
               {contactEmail || 'no contact email on file'}
             </span>
           </div>
         </div>
 
         {communications.length === 0 ? (
-          <p className="px-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <p className="px-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
             No merchant-facing messages apply to this merchant yet.
           </p>
         ) : (
@@ -140,17 +146,17 @@ export function WelcomeCommunications({ merchantId }: WelcomeCommunicationsProps
               return (
                 <div
                   key={comm.kind}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-zen-surface px-4 py-3 dark:border-gray-800/80 shadow-sm transition-all duration-200 hover:border-gray-200 dark:hover:border-gray-700"
+                  className="flex items-start justify-between gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 dark:border-slate-800/80 shadow-sm transition-all duration-200 hover:border-slate-200 dark:hover:border-slate-700"
                 >
                   <div className="flex items-start gap-3 min-w-0">
                     <StatusIcon className={cn('mt-0.5 h-4 w-4 shrink-0', meta.className)} />
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{comm.title}</p>
-                      <p className="mt-0.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{comm.title}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
                         {when ? `${meta.label} · ${when}` : meta.label}
                       </p>
                       {comm.detail && (
-                        <p className="mt-1 text-[10px] leading-relaxed text-gray-500 dark:text-gray-400 break-words">
+                        <p className="mt-1 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 break-words">
                           {comm.detail}
                         </p>
                       )}

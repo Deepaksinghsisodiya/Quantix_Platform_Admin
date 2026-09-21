@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Form, FormikProps } from 'formik';
 import {
   UserPlus,
   Briefcase,
   Shield,
   CheckCircle2,
-  ArrowLeft,
   Save,
   Fingerprint,
-  Lock
+  Lock,
+  UserCog,
+  ChevronDown
 } from 'lucide-react';
 import { ATMInputField, ATMSelectField } from '@/shared/components/form';
-import { ATMCheckbox, ATMButton, ATMIconButton } from '@/shared/ui';
+import { ATMCheckbox, ATMButton, ATMSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ROLE_ID_MAP, type PermissionCatalogItem } from '../types/user.types';
 import { useGetPermissionCatalogQuery, useGetRolePermissionsQuery } from '../services/userApi';
 
@@ -39,6 +41,62 @@ const PLATFORM_ROLES = [
   { value: 'ContentManager', label: 'Content Manager', description: 'Public Website content (blog / FAQ / help) + CRM (leads / contacts)' },
   { value: 'Operator', label: 'Operator', description: 'Helpdesk tickets by default; Admin grants additional activities per user' },
 ];
+
+interface FormSectionProps {
+  icon: React.ElementType;
+  iconClassName?: string;
+  title: string;
+  description: React.ReactNode;
+  defaultOpen?: boolean;
+  extra?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+const FormSection: React.FC<FormSectionProps> = ({
+  icon: Icon,
+  iconClassName = 'text-primary-600',
+  title,
+  description,
+  defaultOpen = true,
+  extra,
+  children,
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-gray-800/80">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/30"
+      >
+        <div className="flex min-w-0 items-center gap-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-slate-50 dark:border-gray-800/80 dark:bg-slate-900">
+            <Icon size={18} className={iconClassName} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{title}</h3>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          {extra}
+          <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-slate-200/80 px-5 py-5 dark:border-gray-800/80">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const UserForm: React.FC<UserFormProps> = ({
   title,
@@ -73,65 +131,40 @@ export const UserForm: React.FC<UserFormProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-zen-surface animate-in fade-in duration-500 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-zen-surface z-20 shadow-sm">
-        <div className="flex items-center gap-5">
-          <ATMIconButton
-            type="button"
-            icon={ArrowLeft}
-            onClick={onCancel}
-            variant="default"
-            size="md"
-            className="hover:bg-gray-50 dark:hover:bg-gray-900 border-gray-100 dark:border-gray-800 text-slate-400"
-          />
-          <div className="w-px h-10 bg-slate-100 dark:bg-gray-800" />
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
-            <p className="text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-1.5">
-              {isEdit ? 'Update platform staff settings and rights' : 'Add a new staff member to the platform'}
-            </p>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={isEdit ? UserCog : UserPlus}
+        iconColor="theme"
+        title={title}
+        subtitle={isEdit ? 'Update platform staff settings and rights' : 'Add a new staff member to the platform'}
+        onBack={onCancel}
+        extraActions={
+          <div className="flex items-center gap-3">
+            <ATMButton type="button" variant="ghost" onClick={onCancel}>
+              Discard
+            </ATMButton>
+            <ATMButton
+              type="button"
+              variant="primary"
+              isLoading={isSubmitting}
+              icon={isEdit ? Save : UserPlus}
+              onClick={() => formikProps.handleSubmit()}
+            >
+              {isEdit ? 'Save Changes' : 'Create User'}
+            </ATMButton>
           </div>
-        </div>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <ATMButton
-            type="button"
-            variant="ghost"
-            onClick={onCancel}
-            className="px-10 h-14 font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900"
-          >
-            Discard
-          </ATMButton>
-          <ATMButton
-            type="button"
-            variant="primary"
-            isLoading={isSubmitting}
-            icon={isEdit ? Save : UserPlus}
-            onClick={() => formikProps.handleSubmit()}
-            className="px-16 h-14 bg-accent-600 text-white hover:bg-accent-700 rounded-2xl shadow-2xl shadow-accent-900/20 transition-all active:scale-95 font-black uppercase tracking-[0.2em]"
-          >
-            {isEdit ? 'Save Changes' : 'Create User'}
-          </ATMButton>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/10 dark:bg-gray-900/10">
-        <Form id="user-form" className="px-10 py-12 space-y-16 max-w-full">
+      <Form id="user-form" className="w-full space-y-5">
           {/* Section 1 — Personal Details */}
-          <div className="space-y-10">
-            <div className="border-l-4 border-accent-600 pl-5">
-              <h3 className="text-xs font-black text-slate-900 dark:text-gray-100 uppercase tracking-[0.2em] flex items-center gap-2">
-                <UserPlus size={14} className="text-accent-600" />
-                Personal Details
-              </h3>
-              <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">
-                Basic identification and corporate contact credentials.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pl-6">
+          <FormSection
+            icon={UserPlus}
+            iconClassName="text-primary-600"
+            title="Personal Details"
+            description="Basic identification and corporate contact credentials."
+          >
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
               <ATMInputField name="name" label="Full Name" placeholder="e.g. Sarah Chen" required />
               <ATMInputField name="email" label="Corporate Email" type="email" placeholder="sarah.chen@quantix.io" required disabled={isEdit} />
               {!isEdit && (
@@ -144,21 +177,16 @@ export const UserForm: React.FC<UserFormProps> = ({
                 />
               )}
             </div>
-          </div>
+          </FormSection>
 
           {/* Section 2 — Work Details */}
-          <div className="space-y-10">
-            <div className="border-l-4 border-emerald-500 pl-5">
-              <h3 className="text-xs font-black text-slate-900 dark:text-gray-100 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Briefcase size={14} className="text-emerald-500" />
-                Work Details
-              </h3>
-              <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">
-                Platform role{isEdit ? ', account status and IP address restrictions' : ''}.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pl-6">
+          <FormSection
+            icon={Briefcase}
+            iconClassName="text-emerald-500"
+            title="Work Details"
+            description={`Platform role${isEdit ? ', account status and IP address restrictions' : ''}.`}
+          >
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
               <ATMSelectField
                 name="role"
                 label="Platform Role"
@@ -182,7 +210,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               )}
 
               {isEdit && (
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 lg:col-span-3">
                   <ATMInputField
                     name="ipAllowlist"
                     label="IP Allowlist (Comma-separated CIDRs)"
@@ -192,94 +220,111 @@ export const UserForm: React.FC<UserFormProps> = ({
                 </div>
               )}
             </div>
-          </div>
+          </FormSection>
 
           {/* Section 3 — Additional Permissions (additive per-user grants) */}
-          <div className="space-y-10">
-            <div className="border-l-4 border-indigo-500 pl-5">
-              <h3 className="text-xs font-black text-slate-900 dark:text-gray-100 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Shield size={14} className="text-indigo-500" />
-                Additional Permissions
-              </h3>
-              <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">
+          <FormSection
+            icon={Shield}
+            iconClassName="text-primary-500"
+            title="Additional Permissions"
+            description={
+              <>
                 Role permissions are locked (additive model — never subtracted). Extras granted
                 here apply on the user's next login.
-                {extraGrants.length > 0 && ` ${extraGrants.length} extra grant${extraGrants.length === 1 ? '' : 's'} selected.`}
-              </p>
-            </div>
-
-            <div className="pl-6">
-              {isAdminRole ? (
-                <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-gray-800 dark:bg-gray-900/30">
-                  <Lock size={16} className="shrink-0 text-gray-400 mt-0.5" />
-                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                    Admin has every permission unconditionally — there is nothing extra to grant.
-                  </p>
-                </div>
-              ) : catalogLoading || rolePermsLoading ? (
-                <p className="text-sm font-semibold text-gray-400">Loading permission catalog…</p>
-              ) : (
-                <div className="space-y-6">
-                  {Object.entries(grouped).map(([category, items]) => (
-                    <div key={category} className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-zen-card p-6">
-                      <p className="mb-4 text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-gray-550">
-                        {category}
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
-                        {items.map((p) => {
-                          const fromRole = roleCodes.has(p.permissionCode);
-                          const checked = fromRole || extraGrants.includes(p.permissionCode);
-                          return (
-                            <label
-                              key={p.permissionCode}
-                              className={`flex items-center gap-2.5 ${fromRole ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                              title={fromRole ? 'Included in the selected role — locked' : p.permissionCode}
-                            >
-                              <ATMCheckbox
-                                name={p.permissionCode}
-                                label=""
-                                checked={checked}
-                                disabled={fromRole}
-                                onChange={() => toggleGrant(p.permissionCode)}
-                              />
-                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                                {p.permissionName}
-                                {fromRole && <Lock size={11} className="text-gray-400" />}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
+              </>
+            }
+            extra={
+              extraGrants.length > 0 && (
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                  {extraGrants.length} extra
+                </span>
+              )
+            }
+          >
+            {isAdminRole ? (
+              <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 p-5 dark:border-gray-800/80">
+                <Lock size={16} className="mt-0.5 shrink-0 text-slate-400" />
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Admin has every permission unconditionally — there is nothing extra to grant.
+                </p>
+              </div>
+            ) : catalogLoading || rolePermsLoading ? (
+              <div className="space-y-4">
+                {[0, 1, 2].map((g) => (
+                  <div key={g} className="rounded-xl border border-slate-200/80 p-5 dark:border-gray-800/80">
+                    <ATMSkeleton width="150px" height="12px" className="rounded" />
+                    <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2 lg:grid-cols-3">
+                      {[0, 1, 2, 3, 4, 5].map((r) => (
+                        <div key={r} className="flex items-center gap-2.5">
+                          <div className="h-4 w-4 rounded border border-slate-200 bg-surface-100 dark:bg-surface-850" />
+                          <ATMSkeleton width="60%" height="14px" className="rounded" />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  {catalog.length === 0 && (
-                    <p className="text-sm font-semibold text-red-500">
-                      Permission catalog is empty — check the API connection.
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(grouped).map(([category, items]) => (
+                  <div key={category} className="rounded-xl border border-slate-200/80 p-5 dark:border-gray-800/80">
+                    <p className="mb-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                      {category}
                     </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+                    <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2 lg:grid-cols-3">
+                      {items.map((p) => {
+                        const fromRole = roleCodes.has(p.permissionCode);
+                        const checked = fromRole || extraGrants.includes(p.permissionCode);
+                        return (
+                          <label
+                            key={p.permissionCode}
+                            className={`flex items-center gap-2.5 ${fromRole ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                            title={fromRole ? 'Included in the selected role — locked' : p.permissionCode}
+                          >
+                            <ATMCheckbox
+                              name={p.permissionCode}
+                              label=""
+                              checked={checked}
+                              disabled={fromRole}
+                              onChange={() => toggleGrant(p.permissionCode)}
+                            />
+                            <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                              {p.permissionName}
+                              {fromRole && <Lock size={11} className="text-slate-400" />}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {catalog.length === 0 && (
+                  <p className="text-sm font-semibold text-red-500">
+                    Permission catalog is empty — check the API connection.
+                  </p>
+                )}
+              </div>
+            )}
+          </FormSection>
 
           {/* Governance Footer */}
-          <div className="bg-slate-900 dark:bg-gray-900 rounded-[2.5rem] p-10 text-white flex items-start gap-8 shadow-2xl relative overflow-hidden group border dark:border-gray-800">
-            <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12 transition-transform group-hover:scale-110 duration-700">
-              <Shield size={180} />
+          <div className="relative flex items-start gap-6 overflow-hidden rounded-2xl border bg-slate-900 p-8 text-white shadow-xl dark:border-slate-800">
+            <div className="pointer-events-none absolute right-0 top-0 p-8 opacity-5">
+              <Shield size={140} />
             </div>
-            <div className="w-16 h-16 rounded-3xl bg-slate-800 flex items-center justify-center text-accent-400 shrink-0 border border-slate-700 shadow-inner">
-              <Fingerprint size={32} />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-primary-400 shadow-inner">
+              <Fingerprint size={28} />
             </div>
-            <div className="space-y-4 relative z-10">
-              <p className="font-black uppercase text-[11px] tracking-[0.3em] text-accent-400">Security & Compliance Notice</p>
-              <p className="font-medium text-base leading-relaxed text-slate-300 max-w-2xl">
+            <div className="relative z-10 space-y-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-400">Security & Compliance Notice</p>
+              <p className="max-w-2xl text-base font-medium leading-relaxed text-slate-300">
                 {isEdit
                   ? 'Role and status changes, and additional grants, apply on the user’s next login or token refresh — permissions travel in the JWT.'
                   : 'A temporary password will be assigned; the user must change it on first login. Additional grants apply from their first login.'}
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <CheckCircle2 size={16} className="text-emerald-500" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                   Role-Based Access Governance Enforced
                 </span>
               </div>
@@ -288,17 +333,16 @@ export const UserForm: React.FC<UserFormProps> = ({
 
           {/* Error Feedback */}
           {Object.keys(errors).length > 0 && Object.keys(touched).length > 0 && (
-            <div className="p-6 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30 animate-in fade-in">
-              <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-widest mb-1">
+            <div className="rounded-2xl border border-red-100 bg-red-50 p-6 animate-in fade-in dark:border-red-900/30 dark:bg-red-950/20">
+              <p className="mb-1 text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
                 Attention Required
               </p>
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium italic">
+              <p className="text-sm font-medium italic text-red-500 dark:text-red-400">
                 Please correct all highlighted errors before submitting the form.
               </p>
             </div>
           )}
         </Form>
-      </div>
     </div>
   );
 };

@@ -16,6 +16,11 @@ interface LoginFormProps {
   apiError?: string;
 }
 
+const SUBMIT_BUTTON_CLASS =
+  'w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25';
+
+const FIELD_CLASS = '[&_input]:h-11 [&_input]:rounded-xl';
+
 export const LoginForm: React.FC<LoginFormProps> = ({
   step,
   setStep,
@@ -26,150 +31,154 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const brandName = useBrandName();
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
-      {/* Premium Ambient Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-accent-300/30 to-indigo-400/10 rounded-full blur-[140px] dark:from-accent-900/20 dark:to-indigo-900/5 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-tl from-emerald-300/20 to-accent-400/10 rounded-full blur-[140px] dark:from-emerald-950/15 dark:to-accent-900/10 pointer-events-none" />
-      <div className="absolute top-[30%] right-[-5%] w-[30%] h-[30%] bg-purple-300/15 rounded-full blur-[120px] dark:bg-purple-900/5 pointer-events-none" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-12 selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
+      {/* Subtle dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.05] dark:opacity-[0.06]"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.9) 1px, transparent 0)',
+          backgroundSize: '26px 26px',
+        }}
+      />
 
-      {/* Main Container */}
-      <div className="relative w-full max-w-[440px] animate-slide-up z-10">
+      {/* Premium ambient glows */}
+      <div className="pointer-events-none absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-accent-300/40 to-indigo-400/10 blur-[120px] dark:from-accent-900/25 dark:to-indigo-900/10" />
+      <div className="pointer-events-none absolute -bottom-40 -right-32 h-[26rem] w-[26rem] rounded-full bg-gradient-to-tl from-emerald-300/25 to-accent-400/15 blur-[120px] dark:from-emerald-950/20 dark:to-accent-900/15" />
+
+      {/* Main container */}
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         {/* Card */}
-        <div className="rounded-[2rem] border border-white/60 bg-white/80 p-10 shadow-2xl backdrop-blur-xl dark:border-surface-800/40 dark:bg-surface-900/80 shadow-accent-500/5">
+        <div className="relative overflow-hidden rounded-4xl border border-white/70 bg-white/85 p-8 shadow-2xl shadow-slate-900/5 backdrop-blur-2xl sm:p-10 dark:border-slate-800/70 dark:bg-[#0f172a]/85 dark:shadow-black/40">
+          {/* Top accent hairline */}
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-accent-500 to-transparent" />
+
           {/* Logo / header */}
-          <div className="mb-10 flex flex-col items-center gap-3.5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-600 to-accent-400 shadow-xl shadow-accent-500/25 transition-all duration-300 hover:scale-105">
-              <span className="text-3xl font-black text-white tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
+          <div className="mb-9 flex flex-col items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-600 to-accent-400 text-white shadow-lg shadow-accent-500/25 transition-transform duration-300 hover:scale-105">
+              <span className="text-2xl font-black tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
             </div>
-            <div className="text-center space-y-1">
-              <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-555">
-                {brandName}
-              </h1>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
+            <div className="space-y-1 text-center">
+              <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">{brandName}</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
                 Platform Admin
               </p>
             </div>
           </div>
 
           {/* Step content */}
-          <div className="transition-all duration-200">
-            {apiError && (
-              <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300" role="alert">
-                {apiError}
+          {apiError && (
+            <div
+              className="mb-6 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+              role="alert"
+            >
+              {apiError}
+            </div>
+          )}
+
+          {step === 'credentials' ? (
+            <Form className="flex flex-col gap-5" noValidate>
+              {/* Identifier */}
+              <ATMInputField
+                name="email"
+                label="Email or Username"
+                placeholder="admin@quantix.io or admin"
+                autoComplete="username"
+                required
+                autoFocus
+                className={FIELD_CLASS}
+                icon={<AtSign size={18} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
+              />
+
+              {/* Password */}
+              <div className="space-y-2">
+                <ATMInputField
+                  name="password"
+                  label="Password"
+                  type="password"
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                  className={FIELD_CLASS}
+                  icon={<Lock size={18} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
+                />
+                <div className="flex items-center justify-end px-1 pt-1">
+                  <button
+                    type="button"
+                    className="text-[10px] font-bold uppercase tracking-wider text-accent-600 outline-none transition-colors hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
+                    onClick={onForgotPasswordClick}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
-            )}
-            {step === 'credentials' ? (
-              <Form className="flex flex-col gap-6" noValidate>
-                {/* Identifier */}
-                <ATMInputField
-                  name="email"
-                  label="Email or Username"
-                  placeholder="admin@quantix.io or admin"
-                  autoComplete="username"
-                  required
-                  autoFocus
-                  icon={<AtSign size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                />
 
-                {/* Password */}
-                <div className="space-y-2">
-                  <ATMInputField
-                    name="password"
-                    label="Password"
-                    type="password"
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    required
-                    icon={<Lock size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                  />
-                  <div className="flex items-center justify-end px-1 pt-1">
-                    <button
-                      type="button"
-                      className="text-[10px] font-bold uppercase tracking-wider text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 transition-colors outline-none"
-                      onClick={onForgotPasswordClick}
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
+              {/* Submit */}
+              <ATMButton type="submit" isLoading={isSubmitting} className={SUBMIT_BUTTON_CLASS}>
+                Sign In
+              </ATMButton>
+
+              {/* Registration link */}
+              <div className="mt-1 text-center">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Don&apos;t have an account?{' '}
+                  <Link
+                    to="/register"
+                    className="font-bold text-accent-600 outline-none transition-colors hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
+                  >
+                    Sign Up
+                  </Link>
+                </span>
+              </div>
+            </Form>
+          ) : (
+            <Form className="flex flex-col gap-5" noValidate>
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 shadow-sm transition-transform duration-300 hover:scale-105 dark:bg-accent-950/40 dark:text-accent-400">
+                  <ShieldCheck className="h-6 w-6" />
                 </div>
-
-                {/* Submit */}
-                <ATMButton
-                  type="submit"
-                  isLoading={isSubmitting}
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25"
-                >
-                  Sign In
-                </ATMButton>
-
-                {/* Registration Link */}
-                <div className="text-center mt-2">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      className="font-bold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 transition-colors"
-                    >
-                      Sign Up
-                    </Link>
-                  </span>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Two-Factor Authentication</h3>
+                  <p className="px-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    Enter the 6-digit authenticator code or an 8-digit backup recovery code.
+                  </p>
                 </div>
-              </Form>
-            ) : (
-              <Form className="flex flex-col gap-6" noValidate>
-                <div className="flex flex-col items-center gap-3.5 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-50 dark:bg-accent-950/40 transition-all duration-300 hover:scale-105 shadow-sm">
-                    <ShieldCheck className="h-7 w-7 text-accent-600 dark:text-accent-400" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-bold text-surface-900 dark:text-surface-555">
-                      Two-Factor Authentication
-                    </h3>
-                    <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed px-2">
-                      Enter the 6-digit authenticator code or an 8-digit backup recovery code.
-                    </p>
-                  </div>
-                </div>
+              </div>
 
-                {/* Reusable Code input */}
-                <ATMInputField
-                  name="code"
-                  label="Verification Code"
-                  placeholder="Enter 6 or 8-digit code"
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  maxLength={8}
-                  required
-                  icon={<ShieldCheck size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
-                />
+              {/* Code input */}
+              <ATMInputField
+                name="code"
+                label="Verification Code"
+                placeholder="••••••"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={8}
+                required
+                className="[&_input]:h-11 [&_input]:rounded-xl [&_input]:text-center [&_input]:font-mono [&_input]:text-base [&_input]:tracking-[0.35em]"
+                icon={<ShieldCheck size={18} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
+              />
 
-                <ATMButton
-                  type="submit"
-                  isLoading={isSubmitting}
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25"
-                >
-                  Verify
-                </ATMButton>
+              <ATMButton type="submit" isLoading={isSubmitting} className={SUBMIT_BUTTON_CLASS}>
+                Verify
+              </ATMButton>
 
-                {/* Back link */}
-                <button
-                  type="button"
-                  className="text-xs font-bold uppercase tracking-wider text-surface-400 hover:text-surface-600 dark:text-surface-500 dark:hover:text-surface-300 transition-colors text-center"
-                  onClick={() => {
-                    setStep('credentials');
-                    if (resetForm) resetForm();
-                  }}
-                >
-                  Back to sign in
-                </button>
-              </Form>
-            )}
-          </div>
+              {/* Back link */}
+              <button
+                type="button"
+                className="text-center text-xs font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                onClick={() => {
+                  setStep('credentials');
+                  if (resetForm) resetForm();
+                }}
+              >
+                Back to sign in
+              </button>
+            </Form>
+          )}
         </div>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          {brandName} v1.0.0-alpha
+        <p className="mt-7 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400/80 dark:text-slate-500/60">
+          Secured by two-factor authentication
         </p>
       </div>
     </div>

@@ -1,16 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { ATMBadge, ATMButton, ATMCard, ATMEmptyState, ATMSkeleton } from '@/shared/ui';
+import { ATMBadge, ATMButton, ATMCard, ATMSkeleton, ATMStatsCard } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { ATMPagination } from '@/shared/components/Pagination/ATMPagination';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  flexRender,
-  type ColumnDef,
-  type SortingState,
-} from '@tanstack/react-table';
-import {
+  LifeBuoy,
   LayoutGrid,
   List,
   Search,
@@ -18,9 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Archive,
-  ArrowUpDown,
   ArrowUpRight,
-  ChevronRight,
   Filter,
 } from 'lucide-react';
 import { useTickets, useTicketMetrics } from '@/lib/hooks/useHelpdesk';
@@ -71,7 +65,7 @@ function TicketQueuePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState('');
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sort, setSort] = useState<{ field: string; desc: boolean } | null>(null);
   const [showFilters, setShowFilters] = useState(() => searchParams.get('escalated') === '1');
 
   const [filterStatus, setFilterStatus] = useState<TicketStatus | ''>('');
@@ -108,63 +102,69 @@ function TicketQueuePage() {
   };
 
   /* ---- Table columns ---- */
-  const columns = useMemo<ColumnDef<TicketListItem>[]>(
+  const columns = useMemo<ATMTableColumn<TicketListItem>[]>(
     () => [
       {
-        accessorKey: 'ticketNumber',
+        key: 'ticketNumber',
         header: 'Ticket',
-        size: 110,
-        cell: ({ getValue }) => (
-          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{getValue() as string}</span>
+        width: '110px',
+        sortable: true,
+        renderCell: (_v) => (
+          <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{_v as string}</span>
         ),
       },
       {
-        accessorKey: 'merchantName',
+        key: 'merchantName',
         header: 'Merchant',
-        cell: ({ row }) => (
+        sortable: true,
+        renderCell: (_v, row) => (
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900 dark:text-gray-100">{row.original.merchantName || '—'}</span>
-            <ATMBadge variant={row.original.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">
-              {row.original.merchantType}
+            <span className="font-medium text-slate-900 dark:text-slate-100">{row.merchantName || '—'}</span>
+            <ATMBadge variant={row.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">
+              {row.merchantType}
             </ATMBadge>
           </div>
         ),
       },
       {
-        accessorKey: 'subject',
+        key: 'subject',
         header: 'Subject',
-        cell: ({ getValue }) => (
-          <span className="max-w-xs truncate text-gray-900 dark:text-gray-100">{getValue() as string}</span>
+        sortable: true,
+        renderCell: (_v) => (
+          <span className="max-w-xs truncate text-slate-900 dark:text-slate-100">{_v as string}</span>
         ),
       },
       {
-        accessorKey: 'category',
+        key: 'category',
         header: 'Category',
-        size: 100,
-        cell: ({ getValue }) => {
-          const category = getValue() as string;
-          return category ? <ATMBadge variant="outline" size="sm">{category}</ATMBadge> : <span className="text-xs text-gray-400">—</span>;
+        width: '100px',
+        sortable: true,
+        renderCell: (_v) => {
+          const category = _v as string;
+          return category ? <ATMBadge variant="outline" size="sm">{category}</ATMBadge> : <span className="text-xs text-slate-400">—</span>;
         },
       },
       {
-        accessorKey: 'priority',
+        key: 'priority',
         header: 'Priority',
-        size: 100,
-        cell: ({ getValue }) => {
-          const cfg = PRIORITY_CONFIG[getValue() as TicketPriority];
+        width: '110px',
+        sortable: true,
+        renderCell: (_v) => {
+          const cfg = PRIORITY_CONFIG[_v as TicketPriority];
           return <ATMBadge variant={cfg.variant} size="sm" dot>{cfg.label}</ATMBadge>;
         },
       },
       {
-        accessorKey: 'status',
+        key: 'status',
         header: 'Status',
-        size: 150,
-        cell: ({ row }) => {
-          const cfg = STATUS_CONFIG[row.original.status];
+        width: '160px',
+        sortable: true,
+        renderCell: (_v, row) => {
+          const cfg = STATUS_CONFIG[row.status];
           return (
             <div className="flex items-center gap-1.5">
               <ATMBadge variant={cfg.variant} size="sm">{cfg.label}</ATMBadge>
-              {row.original.isEscalated && (
+              {row.isEscalated && (
                 <ATMBadge variant="danger" size="sm" dot>Escalated</ATMBadge>
               )}
             </div>
@@ -172,68 +172,76 @@ function TicketQueuePage() {
         },
       },
       {
-        accessorKey: 'handledBy',
+        key: 'handledBy',
         header: 'Handled by',
-        size: 130,
-        cell: ({ getValue }) => (
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {(getValue() as string | null | undefined) || '—'}
+        width: '130px',
+        sortable: true,
+        renderCell: (_v) => (
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            {(_v as string | null | undefined) || '—'}
           </span>
         ),
       },
       {
-        accessorKey: 'createdAt',
+        key: 'createdAt',
         header: 'Created',
-        size: 110,
-        cell: ({ getValue }) => (
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {formatRelativeTime(getValue() as string)}
+        width: '110px',
+        sortable: true,
+        renderCell: (_v) => (
+          <span className="text-sm text-slate-500 dark:text-slate-400">
+            {formatRelativeTime(_v as string)}
           </span>
         ),
       },
       {
-        accessorKey: 'slaDeadline',
+        key: 'slaDeadline',
         header: 'SLA',
-        size: 100,
-        cell: ({ getValue }) => {
-          const sla = slaTimeRemaining(getValue() as string | null | undefined);
+        width: '110px',
+        sortable: true,
+        renderCell: (_v) => {
+          const sla = slaTimeRemaining(_v as string | null | undefined);
           return (
-            <span className={cn('text-sm font-medium tabular-nums', sla.breached ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400')}>
+            <span className={cn('text-sm font-medium tabular-nums', sla.breached ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-400')}>
               {sla.breached && <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />}
               {sla.text}
             </span>
           );
         },
       },
-      {
-        id: 'actions',
-        header: '',
-        size: 40,
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => navigate(`/support/${row.original.ticketId}`)}
-            className="rounded p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-            aria-label="View ticket"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        ),
-      },
     ],
-    [navigate],
+    [],
   );
 
-  const table = useReactTable({
-    data: tickets as TicketListItem[],
-    columns,
-    state: { sorting },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    manualPagination: true,
-    pageCount: Math.max(1, Math.ceil(totalCount / pageSize)),
-  });
+  /** Replicates the previous TanStack single-column toggle for ATMTable's onSort. */
+  const handleSort = (field: string) => {
+    setSort((prev) => {
+      if (!prev) return { field, desc: false };
+      if (prev.field === field) return prev.desc ? null : { field, desc: true };
+      return { field, desc: false };
+    });
+  };
+
+  const valueAt = (row: TicketListItem, field: string): unknown =>
+    (row as unknown as Record<string, unknown>)[field];
+
+  const compareValues = (a: unknown, b: unknown): number => {
+    if (a == null && b == null) return 0;
+    if (a == null) return -1;
+    if (b == null) return 1;
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b));
+  };
+
+  /** Sorted copy of the current page — same client-side behaviour the old table had. */
+  const sortedTickets = useMemo(() => {
+    if (!sort) return [...tickets];
+    const list = [...tickets];
+    list.sort((a, b) => {
+      const r = compareValues(valueAt(a, sort.field), valueAt(b, sort.field));
+      return sort.desc ? -r : r;
+    });
+    return list;
+  }, [tickets, sort]);
 
   /* ---- Kanban helpers ---- */
   const ticketsByStatus = useMemo(() => {
@@ -251,12 +259,9 @@ function TicketQueuePage() {
   function renderQuickStats() {
     if (metricsQuery.isLoading) {
       return (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-              <ATMSkeleton variant="text" width="60%" />
-              <ATMSkeleton variant="text" width="40%" height="28px" className="mt-2" />
-            </div>
+            <ATMSkeleton key={i} variant="card" height="118px" />
           ))}
         </div>
       );
@@ -264,38 +269,51 @@ function TicketQueuePage() {
 
     if (metricsQuery.isError) {
       return (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
-          <span className="text-sm text-red-700 dark:text-red-300">Ticket metrics could not be loaded.</span>
+        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900/40 dark:bg-rose-950/40">
+          <span className="text-sm text-rose-700 dark:text-rose-300">Ticket metrics could not be loaded.</span>
           <ATMButton variant="ghost" size="sm" onClick={() => { void metricsQuery.refetch(); }}>Retry</ATMButton>
         </div>
       );
     }
 
-    const stats = [
-      { label: 'Open (30 days)', value: metrics?.openTickets ?? 0, icon: <Clock className="h-5 w-5 text-blue-500" />, color: 'text-blue-600 dark:text-blue-400' },
-      { label: 'Resolved (30 days)', value: metrics?.resolvedTickets ?? 0, icon: <CheckCircle2 className="h-5 w-5 text-emerald-500" />, color: 'text-emerald-600 dark:text-emerald-400' },
-      { label: 'Closed (30 days)', value: metrics?.closedTickets ?? 0, icon: <Archive className="h-5 w-5 text-gray-500" />, color: 'text-gray-700 dark:text-gray-300' },
-      { label: 'Avg Resolution', value: `${(metrics?.avgResolutionHours ?? 0).toFixed(1)}h`, icon: <AlertTriangle className="h-5 w-5 text-amber-500" />, color: 'text-amber-600 dark:text-amber-400' },
-    ];
-
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800">
-              {s.icon}
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{s.label}</p>
-              <p className={cn('text-xl font-bold tabular-nums', s.color)}>{s.value}</p>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <ATMStatsCard
+          label="Open (30 days)"
+          value={(metrics?.openTickets ?? 0).toLocaleString()}
+          icon={Clock}
+          variant="accent"
+          description="Tickets in flight this window"
+        />
+        <ATMStatsCard
+          label="Resolved (30 days)"
+          value={(metrics?.resolvedTickets ?? 0).toLocaleString()}
+          icon={CheckCircle2}
+          variant="emerald"
+          description="Marked resolved this window"
+        />
+        <ATMStatsCard
+          label="Closed (30 days)"
+          value={(metrics?.closedTickets ?? 0).toLocaleString()}
+          icon={Archive}
+          variant="slate"
+          description="Closed out this window"
+        />
+        <ATMStatsCard
+          label="Avg Resolution"
+          value={`${(metrics?.avgResolutionHours ?? 0).toFixed(1)}h`}
+          icon={AlertTriangle}
+          variant="amber"
+          description="Mean time to resolve"
+        />
       </div>
     );
   }
 
   /* ---- Filter row ---- */
+  const selectClass =
+    'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10';
+
   function renderFilters() {
     if (!showFilters) return null;
 
@@ -303,37 +321,37 @@ function TicketQueuePage() {
       <ATMCard padding="md" className="animate-fade-in">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-            <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value as TicketStatus | ''); setPage(1); }} className="input-select">
+            <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Status</label>
+            <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value as TicketStatus | ''); setPage(1); }} className={selectClass}>
               <option value="">All</option>
               {TICKET_STATUSES.map((s) => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Priority</label>
-            <select value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value as TicketPriority | ''); setPage(1); }} className="input-select">
+            <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Priority</label>
+            <select value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value as TicketPriority | ''); setPage(1); }} className={selectClass}>
               <option value="">All</option>
               {TICKET_PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY_CONFIG[p].label}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Merchant Type</label>
-            <select value={filterMerchantType} onChange={(e) => { setFilterMerchantType(e.target.value as MerchantType | ''); setPage(1); }} className="input-select">
+            <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Merchant Type</label>
+            <select value={filterMerchantType} onChange={(e) => { setFilterMerchantType(e.target.value as MerchantType | ''); setPage(1); }} className={selectClass}>
               <option value="">All</option>
               {TYPE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="flex flex-col justify-end gap-1.5">
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
                 checked={filterEscalated}
                 onChange={(e) => { setFilterEscalated(e.target.checked); setPage(1); }}
-                className="h-4 w-4 rounded border-gray-300"
+                className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
               />
               Escalated only
             </label>
-            <span className="text-[11px] text-gray-400 dark:text-gray-500">With the Operations Managers and still open</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">With the Operations Managers and still open</span>
           </div>
           <div className="flex items-end">
             <ATMButton variant="ghost" size="sm" onClick={clearFilters}>Clear All</ATMButton>
@@ -344,12 +362,21 @@ function TicketQueuePage() {
   }
 
   /* ---- Load failure ---- */
+  const header = (
+    <ATMPageHeader
+      icon={LifeBuoy}
+      iconColor="theme"
+      title="Support Queue"
+      subtitle="Work, escalate and resolve merchant support tickets"
+    />
+  );
+
   if (ticketsQuery.isError) {
     return (
-      <div className="flex flex-col gap-6 w-full">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Queue</h1>
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
-          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+      <div className="w-full space-y-6 animate-fade-in">
+        {header}
+        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900/40 dark:bg-rose-950/40">
+          <div className="flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
             <AlertTriangle className="h-4 w-4" />
             <span>The support queue could not be loaded.</span>
           </div>
@@ -361,75 +388,24 @@ function TicketQueuePage() {
 
   /* ---- Table view ---- */
   function renderTableView() {
-    if (isLoading) {
-      return (
-        <ATMCard padding="none">
-          <div className="space-y-3 p-5">
-            <ATMSkeleton variant="table-row" count={8} />
-          </div>
-        </ATMCard>
-      );
-    }
-
-    if (!tickets.length) {
-      return (
-        <ATMCard padding="none">
-          <ATMEmptyState
-            icon={Search}
-            title="No tickets found"
-            description={activeFilterCount > 0 || search ? 'Try adjusting your search or filters.' : 'No merchant has raised a ticket yet.'}
-          />
-        </ATMCard>
-      );
-    }
+    const emptyMessage =
+      activeFilterCount > 0 || search
+        ? 'No tickets match your search.'
+        : 'No merchant has raised a ticket yet.';
 
     return (
-      <ATMCard padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                  {hg.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                      style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
-                    >
-                      {header.isPlaceholder ? null : (
-                        <button
-                          type="button"
-                          className={cn('inline-flex items-center gap-1', header.column.getCanSort() && 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200')}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getCanSort() && <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                        </button>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
-                  onClick={() => navigate(`/support/${row.original.ticketId}`)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="whitespace-nowrap px-4 py-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+      <ATMCard padding="none" className="overflow-hidden">
+        <ATMTable
+          columns={columns}
+          data={sortedTickets}
+          sortBy={sort?.field}
+          sortDesc={sort?.desc}
+          onSort={handleSort}
+          onRowClick={(row) => navigate(`/support/${row.ticketId}`)}
+          isLoading={isLoading}
+          emptyMessage={emptyMessage}
+        />
+        <div className="border-t border-slate-200/80 dark:border-slate-800">
           <ATMPagination
             page={page}
             total={totalCount}
@@ -448,7 +424,7 @@ function TicketQueuePage() {
       return (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {KANBAN_COLUMNS.map((col) => (
-            <div key={col} className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/30">
+            <div key={col} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/30">
               <ATMSkeleton variant="text" width="60%" />
               <div className="mt-3 space-y-3">
                 <ATMSkeleton variant="card" height="6rem" count={3} />
@@ -465,16 +441,16 @@ function TicketQueuePage() {
           const cfg = STATUS_CONFIG[col];
           const items = ticketsByStatus.get(col) ?? [];
           return (
-            <div key={col} className="flex flex-col rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/30">
-              <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2.5 dark:border-gray-700">
+            <div key={col} className="flex flex-col rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/30">
+              <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2.5 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <ATMBadge variant={cfg.variant} size="sm">{cfg.label}</ATMBadge>
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{items.length}</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{items.length}</span>
                 </div>
               </div>
               <div className="flex flex-1 flex-col gap-2 p-2 overflow-y-auto max-h-[60vh]">
                 {items.length === 0 && (
-                  <p className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">No tickets</p>
+                  <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">No tickets</p>
                 )}
                 {items.map((ticket) => {
                   const priCfg = PRIORITY_CONFIG[ticket.priority];
@@ -484,29 +460,29 @@ function TicketQueuePage() {
                       key={ticket.ticketId}
                       type="button"
                       onClick={() => navigate(`/support/${ticket.ticketId}`)}
-                      className="w-full rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
+                      className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-[#13151a]"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium leading-tight text-gray-900 dark:text-gray-100 line-clamp-2">
+                        <span className="text-sm font-medium leading-tight text-slate-900 dark:text-slate-100 line-clamp-2">
                           {ticket.subject}
                         </span>
                         <ATMBadge variant={priCfg.variant} size="sm">{priCfg.label}</ATMBadge>
                       </div>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <ATMBadge variant={ticket.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">
                           {ticket.merchantType.charAt(0)}
                         </ATMBadge>
                         <span className="truncate">{ticket.merchantName || ticket.ticketNumber}</span>
                         {ticket.isEscalated && (
-                          <span className="inline-flex items-center gap-0.5 text-red-600 dark:text-red-400">
+                          <span className="inline-flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
                             <ArrowUpRight className="h-3 w-3" /> Escalated
                           </span>
                         )}
                       </div>
                       <div className="mt-2 flex items-center justify-between text-xs">
-                        <span className="text-gray-400 dark:text-gray-500">{formatRelativeTime(ticket.createdAt)}</span>
+                        <span className="text-slate-400 dark:text-slate-500">{formatRelativeTime(ticket.createdAt)}</span>
                         {ticket.slaDeadline && (
-                          <span className={cn('font-medium tabular-nums', sla.breached ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400')}>
+                          <span className={cn('font-medium tabular-nums', sla.breached ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400')}>
                             {sla.text}
                           </span>
                         )}
@@ -524,33 +500,27 @@ function TicketQueuePage() {
 
   /* ---- Render ---- */
   return (
-    <div className="flex flex-col gap-6 w-full">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Queue</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Work, escalate and resolve merchant support tickets
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      {header}
 
       {renderQuickStats()}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by ticket number or subject..."
-            className="input-base w-full pl-10"
+            className="input-base w-full h-9 pl-10"
           />
         </div>
         <div className="flex items-center gap-2">
           <ATMButton
             variant={showFilters ? 'primary' : 'secondary'}
             size="sm"
+            className="h-9"
             leftIcon={<Filter className="h-3.5 w-3.5" />}
             onClick={() => setShowFilters(!showFilters)}
           >
@@ -561,15 +531,15 @@ function TicketQueuePage() {
               </span>
             )}
           </ATMButton>
-          <div className="flex rounded-lg border border-gray-300 dark:border-gray-600">
+          <div className="inline-flex items-center rounded-lg bg-slate-100/80 p-1 dark:bg-slate-900/60">
             <button
               type="button"
               onClick={() => setViewMode('table')}
               className={cn(
-                'flex items-center gap-1.5 rounded-l-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                'flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'table'
-                  ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               )}
             >
               <List className="h-3.5 w-3.5" /> Table
@@ -578,10 +548,10 @@ function TicketQueuePage() {
               type="button"
               onClick={() => setViewMode('kanban')}
               className={cn(
-                'flex items-center gap-1.5 rounded-r-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                'flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
                 viewMode === 'kanban'
-                  ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               )}
             >
               <LayoutGrid className="h-3.5 w-3.5" /> Board

@@ -3,12 +3,18 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../app/store';
 
 // ─── Font Family Map ──────────────────────────────────────────────────────────
+// Geist is the loaded primary interface font (index.html) and the app default.
+// Every preset keeps 'Geist' + our fallback families in its stack, so whatever
+// preset is chosen the UI never drops to a mismatched system face. 'Outfit' and
+// 'Roboto' are NOT loaded as webfonts, so they resolve to Geist→Inter.
 const FONT_FAMILY_MAP: Record<string, string> = {
-  'Inter':             "'Inter', system-ui, -apple-system, sans-serif",
-  'Outfit':            "'Outfit', system-ui, -apple-system, sans-serif",
-  'Roboto':            "'Roboto', system-ui, -apple-system, sans-serif",
-  'Plus Jakarta Sans': "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  'Geist':             "'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  'Inter':             "'Inter', 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  'Outfit':            "'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  'Roboto':            "'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  'Plus Jakarta Sans': "'Plus Jakarta Sans', 'Geist', 'Inter', system-ui, -apple-system, sans-serif",
 };
+const DEFAULT_FONT_FAMILY = FONT_FAMILY_MAP['Geist'] as string;
 
 // ─── Theme Mode Map ────────────────────────────────────────────────────────────
 const THEME_MODE_MAP: Record<string, string> = {
@@ -74,14 +80,16 @@ const DynamicThemeProvider: React.FC<DynamicThemeProviderProps> = ({ children })
 
     // ── 3. Body Font Preset → Apply actual font family (Bug #8 FIX) ───────────
     // KEY WAS WRONG: was reading config.BodyFont (undefined), now reads config['Theme_BodyFontPreset']
+    // Defaults to Geist so the whole app renders in the brand face instead of a
+    // fallback Inter/system stack. Sets --font-primary too — headings inherit it.
     const hasUserFont = !!localStorage.getItem('theme-font');
     if (!hasUserFont) {
       const fontPreset = config['Theme_BodyFontPreset'] as string | undefined;
       const fontFamily = (fontPreset && FONT_FAMILY_MAP[fontPreset])
         ? FONT_FAMILY_MAP[fontPreset]
-        : (FONT_FAMILY_MAP['Inter'] || "'Inter', sans-serif");
+        : DEFAULT_FONT_FAMILY;
 
-      root.style.setProperty('--font-sans', fontFamily);
+      root.style.setProperty('--font-primary', fontFamily);
       document.body.style.fontFamily = fontFamily;
     }
 

@@ -13,17 +13,17 @@ interface StepProgressProps {
  */
 export function StepProgress({ currentStep, steps }: StepProgressProps) {
   return (
-    <div className="space-y-4 bg-white/75 dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 rounded-3xl p-5 backdrop-blur-md shadow-sm">
+    <div className="space-y-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-black text-white dark:bg-white dark:text-slate-900">
             {currentStep + 1}
           </span>
-          <span className="text-xs font-bold text-slate-450 dark:text-slate-500">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
             Step {currentStep + 1} of {steps.length}
           </span>
         </div>
-        <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+        <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
           {steps[currentStep]}
         </span>
       </div>
@@ -36,7 +36,7 @@ export function StepProgress({ currentStep, steps }: StepProgressProps) {
               'flex-1 rounded-full h-1.5 transition-all duration-500',
               idx <= currentStep
                 ? 'bg-slate-900 dark:bg-white shadow-sm shadow-slate-900/20'
-                : 'bg-slate-100 dark:bg-slate-850',
+                : 'bg-slate-100 dark:bg-slate-800',
             )}
           />
         ))}

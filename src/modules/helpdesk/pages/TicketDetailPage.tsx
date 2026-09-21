@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ATMBadge, ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField } from '@/shared/ui';
+import { ATMBadge, ATMButton, ATMCard, ATMEmptyState, ATMErrorState, ATMModal, ATMSkeleton, ATMTextField } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft,
   Send,
   Clock,
   AlertTriangle,
@@ -114,7 +114,7 @@ function TicketDetailPage() {
   /* ---- Loading / error / missing ---- */
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 w-full">
+      <div className="w-full space-y-6 animate-fade-in">
         <ATMSkeleton variant="text" width="40%" height="32px" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
           <ATMSkeleton variant="card" height="600px" />
@@ -126,10 +126,13 @@ function TicketDetailPage() {
 
   if (ticketQuery.isError) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 p-12">
-        <p className="text-gray-500 dark:text-gray-400">The ticket could not be loaded.</p>
-        <div className="flex gap-2">
-          <ATMButton variant="secondary" onClick={() => { void ticketQuery.refetch(); }}>Retry</ATMButton>
+      <div className="w-full space-y-6 animate-fade-in">
+        <ATMErrorState
+          title="The ticket could not be loaded."
+          message="Something went wrong while fetching this ticket."
+          onRetry={() => { void ticketQuery.refetch(); }}
+        />
+        <div className="flex justify-center">
           <ATMButton variant="ghost" onClick={() => navigate('/support')}>Back to Support Queue</ATMButton>
         </div>
       </div>
@@ -138,9 +141,15 @@ function TicketDetailPage() {
 
   if (!ticket) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 p-12">
-        <p className="text-gray-500 dark:text-gray-400">Ticket not found.</p>
-        <ATMButton variant="secondary" onClick={() => navigate('/support')}>Back to Support Queue</ATMButton>
+      <div className="w-full space-y-6 animate-fade-in">
+        <ATMEmptyState
+          icon={MessageSquare}
+          title="Ticket not found"
+          description="This ticket does not exist or is no longer available."
+        />
+        <div className="flex justify-center">
+          <ATMButton variant="ghost" onClick={() => navigate('/support')}>Back to Support Queue</ATMButton>
+        </div>
       </div>
     );
   }
@@ -225,13 +234,13 @@ function TicketDetailPage() {
       <div key={c.commentId} className={cn('flex gap-3', isAgent ? 'justify-end' : 'justify-start')}>
         <div className={cn('max-w-[75%] space-y-1', isAgent ? 'items-end' : 'items-start')}>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{authorLabel}</span>
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{authorLabel}</span>
             {c.isInternal && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
                 <Lock className="h-2.5 w-2.5" /> Internal note
               </span>
             )}
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">{formatDate(c.createdAt, 'datetime')}</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{formatDate(c.createdAt, 'datetime')}</span>
           </div>
           <div
             className={cn(
@@ -239,8 +248,8 @@ function TicketDetailPage() {
               c.isInternal
                 ? 'bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-100'
                 : isAgent
-                  ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                  : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100',
+                  ? 'bg-primary-600 text-white dark:bg-primary-500'
+                  : 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100',
             )}
           >
             {c.content}
@@ -253,47 +262,45 @@ function TicketDetailPage() {
   const comments = [...ticket.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/support')}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Support Queue
-        </button>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{ticket.subject}</h1>
-            <ATMBadge variant={priCfg.variant} size="sm" dot>{priCfg.label}</ATMBadge>
-            <ATMBadge variant={stCfg.variant} size="sm">{stCfg.label}</ATMBadge>
-            {ticket.isEscalated && <ATMBadge variant="danger" size="sm" dot>Escalated</ATMBadge>}
-          </div>
-          {!ticket.isEscalated && (
+      <ATMPageHeader
+        icon={MessageSquare}
+        iconColor="theme"
+        title={ticket.subject}
+        subtitle={
+          `${ticket.ticketNumber} · Created ${formatDate(ticket.createdAt, 'datetime')}` +
+          (ticket.resolvedAt ? ` · Resolved ${formatDate(ticket.resolvedAt, 'datetime')}` : '') +
+          (ticket.closedAt ? ` · Closed ${formatDate(ticket.closedAt, 'datetime')}` : '')
+        }
+        extraActions={
+          ticket.isEscalated ? undefined : (
             <ATMButton
               variant="secondary"
               size="sm"
+              className="h-9"
               leftIcon={<ArrowUpRight className="h-3.5 w-3.5" />}
               onClick={() => setEscalateModalOpen(true)}
               disabled={isDone}
             >
               Escalate
             </ATMButton>
-          )}
-        </div>
-        <span className="text-xs text-gray-400 dark:text-gray-500">
-          {ticket.ticketNumber} · Created {formatDate(ticket.createdAt, 'datetime')}
-          {ticket.resolvedAt && <> · Resolved {formatDate(ticket.resolvedAt, 'datetime')}</>}
-          {ticket.closedAt && <> · Closed {formatDate(ticket.closedAt, 'datetime')}</>}
-        </span>
+          )
+        }
+        onBack={() => navigate('/support')}
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <ATMBadge variant={priCfg.variant} size="sm" dot>{priCfg.label}</ATMBadge>
+        <ATMBadge variant={stCfg.variant} size="sm">{stCfg.label}</ATMBadge>
+        {ticket.isEscalated && <ATMBadge variant="danger" size="sm" dot>Escalated</ATMBadge>}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left: description + thread */}
         <div className="flex flex-col gap-4">
           <ATMCard title="Description">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-200">
               {ticket.description || 'No description was given.'}
             </p>
           </ATMCard>
@@ -301,13 +308,13 @@ function TicketDetailPage() {
           <ATMCard padding="none" className="flex flex-1 flex-col">
             <div className="flex-1 space-y-4 overflow-y-auto p-5" style={{ maxHeight: '55vh' }}>
               {comments.length === 0 && (
-                <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No replies yet.</p>
+                <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">No replies yet.</p>
               )}
               {comments.map(renderComment)}
               <div ref={threadEndRef} />
             </div>
 
-            <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+            <div className="border-t border-slate-200/80 p-4 dark:border-slate-800">
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 <div className="relative">
                   <ATMButton
@@ -320,27 +327,27 @@ function TicketDetailPage() {
                     <MessageSquare className="h-3.5 w-3.5" /> Canned Responses{canned.length === 0 ? ' (none)' : ''}
                   </ATMButton>
                   {showCanned && canned.length > 0 && (
-                    <div className="absolute left-0 top-full z-10 mt-1 max-h-64 w-80 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    <div className="absolute left-0 top-full z-10 mt-1 max-h-64 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
                       {canned.map((cr) => (
                         <button
                           key={cr.id}
                           type="button"
                           onClick={() => { setMessageText(cr.content); setShowCanned(false); }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
                         >
-                          <span className="font-medium text-gray-900 dark:text-gray-100">{cr.title}</span>
-                          <span className="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{cr.content}</span>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">{cr.title}</span>
+                          <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">{cr.content}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                <label className="inline-flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={isInternal}
                     onChange={(e) => setIsInternal(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-gray-300"
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
                   Internal note (not visible to the merchant)
                 </label>
@@ -354,10 +361,10 @@ function TicketDetailPage() {
                   rows={3}
                   disabled={isClosed}
                   className={cn(
-                    'flex-1 resize-none rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 dark:text-gray-100 dark:placeholder:text-gray-500',
+                    'flex-1 resize-none rounded-lg border px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 dark:text-slate-100 dark:placeholder:text-slate-500',
                     isInternal
                       ? 'border-amber-300 bg-amber-50/50 focus:border-amber-500 focus:ring-amber-500 dark:border-amber-700 dark:bg-amber-900/10'
-                      : 'border-gray-300 bg-white focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900',
+                      : 'border-slate-200 bg-white focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900',
                   )}
                 />
                 <div className="flex flex-col justify-end">
@@ -373,7 +380,7 @@ function TicketDetailPage() {
                 </div>
               </div>
               {isClosed && (
-                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">This ticket is closed. Reopen it to reply.</p>
+                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">This ticket is closed. Reopen it to reply.</p>
               )}
             </div>
           </ATMCard>
@@ -384,20 +391,20 @@ function TicketDetailPage() {
           <ATMCard title="Merchant">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Merchant</span>
-                <Link to={`/merchants/${ticket.merchantId}`} className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                <span className="text-xs text-slate-500 dark:text-slate-400">Merchant</span>
+                <Link to={`/merchants/${ticket.merchantId}`} className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
                   {ticket.merchantName || 'Open merchant'}
                 </Link>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Type</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Type</span>
                 <ATMBadge variant={ticket.merchantType === 'Enterprise' ? 'enterprise' : 'standalone'} size="sm">
                   {ticket.merchantType}
                 </ATMBadge>
               </div>
               {ticket.category && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Category</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Category</span>
                   <ATMBadge variant="outline" size="sm">{ticket.category}</ATMBadge>
                 </div>
               )}
@@ -408,7 +415,7 @@ function TicketDetailPage() {
           <ATMCard title="Handling">
             <div className="space-y-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Handled by</label>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Handled by</label>
                 <input
                   type="text"
                   value={handledBy}
@@ -420,18 +427,18 @@ function TicketDetailPage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Remarks</label>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Remarks</label>
                 <textarea
                   value={handlingRemarks}
                   onChange={(e) => setHandlingRemarks(e.target.value)}
                   placeholder="Anything the next person should know"
                   rows={3}
                   disabled={isClosed}
-                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] text-gray-400 dark:text-gray-500">For reference only; not a platform user.</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">For reference only; not a platform user.</p>
                 <ATMButton
                   variant="secondary"
                   size="sm"
@@ -450,22 +457,22 @@ function TicketDetailPage() {
           <ATMCard title="Escalation">
             {ticket.isEscalated ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-semibold text-red-700 dark:text-red-300">
+                <div className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
                   <UserCheck className="h-4 w-4" /> With the Operations Managers
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Escalated {ticket.escalatedAt ? formatDate(ticket.escalatedAt, 'datetime') : ''}
                   {ticket.escalatedBy ? ` by ${ticket.escalatedBy}` : ''}
                 </p>
                 {ticket.escalationReason && (
-                  <p className="whitespace-pre-wrap rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  <p className="whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     {ticket.escalationReason}
                   </p>
                 )}
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Not escalated. Escalating hands the ticket to the Operations Managers; they can also pick up any ticket without escalation.
                 </p>
                 <ATMButton
@@ -495,8 +502,8 @@ function TicketDetailPage() {
                     className={cn(
                       'flex-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-60',
                       isActive
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/20 dark:text-indigo-300'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800',
+                        ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-500/10 dark:text-primary-300'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800',
                     )}
                   >
                     {cfg.label}
@@ -509,7 +516,7 @@ function TicketDetailPage() {
           <ATMCard title="Status">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Current:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Current:</span>
                 <ATMBadge variant={stCfg.variant} size="sm">{stCfg.label}</ATMBadge>
               </div>
               {nextStates.length > 0 && (
@@ -532,15 +539,15 @@ function TicketDetailPage() {
 
           <ATMCard title="SLA">
             <div className="flex items-center gap-3">
-              <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', sla.breached ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-800')}>
-                {sla.breached ? <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" /> : <Clock className="h-5 w-5 text-gray-500 dark:text-gray-400" />}
+              <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', sla.breached ? 'bg-rose-100 dark:bg-rose-900/30' : 'bg-slate-100 dark:bg-slate-800')}>
+                {sla.breached ? <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400" /> : <Clock className="h-5 w-5 text-slate-500 dark:text-slate-400" />}
               </div>
               <div>
-                <p className={cn('text-sm font-semibold tabular-nums', sla.breached ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-200')}>
+                <p className={cn('text-sm font-semibold tabular-nums', sla.breached ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200')}>
                   {sla.breached ? 'SLA breached' : sla.text === 'No SLA' ? 'No SLA deadline' : `${sla.text} remaining`}
                 </p>
                 {ticket.slaDeadline && (
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
                     Deadline: {formatDate(ticket.slaDeadline, 'datetime')}
                   </p>
                 )}

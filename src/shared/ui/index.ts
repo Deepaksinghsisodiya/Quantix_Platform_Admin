@@ -12,6 +12,7 @@ export * from './ATMSwitch';
 export * from './ATMLoader';
 export * from './ATMDatePicker';
 export * from './ATMSkeleton';
+export * from './ATMPageSkeleton';
 export * from './ATMDrawer';
 export * from './ATMTooltip';
 export * from './ATMStatsCard';

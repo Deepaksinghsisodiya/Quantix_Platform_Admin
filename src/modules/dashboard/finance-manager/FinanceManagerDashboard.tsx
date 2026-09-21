@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import type { BillingDashboard } from '@/modules/billing/services/billingApi';
 import type { CommissionDashboardDto } from '@/lib/api/dashboard';
@@ -40,19 +41,19 @@ export const FinanceManagerDashboard: React.FC<FinanceManagerDashboardProps> = (
     amount === undefined || !currency ? '—' : formatCurrency(amount, currency);
 
   return (
-    <div className="space-y-6 w-full">
-      <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Finance Manager</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Wallets, invoices, commission logs, tax configurations, and billing cadences.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
-          <ATMBadge label="Live" color="primary" />
-        </div>
-      </header>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={DollarSign}
+        iconColor="theme"
+        title="Finance Manager"
+        subtitle="Wallets, invoices, commission logs, tax configurations, and billing cadences."
+        extraActions={
+          <div className="flex items-center gap-3">
+            {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
+            <ATMBadge label="Live" color="primary" />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ATMStatsCard
@@ -111,21 +112,21 @@ export const FinanceManagerDashboard: React.FC<FinanceManagerDashboardProps> = (
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Link to="/billing/wallets" className="group">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-            <span className="text-sm font-bold text-gray-700 group-hover:text-accent-500 dark:text-gray-200 transition-colors">Recharge a Merchant Wallet</span>
-            <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-[#13151a] flex items-center justify-between">
+            <span className="text-sm font-bold text-slate-700 group-hover:text-accent-500 dark:text-slate-200 transition-colors">Recharge a Merchant Wallet</span>
+            <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
           </div>
         </Link>
         <Link to="/billing/invoices" className="group">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-            <span className="text-sm font-bold text-gray-700 group-hover:text-accent-500 dark:text-gray-200 transition-colors">Generate / Send Invoice</span>
-            <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-[#13151a] flex items-center justify-between">
+            <span className="text-sm font-bold text-slate-700 group-hover:text-accent-500 dark:text-slate-200 transition-colors">Generate / Send Invoice</span>
+            <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
           </div>
         </Link>
         <Link to="/commission/collections" className="group">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-            <span className="text-sm font-bold text-gray-700 group-hover:text-accent-500 dark:text-gray-200 transition-colors">Run Commission Settlement Cycle</span>
-            <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 hover:border-accent-500/30 hover:shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-[#13151a] flex items-center justify-between">
+            <span className="text-sm font-bold text-slate-700 group-hover:text-accent-500 dark:text-slate-200 transition-colors">Run Commission Settlement Cycle</span>
+            <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
           </div>
         </Link>
       </div>

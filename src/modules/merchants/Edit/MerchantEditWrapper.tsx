@@ -66,10 +66,23 @@ export const MerchantEditWrapper: React.FC = () => {
             size="md"
             className="text-slate-400"
           />
-          <div className="w-px h-10 bg-slate-100 dark:bg-gray-800" />
+          <div className="w-px h-10 bg-slate-100 dark:bg-slate-800" />
           <ATMSkeleton className="h-8 w-64 rounded-lg" />
         </div>
-        <ATMSkeleton className="h-64 rounded-xl" />
+        <div className="space-y-5 rounded-xl border border-slate-200/80 bg-white/95 p-5 dark:border-gray-800/80 dark:bg-[#13151a]/95">
+          <div className="space-y-2">
+            <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="44px" className="rounded-lg" />
+          </div>
+          <div className="space-y-2">
+            <ATMSkeleton width="35%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="44px" className="rounded-lg" />
+          </div>
+          <div className="space-y-2">
+            <ATMSkeleton width="30%" height="14px" className="rounded-lg" />
+            <ATMSkeleton height="44px" className="rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }

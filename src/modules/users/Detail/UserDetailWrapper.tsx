@@ -12,8 +12,8 @@ import {
 } from '../services/userApi';
 import type { PlatformRole } from '../types/user.types';
 import UserDetailPage from './UserDetailPage';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { ATMButton } from '@/shared/ui';
+import { AlertCircle } from 'lucide-react';
+import { ATMButton, ATMPageSkeleton } from '@/shared/ui';
 
 export const UserDetailWrapper: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -95,11 +95,7 @@ export const UserDetailWrapper: React.FC = () => {
   };
 
   if (isUserLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-600" />
-      </div>
-    );
+    return <ATMPageSkeleton variant="detail" />;
   }
 
   if (isUserError || !user) {

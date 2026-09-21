@@ -101,7 +101,7 @@ export const UserListWrapper: React.FC = () => {
   }, [params]);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-fade-in">
       {/* Page Header and Stats Cards */}
       <ATMPageHeader
         title="Platform Users"

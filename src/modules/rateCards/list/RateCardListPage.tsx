@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils/cn';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
-import { ATMStatsCard, ATMEmptyState } from '@/shared/ui';
+import { ATMStatsCard, ATMEmptyState, ATMSkeleton } from '@/shared/ui';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMTable, ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { ATMSearch } from '@/shared/components/SearchInput/ATMSearch';
@@ -30,7 +30,7 @@ import {
   MapPin,
   Terminal,
   Layers,
-  Tags,
+  CreditCard,
   HardDrive,
   Puzzle,
   Layers3,
@@ -256,8 +256,17 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
 
   if (!defaultCard) {
     return (
-      <div className="p-12 text-center text-sm font-semibold text-slate-500 animate-pulse">
-        Loading rate card configurations...
+      <div className="space-y-8 animate-pulse">
+        {[0, 1, 2, 3].map((c) => (
+          <div key={c} className="space-y-3">
+            <ATMSkeleton width="170px" height="14px" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ATMSkeleton height="62px" className="rounded-xl" />
+              <ATMSkeleton height="62px" className="rounded-xl" />
+              <ATMSkeleton height="62px" className="rounded-xl" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -407,13 +416,13 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
   ];
 
 return (
-    <div className="flex flex-col gap-8 w-full max-w-[1600px] mx-auto animate-page-enter">
+    <div className="w-full max-w-[1600px] mx-auto space-y-6 animate-fade-in">
       {/* Header and Controls */}
       <ATMPageHeader
         title="Feature Rate Cards"
         subtitle="Baseline billing rates and features mapped directly from active token specifications"
-        icon={Tags}
-        iconColor="indigo"
+        icon={CreditCard}
+        iconColor="theme"
         breadcrumbs={[{ label: 'Billing' }, { label: 'Feature Rate Cards' }]}
         extraActions={
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

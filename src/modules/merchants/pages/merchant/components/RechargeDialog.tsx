@@ -20,7 +20,7 @@ import {
 } from '@/modules/merchants/services/merchantSelfApi';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ATMModal } from '@/shared/ui';
+import { ATMModal, ATMSkeleton } from '@/shared/ui';
 import PspMount from './PspMount';
 
 interface Props {
@@ -129,13 +129,13 @@ export default function RechargeDialog({ open, onClose, suggestedTokens }: Props
               step={1}
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-700 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-surface-600 dark:bg-surface-900/60 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
             />
           </label>
 
           <div className="rounded-lg bg-surface-50 dark:bg-surface-900 p-3 text-sm" aria-live="polite">
             {tokenAmount <= 0 && <p className="text-surface-500">Enter how many tokens to add.</p>}
-            {tokenAmount > 0 && quoting && !quote && <p className="text-surface-500">Pricing…</p>}
+            {tokenAmount > 0 && quoting && !quote && <ATMSkeleton width="120px" height="14px" />}
             {tokenAmount > 0 && quoteError && (
               <p role="alert" className="font-semibold text-red-600 dark:text-red-400">{quoteError}</p>
             )}

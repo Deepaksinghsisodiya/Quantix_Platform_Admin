@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+/* Fonts load once via <link> in index.html (Geist, Plus Jakarta Sans, Inter +
+   JetBrains Mono). No @import here: a second copy doubles the download and adds a
+   render-blocking stylesheet. `--font-primary` / `--font-mono` drive everything below. */
 
 @tailwind base;
 @tailwind components;
@@ -71,16 +73,6 @@
 
   body {
     font-family: 'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  .font-heading {
-    font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
   }
 
   * {

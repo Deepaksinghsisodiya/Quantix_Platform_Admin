@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
-import { TicketCheck, AlertCircle, Inbox, ArrowUpRight, ArrowRight, Clock } from 'lucide-react';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { TicketCheck, AlertCircle, Inbox, ArrowUpRight, ArrowRight, Clock, Headphones } from 'lucide-react';
 
 export interface OperatorQueueStats {
   /** Tickets not yet resolved or closed. */
@@ -35,24 +36,28 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ stats, isF
   const partial = stats.total > stats.sampled;
 
   return (
-    <div className="space-y-6 w-full">
-      <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Operator Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Headphones}
+        iconColor="theme"
+        title="Operator Dashboard"
+        subtitle={
+          <>
             Triage, work and resolve helpdesk support tickets.
-          </p>
-          {partial && (
-            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              Counts cover the latest {stats.sampled.toLocaleString()} of {stats.total.toLocaleString()} tickets.
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
-          <ATMBadge label="Live" color="primary" />
-        </div>
-      </header>
+            {partial && (
+              <span className="block mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                Counts cover the latest {stats.sampled.toLocaleString()} of {stats.total.toLocaleString()} tickets.
+              </span>
+            )}
+          </>
+        }
+        extraActions={
+          <div className="flex items-center gap-3">
+            {isFetching && <Clock className="h-4 w-4 animate-spin text-accent-500" />}
+            <ATMBadge label="Live" color="primary" />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ATMStatsCard

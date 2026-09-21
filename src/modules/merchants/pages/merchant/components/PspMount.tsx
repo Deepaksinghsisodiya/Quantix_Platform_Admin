@@ -16,6 +16,7 @@
  * mock-mode "Use mock payment token" button so the flows are clickable end-to-end.
  */
 import { useEffect, useRef, useState } from 'react';
+import { ATMSkeleton } from '@/shared/ui';
 
 declare global {
   interface Window {
@@ -96,7 +97,10 @@ export default function PspMount({ amount, currency, onToken, onCancel, submitti
           </p>
         )}
         {!mockMode && !pspReady && (
-          <p className="text-xs text-surface-500">Loading payment form…</p>
+          <div className="space-y-2 animate-pulse" aria-hidden="true">
+            <ATMSkeleton width="70%" height="14px" className="rounded" />
+            <ATMSkeleton height="40px" className="rounded-lg" />
+          </div>
         )}
       </div>
       <div className="flex justify-end gap-2">

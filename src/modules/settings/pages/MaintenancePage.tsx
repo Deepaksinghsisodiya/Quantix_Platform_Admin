@@ -9,6 +9,9 @@ import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMTextArea } from '@/shared/ui/ATMTextArea';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { get, put, post, del } from '@/lib/api/client';
 import type { ApiResponse } from '@/lib/types/common';
 
@@ -79,7 +82,7 @@ function CardHeader({ icon: Icon, title, subtitle, badge }: { icon: LucideIcon; 
       </div>
       <div className="min-w-0">
         <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h3>
-        {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{subtitle}</p>}
       </div>
       {badge && <div className="ml-auto shrink-0">{badge}</div>}
     </div>
@@ -174,60 +177,74 @@ export function MaintenancePage() {
   const current = windows.filter((w) => w.status === 'Upcoming' || w.status === 'Active');
   const past = windows.filter((w) => w.status === 'Completed' || w.status === 'Cancelled');
 
-  const windowRow = (w: MaintenanceWindow, cancellable: boolean) => (
-    <tr key={w.windowId} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
-      <td className="py-3 pr-4">
-        <p className="text-sm font-bold text-slate-900 dark:text-white">{w.title}</p>
-        {(w.bannerMessage || w.description) && (
-          <p className="mt-0.5 max-w-md truncate text-xs text-slate-500 dark:text-slate-400 font-semibold">
-            {w.bannerMessage || w.description}
-          </p>
-        )}
-      </td>
-      <td className="py-3 pr-4 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{fmt(w.startsAt)}</td>
-      <td className="py-3 pr-4 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{fmt(w.endsAt)}</td>
-      <td className="py-3 pr-4">
+  const windowColumns: ATMTableColumn<MaintenanceWindow>[] = [
+    {
+      key: 'title',
+      header: 'Window',
+      renderCell: (_v, w) => (
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-900 dark:text-white">{w.title}</p>
+          {(w.bannerMessage || w.description) && (
+            <p className="mt-0.5 max-w-md truncate text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              {w.bannerMessage || w.description}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'startsAt',
+      header: 'Start',
+      renderCell: (_v, w) => (
+        <span className="whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-slate-300">{fmt(w.startsAt)}</span>
+      ),
+    },
+    {
+      key: 'endsAt',
+      header: 'End',
+      renderCell: (_v, w) => (
+        <span className="whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-slate-300">{fmt(w.endsAt)}</span>
+      ),
+    },
+    {
+      key: 'severity',
+      header: 'Severity',
+      renderCell: (_v, w) => (
         <ATMBadge size="sm" color={w.severity === 'Full' ? 'error' : 'info'} label={w.severity === 'Full' ? 'Full (blocks)' : w.severity} />
-      </td>
-      <td className="py-3 pr-4 whitespace-nowrap">
-        <ATMBadge size="sm" color={STATUS_COLOR[w.status]} label={w.status} />
-        {w.preNotifiedAt && (
-          <p className="mt-1 text-[10px] font-bold text-slate-400" title={fmt(w.preNotifiedAt)}>notified ✓</p>
-        )}
-      </td>
-      <td className="py-3 text-right">
-        {cancellable && (
-          <button
-            type="button"
-            onClick={() => handleCancel(w)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
-            title="Cancel window"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </td>
-    </tr>
-  );
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      renderCell: (_v, w) => (
+        <div className="whitespace-nowrap">
+          <ATMBadge size="sm" color={STATUS_COLOR[w.status]} label={w.status} />
+          {w.preNotifiedAt && (
+            <p className="mt-1 text-[10px] font-bold text-slate-400" title={fmt(w.preNotifiedAt)}>notified ✓</p>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
-          <Wrench size={20} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          {/* Title matches the sidebar label. */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Maintenance</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
-            Schedule platform maintenance or start it immediately. Enterprise merchants get an
-            advance email (and SMS when SMS Integration is on); platform staff are never blocked.
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={Wrench}
+        iconColor="theme"
+        title="Maintenance"
+        subtitle="Schedule platform maintenance or start it immediately. Enterprise merchants get an advance email (and SMS when SMS Integration is on); platform staff are never blocked."
+      />
 
       {loading ? (
-        <ATMSkeleton className="h-72 w-full" />
+        <div className="space-y-4 animate-pulse">
+          <ATMSkeleton width="40%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+          <ATMSkeleton width="60%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="110px" className="rounded-lg" />
+          <ATMSkeleton width="35%" height="14px" className="rounded-lg" />
+          <ATMSkeleton height="42px" className="rounded-lg" />
+        </div>
       ) : (
         <>
           {/* Master switch */}
@@ -332,47 +349,35 @@ export function MaintenancePage() {
 
           {/* Windows */}
           <ATMCard
-            className="glass-card"
+            className="glass-card overflow-hidden"
+            padding="none"
             header={
               <CardHeader icon={CalendarClock} title="Upcoming & Active" subtitle="Windows currently scheduled or running" />
             }
           >
-            {current.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-slate-400 dark:text-gray-500">
-                <CalendarClock className="h-8 w-8 opacity-50" strokeWidth={1.8} />
-                <p className="text-sm font-bold">No upcoming maintenance scheduled.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      <th className="py-2 pr-4">Window</th>
-                      <th className="py-2 pr-4">Start</th>
-                      <th className="py-2 pr-4">End</th>
-                      <th className="py-2 pr-4">Severity</th>
-                      <th className="py-2 pr-4">Status</th>
-                      <th className="py-2 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>{current.map((w) => windowRow(w, true))}</tbody>
-                </table>
-              </div>
-            )}
+            <ATMTable
+              columns={windowColumns}
+              data={current}
+              emptyMessage="No upcoming maintenance scheduled."
+              rowActions={(w) => [
+                { label: 'Cancel window', icon: X, variant: 'danger', onClick: () => handleCancel(w) },
+              ]}
+            />
           </ATMCard>
 
           {past.length > 0 && (
             <ATMCard
-              className="glass-card"
+              className="glass-card overflow-hidden"
+              padding="none"
               header={
                 <CardHeader icon={Store} title="Past Windows" subtitle="Completed or cancelled — most recent 20" />
               }
             >
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <tbody>{past.slice(0, 20).map((w) => windowRow(w, false))}</tbody>
-                </table>
-              </div>
+              <ATMTable
+                columns={windowColumns}
+                data={past.slice(0, 20)}
+                emptyMessage="No past maintenance windows."
+              />
             </ATMCard>
           )}
         </>

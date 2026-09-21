@@ -30,11 +30,11 @@ export const TemplatePicker: React.FC<Props> = ({ kind, hasContent, onApply }) =
 
   return (
     <div className="flex items-center gap-2">
-      <LayoutTemplate className="h-4 w-4 text-gray-400" />
+      <LayoutTemplate className="h-4 w-4 text-slate-400" />
       {query.isError ? (
         <span className="text-xs text-red-600 dark:text-red-400">Templates could not be loaded.</span>
       ) : templates.length === 0 && !query.isLoading ? (
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-slate-500 dark:text-slate-400">
           No templates yet — <Link to="/content/templates" className="text-indigo-600 hover:underline dark:text-indigo-400">create one</Link>.
         </span>
       ) : (
@@ -42,7 +42,7 @@ export const TemplatePicker: React.FC<Props> = ({ kind, hasContent, onApply }) =
           value=""
           onChange={(e) => choose(e.target.value)}
           disabled={query.isLoading}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           aria-label="Start from a template"
         >
           <option value="">{query.isLoading ? 'Loading templates…' : 'Start from a template…'}</option>

@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, LayoutTemplate, AlertTriangle } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMBadge, ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextArea, ATMTextField } from '@/shared/ui';
+import { ATMBadge, ATMButton, ATMCard, ATMCheckbox, ATMModal, ATMSelectField, ATMSkeleton, ATMTextArea, ATMTextField } from '@/shared/ui';
 import { apiErrorMessage } from '@/lib/utils/apiError';
 import { formatDate } from '@/lib/utils/formatDate';
 import {
@@ -124,13 +124,13 @@ function ArticleTemplatesPage() {
     }
   };
 
-  const selectClass = 'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100';
-
   return (
     <div className="w-full space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Article Templates"
         subtitle="Starting points for blog posts and help articles: the headings and placeholder text a writer begins from."
+        icon={LayoutTemplate}
+        iconColor="theme"
         action={{ label: 'New Template', onClick: () => setDraft(EMPTY), icon: Plus }}
       />
 
@@ -149,41 +149,41 @@ function ArticleTemplatesPage() {
           {[1, 2, 3].map((i) => <ATMSkeleton key={i} variant="rect" height="72px" />)}
         </div>
       ) : templates.length === 0 ? (
-        <ATMCard padding="lg">
+        <ATMCard>
           <div className="py-8 text-center">
-            <LayoutTemplate className="mx-auto h-9 w-9 text-gray-300 dark:text-gray-600" />
-            <p className="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-300">No templates yet.</p>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <LayoutTemplate className="mx-auto h-9 w-9 text-slate-300 dark:text-slate-600" />
+            <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-300">No templates yet.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Create one for each kind of article you publish often — a release note, a how-to, a case study.
             </p>
             <ATMButton variant="primary" size="sm" className="mt-4" onClick={() => setDraft(EMPTY)}>Create the first template</ATMButton>
           </div>
         </ATMCard>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <ATMCard padding="none" className="overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
+              <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
                 {['Name', 'Used by', 'Description', 'Status', 'Updated', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
+                  <th key={h} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {templates.map((t) => (
-                <tr key={t.templateId} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                <tr key={t.templateId} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{t.name}</p>
-                    {t.titlePattern && <p className="text-[11px] text-gray-400">Title starts: “{t.titlePattern}”</p>}
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{t.name}</p>
+                    {t.titlePattern && <p className="text-[11px] text-slate-400">Title starts: “{t.titlePattern}”</p>}
                   </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{TEMPLATE_KIND_LABEL[t.kind]}</td>
-                  <td className="max-w-md px-4 py-3 text-gray-600 dark:text-gray-400">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{TEMPLATE_KIND_LABEL[t.kind]}</td>
+                  <td className="max-w-md px-4 py-3 text-slate-600 dark:text-slate-400">
                     <p className="line-clamp-2">{t.description || '—'}</p>
                   </td>
                   <td className="px-4 py-3">
                     <ATMBadge variant={t.isActive ? 'success' : 'default'} size="sm">{t.isActive ? 'Available' : 'Hidden'}</ATMBadge>
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-gray-500 dark:text-gray-400">{formatDate(t.updatedAt ?? t.createdAt, 'short')}</td>
+                  <td className="px-4 py-3 tabular-nums text-slate-500 dark:text-slate-400">{formatDate(t.updatedAt ?? t.createdAt, 'short')}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       <ATMButton variant="ghost" size="sm" onClick={() => openEdit(t)} aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></ATMButton>
@@ -194,7 +194,7 @@ function ArticleTemplatesPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ATMCard>
       )}
 
       <ATMModal isOpen={!!draft} onClose={() => setDraft(null)} title={draft?.templateId ? 'Edit template' : 'New template'} size="2xl">
@@ -202,12 +202,13 @@ function ArticleTemplatesPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <ATMTextField name="name" label="Name" value={draft.name} onChange={(e) => update('name', e.target.value)} placeholder="Release note" />
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Used by</label>
-                <select value={draft.kind} onChange={(e) => update('kind', e.target.value as ArticleTemplateKind)} className={selectClass}>
-                  {KINDS.map((k) => <option key={k} value={k}>{TEMPLATE_KIND_LABEL[k]}</option>)}
-                </select>
-              </div>
+              <ATMSelectField
+                name="kind"
+                label="Used by"
+                value={draft.kind}
+                onChange={(v) => update('kind', v as ArticleTemplateKind)}
+                options={KINDS.map((k) => ({ value: k, label: TEMPLATE_KIND_LABEL[k] }))}
+              />
             </div>
             <ATMTextField
               name="description"
@@ -235,22 +236,24 @@ function ArticleTemplatesPage() {
               <ATMTextField name="excerpt" label="Excerpt (blog posts)" value={draft.excerpt} onChange={(e) => update('excerpt', e.target.value)} />
               <ATMTextField name="tags" label="Tags" value={draft.tags} onChange={(e) => update('tags', e.target.value)} helperText="Comma-separated." />
             </div>
-            <div className="flex flex-wrap items-center gap-6">
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input type="checkbox" checked={draft.isActive} onChange={(e) => update('isActive', e.target.checked)} />
-                Offered in the editors
-              </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                Order
-                <input
-                  type="number"
-                  value={draft.sortOrder}
-                  onChange={(e) => update('sortOrder', Number(e.target.value) || 0)}
-                  className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                />
-              </label>
+            <div className="flex flex-wrap items-end gap-6">
+              <ATMCheckbox
+                name="isActive"
+                label="Offered in the editors"
+                checked={draft.isActive}
+                onChange={(checked) => update('isActive', checked)}
+                className="pb-2"
+              />
+              <ATMTextField
+                name="sortOrder"
+                label="Order"
+                type="number"
+                value={String(draft.sortOrder)}
+                onChange={(e) => update('sortOrder', Number(e.target.value) || 0)}
+                className="w-28"
+              />
             </div>
-            <div className="flex justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
               <ATMButton variant="secondary" size="sm" onClick={() => setDraft(null)}>Cancel</ATMButton>
               <ATMButton variant="primary" size="sm" loading={createState.isLoading || updateState.isLoading} onClick={() => { void save(); }}>
                 {draft.templateId ? 'Save' : 'Create'}
@@ -263,7 +266,7 @@ function ArticleTemplatesPage() {
       <ATMModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete this template?" size="sm">
         {deleteTarget && (
           <div className="space-y-4 text-sm">
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-slate-700 dark:text-slate-300">
               “{deleteTarget.name}” will no longer be offered in the editors. Articles already written from it keep their text.
             </p>
             <div className="flex justify-end gap-2">

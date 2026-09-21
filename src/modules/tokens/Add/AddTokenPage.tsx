@@ -97,7 +97,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
 
   if (!p.canGenerate) {
     return (
-      <div className="flex flex-col gap-6 w-full">
+      <div className="w-full space-y-6 animate-fade-in">
         <div className="flex flex-col gap-3">
           <ATMBreadcrumbs />
           <ATMPageHeader title="Generate Tokens" subtitle="Issue a paid recharge token for a Standalone merchant." />
@@ -105,8 +105,8 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
         <ATMCard padding="md" className="max-w-xl mx-auto">
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <ATMBadge variant="solid" color="danger" label="Access Denied" />
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">
-              Your role does not include <code className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 text-xs">token.generate</code>.
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-2">
+              Your role does not include <code className="font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 text-xs">token.generate</code>.
             </p>
           </div>
         </ATMCard>
@@ -115,7 +115,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3">
         <ATMBreadcrumbs />
         <ATMPageHeader
@@ -174,24 +174,24 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
                     ) : p.subscription ? (
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Plan</span>
-                          <span className="mt-1 block text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Plan</span>
+                          <span className="mt-1 block text-sm font-extrabold text-slate-900 dark:text-slate-100">
                             {p.subscription.planDisplayName}
                           </span>
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Deployment</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Deployment</span>
                           <ATMBadge color="primary" label={PLAN_TYPE_LABEL[p.subscription.planType] ?? p.subscription.planType} className="mt-1" />
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Daily Price</span>
-                          <span className="mt-1 block text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Daily Price</span>
+                          <span className="mt-1 block text-sm font-extrabold text-slate-900 dark:text-slate-100">
                             {formatCurrencyOrDash(p.subscription.dailySubscriptionPrice, p.currency)}/day
                           </span>
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Current Coverage</span>
-                          <span className="mt-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Coverage</span>
+                          <span className="mt-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
                             {p.activeTokenInfo
                               ? p.activeTokenInfo.latestExpiry
                                 ? `Active token until ${formatDate(p.activeTokenInfo.latestExpiry, 'short')}`
@@ -222,8 +222,8 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
                           />
                         </ATMFieldCell>
                         <ATMFieldCell label="Price to Collect" hint={`${p.subscription.dailySubscriptionPrice.toFixed(2)} × ${p.validityDays} day${p.validityDays === 1 ? '' : 's'}`}>
-                          <div className="flex h-11 items-center rounded-xl border border-[var(--zen-border)] bg-gray-50/60 px-3.5 dark:bg-gray-900">
-                            <span className="text-sm font-extrabold text-accent-600 dark:text-accent-400">
+                          <div className="flex h-11 items-center rounded-xl border border-[var(--zen-border)] bg-slate-50/60 px-3.5 dark:bg-slate-900">
+                            <span className="text-sm font-extrabold text-primary-600 dark:text-primary-400">
                               {formatCurrencyOrDash(p.expectedPrice, p.currency)}
                             </span>
                           </div>
@@ -255,7 +255,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
                           )}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-gray-400 font-medium">
+                        <p className="text-[11px] text-slate-400 font-medium">
                           Standalone Cloud — the token applies to the merchant's cloud instance; no terminal binding.
                         </p>
                       )}
@@ -339,37 +339,37 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
                 <TokenWizardSection title="Summary">
                   <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Merchant</dt>
-                      <dd className="mt-1 text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Merchant</dt>
+                      <dd className="mt-1 text-sm font-extrabold text-slate-900 dark:text-slate-100">
                         {p.merchantOptions.find((o) => o.value === p.merchantId)?.label ?? '—'}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Plan</dt>
-                      <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">{p.subscription?.planDisplayName}</dd>
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plan</dt>
+                      <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">{p.subscription?.planDisplayName}</dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Validity</dt>
-                      <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">{p.validityDays} days</dd>
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Validity</dt>
+                      <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">{p.validityDays} days</dd>
                     </div>
                     {p.isPos && (
                       <div>
-                        <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Terminal</dt>
-                        <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                        <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Terminal</dt>
+                        <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                           {(() => { const t = p.terminals.find((x) => x.terminalId === p.terminalId); return t ? `${t.terminalName} (${t.terminalCode})` : '—'; })()}
                         </dd>
                       </div>
                     )}
                     <div>
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment</dt>
-                      <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Payment</dt>
+                      <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                         {p.paymentMethod} · {formatCurrencyOrDash(Number(p.amountReceived), p.currency)}
                       </dd>
                     </div>
                     {p.paymentReference && (
                       <div>
-                        <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Reference</dt>
-                        <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 break-all">{p.paymentReference}</dd>
+                        <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Reference</dt>
+                        <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 break-all">{p.paymentReference}</dd>
                       </div>
                     )}
                   </dl>
@@ -381,7 +381,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
                       Generate Token
                     </ATMButton>
                   </div>
-                  <p className="mt-3 text-[11px] text-gray-400 font-medium text-right">
+                  <p className="mt-3 text-[11px] text-slate-400 font-medium text-right">
                     Creates the token and a paid Token Purchase invoice in one transaction.
                   </p>
                 </TokenWizardSection>
@@ -406,20 +406,20 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Sequence</span>
-                          <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100">#{p.preview.sequence}</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sequence</span>
+                          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">#{p.preview.sequence}</span>
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Plan</span>
-                          <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100">{p.preview.planName}</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Plan</span>
+                          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{p.preview.planName}</span>
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Cut For</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Cut For</span>
                           <ATMBadge color="primary" label={FLAVOUR_LABELS[p.preview.flavour] ?? p.preview.flavour} />
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Validity</span>
-                          <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100">{p.preview.validityDays} days from apply</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Validity</span>
+                          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{p.preview.validityDays} days from apply</span>
                         </div>
                       </div>
 
@@ -455,17 +455,17 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
             <ATMCard title="Token Purchase Invoice" padding="md">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Invoice</span>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Invoice</span>
                   <Link
                     to={`/billing/invoices/${p.result.invoiceId}`}
-                    className="mt-1 block text-sm font-extrabold text-accent-600 hover:underline dark:text-accent-400"
+                    className="mt-1 block text-sm font-extrabold text-primary-600 hover:underline dark:text-primary-400"
                   >
                     {p.result.invoiceNumber}
                   </Link>
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Amount</span>
-                  <span className="mt-1 block text-sm font-extrabold text-gray-900 dark:text-gray-100">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Amount</span>
+                  <span className="mt-1 block text-sm font-extrabold text-slate-900 dark:text-slate-100">
                     {p.result.amountCharged.toFixed(2)} {p.result.currencyCode}
                   </span>
                 </div>

@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, EyeOff, AlertTriangle, ImageOff, Clock } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMModal, ATMSkeleton, ATMTextField, ATMBadge, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
 import { MediaPicker } from './MediaPicker';
 import { absoluteMediaUrl } from '../services/mediaApi';
@@ -37,6 +37,9 @@ export interface FieldDescriptor {
 export interface CollectionDescriptor<TRow> {
   title: string;
   subtitle: string;
+  /** Icon and accent for the page header. */
+  icon?: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
+  iconColor?: 'theme' | 'indigo' | 'emerald' | 'rose' | 'amber' | 'blue' | 'purple' | 'slate' | 'violet';
   /** Singular noun for buttons and confirmations, e.g. "testimonial". */
   noun: string;
   idOf: (row: TRow) => string;
@@ -180,6 +183,8 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
       <ATMPageHeader
         title={descriptor.title}
         subtitle={descriptor.subtitle}
+        icon={descriptor.icon}
+        iconColor={descriptor.iconColor ?? 'theme'}
         action={{ label: `Add ${descriptor.noun}`, onClick: openCreate, icon: Plus }}
       />
 
@@ -199,12 +204,12 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
             {Array.from({ length: 4 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="68px" />)}
           </div>
         ) : rows.length === 0 ? (
-          <div className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <ImageOff className="h-7 w-7" />
             <p>Nothing here yet. Add the first {descriptor.noun}.</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {rows.map((row) => {
               const id = descriptor.idOf(row);
               const state = windowState(row);
@@ -217,40 +222,38 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
                       className="h-12 w-16 rounded object-cover"
                     />
                   ) : (
-                    <div className="flex h-12 w-16 items-center justify-center rounded bg-gray-100 dark:bg-gray-800">
-                      <ImageOff className="h-4 w-4 text-gray-400" />
+                    <div className="flex h-12 w-16 items-center justify-center rounded bg-slate-100 dark:bg-slate-800">
+                      <ImageOff className="h-4 w-4 text-slate-400" />
                     </div>
                   )}
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{row.title}</span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{row.title}</span>
                       <ATMBadge color="default" label={`#${row.sortOrder}`} />
                       {(descriptor.badgesOf?.(row) ?? []).map((b) => (
                         <ATMBadge key={b} color="primary" label={b} />
                       ))}
                       {!row.isActive && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
-                          <EyeOff className="h-3 w-3" /> Hidden
-                        </span>
+                        <ATMBadge color="warning" icon={<EyeOff className="h-3 w-3" />} label="Hidden" />
                       )}
                       {/* A block outside its window is invisible to the public even while
                           active, so the list says which, rather than looking broken. */}
                       {state && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-blue-600 dark:text-blue-400">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-primary-600 dark:text-primary-400">
                           <Clock className="h-3 w-3" /> {state}
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{descriptor.subtitleOf(row)}</p>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{descriptor.subtitleOf(row)}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => openEdit(row)}
-                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                       aria-label={`Edit ${row.title}`}>
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button type="button" onClick={() => setDeleteTarget(row)}
-                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                      className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                       aria-label={`Delete ${row.title}`}>
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -280,35 +283,42 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
               const value = draft[f.key] ?? '';
               if (f.type === 'textarea') {
                 return (
-                  <div key={f.key} className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">{f.label}</label>
-                    <textarea rows={4} value={value} onChange={(e) => set(f.key, e.target.value)}
-                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100" />
-                    {f.helperText && <span className="text-[11px] text-gray-400">{f.helperText}</span>}
-                  </div>
+                  <ATMTextArea
+                    key={f.key}
+                    name={f.key}
+                    label={f.label}
+                    value={value}
+                    onChange={(e) => set(f.key, e.target.value)}
+                    helperText={f.helperText}
+                    rows={4}
+                  />
                 );
               }
               if (f.type === 'select') {
                 return (
-                  <div key={f.key} className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">{f.label}</label>
-                    <select value={value} onChange={(e) => set(f.key, e.target.value)}
-                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                      {!f.required && <option value="">Not set</option>}
-                      {(f.options ?? []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                    {f.helperText && <span className="text-[11px] text-gray-400">{f.helperText}</span>}
-                  </div>
+                  <ATMSelectField
+                    key={f.key}
+                    name={f.key}
+                    label={f.label}
+                    value={value}
+                    onChange={(v) => set(f.key, v ?? '')}
+                    options={[
+                      ...(!f.required ? [{ value: '', label: 'Not set' }] : []),
+                      ...(f.options ?? []),
+                    ]}
+                    helperText={f.helperText}
+                  />
                 );
               }
               if (f.type === 'checkbox') {
                 return (
-                  <label key={f.key} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <input type="checkbox" checked={!!draft[f.key]}
-                      onChange={(e) => set(f.key, e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300" />
-                    {f.label}
-                  </label>
+                  <ATMCheckbox
+                    key={f.key}
+                    name={f.key}
+                    label={f.label}
+                    checked={!!draft[f.key]}
+                    onChange={(checked) => set(f.key, checked)}
+                  />
                 );
               }
               return (
@@ -325,23 +335,23 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
             })}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Image{descriptor.imageRequired ? '' : ' (optional)'}
               </label>
               {draft.mediaAssetId ? (
-                <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-2 dark:border-gray-700">
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2 dark:border-slate-700">
                   <img src={absoluteMediaUrl(`/api/v1/media/${draft.mediaAssetId}/file`)} alt=""
                     className="h-14 w-20 rounded object-cover" />
                   <div className="flex flex-1 flex-col gap-1">
                     <button type="button" onClick={() => setPickerOpen(true)}
                       className="text-left text-xs font-semibold text-accent-600 hover:underline">Change image</button>
                     <button type="button" onClick={() => set('mediaAssetId', '')}
-                      className="text-left text-xs text-gray-500 hover:underline">Remove</button>
+                      className="text-left text-xs text-slate-500 hover:underline">Remove</button>
                   </div>
                 </div>
               ) : (
                 <button type="button" onClick={() => setPickerOpen(true)}
-                  className="rounded-lg border border-dashed border-gray-300 px-3 py-4 text-sm text-gray-500 hover:border-accent-400 hover:text-accent-600 dark:border-gray-600">
+                  className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 hover:border-accent-400 hover:text-accent-600 dark:border-slate-600">
                   Choose from the media library
                 </button>
               )}
@@ -367,12 +377,12 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
                 value={draft.publishUntil} onChange={(e) => set('publishUntil', e.target.value)} />
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" checked={!!draft.isActive}
-                onChange={(e) => set('isActive', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300" />
-              Published to the website
-            </label>
+            <ATMCheckbox
+              name="isActive"
+              label="Published to the website"
+              checked={!!draft.isActive}
+              onChange={(checked) => set('isActive', checked)}
+            />
 
             <div className="flex justify-end gap-2">
               <ATMButton variant="ghost" onClick={() => setDraft(null)}>Cancel</ATMButton>
@@ -394,7 +404,7 @@ export function WebsiteContentCollection<TRow extends Record<string, any>>({
       <ATMModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)}
         title={`Delete this ${descriptor.noun}?`} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             &ldquo;{deleteTarget?.title}&rdquo; will stop appearing on the website.
           </p>
           <div className="flex justify-end gap-2">

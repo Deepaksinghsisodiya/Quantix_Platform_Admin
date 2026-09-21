@@ -9,7 +9,7 @@ export const SessionExpiredPage: React.FC = () => {
         <h2 className="text-2xl font-black text-surface-900 dark:text-surface-100">Session Expired</h2>
         <p className="mt-2 text-sm text-surface-500 mb-6">Your secure session has expired. Please log in again to continue.</p>
         <Link to="/login">
-          <ATMButton className="w-full h-11 bg-accent-600 hover:bg-accent-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all">
+          <ATMButton className="w-full h-12 bg-accent-600 hover:bg-accent-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all">
             Return to Login
           </ATMButton>
         </Link>

@@ -45,22 +45,22 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
     <div className="space-y-5">
       {/* Limits */}
       <div>
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
           Limits ({limitEntries.length})
         </h4>
         {limitEntries.length === 0 ? (
-          <p className="text-xs font-semibold text-gray-400">No limits recorded in the payload.</p>
+          <p className="text-xs font-semibold text-slate-400">No limits recorded in the payload.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {limitEntries.map(([code, value]) => (
               <div
                 key={code}
-                className="rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 dark:border-gray-800 dark:bg-gray-900"
+                className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
               >
-                <span className="block text-[10px] font-bold text-gray-400" title={code}>
+                <span className="block text-[10px] font-bold text-slate-400" title={code}>
                   {limitLabel(code)}
                 </span>
-                <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100 tabular-nums">
+                <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
                   {limitValueText(code, value)}
                 </span>
               </div>
@@ -71,12 +71,12 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
 
       {/* Features */}
       <div>
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
           Features ({enabledFeatures.length} enabled
           {disabledFeatures.length > 0 ? `, ${disabledFeatures.length} off` : ''})
         </h4>
         {enabledFeatures.length === 0 && disabledFeatures.length === 0 ? (
-          <p className="text-xs font-semibold text-gray-400">No feature map recorded in the payload.</p>
+          <p className="text-xs font-semibold text-slate-400">No feature map recorded in the payload.</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {enabledFeatures.map((code) => (
@@ -93,7 +93,7 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
               <span
                 key={code}
                 title={code}
-                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-400 line-through dark:bg-gray-800"
+                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-400 line-through dark:bg-slate-800"
               >
                 <X size={11} />
                 {featureLabel(code)}
@@ -106,7 +106,7 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
       {/* Services (preview only) */}
       {serviceEntries.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
             Service Types ({serviceEntries.filter(([, on]) => on).length} enabled)
           </h4>
           <div className="flex flex-wrap gap-1.5">
@@ -116,7 +116,7 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
                 title={code}
                 className={on
                   ? 'inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
-                  : 'inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-400 line-through dark:bg-gray-800'}
+                  : 'inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-400 line-through dark:bg-slate-800'}
               >
                 {on ? <Check size={11} strokeWidth={3} /> : <X size={11} />}
                 {serviceLabel(code)}
@@ -129,7 +129,7 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
       {/* Payment methods (preview only) */}
       {paymentEntries.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
             Payment Methods ({paymentEntries.filter(([, on]) => on).length} enabled)
           </h4>
           <div className="flex flex-wrap gap-1.5">
@@ -139,7 +139,7 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
                 title={code}
                 className={on
                   ? 'inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
-                  : 'inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-400 line-through dark:bg-gray-800'}
+                  : 'inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-400 line-through dark:bg-slate-800'}
               >
                 {on ? <Check size={11} strokeWidth={3} /> : <X size={11} />}
                 {paymentLabel(code)}
@@ -151,20 +151,20 @@ export const TokenBreakdown: React.FC<TokenBreakdownProps> = ({
 
       {/* Grace policy */}
       <div>
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
           Grace Policy After Expiry
         </h4>
         {graceEntries.length === 0 ? (
-          <p className="text-xs font-semibold text-gray-400">No grace policy recorded — plan default applies.</p>
+          <p className="text-xs font-semibold text-slate-400">No grace policy recorded — plan default applies.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {graceEntries.map(([key, days]) => (
               <div
                 key={key}
-                className="rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 dark:border-gray-800 dark:bg-gray-900"
+                className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
               >
-                <span className="block text-[10px] font-bold text-gray-400">{GRACE_LABELS[key] ?? key}</span>
-                <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100 tabular-nums">
+                <span className="block text-[10px] font-bold text-slate-400">{GRACE_LABELS[key] ?? key}</span>
+                <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
                   {days} day{days === 1 ? '' : 's'}
                 </span>
               </div>

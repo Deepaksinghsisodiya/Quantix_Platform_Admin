@@ -33,21 +33,21 @@ export const NotificationBell: React.FC = () => {
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications, ${unreadCount} unread`}
         className={cn(
-          'relative p-2 rounded-xl transition-all',
-          'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white',
-          'hover:bg-slate-50 dark:hover:bg-slate-900/60 border border-transparent hover:border-slate-150/60',
+          'relative p-2 rounded-xl transition-all active:scale-95',
+          'text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white',
+          'hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-transparent hover:border-slate-200 dark:hover:border-slate-700',
         )}
       >
         <Bell size={18} strokeWidth={2} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-black">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-[#0d0f14]">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[360px] bg-white dark:bg-zinc-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-[360px] bg-white dark:bg-[#13151a] border border-[var(--zen-border)] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800/60">
             <div>
               <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Notifications</p>
@@ -82,7 +82,7 @@ export const NotificationBell: React.FC = () => {
                     className={cn(
                       'w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 transition-colors',
                       n.read
-                        ? 'hover:bg-slate-50 dark:hover:bg-zinc-900/50'
+                        ? 'hover:bg-slate-100 dark:hover:bg-white/[0.03]'
                         : 'bg-primary-50/50 hover:bg-primary-50 dark:bg-primary-950/10 dark:hover:bg-primary-950/20',
                     )}
                   >
@@ -112,7 +112,7 @@ export const NotificationBell: React.FC = () => {
 
           <button
             onClick={() => { setOpen(false); navigate('/notifications'); }}
-            className="w-full py-2.5 text-[11px] font-black text-primary-600 dark:text-primary-400 hover:bg-slate-50 dark:hover:bg-zinc-900/50 border-t border-slate-100 dark:border-slate-800/60 uppercase tracking-widest"
+            className="w-full py-2.5 text-[11px] font-black text-primary-600 dark:text-primary-400 hover:bg-slate-100 dark:hover:bg-white/[0.03] border-t border-slate-100 dark:border-slate-800/60 uppercase tracking-widest"
           >
             View all notifications
           </button>

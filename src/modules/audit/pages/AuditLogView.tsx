@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Download, FileText } from 'lucide-react';
+import { Shield, Download, FileText, Search as SearchIcon, X } from 'lucide-react';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge, BadgeColor } from '@/shared/ui/ATMBadge';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
@@ -64,7 +64,7 @@ function UserAvatarCell({ avatar, name }: { avatar: string; name: string }) {
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-700 dark:bg-accent-950/40 dark:text-accent-300">
         {avatar}
       </div>
-      <span className="text-gray-900 dark:text-gray-100 font-bold">{name}</span>
+      <span className="text-slate-900 dark:text-slate-100 font-bold">{name}</span>
     </div>
   );
 }
@@ -74,7 +74,7 @@ const COLUMNS: ATMTableColumn<AuditRow>[] = [
     key: 'timestamp',
     header: 'Timestamp',
     renderCell: (_val, row) => (
-      <span className="whitespace-nowrap tabular-nums text-gray-500 dark:text-gray-400 font-semibold">
+      <span className="whitespace-nowrap tabular-nums text-slate-500 dark:text-slate-400 font-semibold">
         {formatTimestamp(row.timestamp)}
       </span>
     ),
@@ -99,7 +99,7 @@ const COLUMNS: ATMTableColumn<AuditRow>[] = [
     key: 'entityType',
     header: 'Entity Type',
     renderCell: (_val, row) => (
-      <span className="text-gray-600 dark:text-gray-400 font-semibold">{row.entityType || '—'}</span>
+      <span className="text-slate-600 dark:text-slate-400 font-semibold">{row.entityType || '—'}</span>
     ),
     width: '130px',
   },
@@ -107,7 +107,7 @@ const COLUMNS: ATMTableColumn<AuditRow>[] = [
     key: 'entityId',
     header: 'Entity ID',
     renderCell: (_val, row) => (
-      <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{row.entityId || '—'}</span>
+      <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{row.entityId || '—'}</span>
     ),
     width: '200px',
   },
@@ -115,7 +115,7 @@ const COLUMNS: ATMTableColumn<AuditRow>[] = [
     key: 'details',
     header: 'Details',
     renderCell: (_val, row) => (
-      <span className="max-w-xs truncate block text-gray-600 dark:text-gray-400 font-semibold">
+      <span className="max-w-xs truncate block text-slate-600 dark:text-slate-400 font-semibold">
         {row.details || '—'}
       </span>
     ),
@@ -124,7 +124,7 @@ const COLUMNS: ATMTableColumn<AuditRow>[] = [
     key: 'ipAddress',
     header: 'IP Address',
     renderCell: (_val, row) => (
-      <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{row.ipAddress || '—'}</span>
+      <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{row.ipAddress || '—'}</span>
     ),
     width: '140px',
   },
@@ -155,16 +155,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
   onExport,
 }) => {
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
+        icon={Shield}
+        iconColor="theme"
         title="Audit Log"
-        subtitle={
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-gray-400" />
-            <span>7-year retention policy. All actions are immutable and non-deletable.</span>
-          </div>
-        }
+        subtitle="7-year retention policy. All actions are immutable and non-deletable."
         extraActions={
           <div className="flex flex-wrap gap-2">
             <ATMButton variant="secondary" size="sm" icon={Download} onClick={() => onExport('CSV')}>
@@ -178,75 +175,83 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
       />
 
       {/* Filters */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 items-end">
-        <div className="lg:col-span-1">
+      <ATMCard padding="md">
+        <div className="mb-1 flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Filters
+          </p>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear all
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-4">
           <ATMTextField
             name="search"
+            label="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search details..."
-            size="sm"
+            placeholder="Search audit log…"
+            size="md"
+            prefix={<SearchIcon size={16} className="text-slate-400" />}
+            className="max-w-2xl"
           />
-        </div>
-        <div>
-          <ATMSelectField
-            name="filterUser"
-            value={filterUser}
-            onChange={(val) => setFilterUser(val ? String(val) : '')}
-            options={[{ label: 'All Users', value: '' }, ...users.map((u) => ({ label: u, value: u }))]}
-            size="sm"
-          />
-        </div>
-        <div>
-          <ATMSelectField
-            name="filterAction"
-            value={filterAction}
-            onChange={(val) => setFilterAction(val ? String(val) : '')}
-            options={[{ label: 'All Actions', value: '' }, ...actions.map((a) => ({ label: a, value: a }))]}
-            size="sm"
-          />
-        </div>
-        <div>
-          <ATMSelectField
-            name="filterEntity"
-            value={filterEntity}
-            onChange={(val) => setFilterEntity(val ? String(val) : '')}
-            options={[{ label: 'All Entities', value: '' }, ...entityTypes.map((e) => ({ label: e, value: e }))]}
-            size="sm"
-          />
-        </div>
-        <div>
-          <ATMTextField
-            name="filterDateFrom"
-            type="date"
-            value={filterDateFrom}
-            onChange={(e) => setFilterDateFrom(e.target.value)}
-            size="sm"
-          />
-        </div>
-        <div>
-          <ATMTextField
-            name="filterDateTo"
-            type="date"
-            value={filterDateTo}
-            onChange={(e) => setFilterDateTo(e.target.value)}
-            size="sm"
-          />
-        </div>
-      </div>
 
-      {/* Result count + clear */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <ATMSelectField
+              name="filterUser"
+              label="User"
+              value={filterUser}
+              onChange={(val) => setFilterUser(val ? String(val) : '')}
+              options={[{ label: 'All Users', value: '' }, ...users.map((u) => ({ label: u, value: u }))]}
+              size="md"
+            />
+            <ATMSelectField
+              name="filterAction"
+              label="Action"
+              value={filterAction}
+              onChange={(val) => setFilterAction(val ? String(val) : '')}
+              options={[{ label: 'All Actions', value: '' }, ...actions.map((a) => ({ label: a, value: a }))]}
+              size="md"
+            />
+            <ATMSelectField
+              name="filterEntity"
+              label="Entity"
+              value={filterEntity}
+              onChange={(val) => setFilterEntity(val ? String(val) : '')}
+              options={[{ label: 'All Entities', value: '' }, ...entityTypes.map((e) => ({ label: e, value: e }))]}
+              size="md"
+            />
+            <ATMTextField
+              name="filterDateFrom"
+              label="From"
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              size="md"
+            />
+            <ATMTextField
+              name="filterDateTo"
+              label="To"
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              size="md"
+            />
+          </div>
+        </div>
+      </ATMCard>
+
+      {/* Result count */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
         <span>Showing {rows.length} of {totalCount} entries</span>
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="text-accent-600 hover:text-accent-700 dark:text-accent-400 font-bold"
-          >
-            Clear filters
-          </button>
-        )}
       </div>
 
       {/* Error banner */}

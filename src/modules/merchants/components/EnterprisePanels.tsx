@@ -13,11 +13,11 @@ import {
   CreditCard,
   DollarSign,
   Link2,
-  RefreshCw,
   Wallet,
 } from 'lucide-react';
 
 import { ATMCard } from '@/shared/ui/ATMCard';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { cn } from '@/lib/utils/cn';
 import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { formatDate } from '@/lib/utils/formatDate';
@@ -36,14 +36,14 @@ import type {
 function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="shrink-0 text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="min-w-0 text-right font-medium tabular-nums break-words text-gray-900 dark:text-gray-100">{value}</span>
+      <span className="shrink-0 text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="min-w-0 text-right font-medium tabular-nums break-words text-slate-900 dark:text-slate-100">{value}</span>
     </div>
   );
 }
 
 function EmptyHint({ text }: { text: string }) {
-  return <p className="text-xs text-gray-500 dark:text-gray-400 py-4 text-center">{text}</p>;
+  return <p className="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">{text}</p>;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,8 +71,13 @@ function EnterprisePanels({
   const { currency } = useDeploymentCurrency();
   if (isLoading) {
     return (
-      <div className="flex h-40 items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-accent-500" />
+      <div className="grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="rounded-2xl border border-slate-200/80 bg-white/95 p-4 dark:border-gray-800/80 dark:bg-[#13151a]/95">
+            <ATMSkeleton width="45%" height="14px" className="rounded-lg" />
+            <div className="mt-4"><ATMSkeleton height="110px" className="rounded-xl" /></div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -102,11 +107,11 @@ function EnterprisePanels({
                   {bridgeHealth.isConnected && (
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   )}
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     {bridgeHealth.isConnected ? 'Connected' : 'Disconnected'}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {bridgeHealth.syncStatus ?? 'No sync status reported'}
                 </p>
               </div>
@@ -131,10 +136,10 @@ function EnterprisePanels({
                 <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {usageSummary.last30DaysTransactions.toLocaleString()} transactions
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {usageSummary.lastReportedAt
                     ? `Last reported ${formatDate(usageSummary.lastReportedAt, 'short')}`
                     : 'No usage reported yet'}
@@ -160,10 +165,10 @@ function EnterprisePanels({
                 <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {formatCurrencyOrDash(commissionSummary.totalCommissionEarned, currency)}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total earned</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Total earned</p>
               </div>
             </div>
             <StatRow label="Commission Rate" value={`${commissionSummary.currentRatePercent}%`} />
@@ -191,10 +196,10 @@ function EnterprisePanels({
                 <CreditCard className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {subscription.planDisplayName ?? 'Subscribed'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {subscription.dailySubscriptionPrice != null
                     ? `${formatCurrencyOrDash(Number(subscription.dailySubscriptionPrice), currency)}/day`
                     : 'Rate on file'}
@@ -220,14 +225,14 @@ function EnterprisePanels({
                 <Wallet className="h-5 w-5 text-teal-600 dark:text-teal-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {wallet.currencyBalance != null
                     ? formatCurrencyOrDash(Number(wallet.currencyBalance), currency)
                     : wallet.tokenBalance != null
                       ? `${Number(wallet.tokenBalance).toLocaleString()} tokens`
                       : '—'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Available balance</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Available balance</p>
               </div>
             </div>
             {wallet.tokenBalance != null && wallet.currencyBalance != null && (

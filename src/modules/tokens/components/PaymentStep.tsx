@@ -59,7 +59,14 @@ export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
       description="Choose how the payment was collected — the method catalog comes from System Setup."
     >
       {p.methodsLoading ? (
-        <ATMSkeleton variant="text" count={3} className="h-12 w-full" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="rounded-xl border border-slate-200/80 bg-white/95 p-4 dark:border-gray-800/80 dark:bg-[#13151a]/95">
+              <ATMSkeleton width="55%" height="14px" className="rounded-lg" />
+              <ATMSkeleton width="80%" height="12px" className="mt-2 rounded" />
+            </div>
+          ))}
+        </div>
       ) : p.enabledMethods.length === 0 ? (
         <div className="flex items-start gap-2 py-2">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
@@ -78,16 +85,16 @@ export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
               className={cn(
                 'rounded-xl border px-4 py-3 text-sm font-bold transition-colors text-left',
                 p.paymentMethod === m.methodType
-                  ? 'border-accent-500 bg-accent-50/60 text-accent-700 dark:bg-accent-950/30 dark:text-accent-300'
-                  : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300',
+                  ? 'border-primary-500 bg-primary-50/60 text-primary-700 dark:bg-primary-950/30 dark:text-primary-300'
+                  : 'border-slate-200 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:text-slate-300',
               )}
             >
               {m.displayName}
               {m.methodType === 'External' && (
-                <span className="block text-[10px] font-semibold text-gray-400 mt-0.5">Collected outside the platform</span>
+                <span className="block text-[10px] font-semibold text-slate-400 mt-0.5">Collected outside the platform</span>
               )}
               {m.methodType === 'Card' && (
-                <span className="block text-[10px] font-semibold text-gray-400 mt-0.5">Online — charged via gateway</span>
+                <span className="block text-[10px] font-semibold text-slate-400 mt-0.5">Online — charged via gateway</span>
               )}
             </button>
           ))}

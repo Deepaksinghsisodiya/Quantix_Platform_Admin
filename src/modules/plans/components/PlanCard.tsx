@@ -48,13 +48,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       label: 'Stores',
       value: storesLabel,
       icon: MapPin,
-      tint: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400',
+      tint: 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400',
     },
     {
       label: 'Registers',
       value: registersLabel,
       icon: Monitor,
-      tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400',
+      tint: 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400',
     },
     {
       label: 'Subscribers',
@@ -75,7 +75,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       className={cn(
         'group relative flex flex-col overflow-hidden rounded-2xl border bg-white/70 dark:bg-[#13151a]/80 backdrop-blur-md shadow-sm transition-all duration-300 hover:shadow-lg',
         isMuted
-          ? 'border-dashed border-slate-200 dark:border-slate-800'
+          ? 'border-dashed border-slate-200/80 dark:border-slate-800'
           : ''
       )}
       style={isMuted ? undefined : { borderColor: `${accentColor}30` }}
@@ -147,7 +147,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           {tiles.map((tile, i) => {
             const TileIcon = tile.icon;
             return (
-              <div key={i} className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+              <div key={i} className="p-4 rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#13151a] flex items-start gap-3">
                 <div className={cn('p-2 rounded-lg mt-0.5', tile.tint)}>
                   <TileIcon size={16} />
                 </div>
@@ -207,7 +207,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-2 pt-4 mt-5 border-t border-slate-100 dark:border-slate-800/60">
+        <div className="flex items-center justify-between gap-2 pt-4 mt-5 border-t border-slate-200/80 dark:border-slate-800">
           <span className={cn('text-[11px] font-bold', isMuted ? 'text-slate-400 dark:text-slate-500' : 'text-emerald-600 dark:text-emerald-400')}>
             {isMuted ? 'Closed for new signups' : 'Accepting new signups'}
           </span>

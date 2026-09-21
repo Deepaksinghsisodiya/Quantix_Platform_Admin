@@ -1,5 +1,6 @@
 import React from 'react';
 import { toast } from 'sonner';
+import { Handshake } from 'lucide-react';
 
 import { WebsiteContentCollection, type CollectionDescriptor } from '../components/WebsiteContentCollection';
 import {
@@ -23,6 +24,8 @@ import {
 const descriptor: CollectionDescriptor<ClientLogo> = {
   title: 'Clientele',
   subtitle: 'Client and partner logos shown on the website.',
+  icon: Handshake,
+  iconColor: 'theme',
   noun: 'client',
   idOf: (c) => c.clientLogoId,
   subtitleOf: (c) => [c.industry, c.websiteUrl].filter(Boolean).join(' · ') || 'No details',

@@ -42,7 +42,7 @@ export interface TimelineEvent {
 
 function getExpiryTextColor(days: number): string {
   if (days > 30) return 'text-emerald-600 dark:text-emerald-400';
-  if (days > 14) return 'text-yellow-600 dark:text-yellow-400';
+  if (days > 14) return 'text-amber-600 dark:text-amber-400';
   if (days > 7) return 'text-orange-600 dark:text-orange-400';
   return 'text-red-600 dark:text-red-400';
 }
@@ -67,17 +67,17 @@ function PayloadSection({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={sectionId}
-        className="flex w-full items-center justify-between px-5 py-4 text-sm font-bold text-gray-900 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-800/50 transition-colors"
+        className="flex w-full items-center justify-between px-5 py-4 text-sm font-bold text-slate-900 hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800/50 transition-colors"
       >
         <span>{title}</span>
-        <span className="text-gray-400 text-xs font-semibold">{open ? 'Hide' : 'Show'}</span>
+        <span className="text-slate-400 text-xs font-semibold">{open ? 'Hide' : 'Show'}</span>
       </button>
       {open && (
         <div id={sectionId} className="px-5 pb-4">
           {isEmpty ? (
-            <p className="text-xs font-semibold text-gray-400 py-2">Nothing recorded.</p>
+            <p className="text-xs font-semibold text-slate-400 py-2">Nothing recorded.</p>
           ) : (
-            <pre className="overflow-x-auto rounded-xl bg-gray-50/50 p-4 font-mono text-xs text-gray-800 dark:bg-gray-900 dark:text-gray-200 border border-[var(--zen-border)] shadow-inner">
+            <pre className="overflow-x-auto rounded-xl bg-slate-50/50 p-4 font-mono text-xs text-slate-800 dark:bg-slate-900 dark:text-slate-200 border border-[var(--zen-border)] shadow-inner">
               {JSON.stringify(data, null, 2)}
             </pre>
           )}
@@ -97,22 +97,22 @@ function TokenTimeline({ events }: { events: TimelineEvent[] }) {
 
   return (
     <div className="relative pl-6">
-      <div className="absolute left-2.5 top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-700" />
+      <div className="absolute left-2.5 top-2 bottom-2 w-px bg-slate-200 dark:bg-slate-700" />
       <ul className="space-y-6">
         {events.map((evt) => (
           <li key={evt.id} className="relative flex gap-4">
             <span className={cn(
-              'absolute -left-3.5 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white dark:border-gray-900',
+              'absolute -left-3.5 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white dark:border-slate-900',
               dotColor[evt.type ?? 'info'],
             )}>
               <span className="h-2 w-2 rounded-full bg-white" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{evt.title}</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{evt.title}</p>
               {evt.description && (
-                <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 font-medium">{evt.description}</p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 font-medium">{evt.description}</p>
               )}
-              <p className="mt-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
+              <p className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
                 {formatDate(evt.timestamp, 'datetime')}
                 {evt.user && <> &middot; {evt.user}</>}
               </p>
@@ -167,8 +167,8 @@ export const TokenView: React.FC<TokenViewProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 w-full">
-        <ATMPageHeader title="Token Detail" onBack={onBack} />
+      <div className="w-full space-y-6 animate-fade-in">
+        <ATMPageHeader title="Token Detail" icon={Key} iconColor="indigo" onBack={onBack} />
         <div className="w-full max-w-[1600px] mx-auto space-y-6">
           <ATMSkeleton variant="card" className="h-40 w-full" />
           <div className="grid gap-6 lg:grid-cols-3">
@@ -188,15 +188,15 @@ export const TokenView: React.FC<TokenViewProps> = ({
 
   if (isError || !token) {
     return (
-      <div className="flex flex-col gap-6 w-full">
-        <ATMPageHeader title="Token Detail" onBack={onBack} />
+      <div className="w-full space-y-6 animate-fade-in">
+        <ATMPageHeader title="Token Detail" icon={Key} iconColor="indigo" onBack={onBack} />
         <ATMCard padding="md" className="w-full max-w-[1600px] mx-auto">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Failed to load token</p>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">Please try again.</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Failed to load token</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Please try again.</p>
               </div>
             </div>
             <ATMButton type="button" variant="secondary" size="sm" onClick={refetch}>
@@ -213,13 +213,14 @@ export const TokenView: React.FC<TokenViewProps> = ({
   const gracePolicy = parseJsonRecord<Record<string, number>>(token.gracePolicyDays);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="w-full space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Token Detail"
         icon={Key}
+        iconColor="indigo"
         subtitle={
           <div className="flex items-center gap-2 mt-1 min-w-0">
-            <code className="min-w-0 truncate font-mono text-xs text-gray-400">{token.tokenId}</code>
+            <code className="min-w-0 truncate font-mono text-xs text-slate-400">{token.tokenId}</code>
             <TokenStatusBadge status={token.status} />
           </div>
         }
@@ -239,13 +240,13 @@ export const TokenView: React.FC<TokenViewProps> = ({
             <ATMCard title="Token Information" padding="md">
               <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Merchant</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 break-words min-w-0">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Merchant</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 break-words min-w-0">
                     {token.merchantName || token.merchantId}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Plan</dt>
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Plan</dt>
                   <dd className="mt-1">
                     <span title={PLAN_TYPE_LABEL[token.plan] ?? token.plan}>
                       <ATMBadge color="primary" label={token.planName || (PLAN_TYPE_LABEL[token.plan] ?? token.plan)} />
@@ -253,36 +254,36 @@ export const TokenView: React.FC<TokenViewProps> = ({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sequence</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">#{token.sequence}</dd>
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sequence</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">#{token.sequence}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Validity</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Validity</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                     {token.validityDays} days from activation
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Applied</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Applied</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                     {token.activatedAt ? formatDate(token.activatedAt, 'long') : 'Not applied yet'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Expires</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Expires</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                     {token.expiresAt ? formatDate(token.expiresAt, 'long') : '— (starts on apply)'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Price</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Price</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                     {token.priceCurrency > 0 ? token.priceCurrency.toFixed(2) : '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Generated</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Generated</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                     {formatDate(token.createdAt, 'datetime')} · {token.generatedBy}
                   </dd>
                 </div>
@@ -294,10 +295,10 @@ export const TokenView: React.FC<TokenViewProps> = ({
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Superseded — needs review
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
                       A higher-sequence token was recorded as applied while this one was never
                       applied, so the merchant's system will reject it forever. The merchant paid
                       for it — resolve by revoking it (and credit or reissue if warranted).
@@ -312,11 +313,11 @@ export const TokenView: React.FC<TokenViewProps> = ({
                 <div className="flex items-start gap-3">
                   <Ban className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Revoked {token.revokedAt ? formatDate(token.revokedAt, 'datetime') : ''}
                       {token.revokedBy ? ` by ${token.revokedBy}` : ''}
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
                       {token.revokedReason ?? 'No reason recorded.'}
                     </p>
                   </div>
@@ -326,7 +327,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
 
             <ATMCard title="Coverage" padding="md">
               {daysRemaining == null ? (
-                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 py-2">
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 py-2">
                   Not applied yet — the {token.validityDays}-day window starts when the merchant applies this token.
                 </p>
               ) : (
@@ -335,7 +336,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
                     <span className={cn('text-sm font-bold', getExpiryTextColor(daysRemaining))}>
                       {daysRemaining} days remaining
                     </span>
-                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                       {token.validityDays} day validity
                     </span>
                   </div>
@@ -347,7 +348,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
                     size="md"
                     label={`${daysRemaining} of ${token.validityDays} days remaining`}
                   />
-                  <div className="flex justify-between text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     <span>{token.activatedAt ? formatDate(token.activatedAt, 'short') : ''}</span>
                     <span>{token.expiresAt ? formatDate(token.expiresAt, 'short') : ''}</span>
                   </div>
@@ -357,7 +358,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
 
             <ATMCard title="Token String" padding="md">
               <div className="flex items-center gap-3">
-                <code className="flex-1 break-all rounded-xl border border-[var(--zen-border)] bg-gray-50/50 px-4 py-3.5 font-mono text-sm font-bold text-gray-900 dark:bg-gray-900 dark:text-gray-100 shadow-inner">
+                <code className="flex-1 break-all rounded-xl border border-[var(--zen-border)] bg-slate-50/50 px-4 py-3.5 font-mono text-sm font-bold text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-inner">
                   {token.encodedToken}
                 </code>
                 <ATMButton
@@ -399,21 +400,21 @@ export const TokenView: React.FC<TokenViewProps> = ({
                 <div className="rounded-2xl border border-[var(--zen-border)] bg-white p-5 dark:bg-white shadow-md">
                   <QRCodeSVG value={token.encodedToken} size={200} level="H" includeMargin />
                 </div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">Scan to apply on POS terminal</p>
+                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">Scan to apply on POS terminal</p>
               </div>
             </ATMCard>
 
             <ATMCard title="Activation" padding="md">
               <dl className="space-y-3">
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Terminal</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 break-all">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Terminal</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 break-all">
                     {token.activatedTerminalId ?? '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">App Version</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dt className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">App Version</dt>
+                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
                     {token.activatedAppVersion ?? '—'}
                   </dd>
                 </div>

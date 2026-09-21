@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form } from 'formik';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
 import { ATMInputField } from '@/shared/components/form';
 import { useBrandName } from '@/shared/hooks/useBrandName';
@@ -11,73 +11,83 @@ interface ForgotPasswordFormProps {
   isSubmitting: boolean;
 }
 
+const SUBMIT_BUTTON_CLASS =
+  'w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25';
+
+const FIELD_CLASS = '[&_input]:h-11 [&_input]:rounded-xl';
+
 export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   isSuccess,
   isSubmitting,
 }) => {
   const brandName = useBrandName();
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 overflow-hidden selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
-      {/* Premium Ambient Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-accent-300/30 to-indigo-400/10 rounded-full blur-[140px] dark:from-accent-900/20 dark:to-indigo-900/5 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-tl from-emerald-300/20 to-accent-400/10 rounded-full blur-[140px] dark:from-emerald-950/15 dark:to-accent-900/10 pointer-events-none" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-12 selection:bg-accent-100 selection:text-accent-900 dark:bg-slate-950">
+      {/* Subtle dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.05] dark:opacity-[0.06]"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.9) 1px, transparent 0)',
+          backgroundSize: '26px 26px',
+        }}
+      />
 
-      {/* Main Container */}
-      <div className="relative w-full max-w-[440px] animate-slide-up z-10">
+      {/* Premium ambient glows */}
+      <div className="pointer-events-none absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-accent-300/40 to-indigo-400/10 blur-[120px] dark:from-accent-900/25 dark:to-indigo-900/10" />
+      <div className="pointer-events-none absolute -bottom-40 -right-32 h-[26rem] w-[26rem] rounded-full bg-gradient-to-tl from-emerald-300/25 to-accent-400/15 blur-[120px] dark:from-emerald-950/20 dark:to-accent-900/15" />
+
+      {/* Main container */}
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         {/* Card */}
-        <div className="rounded-[2rem] border border-white/60 bg-white/80 p-10 shadow-2xl backdrop-blur-xl dark:border-surface-800/40 dark:bg-surface-900/80 shadow-accent-500/5">
+        <div className="relative overflow-hidden rounded-4xl border border-white/70 bg-white/85 p-8 shadow-2xl shadow-slate-900/5 backdrop-blur-2xl sm:p-10 dark:border-slate-800/70 dark:bg-[#0f172a]/85 dark:shadow-black/40">
+          {/* Top accent hairline */}
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-accent-500 to-transparent" />
+
           {/* Logo / header */}
-          <div className="mb-8 flex flex-col items-center gap-3.5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-600 to-accent-400 shadow-xl shadow-accent-500/25 transition-all duration-300 hover:scale-105">
-              <span className="text-3xl font-black text-white tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
+          <div className="mb-9 flex flex-col items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-600 to-accent-400 text-white shadow-lg shadow-accent-500/25 transition-transform duration-300 hover:scale-105">
+              <span className="text-2xl font-black tracking-tighter">{brandName.charAt(0).toUpperCase()}</span>
             </div>
-            <div className="text-center space-y-1">
-              <h1 className="text-2xl font-black tracking-tight text-surface-900 dark:text-surface-555">
-                {brandName}
-              </h1>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400 dark:text-surface-500">
+            <div className="space-y-1 text-center">
+              <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">{brandName}</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
                 Platform Admin
               </p>
             </div>
           </div>
 
-          {/* Form Step */}
+          {/* Form step */}
           {!isSuccess ? (
-            <Form className="flex flex-col gap-6" noValidate>
-              <div className="text-center space-y-1">
-                <h3 className="text-base font-bold text-surface-900 dark:text-surface-555">
-                  Trouble signing in?
-                </h3>
-                <p className="text-xs text-surface-400 dark:text-surface-500 px-2 leading-relaxed">
-                  Enter your email address and we'll send you a recovery code to reset your password.
+            <Form className="flex flex-col gap-5" noValidate>
+              <div className="space-y-1 text-center">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Forgot your password?</h3>
+                <p className="px-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  Enter your registered email and we&apos;ll send you a recovery code to reset your password.
                 </p>
               </div>
 
-              {/* Email Input */}
+              {/* Email */}
               <ATMInputField
                 name="email"
                 label="Registered Email"
-                placeholder="name@quantix.io"
+                placeholder="name@company.com"
                 autoComplete="email"
                 required
                 autoFocus
-                icon={<Mail size={18} className="text-surface-400 group-focus-within:text-accent-500 transition-colors" />}
+                className={FIELD_CLASS}
+                icon={<Mail size={18} className="text-slate-400 group-focus-within:text-accent-500 transition-colors" />}
               />
 
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-4">
-                <ATMButton
-                  type="submit"
-                  isLoading={isSubmitting}
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25"
-                >
+              {/* Actions */}
+              <div className="flex flex-col gap-4 pt-1">
+                <ATMButton type="submit" isLoading={isSubmitting} className={SUBMIT_BUTTON_CLASS}>
                   Send Recovery Code
                 </ATMButton>
 
-                <div className="text-center pt-2">
+                <div className="text-center">
                   <Link
                     to="/login"
-                    className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-surface-400 hover:text-accent-600 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 outline-none transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                   >
                     <ArrowLeft size={12} />
                     Back to login
@@ -86,32 +96,33 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
               </div>
             </Form>
           ) : (
-            <div className="flex flex-col gap-6 text-center animate-in zoom-in-95 duration-300">
-              <div className="flex justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/20 text-emerald-600 shadow-md">
-                  <CheckCircle2 size={32} strokeWidth={1.5} />
-                </div>
+            <div className="flex flex-col items-center gap-5 text-center animate-in zoom-in-95 duration-300">
+              {/* Success icon */}
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-md dark:border-emerald-900/30 dark:bg-emerald-950/30 dark:text-emerald-400">
+                <CheckCircle2 size={32} strokeWidth={1.5} />
               </div>
 
-              <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-surface-900 dark:text-surface-50">
-                  Email Dispatched
-                </h3>
-                <p className="text-xs text-surface-450 dark:text-surface-555 leading-relaxed px-1">
-                  We have sent a high-security recovery token code to your inbox.
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Email Dispatched</h3>
+                <p className="px-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  A secure recovery code is on its way to your inbox. Check your spam folder if it doesn&apos;t
+                  arrive shortly.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 pt-2">
-                <Link to="/reset-password">
-                  <ATMButton className="w-full h-12 rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent-500/20 transition-all duration-150 active:scale-[0.98] hover:shadow-xl hover:shadow-accent-500/25">
-                    Enter Recovery Code
+              <div className="mt-1 flex w-full flex-col gap-3">
+                <Link to="/reset-password" className="w-full">
+                  <ATMButton className={SUBMIT_BUTTON_CLASS}>
+                    <span className="flex items-center justify-center gap-2">
+                      Enter Recovery Code
+                      <ArrowRight size={14} />
+                    </span>
                   </ATMButton>
                 </Link>
 
                 <Link
                   to="/login"
-                  className="text-xs font-bold uppercase tracking-wider text-surface-400 hover:text-accent-600 transition-colors text-center"
+                  className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 outline-none transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                 >
                   Back to login
                 </Link>
@@ -121,8 +132,8 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         </div>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wider text-surface-400/80 dark:text-surface-500/60">
-          {brandName} v1.0.0-alpha
+        <p className="mt-7 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400/80 dark:text-slate-500/60">
+          Secured by two-factor authentication
         </p>
       </div>
     </div>

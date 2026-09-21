@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Trash2, Film, ImageOff, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Film, ImageOff, EyeOff, Images } from 'lucide-react';
 
-import { ATMButton, ATMCard, ATMModal, ATMTextField, ATMBadge } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMModal, ATMTextField, ATMBadge, ATMSkeleton, ATMCheckbox } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
 import { WebsiteContentCollection, type CollectionDescriptor } from '../components/WebsiteContentCollection';
 import { MediaPicker } from '../components/MediaPicker';
@@ -33,6 +33,8 @@ import {
 const descriptor: CollectionDescriptor<Gallery> = {
   title: 'Galleries',
   subtitle: 'Photo and video collections shown on the website.',
+  icon: Images,
+  iconColor: 'theme',
   noun: 'gallery',
   idOf: (g) => g.galleryId,
   subtitleOf: (g) => `/${g.slug} · ${g.itemCount} item${g.itemCount === 1 ? '' : 's'}`,
@@ -72,7 +74,7 @@ function GalleriesPage() {
     >
       {galleries.length > 0 && (
         <ATMCard title="Gallery contents">
-          <div className="mb-3 flex flex-wrap gap-1">
+          <div className="mb-3 inline-flex flex-wrap gap-1 rounded-lg border border-slate-200/80 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900/60">
             {galleries.map((g) => (
               <button
                 key={g.galleryId}
@@ -81,8 +83,8 @@ function GalleriesPage() {
                 className={cn(
                   'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                   openSlug === g.slug
-                    ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
+                    ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
                 )}
               >
                 {g.title} ({g.itemCount})
@@ -92,7 +94,7 @@ function GalleriesPage() {
           {openSlug ? (
             <GalleryItems slug={openSlug} />
           ) : (
-            <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
               Pick a gallery above to manage its photos and clips.
             </p>
           )}
@@ -150,7 +152,18 @@ function GalleryItems({ slug }: { slug: string }) {
     }
   };
 
-  if (query.isLoading) return <p className="py-6 text-center text-sm text-gray-500">Loading…</p>;
+  if (query.isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="flex justify-end">
+          <ATMSkeleton variant="rect" width="96px" height="32px" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {Array.from({ length: 6 }, (_, i) => <ATMSkeleton key={i} variant="rect" height="120px" />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -159,32 +172,32 @@ function GalleryItems({ slug }: { slug: string }) {
       </div>
 
       {items.length === 0 ? (
-        <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
           This gallery is empty.
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           {items.map((i) => (
             <div key={i.galleryItemId}
-              className={cn('overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700', !i.isActive && 'opacity-60')}>
+              className={cn('overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-700', !i.isActive && 'opacity-60')}>
               {i.mediaAssetId ? (
                 <img src={absoluteMediaUrl(`/api/v1/media/${i.mediaAssetId}/file`)} alt={i.caption ?? ''}
                   className="h-20 w-full object-cover" />
               ) : (
-                <div className="flex h-20 w-full items-center justify-center bg-gray-100 dark:bg-gray-800">
-                  <Film className="h-5 w-5 text-gray-400" />
+                <div className="flex h-20 w-full items-center justify-center bg-slate-100 dark:bg-slate-800">
+                  <Film className="h-5 w-5 text-slate-400" />
                 </div>
               )}
               <div className="space-y-1 px-2 py-1.5">
-                <p className="truncate text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                <p className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-300">
                   {i.caption || (i.externalVideoUrl ? 'External video' : 'Untitled')}
                 </p>
                 <div className="flex items-center justify-between">
                   {!i.isActive
-                    ? <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase text-amber-600"><EyeOff className="h-2.5 w-2.5" />Hidden</span>
+                    ? <ATMBadge color="warning" icon={<EyeOff className="h-3 w-3" />} label="Hidden" />
                     : <ATMBadge color="default" label={`#${i.sortOrder}`} />}
                   <button type="button" onClick={() => { void removeItem(i.galleryItemId); }}
-                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                    className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                     aria-label="Remove item">
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -199,17 +212,17 @@ function GalleryItems({ slug }: { slug: string }) {
         {draft && (
           <div className="space-y-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Hosted photo or clip</label>
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Hosted photo or clip</label>
               {draft.mediaAssetId ? (
-                <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-2 dark:border-gray-700">
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2 dark:border-slate-700">
                   <img src={absoluteMediaUrl(`/api/v1/media/${draft.mediaAssetId}/file`)} alt=""
                     className="h-14 w-20 rounded object-cover" />
                   <button type="button" onClick={() => setDraft({ ...draft, mediaAssetId: '' })}
-                    className="text-xs text-gray-500 hover:underline">Remove</button>
+                    className="text-xs text-slate-500 hover:underline">Remove</button>
                 </div>
               ) : (
                 <button type="button" onClick={() => setPickerOpen(true)}
-                  className="rounded-lg border border-dashed border-gray-300 px-3 py-4 text-sm text-gray-500 hover:border-accent-400 dark:border-gray-600">
+                  className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 hover:border-accent-400 dark:border-slate-600">
                   Choose from the media library
                 </button>
               )}
@@ -222,12 +235,12 @@ function GalleryItems({ slug }: { slug: string }) {
               onChange={(e) => setDraft({ ...draft, caption: e.target.value })} />
             <ATMTextField name="sortOrder" label="Order" type="number" value={String(draft.sortOrder)}
               onChange={(e) => setDraft({ ...draft, sortOrder: parseInt(e.target.value, 10) || 0 })} />
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" checked={draft.isActive}
-                onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300" />
-              Shown in the gallery
-            </label>
+            <ATMCheckbox
+              name="isActive"
+              label="Shown in the gallery"
+              checked={draft.isActive}
+              onChange={(checked) => setDraft({ ...draft, isActive: checked })}
+            />
             <div className="flex justify-end gap-2">
               <ATMButton variant="ghost" onClick={() => setDraft(null)}>Cancel</ATMButton>
               <ATMButton variant="primary" onClick={() => { void save(); }} isLoading={saveState.isLoading}>Save</ATMButton>

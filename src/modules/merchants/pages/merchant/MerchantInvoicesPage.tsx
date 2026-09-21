@@ -4,6 +4,7 @@
  * Two stacked panels: invoices (with Download button → openInvoiceForDownload)
  * and payment history.
  */
+import { FileText } from 'lucide-react';
 import {
   useGetSelfInvoicesQuery,
   useGetSelfPaymentsQuery,
@@ -11,6 +12,10 @@ import {
 import { toast } from 'sonner';
 import { openInvoiceForDownload } from './components/invoiceDownload';
 import { useBrandName } from '@/shared/hooks/useBrandName';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMCard } from '@/shared/ui';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 
 interface InvoiceListDto {
   invoiceId: string;
@@ -63,118 +68,118 @@ export default function MerchantInvoicesPage() {
     }
   }
 
+  const invoiceColumns: ATMTableColumn<InvoiceListDto>[] = [
+    {
+      key: 'invoiceNumber',
+      header: 'Number',
+      renderCell: (_v, inv) => (
+        <span className="font-mono text-xs text-slate-900 dark:text-slate-100">{inv.invoiceNumber}</span>
+      ),
+    },
+    { key: 'invoiceType', header: 'Type' },
+    {
+      key: 'invoiceDate',
+      header: 'Issued',
+      renderCell: (_v, inv) => (
+        <span className="text-slate-600 dark:text-slate-300">{new Date(inv.invoiceDate).toLocaleDateString()}</span>
+      ),
+    },
+    {
+      key: 'dueDate',
+      header: 'Due',
+      renderCell: (_v, inv) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      renderCell: (_v, inv) => <InvoiceStatusBadge status={inv.status} />,
+    },
+    {
+      key: 'totalCurrency',
+      header: 'Amount',
+      align: 'right',
+      renderCell: (_v, inv) => (
+        <span className="font-mono text-slate-900 dark:text-slate-100">
+          {inv.totalCurrency.toFixed(2)} {inv.currencyCode}
+        </span>
+      ),
+    },
+    {
+      key: 'download',
+      header: '',
+      align: 'right',
+      renderCell: (_v, inv) => (
+        <button
+          type="button"
+          onClick={() => handleDownload(inv.invoiceId)}
+          className="text-xs font-medium text-primary-600 hover:underline"
+        >
+          Download
+        </button>
+      ),
+    },
+  ];
+
+  const paymentColumns: ATMTableColumn<PaymentHistoryDto>[] = [
+    {
+      key: 'createdAt',
+      header: 'Date',
+      renderCell: (_v, p) => (
+        <span className="text-slate-600 dark:text-slate-300">{new Date(p.createdAt).toLocaleDateString()}</span>
+      ),
+    },
+    {
+      key: 'invoiceNumber',
+      header: 'Invoice',
+      renderCell: (_v, p) => (
+        <span className="font-mono text-xs text-slate-900 dark:text-slate-100">{p.invoiceNumber}</span>
+      ),
+    },
+    { key: 'paymentMethod', header: 'Method' },
+    {
+      key: 'transactionId',
+      header: 'Reference',
+      renderCell: (_v, p) => (
+        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{p.transactionId || '—'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      renderCell: (_v, p) => <InvoiceStatusBadge status={p.status} />,
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      renderCell: (_v, p) => (
+        <span className="font-mono text-slate-900 dark:text-slate-100">
+          {(p.amount ?? 0).toFixed(2)} {p.currencyCode}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6 w-full">
-      <h1 className="text-2xl font-semibold">Invoices &amp; Payments</h1>
+    <div className="w-full space-y-6 animate-fade-in">
+      <ATMPageHeader
+        icon={FileText}
+        iconColor="theme"
+        title="Invoices & Payments"
+        subtitle="Download your invoices as PDF and review how your account is settling."
+      />
 
-      <div className="rounded-xl bg-white dark:bg-surface-800 shadow-sm">
-        <div className="border-b border-surface-200 dark:border-surface-700 p-4">
-          <h2 className="text-sm font-semibold">Invoices</h2>
-          <p className="mt-1 text-xs text-surface-500">Click an invoice to download as PDF</p>
-        </div>
-        {invoices.isLoading ? (
-          <div className="p-6 text-center text-sm text-surface-500">Loading invoices…</div>
-        ) : invoiceRows.length === 0 ? (
-          <div className="p-6 text-center text-sm text-surface-500">No invoices yet.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200 dark:border-surface-700 text-left text-xs uppercase tracking-wide text-surface-500">
-                  <th className="px-4 py-3">Number</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Issued</th>
-                  <th className="px-4 py-3">Due</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {invoiceRows.map((inv) => (
-                  <tr
-                    key={inv.invoiceId}
-                    className="border-b border-surface-100 dark:border-surface-700/50 last:border-0 hover:bg-surface-50 dark:hover:bg-surface-700/30"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs">{inv.invoiceNumber}</td>
-                    <td className="px-4 py-3">{inv.invoiceType}</td>
-                    <td className="px-4 py-3 text-surface-600">
-                      {new Date(inv.invoiceDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-surface-600">
-                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <InvoiceStatusBadge status={inv.status} />
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {inv.totalCurrency.toFixed(2)} {inv.currencyCode}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(inv.invoiceId)}
-                        className="text-xs font-medium text-primary-600 hover:underline"
-                      >
-                        Download
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ATMCard title="Invoices" subtitle="Click an invoice to download as PDF" padding="none" className="overflow-hidden">
+        <ATMTable columns={invoiceColumns} data={invoiceRows} isLoading={invoices.isLoading} emptyMessage="No invoices yet." />
+      </ATMCard>
 
-      <div className="rounded-xl bg-white dark:bg-surface-800 shadow-sm">
-        <div className="border-b border-surface-200 dark:border-surface-700 p-4">
-          <h2 className="text-sm font-semibold">Payment history</h2>
-        </div>
-        {payments.isLoading ? (
-          <div className="p-6 text-center text-sm text-surface-500">Loading payments…</div>
-        ) : paymentRows.length === 0 ? (
-          <div className="p-6 text-center text-sm text-surface-500">No payments yet.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200 dark:border-surface-700 text-left text-xs uppercase tracking-wide text-surface-500">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Invoice</th>
-                  <th className="px-4 py-3">Method</th>
-                  <th className="px-4 py-3">Reference</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paymentRows.map((p) => (
-                  <tr
-                    key={p.paymentId}
-                    className="border-b border-surface-100 dark:border-surface-700/50 last:border-0"
-                  >
-                    <td className="px-4 py-3 text-surface-600">
-                      {new Date(p.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">{p.invoiceNumber}</td>
-                    <td className="px-4 py-3">{p.paymentMethod}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-surface-500">
-                      {p.transactionId || '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <InvoiceStatusBadge status={p.status} />
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {(p.amount ?? 0).toFixed(2)} {p.currencyCode}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ATMCard title="Payment history" padding="none" className="overflow-hidden">
+        <ATMTable columns={paymentColumns} data={paymentRows} isLoading={payments.isLoading} emptyMessage="No payments yet." />
+      </ATMCard>
     </div>
   );
 }
@@ -185,7 +190,7 @@ function InvoiceStatusBadge({ status }: { status: string }) {
     status === 'Issued' || status === 'Pending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
     status === 'Void' || status === 'Failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
     status === 'Overdue' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-    'bg-surface-100 text-surface-700';
+    'bg-slate-100 text-slate-700';
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
       {status}

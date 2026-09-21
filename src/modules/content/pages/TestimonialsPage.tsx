@@ -1,5 +1,6 @@
 import React from 'react';
 import { toast } from 'sonner';
+import { Quote } from 'lucide-react';
 
 import { WebsiteContentCollection, type CollectionDescriptor } from '../components/WebsiteContentCollection';
 import {
@@ -23,6 +24,8 @@ import {
 const descriptor: CollectionDescriptor<Testimonial> = {
   title: 'Testimonials',
   subtitle: 'Customer quotes and ratings shown on the website.',
+  icon: Quote,
+  iconColor: 'theme',
   noun: 'testimonial',
   idOf: (t) => t.testimonialId,
   subtitleOf: (t) =>

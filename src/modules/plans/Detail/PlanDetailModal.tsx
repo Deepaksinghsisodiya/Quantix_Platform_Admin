@@ -16,8 +16,15 @@ import {
   Monitor,
   Clock,
   Sparkles,
+  Banknote,
+  Coins,
+  CalendarDays,
+  CalendarRange,
+  Layers,
+  type LucideIcon,
 } from 'lucide-react';
 import type { Plan } from '../types/plan.types';
+import { FLAVOUR_DISPLAY } from '../types/plan.types';
 
 interface PlanDetailModalProps {
   isOpen: boolean;
@@ -27,6 +34,30 @@ interface PlanDetailModalProps {
   onDelete: (plan: Plan) => void;
   onToggleStatus: (planId: string) => void;
 }
+
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+    <span className="h-px w-4 bg-slate-200 dark:bg-slate-700" />
+    {children}
+  </p>
+);
+
+const InfoTile: React.FC<{
+  icon: LucideIcon;
+  tint: string;
+  label: string;
+  value: React.ReactNode;
+}> = ({ icon: Icon, tint, label, value }) => (
+  <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+    <div className={cn('p-2 rounded-lg mt-0.5', tint)}>
+      <Icon size={16} />
+    </div>
+    <div className="min-w-0">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">{label}</p>
+      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{value}</p>
+    </div>
+  </div>
+);
 
 export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
   isOpen,
@@ -40,18 +71,28 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
   const { currency } = useDeploymentCurrency();
   if (!plan) return null;
 
+  const accentColor = plan.color || '#3b82f6';
+  const isMuted = plan.status !== 'Active';
+
+  const pricingTiles = [
+    { label: 'Daily Price', value: formatCurrencyOrDash(plan.dailyPrice, currency), icon: Coins, tint: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400' },
+    { label: 'Weekly Price', value: formatCurrencyOrDash(plan.weeklyPrice, currency), icon: CalendarDays, tint: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' },
+    { label: 'Monthly Price', value: formatCurrencyOrDash(plan.monthlyPrice, currency), icon: Banknote, tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' },
+    { label: 'Yearly Price', value: formatCurrencyOrDash(plan.yearlyPrice, currency), icon: CalendarRange, tint: 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400' },
+  ];
+
   return (
     <ATMModal
       isOpen={isOpen}
       onClose={onClose}
       title={`Subscription Plan: ${plan.name}`}
-      subtitle="Complete subscription tier specifications, merchant entitlement quotas, and pricing breakdown"
+      subtitle="Complete subscription tier specifications, entitlement quotas, and pricing breakdown"
       size="3xl"
       footer={
-        <div className="flex items-center justify-between w-full border-t border-gray-150/80 dark:border-gray-800/80 pt-4">
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-            <Users className="h-4 w-4 text-gray-400" />
-            <span>{plan.merchantCount} Subscribed Merchants</span>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+            <Users className="h-4 w-4 text-slate-400" />
+            <span>{plan.merchantCount > 0 ? `${plan.merchantCount.toLocaleString()} Subscribed Merchants` : 'No Subscribers Yet'}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -63,7 +104,7 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
                 onClose();
                 onEdit(plan);
               }}
-              className="rounded-xl border-gray-200 dark:border-gray-800 font-bold"
+              className="rounded-xl border-slate-200 dark:border-slate-800 font-bold"
             >
               Edit Plan
             </ATMButton>
@@ -83,159 +124,169 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
         </div>
       }
     >
-      <div className="space-y-6 py-2">
-        {/* Top Summary Header Banner */}
-        <div
-          className="p-6 rounded-[24px] border flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden"
-          style={{
-            borderColor: `${plan.color}25`,
-            background: `linear-gradient(135deg, ${plan.color}0a 0%, ${plan.color}15 100%)`,
-          }}
-        >
-          {/* Subtle background blur circle */}
-          <div
-            className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full blur-3xl opacity-20 pointer-events-none"
-            style={{ backgroundColor: plan.color }}
-          />
-
-          <div className="space-y-2 relative z-10">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ATMBadge
-                color={plan.planType === 'Enterprise cloud' ? 'purple' : 'success'}
-                label={plan.planType}
-                size="md"
-              />
-              {plan.popular && (
-                <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> Popular Plan
-                </span>
-              )}
+      <div className="space-y-6 py-1">
+        {/* Identity banner */}
+        <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div
+              className="h-12 w-12 rounded-xl flex items-center justify-center text-white shadow-md shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${accentColor}, ${accentColor}b3)`,
+                boxShadow: `0 4px 12px ${accentColor}40`,
+              }}
+            >
+              <Banknote size={22} strokeWidth={2} />
             </div>
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 leading-relaxed max-w-md">
-              {plan.planType === 'Enterprise cloud'
-                ? 'Centralized Cloud Multi-Store Management with Real-time Terminal Sync.'
-                : 'Standalone Local POS Hardware Terminal with Offline Cash Register & Settlement.'}
+            <div className="min-w-0">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">{plan.name}</h3>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <ATMBadge color={plan.planType === 'Enterprise cloud' ? 'purple' : 'success'} label={plan.planType} size="md" />
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  {FLAVOUR_DISPLAY[plan.flavour]}
+                </span>
+                {plan.popular && (
+                  <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-500/20">
+                    <Sparkles className="h-3 w-3" /> Popular Plan
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <StatusBadge status={plan.status} />
+            <div className="flex items-center gap-2 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm px-3 py-2 rounded-xl border border-[var(--zen-border)]">
+              <p className="text-xs font-black text-slate-800 dark:text-slate-200">
+                {isMuted ? 'Disabled' : 'Enabled'}
+              </p>
+              <ATMSwitch
+                name="detail-status-switch"
+                checked={!isMuted}
+                onChange={() => onToggleStatus(plan.id)}
+                size="sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Emphasis price + quick capacity chips */}
+        <div className="rounded-2xl border border-[var(--zen-border)] bg-white/70 dark:bg-[#13151a]/80 p-5 flex flex-col xl:flex-row gap-5 xl:items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Monthly Subscription</p>
+            <div className="flex items-end gap-1.5 mt-1.5">
+              <span
+                className={cn('text-4xl font-black tracking-tighter tabular-nums leading-none', isMuted ? 'text-slate-400' : 'text-slate-900 dark:text-white')}
+                style={isMuted ? undefined : { color: accentColor }}
+              >
+                {formatCurrencyOrDash(plan.monthlyPrice, currency)}
+              </span>
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 mb-0.5">/month</span>
+            </div>
+            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1.5">
+              Billed {formatCurrencyOrDash(plan.yearlyPrice, currency)}/yr · {formatCurrencyOrDash(plan.dailyPrice, currency)}/day
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm px-4 py-2.5 rounded-2xl border border-gray-100 dark:border-gray-800 relative z-10">
-            <div>
-              <p className="text-xs font-black text-gray-800 dark:text-gray-200">Active Status</p>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400">{plan.status === 'Active' ? 'Enabled for signups' : 'Disabled'}</p>
-            </div>
-            <ATMSwitch
-              name="detail-status-switch"
-              checked={plan.status === 'Active'}
-              onChange={() => onToggleStatus(plan.id)}
-              size="sm"
+          <div className="grid grid-cols-3 gap-3 flex-1 max-w-lg">
+            <InfoTile
+              icon={MapPin}
+              tint="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+              label="Stores"
+              value={plan.maxLocations === 0 ? 'Unlimited' : plan.maxLocations}
+            />
+            <InfoTile
+              icon={Monitor}
+              tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400"
+              label="Registers"
+              value={plan.maxTerminals === 0 ? 'Unlimited' : plan.maxTerminals}
+            />
+            <InfoTile
+              icon={Users}
+              tint="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+              label="Subscribers"
+              value={plan.merchantCount?.toLocaleString?.() ?? plan.merchantCount}
             />
           </div>
         </div>
 
-        {/* Pricing Cycles Breakdowns */}
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Pricing Cycles</p>
+        {/* Pricing cycles */}
+        <div className="space-y-3">
+          <SectionLabel>Pricing Cycles</SectionLabel>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Daily Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.dailyPrice, currency)}</p>
-            </div>
-            <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Weekly Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.weeklyPrice, currency)}</p>
-            </div>
-            <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Monthly Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.monthlyPrice, currency)}</p>
-            </div>
-            <div className="p-3.5 rounded-[20px] bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/80">
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Yearly Price</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{formatCurrencyOrDash(plan.yearlyPrice, currency)}</p>
-            </div>
+            {pricingTiles.map((p, i) => (
+              <InfoTile key={i} icon={p.icon} tint={p.tint} label={p.label} value={p.value} />
+            ))}
           </div>
         </div>
 
-        {/* 2 Capacity Stat Cards Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 rounded-[20px] bg-gray-50/50 dark:bg-gray-950/30 border border-gray-200/80 dark:border-gray-800/80 space-y-1 hover:shadow-md transition-shadow">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">Allowed Outlets</span>
-            <p className="text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tight flex items-center gap-1.5">
-              <MapPin className="h-5 w-5 text-blue-500 shrink-0" /> {plan.maxLocations === 0 ? 'Unlimited' : plan.maxLocations}
-            </p>
-            <p className="text-[10px] font-bold text-gray-450 dark:text-gray-500">Max merchant stores</p>
-          </div>
-
-          <div className="p-4 rounded-[20px] bg-gray-50/50 dark:bg-gray-950/30 border border-gray-200/80 dark:border-gray-800/80 space-y-1 hover:shadow-md transition-shadow">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">POS Terminals</span>
-            <p className="text-2xl font-black text-purple-600 dark:text-purple-400 tracking-tight flex items-center gap-1.5">
-              <Monitor className="h-5 w-5 text-purple-500 shrink-0" /> {plan.maxTerminals === 0 ? 'Unlimited' : plan.maxTerminals}
-            </p>
-            <p className="text-[10px] font-bold text-gray-450 dark:text-gray-500">Max POS registers</p>
-          </div>
-        </div>
-
-        {/* Detailed Entitlements & Configuration Matrix */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          {/* Left: General Settings & Quotas */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 border-b border-gray-150 dark:border-gray-800/80 pb-2">
-              Plan Quotas & Specs
-            </h3>
-
+        {/* Specs + capabilities */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-1">
+          <div className="space-y-3">
+            <SectionLabel>Plan Specs</SectionLabel>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50/50 dark:bg-gray-900/30 border border-gray-150 dark:border-gray-800 text-xs transition-colors hover:border-gray-300 dark:hover:border-gray-700">
-                <span className="font-bold text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-blue-500" /> Free Trial Duration
-                </span>
-                <span className="font-extrabold text-gray-900 dark:text-white">
-                  {plan.trialPeriod ? `${plan.trialPeriod} Days Free Trial` : 'No Free Trial'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50/50 dark:bg-gray-900/30 border border-gray-150 dark:border-gray-800 text-xs transition-colors hover:border-gray-300 dark:hover:border-gray-700">
-                <span className="font-bold text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-purple-500" /> Priority Rank
-                </span>
-                <span className="font-extrabold text-purple-650 dark:text-purple-400">Rank: {plan.priority}</span>
-              </div>
+              <InfoTile
+                icon={Layers}
+                tint="bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
+                label="Priority Rank"
+                value={`Rank #${plan.priority}`}
+              />
+              <InfoTile
+                icon={Clock}
+                tint="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                label="Free Trial"
+                value={plan.trialPeriod ? `${plan.trialPeriod} days` : 'No free trial'}
+              />
             </div>
           </div>
 
-          {/* Right: Included & Excluded Features */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 border-b border-gray-150 dark:border-gray-800/80 pb-2">
-              Marketing Bullet Points ({plan.features.length})
-            </h3>
-
-            <ul className="space-y-2.5 max-h-[190px] overflow-y-auto pr-1">
-              {plan.features.map((feature, idx) => (
-                <li key={idx} className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-800/40">
-                  {feature.included ? (
-                    <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/10">
-                      <Check className="h-3.5 w-3.5 stroke-[3.5]" />
-                    </div>
-                  ) : (
-                    <div className="h-5 w-5 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600 flex items-center justify-center shrink-0 mt-0.5 border border-gray-100 dark:border-gray-800/60">
-                      <X className="h-3.5 w-3.5 stroke-[2.5]" />
-                    </div>
-                  )}
-                  <span
-                    className={cn(
-                      'text-xs font-semibold leading-relaxed transition-colors',
-                      feature.included
-                        ? 'text-gray-800 dark:text-gray-200'
-                        : 'text-gray-400 line-through dark:text-gray-600'
-                    )}
+          <div className="space-y-3 min-w-0">
+            <SectionLabel>Capabilities ({plan.features.length})</SectionLabel>
+            {plan.features.length === 0 ? (
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                All standard POS capabilities included.
+              </p>
+            ) : (
+              <ul className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                {plan.features.map((feature, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2.5 p-2 rounded-xl border border-transparent"
                   >
-                    {feature.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
+                    {feature.included ? (
+                      <span
+                        className="h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                        style={{
+                          backgroundColor: `${accentColor}1a`,
+                          color: accentColor,
+                          border: `1px solid ${accentColor}33`,
+                        }}
+                      >
+                        <Check className="h-3 w-3 stroke-[3.5]" />
+                      </span>
+                    ) : (
+                      <span className="h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 flex items-center justify-center shrink-0 mt-0.5 border border-slate-200/60 dark:border-slate-800/60">
+                        <X className="h-3 w-3 stroke-[2.5]" />
+                      </span>
+                    )}
+                    <span
+                      className={cn(
+                        'text-xs font-semibold leading-relaxed',
+                        feature.included
+                          ? 'text-slate-700 dark:text-slate-200'
+                          : 'text-slate-400 line-through dark:text-slate-600',
+                      )}
+                    >
+                      {feature.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>
     </ATMModal>
   );
 };
+
 export default PlanDetailModal;

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMIconButton } from '@/shared/ui/ATMIconButton';
 import { ATMModal } from '@/shared/ui/ATMModal';
@@ -192,7 +193,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
       )}
 
       {/* ATMTable Integration */}
-      <div className="flex-1 overflow-hidden w-full bg-zen-surface rounded-2xl border border-gray-100 dark:border-gray-800">
+      <ATMCard padding="none" className="overflow-hidden rounded-2xl">
         <ATMTable<MerchantTerminal>
           columns={columns}
           data={filteredTerminals}
@@ -217,7 +218,7 @@ export const MerchantTerminalsPage: React.FC<MerchantTerminalsProps> = ({
           }
           emptyMessage="No terminals registered yet. Click Add Terminal to start."
         />
-      </div>
+      </ATMCard>
 
       {/* Create / Edit Modal */}
       <ATMModal

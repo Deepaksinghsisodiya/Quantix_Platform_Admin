@@ -15,7 +15,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  Building2, CreditCard, ShieldCheck, Wallet, KeyRound, Database,
+  Building2, CreditCard, ShieldCheck, Wallet, KeyRound, Database, Globe,
+  Store, Cloud, Server,
   CheckCircle2, Circle, MinusCircle, ArrowRight, ArrowLeft, Copy,
   Loader2, PartyPopper, RefreshCw, Upload, Eye, X as XIcon,
 } from 'lucide-react';
@@ -25,8 +26,9 @@ import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMFieldCell, ATMFormGrid } from '@/shared/components/form';
 import { cn } from '@/lib/utils/cn';
-import { formatDate } from '@/lib/utils/formatDate';
 import { useGetPlansListQuery, useGetPlanByIdQuery } from '@/modules/plans/services/planApi';
 import { useGetTerminalsByMerchantQuery, useGetAllowedTerminalTypesQuery, useCreateTerminalMutation } from '@/modules/merchants/services/merchantApi';
 import {
@@ -102,6 +104,7 @@ const KIND_CARDS = [
     key: 'standalone-pos',
     title: 'Standalone — Local POS',
     desc: 'On-premise POS only. No cloud portal. Token-billed.',
+    icon: Store,
     merchantType: 'Standalone' as const,
     planTypes: ['StandalonePos'],
   },
@@ -109,6 +112,7 @@ const KIND_CARDS = [
     key: 'standalone-cloud',
     title: 'Standalone — Cloud',
     desc: 'Own isolated cloud instance + Merchant Admin Portal. Token-billed.',
+    icon: Cloud,
     merchantType: 'Standalone' as const,
     planTypes: ['StandaloneCloud'],
   },
@@ -116,6 +120,7 @@ const KIND_CARDS = [
     key: 'enterprise',
     title: 'Enterprise',
     desc: 'Shared managed cloud (own DB), bridge-connected. Billed online.',
+    icon: Server,
     merchantType: 'Enterprise' as const,
     planTypes: ['EnterpriseCloud'],
   },
@@ -153,50 +158,133 @@ function StepperSidebar({
     key, status: key === 'basic_info' ? ('Current' as const) : ('Pending' as const),
   }));
 
+  const completedCount = steps.filter((s) => s.status === 'Complete').length;
+  const total = steps.length;
+  const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
   return (
-    <div className="space-y-1.5 bg-white/75 dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 rounded-3xl p-5 backdrop-blur-md shadow-sm">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 pb-2">
-        Onboarding Steps
-      </p>
-      {steps.map((s, idx) => {
-        const meta = STEP_META[s.key];
-        const isActive = s.key === activeStep;
-        // 2026-08-13: KYC stays reachable even with no documents — it applies to every
-        // merchant, so the operator must be able to come back and add documents later.
-        // (Provision genuinely is not applicable to Standalone, so it stays locked.)
-        const clickable = s.status === 'Complete'
-          || s.key === state?.currentStep
-          || (s.key === 'kyc' && s.status === 'Skipped');
-        return (
-          <button
-            key={s.key}
-            type="button"
-            disabled={!clickable}
-            onClick={() => clickable && onNavigate(s.key)}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all',
-              isActive
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                : clickable
-                  ? 'hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
-                  : 'text-slate-400 dark:text-slate-600 cursor-not-allowed',
-            )}
-          >
-            {s.status === 'Complete' ? (
-              <CheckCircle2 size={16} className={isActive ? '' : 'text-emerald-500'} />
-            ) : s.status === 'Skipped' ? (
-              <MinusCircle size={16} className="text-slate-300 dark:text-slate-600" />
-            ) : (
-              <Circle size={16} className={isActive ? '' : 'text-slate-300 dark:text-slate-700'} />
-            )}
-            <span className="flex-1 text-xs font-bold">{idx + 1}. {meta.label}</span>
-            {s.status === 'Skipped' && (
-              <span className="text-[9px] font-black uppercase tracking-wider opacity-60">{skippedBadge(s.key)}</span>
-            )}
-          </button>
-        );
-      })}
+    <div className="bg-white/75 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 backdrop-blur-md shadow-sm lg:sticky lg:top-24">
+      <div className="flex items-center justify-between px-2 pb-1">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Onboarding Steps
+        </p>
+        <span className="text-[10px] font-black text-primary-600 dark:text-primary-400">
+          {pct}%
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-2 pb-4">
+        <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary-600 to-primary-400 transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        {steps.map((s, idx) => {
+          const meta = STEP_META[s.key];
+          const isActive = s.key === activeStep;
+          // 2026-08-13: KYC stays reachable even with no documents — it applies to every
+          // merchant, so the operator must be able to come back and add documents later.
+          // (Provision genuinely is not applicable to Standalone, so it stays locked.)
+          const clickable = s.status === 'Complete'
+            || s.key === state?.currentStep
+            || (s.key === 'kyc' && s.status === 'Skipped');
+          return (
+            <button
+              key={s.key}
+              type="button"
+              disabled={!clickable}
+              onClick={() => clickable && onNavigate(s.key)}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group',
+                isActive
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                  : clickable
+                    ? 'hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                    : 'text-slate-400 dark:text-slate-600 cursor-not-allowed',
+              )}
+            >
+              {s.status === 'Complete' ? (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/40">
+                  <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                </span>
+              ) : s.status === 'Skipped' ? (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                  <MinusCircle size={13} className="text-slate-300 dark:text-slate-600" />
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    'flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black',
+                    isActive
+                      ? 'bg-white text-slate-900 dark:bg-slate-900 dark:text-white'
+                      : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600',
+                  )}
+                >
+                  {idx + 1}
+                </span>
+              )}
+              <span className="flex-1 text-xs font-bold">{meta.label}</span>
+              {s.status === 'Skipped' && (
+                <span className="text-[9px] font-black uppercase tracking-wider opacity-60">{skippedBadge(s.key)}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 px-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] font-semibold text-slate-400 dark:text-slate-500 leading-relaxed">
+        {completedCount} of {total} steps complete. Close anytime — resuming reopens at the
+        first incomplete step.
+      </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step card shell — consistent premium header for every wizard step
+// ---------------------------------------------------------------------------
+
+function WizardStepCard({
+  stepKey, title, description, children,
+}: {
+  stepKey: WizardStepKey;
+  title: string;
+  description?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const meta = STEP_META[stepKey];
+  const Icon = meta.icon;
+  const stepNo = Object.keys(STEP_META).indexOf(stepKey) + 1;
+
+  return (
+    <ATMCard className="glass-card" padding="none">
+      <div className="flex items-start gap-3.5 px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-primary-50/60 via-white to-white dark:from-primary-950/20 dark:via-transparent dark:to-transparent rounded-t-2xl">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-md shadow-primary-500/25 shrink-0">
+          <Icon size={19} strokeWidth={2} />
+        </span>
+        <div className="min-w-0 pt-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400">
+              Step {stepNo} of {Object.keys(STEP_META).length}
+            </span>
+          </div>
+          <h3 className="text-[15px] font-black text-slate-900 dark:text-white tracking-tight truncate mt-0.5">
+            {title}
+          </h3>
+          {description && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug max-w-xl">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="px-6 py-6">{children}</div>
+    </ATMCard>
   );
 }
 
@@ -635,23 +723,28 @@ const OnboardingWizardPage: React.FC = () => {
   if (isNew) return <Navigate to="/merchants/signups" replace />;
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Merchant Onboarding
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {state
-              ? <>Onboarding <span className="font-bold text-slate-700 dark:text-slate-200">{state.companyName}</span> — one unified 8-step process. Close anytime; it resumes where you left off.</>
-              : 'Continues a signup from the queue — website or admin-entered — from whichever step it is at.'}
-          </p>
-        </div>
-        <Link to="/merchants">
-          <ATMButton variant="outline" size="sm" icon={ArrowLeft}>Back to Merchants</ATMButton>
-        </Link>
-      </div>
+      <ATMPageHeader
+        title="Merchant Onboarding"
+        subtitle={
+          state ? (
+            <span>
+              Onboarding <strong className="font-semibold text-slate-800 dark:text-slate-200">{state.companyName}</strong> — unified 8-step process. Resumes automatically where you left off.
+            </span>
+          ) : (
+            'Continues a signup from the queue — website or admin-entered.'
+          )
+        }
+        icon={Building2}
+        iconColor="theme"
+        onBack={() => navigate('/merchants/signups')}
+        extraActions={
+          <Link to="/merchants">
+            <ATMButton variant="outline" size="sm" icon={ArrowLeft}>Back to Merchants</ATMButton>
+          </Link>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
         <StepperSidebar state={state} activeStep={activeStep} onNavigate={setActiveStep} />
@@ -659,88 +752,127 @@ const OnboardingWizardPage: React.FC = () => {
         <div className="space-y-4">
           {/* ═══ STEP 1: MERCHANT INFO ═══ */}
           {activeStep === 'basic_info' && (
-            <ATMCard title="Step 1 — Merchant Info" className="glass-card">
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                The signed-up basic info — review and edit before continuing. (Signup captured
-                taking the billing solution). Their businesses come from the plan later.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ATMTextField name="companyName" label="Merchant Company / Individual Name" required
-                  placeholder="e.g. Acme Foods Pvt Ltd, or a proprietor's name"
-                  value={basic.companyName} onChange={(e) => setBasic({ ...basic, companyName: e.target.value })} />
-                <ATMTextField name="contactName" label="Contact Person" required
-                  value={basic.contactName} onChange={(e) => setBasic({ ...basic, contactName: e.target.value })} />
-                <ATMTextField name="contactEmail" label="Contact Email" type="email" required
-                  value={basic.contactEmail} onChange={(e) => setBasic({ ...basic, contactEmail: e.target.value })} />
-                <ATMTextField name="contactPhone" label="Contact Phone"
-                  value={basic.contactPhone} onChange={(e) => setBasic({ ...basic, contactPhone: e.target.value })} />
+            <WizardStepCard
+              stepKey="basic_info"
+              title="Merchant Info"
+              description="Review and edit the enquiry info captured at signup, before continuing."
+            >
+              <ATMFormGrid cols={3}>
+                <ATMFieldCell label="Merchant Company / Individual Name" required>
+                  <ATMTextField name="companyName"
+                    placeholder="e.g. Acme Foods Pvt Ltd, or a proprietor's name"
+                    value={basic.companyName} onChange={(e) => setBasic({ ...basic, companyName: e.target.value })} />
+                </ATMFieldCell>
+                <ATMFieldCell label="Contact Person" required>
+                  <ATMTextField name="contactName"
+                    value={basic.contactName} onChange={(e) => setBasic({ ...basic, contactName: e.target.value })} />
+                </ATMFieldCell>
+                <ATMFieldCell label="Contact Email" required>
+                  <ATMTextField name="contactEmail" type="email"
+                    value={basic.contactEmail} onChange={(e) => setBasic({ ...basic, contactEmail: e.target.value })} />
+                </ATMFieldCell>
+                <ATMFieldCell label="Contact Phone">
+                  <ATMTextField name="contactPhone"
+                    value={basic.contactPhone} onChange={(e) => setBasic({ ...basic, contactPhone: e.target.value })} />
+                </ATMFieldCell>
                 {/* Single-country deployment — configured once in Global Settings, not editable per merchant. */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Country</label>
-                  <div className="px-3 py-2.5 rounded-lg border border-slate-150 dark:border-slate-800 bg-slate-50 dark:bg-zinc-900/40">
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{countryLabel}</span>
+                <ATMFieldCell label="Country">
+                  <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl border border-zinc-200/90 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/40 shadow-sm">
+                    <Globe size={15} className="text-slate-400 shrink-0" />
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{countryLabel}</span>
                   </div>
-                </div>
-                <ATMTextField name="businessNature" label="Business Nature (free text)"
-                  placeholder="e.g. Restaurant chain, Retail shops, or both"
-                  value={basic.businessNature} onChange={(e) => setBasic({ ...basic, businessNature: e.target.value })} />
-              </div>
-              <div className="mt-5 flex justify-end">
+                </ATMFieldCell>
+                <ATMFieldCell label="Business Nature (free text)">
+                  <ATMTextField name="businessNature"
+                    placeholder="e.g. Restaurant chain, Retail shops, or both"
+                    value={basic.businessNature} onChange={(e) => setBasic({ ...basic, businessNature: e.target.value })} />
+                </ATMFieldCell>
+              </ATMFormGrid>
+              <div className="mt-5 flex justify-end border-t border-slate-100 dark:border-slate-800 pt-4">
                 <ATMButton variant="primary" onClick={submitBasic} isLoading={updating} icon={ArrowRight}>
                   Save & Continue
                 </ATMButton>
               </div>
-            </ATMCard>
+            </WizardStepCard>
           )}
 
           {/* ═══ STEP 2: TYPE & PLAN ═══ */}
           {activeStep === 'type_plan' && state && (
-            <ATMCard title="Step 2 — Merchant Type & Plan" className="glass-card">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+            <WizardStepCard
+              stepKey="type_plan"
+              title="Merchant Type & Plan"
+              description="Choose the merchant kind and the plan that grants their capacity, services and payment methods."
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 {KIND_CARDS.map((k) => (
                   <button
                     key={k.key}
                     type="button"
                     onClick={() => { setKindKey(k.key); setPlanId(''); }}
                     className={cn(
-                      'p-4 rounded-2xl border text-left transition-all',
+                      'relative flex flex-col gap-3 p-4 rounded-2xl border-2 text-left transition-all duration-200',
                       kindKey === k.key
-                        ? 'border-primary-500 ring-2 ring-primary-500/15 bg-primary-50/40 dark:bg-primary-950/20'
-                        : 'border-slate-150 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700',
+                        ? 'border-primary-500 ring-4 ring-primary-500/10 bg-primary-50/50 dark:bg-primary-950/20'
+                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-transparent',
                     )}
                   >
-                    <p className="text-xs font-black text-slate-900 dark:text-white">{k.title}</p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">{k.desc}</p>
+                    {kindKey === k.key && (
+                      <span className="absolute -top-2 right-3 flex items-center gap-1 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 shadow-md shadow-primary-500/30">
+                        <CheckCircle2 size={10} /> Selected
+                      </span>
+                    )}
+                    <span
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
+                        kindKey === k.key
+                          ? 'bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-md shadow-primary-500/25'
+                          : 'bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-slate-500',
+                      )}
+                    >
+                      <k.icon size={18} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-black text-slate-900 dark:text-white">{k.title}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">{k.desc}</p>
+                    </div>
                   </button>
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ATMSelectField
-                  name="planId" label="Plan" required
-                  options={kindPlans.map((p) => ({
-                    label: `${p.displayName} — $${p.planPricePerDay}/day (${p.flavour === 'RES' ? 'Restaurant' : p.flavour === 'RET' ? 'Retail' : 'Restaurant + Retail'})`,
-                    value: p.planId,
-                  }))}
-                  value={planId}
-                  onChange={(v: any) => setPlanId(v)}
-                />
-                {kind.merchantType === 'Enterprise' && (
+              <ATMFormGrid cols={3}>
+                <ATMFieldCell label="Plan" required>
                   <ATMSelectField
-                    name="dbEngine" label="Database Engine (for provisioning)" required
-                    options={DB_ENGINE_OPTIONS} value={dbEngine} onChange={(v: any) => setDbEngine(v)}
+                    name="planId"
+                    options={kindPlans.map((p) => ({
+                      label: `${p.displayName} — $${p.planPricePerDay}/day (${p.flavour === 'RES' ? 'Restaurant' : p.flavour === 'RET' ? 'Retail' : 'Restaurant + Retail'})`,
+                      value: p.planId,
+                    }))}
+                    value={planId}
+                    onChange={(v: any) => setPlanId(v)}
                   />
+                </ATMFieldCell>
+                {kind.merchantType === 'Enterprise' && (
+                  <ATMFieldCell label="Database Engine (for provisioning)" required>
+                    <ATMSelectField
+                      name="dbEngine"
+                      options={DB_ENGINE_OPTIONS} value={dbEngine} onChange={(v: any) => setDbEngine(v)}
+                    />
+                  </ATMFieldCell>
                 )}
                 {kind.merchantType === 'Enterprise' && (
-                  <ATMTextField
-                    name="expectedMonthlyRevenue"
+                  <ATMFieldCell
                     label="Expected Monthly Revenue (optional)"
-                    type="number"
-                    value={expectedRevenue}
-                    onChange={(e) => setExpectedRevenue(e.target.value)}
-                  />
+                    hint="Blank = no estimate (funding must cover 90 days)."
+                  >
+                    <ATMTextField
+                      name="expectedMonthlyRevenue"
+                      type="number"
+                      value={expectedRevenue}
+                      onChange={(e) => setExpectedRevenue(e.target.value)}
+                    />
+                  </ATMFieldCell>
                 )}
-              </div>
+              </ATMFormGrid>
               {kind.merchantType === 'Enterprise' && (
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
                   Sets the wallet funding minimum: with an estimate the deposit and first recharge must
@@ -765,7 +897,7 @@ const OnboardingWizardPage: React.FC = () => {
 
               {/* Plan contents preview — operator sees exactly what this plan grants. */}
               {planId && (
-                <div className="mt-4 rounded-2xl border border-slate-150 dark:border-slate-800 bg-slate-50/60 dark:bg-zinc-900/30 p-4 space-y-3">
+                <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-zinc-900/30 p-4 space-y-3">
                   {planDetailLoading || !planDetail ? (
                     <div className="flex items-center gap-2 text-xs text-slate-400">
                       <Loader2 size={13} className="animate-spin" /> Loading plan contents…
@@ -787,7 +919,7 @@ const OnboardingWizardPage: React.FC = () => {
                         <div className="flex flex-wrap gap-1.5">
                           {(planDetail.limits ?? []).map((l: any) => (
                             <span key={l.limitCode} title={l.limitName}
-                              className="px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-950 border border-slate-150 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
+                              className="px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
                               {l.limitCode}:{l.maxValue}
                             </span>
                           ))}
@@ -817,44 +949,43 @@ const OnboardingWizardPage: React.FC = () => {
                       <p className="text-[10px] text-slate-400">All 23 basic POS features are always included in every plan.</p>
 
                       {/* Pricing + per-merchant discount */}
-                      <div className="border-t border-slate-150 dark:border-slate-800 pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plan Rate</p>
-                          <p className="text-lg font-black text-slate-900 dark:text-white">${baseDaily.toFixed(2)}<span className="text-xs font-bold text-slate-400">/day</span></p>
-                        </div>
-                        <ATMTextField
-                          name="discountPct" label="Merchant Discount (%)" type="number"
-                          value={discountPct}
-                          onChange={(e) => setDiscountPct(Math.max(0, Math.min(99, Number(e.target.value) || 0)))}
-                        />
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">This Merchant Pays</p>
-                          <p className={cn('text-lg font-black', discountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white')}>
+                      <ATMFormGrid cols={3} className="border-t border-slate-200 dark:border-slate-800 pt-4">
+                        <ATMFieldCell label="Plan Rate">
+                          <p className="px-0.5 text-lg font-black text-slate-900 dark:text-white">${baseDaily.toFixed(2)}<span className="text-xs font-bold text-slate-400">/day</span></p>
+                        </ATMFieldCell>
+                        <ATMFieldCell label="Merchant Discount (%)">
+                          <ATMTextField
+                            name="discountPct" type="number"
+                            value={discountPct}
+                            onChange={(e) => setDiscountPct(Math.max(0, Math.min(99, Number(e.target.value) || 0)))}
+                          />
+                        </ATMFieldCell>
+                        <ATMFieldCell label="This Merchant Pays">
+                          <p className={cn('px-0.5 text-lg font-black', discountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white')}>
                             ${effectiveDaily.toFixed(2)}<span className="text-xs font-bold text-slate-400">/day</span>
                           </p>
-                        </div>
-                      </div>
+                        </ATMFieldCell>
+                      </ATMFormGrid>
                     </>
                   )}
                 </div>
               )}
 
-              <div className="mt-5 flex justify-end">
+              <div className="mt-5 flex justify-end border-t border-slate-100 dark:border-slate-800 pt-4">
                 <ATMButton variant="primary" onClick={submitTypePlan} isLoading={settingPlan} icon={ArrowRight}>
                   Save & Continue
                 </ATMButton>
               </div>
-            </ATMCard>
+            </WizardStepCard>
           )}
 
           {/* ═══ STEP 3: KYC ═══ */}
           {activeStep === 'kyc' && state && (
-            <ATMCard title="Step 3 — KYC Verification" className="glass-card">
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                Optional — upload or record any documents you verified. Multiple documents are
-                fine; nothing is mandatory.
-              </p>
-
+            <WizardStepCard
+              stepKey="kyc"
+              title="KYC Verification"
+              description="Optional — upload or record any documents you verified. Multiple documents are fine; nothing is mandatory."
+            >
               {state.kycDocuments.length > 0 && (
                 <div className="mb-4 space-y-1.5">
                   {state.kycDocuments.map((d) => (
@@ -895,14 +1026,20 @@ const OnboardingWizardPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <ATMSelectField name="documentType" label="Document Type" options={KYC_DOC_OPTIONS}
-                  value={kycForm.documentType} onChange={(v: any) => setKycForm({ ...kycForm, documentType: v })} />
-                <ATMTextField name="reference" label="Document Number / Reference (optional)"
-                  value={kycForm.reference} onChange={(e) => setKycForm({ ...kycForm, reference: e.target.value })} />
-                <ATMTextField name="notes" label="Notes (optional)"
-                  value={kycForm.notes} onChange={(e) => setKycForm({ ...kycForm, notes: e.target.value })} />
-              </div>
+              <ATMFormGrid cols={3}>
+                <ATMFieldCell label="Document Type">
+                  <ATMSelectField name="documentType" options={KYC_DOC_OPTIONS}
+                    value={kycForm.documentType} onChange={(v: any) => setKycForm({ ...kycForm, documentType: v })} />
+                </ATMFieldCell>
+                <ATMFieldCell label="Document Number / Reference (optional)">
+                  <ATMTextField name="reference"
+                    value={kycForm.reference} onChange={(e) => setKycForm({ ...kycForm, reference: e.target.value })} />
+                </ATMFieldCell>
+                <ATMFieldCell label="Notes (optional)">
+                  <ATMTextField name="notes"
+                    value={kycForm.notes} onChange={(e) => setKycForm({ ...kycForm, notes: e.target.value })} />
+                </ATMFieldCell>
+              </ATMFormGrid>
 
               {/* Optional file — PDF/PNG/JPG/WEBP, max 10 MB. */}
               <div className="mt-4 flex items-center gap-3 flex-wrap">
@@ -926,7 +1063,7 @@ const OnboardingWizardPage: React.FC = () => {
                 <span className="text-[10px] text-slate-400">PDF / PNG / JPG / WEBP, up to 10 MB</span>
               </div>
 
-              <div className="mt-5 flex justify-between">
+              <div className="mt-5 flex justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
                 <ATMButton variant="outline" onClick={submitKyc} isLoading={recordingKyc || uploadingKyc}>
                   {kycFile ? 'Upload Document' : 'Add Document'}
                 </ATMButton>
@@ -939,18 +1076,20 @@ const OnboardingWizardPage: React.FC = () => {
                   Save & Continue to Payment
                 </ATMButton>
               </div>
-            </ATMCard>
+            </WizardStepCard>
           )}
 
           {/* ═══ STEP 4: PAYMENT ═══ */}
           {activeStep === 'payment' && state && (
-            <ATMCard title="Step 4 — Record Payment" className="glass-card">
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                {isEnterprise
+            <WizardStepCard
+              stepKey="payment"
+              title="Record Payment"
+              description={
+                isEnterprise
                   ? <>Enterprise: security deposit + first recharge ({state.planSelection?.planName} @ ${daily}/day).</>
-                  : <>Standalone: the first token's price — plan daily rate (${daily}/day) × validity days.</>}
-                {' '}No bypass — record what was actually received.
-              </p>
+                  : <>Standalone: the first token's price — plan daily rate (${daily}/day) × validity days.</>
+              }
+            >
 
               {/* 2026-09-05 (decision B): the funding minimum the server enforces, shown
                   before the operator types an amount, with a live shortfall. */}
@@ -973,29 +1112,39 @@ const OnboardingWizardPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <ATMTextField
-                  name="periodDays"
+              <ATMFormGrid cols={3}>
+                <ATMFieldCell
                   label={isEnterprise ? 'First Subscription Period (days)' : 'Token Validity (days, min 30)'}
-                  type="number" required
-                  value={pay.periodDays}
-                  onChange={(e) => setPay({ ...pay, periodDays: Number(e.target.value) || 0 })}
-                />
+                  required
+                >
+                  <ATMTextField
+                    name="periodDays"
+                    type="number"
+                    value={pay.periodDays}
+                    onChange={(e) => setPay({ ...pay, periodDays: Number(e.target.value) || 0 })}
+                  />
+                </ATMFieldCell>
                 {isEnterprise ? (
                   <>
-                    <ATMTextField name="securityDepositAmount" label="Security Deposit ($)" type="number" required
-                      value={pay.securityDepositAmount}
-                      onChange={(e) => setPay({ ...pay, securityDepositAmount: Number(e.target.value) || 0 })} />
-                    <ATMTextField name="rechargeAmount" label="First Recharge ($)" type="number" required
-                      value={pay.rechargeAmount}
-                      onChange={(e) => setPay({ ...pay, rechargeAmount: Number(e.target.value) || 0 })} />
+                    <ATMFieldCell label="Security Deposit ($)" required>
+                      <ATMTextField name="securityDepositAmount" type="number"
+                        value={pay.securityDepositAmount}
+                        onChange={(e) => setPay({ ...pay, securityDepositAmount: Number(e.target.value) || 0 })} />
+                    </ATMFieldCell>
+                    <ATMFieldCell label="First Recharge ($)" required>
+                      <ATMTextField name="rechargeAmount" type="number"
+                        value={pay.rechargeAmount}
+                        onChange={(e) => setPay({ ...pay, rechargeAmount: Number(e.target.value) || 0 })} />
+                    </ATMFieldCell>
                   </>
                 ) : (
-                  <ATMTextField name="amount" label="Amount Received ($)" type="number" required
-                    value={pay.amount}
-                    onChange={(e) => setPay({ ...pay, amount: Number(e.target.value) || 0 })} />
+                  <ATMFieldCell label="Amount Received ($)" required>
+                    <ATMTextField name="amount" type="number"
+                      value={pay.amount}
+                      onChange={(e) => setPay({ ...pay, amount: Number(e.target.value) || 0 })} />
+                  </ATMFieldCell>
                 )}
-              </div>
+              </ATMFormGrid>
 
               {/* Validation hint */}
               <div className={cn(
@@ -1031,7 +1180,7 @@ const OnboardingWizardPage: React.FC = () => {
                           'rounded-xl border px-4 py-3 text-sm font-bold transition-colors text-left',
                           pay.paymentMethod === m.methodType
                             ? 'border-primary-500 bg-primary-50/60 text-primary-700 dark:bg-primary-950/30 dark:text-primary-300'
-                            : 'border-slate-150 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:text-slate-300',
+                            : 'border-slate-200 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:text-slate-300',
                         )}
                       >
                         {m.displayName}
@@ -1049,14 +1198,21 @@ const OnboardingWizardPage: React.FC = () => {
 
               {pay.paymentMethod && pay.paymentMethod !== 'Card' && (
                 <>
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <ATMTextField
-                      name="paymentReference"
-                      label={pay.paymentMethod === 'External' ? 'Payment Reference (required)' : 'Payment Reference (optional)'}
-                      placeholder={pay.paymentMethod === 'External' ? 'Bank/settlement/transaction reference…' : 'Wire ref, cheque no, receipt no…'}
-                      value={pay.paymentReference} onChange={(e) => setPay({ ...pay, paymentReference: e.target.value })} />
-                    <ATMTextField name="notes" label="Notes (optional)"
-                      value={pay.notes} onChange={(e) => setPay({ ...pay, notes: e.target.value })} />
+                  <div className="mt-4">
+                    <ATMFormGrid cols={2}>
+                      <ATMFieldCell
+                        label={pay.paymentMethod === 'External' ? 'Payment Reference (required)' : 'Payment Reference (optional)'}
+                        required={pay.paymentMethod === 'External'}
+                      >
+                        <ATMTextField name="paymentReference"
+                          placeholder={pay.paymentMethod === 'External' ? 'Bank/settlement/transaction reference…' : 'Wire ref, cheque no, receipt no…'}
+                          value={pay.paymentReference} onChange={(e) => setPay({ ...pay, paymentReference: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell label="Notes (optional)">
+                        <ATMTextField name="notes"
+                          value={pay.notes} onChange={(e) => setPay({ ...pay, notes: e.target.value })} />
+                      </ATMFieldCell>
+                    </ATMFormGrid>
                   </div>
                   <div className="mt-5 flex justify-end">
                     <ATMButton variant="primary" onClick={submitPayment} isLoading={recordingPayment} icon={ArrowRight}>
@@ -1143,26 +1299,23 @@ const OnboardingWizardPage: React.FC = () => {
                 )}
               </div>
               )}
-            </ATMCard>
+            </WizardStepCard>
           )}
 
           {/* ═══ STEP 5: TERMINALS (Standalone POS only) ═══ */}
           {activeStep === 'terminals' && state && (
-            <ATMCard title="Step 5 — Terminals" className="glass-card">
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-2xl">
-                Standalone POS merchants have no central cloud — the Platform registry is the
-                source of truth for their terminals. Create the first terminal here: the first
-                token binds to it, and the local POS pairs against it with a 6-digit pairing code.
-                The plan's Max Terminals limit is enforced on creation.
-              </p>
-
+            <WizardStepCard
+              stepKey="terminals"
+              title="Terminals"
+              description="Standalone POS merchants have no central cloud — create the first terminal here. The first token binds to it, and the local POS pairs with a 6-digit code."
+            >
               {(terminalsQuery.data?.data ?? []).length > 0 && (
                 <div className="mb-4 space-y-2">
                   {(terminalsQuery.data?.data ?? []).map((t) => (
-                    <div key={t.terminalId} className="flex items-center justify-between rounded-lg border border-slate-150 dark:border-slate-800 px-3 py-2.5">
+                    <div key={t.terminalId} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2.5">
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-slate-900 dark:text-white">{t.terminalName}</span>
-                        <code className="text-[11px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-150 dark:border-slate-800">{t.terminalCode}</code>
+                        <code className="text-[11px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-slate-800">{t.terminalCode}</code>
                       </div>
                       <ATMBadge size="sm" color={t.isRegistered ? 'success' : 'gray'} label={t.isRegistered ? 'Paired' : 'Not paired yet'} />
                     </div>
@@ -1170,40 +1323,49 @@ const OnboardingWizardPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-                <ATMTextField
-                  name="termName"
-                  label="Terminal Name"
-                  placeholder="e.g. Front Counter"
-                  value={termName}
-                  onChange={(e) => setTermName(e.target.value)}
-                />
-                <ATMTextField
-                  name="termCode"
-                  label="Terminal Code"
-                  placeholder="e.g. T-01"
-                  value={termCode}
-                  onChange={(e) => setTermCode(e.target.value)}
-                />
+              <ATMFormGrid cols={4}>
+                <ATMFieldCell label="Terminal Name">
+                  <ATMTextField
+                    name="termName"
+                    placeholder="e.g. Front Counter"
+                    value={termName}
+                    onChange={(e) => setTermName(e.target.value)}
+                  />
+                </ATMFieldCell>
+                <ATMFieldCell label="Terminal Code">
+                  <ATMTextField
+                    name="termCode"
+                    placeholder="e.g. T-01"
+                    value={termCode}
+                    onChange={(e) => setTermCode(e.target.value)}
+                  />
+                </ATMFieldCell>
                 {/* Plan-derived taxonomy — flavours the terminal-bound token. */}
-                <ATMSelectField
-                  name="termType"
-                  label="Terminal Type"
-                  placeholder="Select type…"
-                  options={allowedTermTypes.map((t) => ({ value: t, label: t }))}
-                  value={termType || null}
-                  onChange={(v) => setTermType((v as string) ?? '')}
-                  disabled={allowedTermTypes.length <= 1}
-                />
-                <ATMButton
-                  variant="outline"
-                  isLoading={creatingTerminal}
-                  disabled={!termName.trim() || !termCode.trim() || !termType}
-                  onClick={addTerminal}
-                >
-                  Add Terminal
-                </ATMButton>
-              </div>
+                <ATMFieldCell label="Terminal Type">
+                  <ATMSelectField
+                    name="termType"
+                    placeholder="Select type…"
+                    options={allowedTermTypes.map((t) => ({ value: t, label: t }))}
+                    value={termType || null}
+                    onChange={(v) => setTermType((v as string) ?? '')}
+                    disabled={allowedTermTypes.length <= 1}
+                  />
+                </ATMFieldCell>
+                <div className="flex items-end">
+                  <ATMButton
+                    variant="outline"
+                    isLoading={creatingTerminal}
+                    disabled={!termName.trim() || !termCode.trim() || !termType}
+                    onClick={addTerminal}
+                  >
+                    Add Terminal
+                  </ATMButton>
+                </div>
+              </ATMFormGrid>
+
+              <p className="text-[10px] text-slate-400 mt-3">
+                The plan's Max Terminals limit is enforced on creation.
+              </p>
 
               <div className="flex justify-end mt-5 border-t border-slate-100 dark:border-slate-800 pt-4">
                 <ATMButton
@@ -1215,12 +1377,22 @@ const OnboardingWizardPage: React.FC = () => {
                   Continue to Fund
                 </ATMButton>
               </div>
-            </ATMCard>
+            </WizardStepCard>
           )}
 
           {/* ═══ STEP 6: FUND ═══ */}
           {activeStep === 'fund' && state && (
-            <ATMCard title={`Step 7 — ${isEnterprise ? 'Create Wallet' : 'Generate First Token'}`} className="glass-card">
+            <WizardStepCard
+              stepKey="fund"
+              title={isEnterprise ? 'Create Wallet' : 'Generate First Token'}
+              description={
+                state.fundSummary
+                  ? 'Funding is complete — review below, then continue.'
+                  : isEnterprise
+                    ? 'Create the funded wallet with the deposit and first recharge recorded in Step 4.'
+                    : 'Generate the first token, which binds to the earliest active terminal.'
+              }
+            >
               {state.paymentRecord && (
                 <div className="mb-4 px-3 py-2 rounded-lg bg-slate-50 dark:bg-zinc-900/40 text-xs text-slate-600 dark:text-slate-300">
                   Recorded payment: <b>${state.paymentRecord.amount.toFixed(2)}</b> via {state.paymentRecord.paymentMethod}
@@ -1295,12 +1467,18 @@ const OnboardingWizardPage: React.FC = () => {
                   </ATMButton>
                 </div>
               )}
-            </ATMCard>
+            </WizardStepCard>
           )}
 
-          {/* ═══ STEP 6: PROVISION ═══ */}
+          {/* ═══ STEP 7: PROVISION ═══ */}
           {activeStep === 'provision' && state && (
-            <ATMCard title="Step 6 — Database Provisioning" className="glass-card">
+            <WizardStepCard
+              stepKey="provision"
+              title="Database Provisioning"
+              description={isEnterprise
+                ? 'Composes and stores this merchant\u2019s dedicated database connection (encrypted at rest).'
+                : 'Skipped — Standalone merchants are not platform-provisioned.'}
+            >
               {isEnterprise ? (
                 <>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
@@ -1313,50 +1491,53 @@ const OnboardingWizardPage: React.FC = () => {
                       the Pass-27 fields the provisioners always supported but no UI
                       collected since the unified wizard. */}
                   {provisionEngine === 'Sqlite' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                      <ATMTextField
-                        name="provDbName" label="Database File Name (optional)"
-                        placeholder={`derived: merchant-<code>.db`}
-                        value={provFields.databaseName}
-                        onChange={(e) => setProvFields({ ...provFields, databaseName: e.target.value })}
-                      />
-                    </div>
+                    <ATMFormGrid cols={2} className="mb-4">
+                      <ATMFieldCell label="Database File Name (optional)">
+                        <ATMTextField
+                          name="provDbName" placeholder={`derived: merchant-<code>.db`}
+                          value={provFields.databaseName}
+                          onChange={(e) => setProvFields({ ...provFields, databaseName: e.target.value })}
+                        />
+                      </ATMFieldCell>
+                    </ATMFormGrid>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                      <ATMTextField
-                        name="provHost" label="Host" placeholder="db.example.internal"
-                        value={provFields.host}
-                        onChange={(e) => setProvFields({ ...provFields, host: e.target.value })}
-                      />
-                      <ATMTextField
-                        name="provPort" label="Port (optional)" type="number" placeholder="engine default"
-                        value={provFields.port}
-                        onChange={(e) => setProvFields({ ...provFields, port: e.target.value })}
-                      />
-                      <ATMTextField
-                        name="provDbName" label="Database Name (optional)" placeholder="derived from merchant code"
-                        value={provFields.databaseName}
-                        onChange={(e) => setProvFields({ ...provFields, databaseName: e.target.value })}
-                      />
-                      <ATMTextField
-                        name="provUser" label="Username"
-                        value={provFields.username}
-                        onChange={(e) => setProvFields({ ...provFields, username: e.target.value })}
-                      />
-                      <ATMTextField
-                        name="provPassword" label="Password" type="password"
-                        value={provFields.password}
-                        onChange={(e) => setProvFields({ ...provFields, password: e.target.value })}
-                      />
-                      <ATMTextField
-                        name="provExtra" label="Extra Params (optional)" placeholder="e.g. SslMode=Require"
-                        value={provFields.extraParams}
-                        onChange={(e) => setProvFields({ ...provFields, extraParams: e.target.value })}
-                      />
-                      <p className="sm:col-span-3 text-[10px] text-slate-400 font-semibold">
-                        Leave host/credentials blank to use the platform's configured connection template.
-                      </p>
-                    </div>
+                    <ATMFormGrid cols={3} className="mb-4">
+                      <ATMFieldCell label="Host">
+                        <ATMTextField name="provHost" placeholder="db.example.internal"
+                          value={provFields.host}
+                          onChange={(e) => setProvFields({ ...provFields, host: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell label="Port (optional)">
+                        <ATMTextField name="provPort" type="number" placeholder="engine default"
+                          value={provFields.port}
+                          onChange={(e) => setProvFields({ ...provFields, port: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell label="Database Name (optional)">
+                        <ATMTextField name="provDbName" placeholder="derived from merchant code"
+                          value={provFields.databaseName}
+                          onChange={(e) => setProvFields({ ...provFields, databaseName: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell label="Username">
+                        <ATMTextField name="provUser"
+                          value={provFields.username}
+                          onChange={(e) => setProvFields({ ...provFields, username: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell label="Password">
+                        <ATMTextField name="provPassword" type="password"
+                          value={provFields.password}
+                          onChange={(e) => setProvFields({ ...provFields, password: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell label="Extra Params (optional)">
+                        <ATMTextField name="provExtra" placeholder="e.g. SslMode=Require"
+                          value={provFields.extraParams}
+                          onChange={(e) => setProvFields({ ...provFields, extraParams: e.target.value })} />
+                      </ATMFieldCell>
+                      <ATMFieldCell className="sm:col-span-3">
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          Leave host/credentials blank to use the platform's configured connection template.
+                        </p>
+                      </ATMFieldCell>
+                    </ATMFormGrid>
                   )}
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -1377,44 +1558,50 @@ const OnboardingWizardPage: React.FC = () => {
                   instance is set up manually outside the platform; a Local POS merchant runs fully on-premise.
                 </p>
               )}
-            </ATMCard>
+            </WizardStepCard>
           )}
 
-          {/* ═══ STEP 7: ACTIVATE ═══ */}
+          {/* ═══ STEP 8: ACTIVATE ═══ */}
           {activeStep === 'activate' && state && (
-            <ATMCard title="Step 8 — Activate & Notify" className="glass-card">
+            <WizardStepCard
+              stepKey="activate"
+              title="Activate & Notify"
+              description={
+                isActive
+                  ? 'This merchant is live.'
+                  : 'Final review — activating sets the merchant live, provisions their portal login, and emails the welcome pack.'
+              }
+            >
               {isActive ? (
-                <div className="text-center py-6 space-y-3">
-                  <PartyPopper className="h-10 w-10 mx-auto text-emerald-500" />
-                  <p className="text-sm font-black text-slate-900 dark:text-white">
+                <div className="text-center py-8 space-y-4">
+                  <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-400 text-white shadow-lg shadow-emerald-500/30">
+                    <PartyPopper className="h-8 w-8" />
+                  </span>
+                  <p className="text-base font-black text-slate-900 dark:text-white">
                     {state.companyName} is live!
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                     Welcome email with credentials{state.merchantType === 'Standalone' ? ' and the activation token' : ''} has been sent to {state.basicInfo?.contactEmail}.
                   </p>
                   <div className="flex justify-center gap-2 pt-2">
                     <Link to={`/merchants/${state.merchantId}`}>
-                      <ATMButton variant="primary" size="sm">Open Merchant Detail</ATMButton>
+                      <ATMButton variant="primary" size="md">Open Merchant Detail</ATMButton>
                     </Link>
                     <Link to="/merchants/onboard">
-                      <ATMButton variant="outline" size="sm" icon={RefreshCw}>Onboard Another</ATMButton>
+                      <ATMButton variant="outline" size="md" icon={RefreshCw}>Onboard Another</ATMButton>
                     </Link>
                   </div>
                 </div>
               ) : (
                 <>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                    Final review — activating sets the merchant live, provisions their portal login,
-                    and emails the welcome pack{state.merchantType === 'Standalone' ? ' with the activation token' : ''}.
-                  </p>
                   <div className="space-y-1.5 mb-5">
                     {state.steps.filter((s) => s.key !== 'activate').map((s) => (
-                      <div key={s.key} className="flex items-center gap-2 text-xs font-semibold">
+                      <div key={s.key} className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-100 dark:border-slate-800">
                         {s.status === 'Complete'
-                          ? <CheckCircle2 size={14} className="text-emerald-500" />
+                          ? <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/40"><CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" /></span>
                           : s.status === 'Skipped'
-                            ? <MinusCircle size={14} className="text-slate-300 dark:text-slate-600" />
-                            : <Circle size={14} className="text-amber-500" />}
+                            ? <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"><MinusCircle size={12} className="text-slate-400 dark:text-slate-600" /></span>
+                            : <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40"><Circle size={12} className="text-amber-500" /></span>}
                         <span className={cn(
                           s.status === 'Complete' ? 'text-slate-700 dark:text-slate-300'
                             : s.status === 'Skipped' ? 'text-slate-400 dark:text-slate-600'
@@ -1438,7 +1625,7 @@ const OnboardingWizardPage: React.FC = () => {
                   </div>
                 </>
               )}
-            </ATMCard>
+            </WizardStepCard>
           )}
         </div>
       </div>

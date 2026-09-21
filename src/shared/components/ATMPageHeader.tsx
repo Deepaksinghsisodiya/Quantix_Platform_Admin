@@ -26,15 +26,15 @@ interface Props {
 import { ArrowLeft } from 'lucide-react';
 
 const colorMaps = {
-  theme: 'bg-accent-50 dark:bg-accent-500/10 text-accent-600 dark:text-accent-400 border-accent-100 dark:border-accent-900/30 shadow-accent-100/5 dark:shadow-none',
-  indigo: 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30 shadow-indigo-100/10 dark:shadow-none',
-  emerald: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30 shadow-emerald-100/10 dark:shadow-none',
-  rose: 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30 shadow-rose-100/10 dark:shadow-none',
-  amber: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30 shadow-amber-100/10 dark:shadow-none',
-  blue: 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30 shadow-blue-100/10 dark:shadow-none',
-  purple: 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30 shadow-purple-100/10 dark:shadow-none',
-  slate: 'bg-slate-100/80 dark:bg-gray-900 text-slate-700 dark:text-slate-300 border-slate-200/60 dark:border-gray-800/80 shadow-slate-100/10 dark:shadow-none',
-  violet: 'bg-violet-50 dark:bg-violet-950/20 text-violet-600 dark:text-violet-400 border-violet-100 dark:border-violet-900/30 shadow-violet-100/10 dark:shadow-none',
+  theme: 'bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-lg shadow-primary-500/20 border-none',
+  indigo: 'bg-gradient-to-br from-indigo-600 to-indigo-400 text-white shadow-lg shadow-indigo-500/20 border-none',
+  emerald: 'bg-gradient-to-br from-emerald-600 to-emerald-400 text-white shadow-lg shadow-emerald-500/20 border-none',
+  rose: 'bg-gradient-to-br from-rose-600 to-rose-400 text-white shadow-lg shadow-rose-500/20 border-none',
+  amber: 'bg-gradient-to-br from-amber-500 to-amber-400 text-white shadow-lg shadow-amber-500/20 border-none',
+  blue: 'bg-gradient-to-br from-blue-600 to-blue-400 text-white shadow-lg shadow-blue-500/20 border-none',
+  purple: 'bg-gradient-to-br from-purple-600 to-purple-400 text-white shadow-lg shadow-purple-500/20 border-none',
+  slate: 'bg-gradient-to-br from-slate-700 to-slate-500 text-white shadow-lg shadow-slate-500/20 border-none dark:from-slate-800 dark:to-slate-600',
+  violet: 'bg-gradient-to-br from-violet-600 to-violet-400 text-white shadow-lg shadow-violet-500/20 border-none',
 };
 
 export const ATMPageHeader: React.FC<Props> = ({
@@ -85,16 +85,16 @@ export const ATMPageHeader: React.FC<Props> = ({
         {Icon && (
           <div className={
             iconColor === 'theme' 
-              ? "w-14 h-14 rounded-[22px] bg-accent-600 dark:bg-accent-600 text-white shadow-xl shadow-accent-500/25 dark:shadow-none hover:scale-105 border border-transparent flex items-center justify-center transition-all duration-500 cursor-pointer"
-              : `w-12 h-12 rounded-2xl flex items-center justify-center border shadow-sm hover:scale-105 transition-all duration-300 ${colorMaps[iconColor]}`
+              ? "w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-lg shadow-primary-500/30 flex items-center justify-center transition-all duration-300 shrink-0"
+              : `w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 shrink-0 ${colorMaps[iconColor]}`
           }>
-            <Icon size={iconColor === 'theme' ? 26 : 22} strokeWidth={iconColor === 'theme' ? 2 : 2.2} />
+            <Icon size={24} strokeWidth={2} />
           </div>
         )}
 
         <div className="space-y-1">
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h1>
-          {subtitle && <div className="text-sm font-normal text-slate-500 dark:text-gray-400">{subtitle}</div>}
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h1>
+          {subtitle && <div className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">{subtitle}</div>}
         </div>
       </div>
 

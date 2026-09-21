@@ -119,13 +119,6 @@ export const parseJsonRecord = <T extends Record<string, unknown>>(value: string
   }
 };
 
-const unwrapArray = (response: any): any[] => {
-  const data = response?.data ?? response;
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.items)) return data.items;
-  return [];
-};
-
 export const tokenApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // ─── List & Detail ─────────────────────────────────────────────────

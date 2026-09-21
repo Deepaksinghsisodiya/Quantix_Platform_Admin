@@ -5,9 +5,8 @@ import { formatCurrencyOrDash } from '@/lib/utils/formatCurrency';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
-import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
-import { ATMTable, ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import { ATMTable, ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
 import { ATMPagination } from '@/shared/components/ATMTable/ATMPagination';
 import { ATMSearch } from '@/shared/components/SearchInput/ATMSearch';
 import {
@@ -23,11 +22,12 @@ import {
   Building,
   Store,
   Eye,
-  Info,
-  X,
+  Banknote,
+  Star,
 } from 'lucide-react';
 import { PlanCard } from '../components/PlanCard';
-import type { Plan } from '../types/plan.types';
+import { PlanCardSkeleton } from '../components/PlanCardSkeleton';
+import { FLAVOUR_DISPLAY, type Plan } from '../types/plan.types';
 
 interface PlanListViewProps {
   plans: Plan[];
@@ -87,36 +87,62 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
     {
       key: 'name',
       header: 'Plan & Tier',
-      renderCell: (_, row) => (
-        <div
-          className="flex items-center gap-3 cursor-pointer group/title"
-          onClick={() => onViewDetails(row)}
-          title="Click to view plan details"
-        >
+      renderCell: (_, row) => {
+        const isMuted = row.status !== 'Active';
+        const isPopular = row.status === 'Active' && (row.popular ?? false);
+        return (
           <div
-            className="h-10 w-10 rounded-2xl flex items-center justify-center font-bold text-white text-xs shadow-sm border border-white/10 shrink-0 group-hover/title:scale-105 transition-transform"
-            style={{ backgroundColor: row.color || '#3b82f6' }}
+            className="flex items-center gap-3 cursor-pointer group/title"
+            onClick={() => onViewDetails(row)}
+            title="Click to view plan details"
           >
-            {row.name.charAt(0).toUpperCase()}
+            <div
+              className={cn('h-10 w-10 rounded-xl flex items-center justify-center text-white shadow-md shrink-0', isMuted && 'opacity-60')}
+              style={{
+                background: isMuted
+                  ? 'linear-gradient(135deg, #94a3b8, #cbd5e1)'
+                  : `linear-gradient(135deg, ${row.color || '#3b82f6'}, ${(row.color || '#3b82f6')}b3)`,
+                boxShadow: isMuted ? undefined : `0 3px 10px ${(row.color || '#3b82f6')}40`,
+              }}
+            >
+              <Banknote size={18} strokeWidth={2} />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                {isPopular && (
+                  <Star size={12} className="fill-amber-400 stroke-amber-400 shrink-0" />
+                )}
+                <span
+                  className={cn(
+                    'font-bold text-sm truncate group-hover/title:text-slate-600 dark:group-hover/title:text-slate-300 transition-colors',
+                    isMuted ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'
+                  )}
+                >
+                  {row.name}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono tracking-tight mt-0.5 truncate">
+                priority: {row.priority} · {FLAVOUR_DISPLAY[row.flavour]}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-slate-900 dark:text-white text-sm group-hover/title:text-slate-655 dark:group-hover/title:text-slate-350 transition-colors">
-              {row.name}
-            </span>
-            <span className="text-[10px] text-slate-450 dark:text-slate-500 font-mono tracking-tight">priority: {row.priority}</span>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'planType',
       header: 'Plan Type',
       renderCell: (_, row) => (
-        <ATMBadge
-          color={row.planType === 'Enterprise cloud' ? 'purple' : 'success'}
-          label={row.planType}
-          size="sm"
-        />
+        <div className="flex flex-col items-start gap-1">
+          <ATMBadge
+            color={row.planType === 'Enterprise cloud' ? 'purple' : 'success'}
+            label={row.planType}
+            size="sm"
+          />
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+            {FLAVOUR_DISPLAY[row.flavour]}
+          </span>
+        </div>
       ),
       width: '160px',
     },
@@ -124,11 +150,12 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       key: 'monthlyPrice',
       header: 'Pricing',
       renderCell: (_, row) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-900 dark:text-white text-sm">
-            {formatCurrencyOrDash(row.monthlyPrice, currency)} <span className="text-xs font-normal text-slate-400 dark:text-slate-550">/mo</span>
+        <div className="flex flex-col items-start gap-1">
+          <span className={cn('font-extrabold text-sm', row.status === 'Active' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>
+            {formatCurrencyOrDash(row.monthlyPrice, currency)}
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500"> /mo</span>
           </span>
-          <span className="text-[10px] text-slate-455 dark:text-slate-500">
+          <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 rounded-lg px-1.5 py-0.5 text-[10px] font-bold">
             {formatCurrencyOrDash(row.yearlyPrice, currency)} /yr
           </span>
         </div>
@@ -139,12 +166,24 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       key: 'maxLocations',
       header: 'Limits & Capacity',
       renderCell: (_, row) => (
-        <div className="flex items-center gap-3 text-[11px] font-bold text-slate-650 dark:text-slate-300">
-          <span className="flex items-center gap-1 text-slate-750 dark:text-slate-305" title="Maximum physical store outlets/locations allowed under this plan tier">
-            <MapPin className="h-3.5 w-3.5 text-slate-400" /> {row.maxLocations === 0 ? 'Unlimited Stores' : `${row.maxLocations} stores`}
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 rounded-lg px-2 py-1"
+            title="Maximum physical store outlets/locations allowed under this plan tier"
+          >
+            <span className="inline-flex h-5 w-5 rounded-md bg-blue-500/10 items-center justify-center">
+              <MapPin className="h-3 w-3" />
+            </span>
+            {row.maxLocations === 0 ? 'Unlimited' : row.maxLocations}
           </span>
-          <span className="flex items-center gap-1 text-slate-750 dark:text-slate-305" title="Maximum cash registers / POS terminal systems active at same time">
-            <Monitor className="h-3.5 w-3.5 text-slate-400" /> {row.maxTerminals === 0 ? 'Unlimited Registers' : `${row.maxTerminals} POS`}
+          <span
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg px-2 py-1"
+            title="Maximum cash registers / POS terminal systems active at same time"
+          >
+            <span className="inline-flex h-5 w-5 rounded-md bg-indigo-500/10 items-center justify-center">
+              <Monitor className="h-3 w-3" />
+            </span>
+            {row.maxTerminals === 0 ? 'Unlimited' : row.maxTerminals}
           </span>
         </div>
       ),
@@ -153,11 +192,19 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       key: 'merchantCount',
       header: 'Active Subscribers',
       renderCell: (_, row) => (
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-705 dark:text-slate-300">
-          <Users className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" /> {row.merchantCount} subscribers
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 text-xs font-bold rounded-lg px-2 py-1',
+            row.merchantCount > 0
+              ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
+              : 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/60'
+          )}
+        >
+          <Users className="h-3.5 w-3.5" />
+          {row.merchantCount} {row.merchantCount === 1 ? 'subscriber' : 'subscribers'}
         </span>
       ),
-      width: '150px',
+      width: '170px',
     },
     {
       key: 'status',
@@ -175,49 +222,16 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       ),
       width: '185px',
     },
-    {
-      key: 'actions',
-      header: 'Actions',
-      align: 'right',
-      renderCell: (_, row) => (
-        <div className="flex items-center justify-end gap-1">
-          <ATMButton
-            variant="ghost"
-            size="sm"
-            icon={Eye}
-            onClick={() => onViewDetails(row)}
-            className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl"
-          >
-            View
-          </ATMButton>
-          <ATMButton
-            variant="outline"
-            size="sm"
-            icon={Pencil}
-            onClick={() => onEditPlan(row)}
-            className="rounded-xl border-slate-200 dark:border-slate-800"
-          >
-            Edit
-          </ATMButton>
-          <ATMButton
-            variant="ghost"
-            size="sm"
-            icon={Archive}
-            onClick={() => onDeletePlan(row)}
-            className="text-red-500 hover:text-red-655 hover:bg-red-50 dark:hover:bg-red-955/20 rounded-xl"
-          >
-            Remove
-          </ATMButton>
-        </div>
-      ),
-      width: '210px',
-    },
+  ];
+
+  const rowActions = (row: Plan): RowAction<Plan>[] => [
+    { label: 'View Details', icon: Eye, onClick: () => onViewDetails(row) },
+    { label: 'Edit Plan', icon: Pencil, onClick: () => onEditPlan(row) },
+    { label: 'Remove Plan', icon: Archive, variant: 'danger', onClick: () => onDeletePlan(row) },
   ];
 
   return (
     <div className="space-y-6">
-
-
       {/* Toolbar: Reusable ATMSearch + Type & Status Filter Controls */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
         {/* Reusable ATMSearch Component */}
@@ -238,7 +252,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'px-3 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 typeFilter === 'all'
-                  ? 'bg-white dark:bg-slate-850 text-slate-950 dark:text-white shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -249,7 +263,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 typeFilter === 'Standalone POS'
-                  ? 'bg-white dark:bg-slate-850 text-emerald-600 dark:text-emerald-450 shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -261,7 +275,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 typeFilter === 'Standalone Cloud'
-                  ? 'bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -273,7 +287,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 typeFilter === 'Enterprise cloud'
-                  ? 'bg-white dark:bg-slate-850 text-purple-600 dark:text-purple-400 shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -289,7 +303,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'px-3.5 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 statusFilter === 'all'
-                  ? 'bg-white dark:bg-slate-850 text-slate-950 dark:text-white shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -300,7 +314,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'px-3.5 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 statusFilter === 'active'
-                  ? 'bg-white dark:bg-slate-850 text-emerald-600 dark:text-emerald-450 shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -311,7 +325,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               className={cn(
                 'px-3.5 py-1.5 text-xs font-bold rounded-[12px] transition-all cursor-pointer',
                 statusFilter === 'inactive'
-                  ? 'bg-white dark:bg-slate-850 text-amber-650 dark:text-amber-455 shadow-sm border border-slate-200/30'
+                  ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm border border-slate-200/30'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -324,7 +338,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
             size="sm"
             onClick={refetch}
             icon={RefreshCw}
-            className="shrink-0 rounded-[14px] border-slate-250 dark:border-slate-800/80 h-9 font-bold"
+            className="shrink-0 rounded-[14px] border-slate-200 dark:border-slate-800/80 h-9 font-bold"
           >
             Refetch
           </ATMButton>
@@ -334,8 +348,8 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       {/* Grid or Table List */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <ATMSkeleton key={i} height="460px" className="rounded-2xl" />
+          {Array.from({ length: 6 }, (_, i) => (
+            <PlanCardSkeleton key={i} />
           ))}
         </div>
       ) : isError ? (
@@ -353,7 +367,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
       ) : plans.length === 0 ? (
         <ATMCard className="rounded-2xl">
           <div className="py-16 text-center space-y-3">
-            <div className="h-12 w-12 rounded-[20px] bg-slate-100 dark:bg-slate-850 flex items-center justify-center mx-auto text-slate-400">
+            <div className="h-12 w-12 rounded-[20px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
               <Layers className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">No plans match your criteria</h3>
@@ -382,23 +396,24 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
 
           {/* Grid View Pagination Controls */}
           {totalCount > 0 && (
-            <div className="bg-slate-50/45 dark:bg-slate-950/20 backdrop-blur-md p-4 rounded-2xl border border-slate-250/80 dark:border-slate-800 shadow-sm">
+            <div className="bg-slate-50/45 dark:bg-slate-950/20 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
               <ATMPagination
                 page={page}
                 pageSize={pageSize}
                 totalCount={totalCount}
                 onPageChange={onPageChange}
                 onPageSizeChange={onPageSizeChange}
-                pageSizeOptions={[6, 12, 24, 48]}
+                pageSizeOptions={[10, 20, 40, 60]}
               />
             </div>
           )}
         </div>
       ) : (
-        <ATMCard className="overflow-hidden p-0 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[var(--zen-surface)] overflow-hidden shadow-sm h-[calc(100vh-17rem)] min-h-[440px]">
           <ATMTable
             data={plans}
             columns={columns}
+            rowActions={rowActions}
             pagination={{
               page,
               pageSize,
@@ -407,7 +422,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
               onPageSizeChange,
             }}
           />
-        </ATMCard>
+        </div>
       )}
     </div>
   );

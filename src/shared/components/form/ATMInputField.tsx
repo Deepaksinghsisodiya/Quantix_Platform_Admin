@@ -85,7 +85,7 @@ const ATMInputField: React.FC<ATMInputFieldProps> = ({
             </div>
 
             {hint && !isError && (
-                <p className="text-[11px] font-medium text-gray-400 dark:text-gray-550 mt-1 px-1 leading-normal">
+                <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-1 px-1 leading-normal">
                     {hint}
                 </p>
             )}

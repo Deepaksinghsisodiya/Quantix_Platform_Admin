@@ -39,20 +39,20 @@ export const ATMCard: React.FC<Props> = ({
     // pass `overflow-hidden` via className explicitly.
     <div
       className={`
-        relative bg-[var(--zen-surface)] border border-[var(--zen-border)] rounded-xl dark:bg-[var(--zen-card)]
-        ${shadow ? 'shadow-sm shadow-black/5 hover:shadow-md hover:shadow-black/5 transition-all duration-300' : ''}
+        relative bg-white/95 border border-slate-200/80 rounded-2xl dark:bg-[#13151a]/95 dark:border-gray-800/80
+        ${shadow ? 'shadow-lg shadow-slate-200/40 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 dark:shadow-none dark:hover:border-gray-700/80' : ''}
         ${className}
       `}
     >
       {header ? (
-        <div className="px-6 py-4 border-b border-[var(--zen-border)]">{header}</div>
+        <div className="px-5 py-4 border-b border-[var(--zen-border)]">{header}</div>
       ) : (title || effectiveSubtitle || action || extra) ? (
-        <div className="px-6 py-5 border-b border-[var(--zen-border)] flex items-center justify-between gap-4">
+        <div className="px-5 py-4 border-b border-[var(--zen-border)] flex items-center justify-between gap-4">
           <div className="min-w-0">
             {title && (
-              <h3 className="text-base font-bold text-gray-900 dark:text-white tracking-tight truncate">{title}</h3>
+              <h3 className="text-[15px] font-black text-slate-900 dark:text-white tracking-tight truncate">{title}</h3>
             )}
-            {effectiveSubtitle && <p className="text-xs text-gray-400 font-medium mt-0.5 truncate">{effectiveSubtitle}</p>}
+            {effectiveSubtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold mt-0.5 truncate">{effectiveSubtitle}</p>}
           </div>
           {(action || extra) && (
             <div className="flex-shrink-0">

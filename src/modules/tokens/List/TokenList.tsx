@@ -5,14 +5,15 @@
  */
 import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Download, Eye, Ban, CheckCircle2, AlertTriangle, Key, Coins, Mail } from 'lucide-react';
+import { Plus, Download, Eye, Ban, CheckCircle2, AlertTriangle, Key, Coins, Mail, Layers } from 'lucide-react';
+import clsx from 'clsx';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
-import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
+import { ATMBadge } from '@/shared/ui/ATMBadge';
+import { ATMAvatar } from '@/shared/ui/ATMAvatar';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
-import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
@@ -54,6 +55,7 @@ interface TokenListProps {
   tokens: TokenListItem[];
   isLoading: boolean;
   isFetching: boolean;
+  fetchError?: string | null;
   totalCount: number;
   page: number;
   pageSize: number;
@@ -74,6 +76,9 @@ interface TokenListProps {
   onDateFromChange: (val: string) => void;
   dateTo: string;
   onDateToChange: (val: string) => void;
+  sortBy?: string;
+  sortDesc?: boolean;
+  onSort: (field: string) => void;
   revokeTarget: { id: string; merchantName: string } | null;
   onRevokeTargetChange: (val: { id: string; merchantName: string } | null) => void;
   revokeReason: string;
@@ -95,6 +100,7 @@ export const TokenList: React.FC<TokenListProps> = ({
   tokens,
   isLoading,
   isFetching,
+  fetchError,
   totalCount,
   page,
   pageSize,
@@ -115,6 +121,9 @@ export const TokenList: React.FC<TokenListProps> = ({
   onDateFromChange,
   dateTo,
   onDateToChange,
+  sortBy,
+  sortDesc,
+  onSort,
   revokeTarget,
   onRevokeTargetChange,
   revokeReason,
@@ -138,28 +147,49 @@ export const TokenList: React.FC<TokenListProps> = ({
       {
         key: 'tokenId',
         header: 'Token ID',
+        sortable: true,
         renderCell: (_val, row) => (
-          <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100" title={row.tokenId}>
-            {row.tokenId.slice(0, 8)}...
+          <span className="inline-flex items-center gap-2.5 min-w-0">
+            <span className={clsx(
+              'h-1.5 w-1.5 rounded-full shrink-0',
+              row.status === 'Active' ? 'bg-emerald-500'
+                : row.status === 'Expired' ? 'bg-slate-300 dark:bg-gray-600'
+                  : row.status === 'Revoked' ? 'bg-rose-500'
+                    : row.status === 'Superseded' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-gray-600',
+            )} />
+            <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100" title={row.tokenId}>
+              {row.tokenId.slice(0, 8)}...
+            </span>
           </span>
         ),
       },
       {
         key: 'merchantName',
         header: 'Merchant',
+        sortable: true,
         renderCell: (_val, row) => (
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {row.merchantName}
-          </span>
+          <div className="flex items-center gap-3 min-w-0 py-1">
+            <div className="shrink-0 ring-2 ring-white dark:ring-gray-800 rounded-xl shadow-sm">
+              <ATMAvatar name={row.merchantName} size="sm" className="rounded-xl" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate max-w-[190px] text-[13px] font-black text-slate-900 dark:text-white tracking-tight" title={row.merchantName}>
+                {row.merchantName}
+              </p>
+              <p className="truncate max-w-[190px] mt-0.5 font-mono text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest" title={row.merchantCode}>
+                {row.merchantCode}
+              </p>
+            </div>
+          </div>
         ),
       },
       {
         key: 'plan',
         header: 'Plan',
         renderCell: (_val, row) => (
-          <span title={PLAN_TYPE_LABEL[row.plan] ?? row.plan}>
+          <div className="flex items-center gap-2">
             <ATMBadge color="primary" label={row.planName || (PLAN_TYPE_LABEL[row.plan] ?? row.plan)} />
-          </span>
+          </div>
         ),
       },
       {
@@ -190,15 +220,24 @@ export const TokenList: React.FC<TokenListProps> = ({
       {
         key: 'createdAt',
         header: 'Generated',
+        sortable: true,
         renderCell: (_val, row) => (
-          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-            {formatDate(row.createdAt, 'short')}
+          <span className="block">
+            <span className="block text-xs text-gray-600 dark:text-gray-400 font-medium">
+              {formatDate(row.createdAt, 'short')}
+            </span>
+            {row.generatedBy && (
+              <span className="block mt-0.5 text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate max-w-[120px]" title={row.generatedBy}>
+                {row.generatedBy}
+              </span>
+            )}
           </span>
         ),
       },
       {
         key: 'status',
         header: 'Status',
+        sortable: true,
         renderCell: (_val, row) => <TokenStatusBadge status={row.status} />,
       },
     ],
@@ -250,136 +289,151 @@ export const TokenList: React.FC<TokenListProps> = ({
   );
 
   return (
-    <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
-      <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
-        <ATMPageHeader
-          title="Token History"
-          subtitle="Every recharge token ever generated, across all Standalone merchants."
-          icon={Key}
-          action={{
-            label: 'Generate Token',
-            onClick: () => navigate('/tokens/generate'),
-            icon: Plus,
+    <div className="flex flex-col gap-6 w-full">
+      <ATMPageHeader
+        title="Token History"
+        subtitle="Every recharge token ever generated, across all Standalone merchants."
+        icon={Key}
+        action={{
+          label: 'Generate Token',
+          onClick: () => navigate('/tokens/generate'),
+          icon: Plus,
+        }}
+        secondaryAction={{
+          label: 'Batch Generate',
+          onClick: () => navigate('/tokens/bulk'),
+          icon: Layers,
+        }}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <ATMStatsCard
+          label="Active Tokens"
+          value={metrics ? metrics.activeTokens : (isLoading ? '...' : 0)}
+          icon={CheckCircle2}
+          variant="emerald"
+        />
+        <ATMStatsCard
+          label="Total Generated"
+          value={metrics ? metrics.totalGenerated : (isLoading ? '...' : 0)}
+          icon={Coins}
+          variant="accent"
+        />
+        <ATMStatsCard
+          label="Token Revenue"
+          value={metrics ? `${metrics.revenueFromTokens.toFixed(2)} ${metrics.revenueCurrency}` : (isLoading ? '...' : 0)}
+          icon={AlertTriangle}
+          variant="purple"
+        />
+        <ATMStatsCard
+          label="Expired / Revoked"
+          value={metrics ? metrics.expiredTokens + metrics.revokedTokens : (isLoading ? '...' : 0)}
+          icon={Ban}
+          variant="rose"
+        />
+      </div>
+
+      {fetchError && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50/60 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/20">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+          <p className="text-sm font-semibold text-red-800 dark:text-red-300">{fetchError}</p>
+        </div>
+      )}
+
+      <ATMCard padding="none" className="overflow-hidden rounded-2xl">
+        <ATMTable
+          columns={columns}
+          data={tokens}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          rowActions={rowActions}
+          onRowClick={(row) => navigate(`/tokens/${row.tokenId}`)}
+          density="compact"
+          searchValue={search}
+          onSearchChange={onSearchChange}
+          searchPlaceholder="Search by token ID or merchant..."
+          sortBy={sortBy}
+          sortDesc={sortDesc}
+          onSort={onSort}
+          emptyMessage={
+            range === 'all'
+              ? 'No tokens found. Generate your first token to get started.'
+              : 'No tokens generated in this date range — switch the range to "All time" to see older history.'
+          }
+          extraHeaderActions={
+            <ATMButton
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={Download}
+              onClick={onExportCsv}
+              className="hover:scale-[1.01] transition-transform"
+            >
+              Export CSV
+            </ATMButton>
+          }
+          filterConfig={{
+            fields: [
+              {
+                key: 'merchant',
+                label: 'Merchant',
+                type: 'select',
+                options: [{ label: 'All Merchants', value: '' }, ...merchantOptions],
+              },
+              { key: 'plan', label: 'Plan', type: 'select', options: PLAN_OPTIONS },
+              { key: 'status', label: 'Status', type: 'select', options: STATUS_OPTIONS },
+              { key: 'range', label: 'Range', type: 'select', options: RANGE_OPTIONS, defaultValue: '30d' },
+              { key: 'from', label: 'From date', type: 'date', placeholder: 'From date' },
+              { key: 'to', label: 'To date', type: 'date', placeholder: 'To date' },
+            ],
+            values: {
+              merchant: merchantFilter,
+              plan: planFilter,
+              status: statusFilter,
+              range,
+              from: dateFrom,
+              to: dateTo,
+            },
+            onChange: (key, val) => {
+              switch (key) {
+                case 'merchant':
+                  onMerchantFilterChange((val as string) || '');
+                  break;
+                case 'plan':
+                  onPlanFilterChange((val as string) || '');
+                  break;
+                case 'status':
+                  onStatusFilterChange((val as string) || '');
+                  break;
+                case 'range':
+                  onRangeChange(((val as string) === 'all' || !val ? '30d' : (val as string)) );
+                  break;
+                case 'from':
+                  onDateFromChange((val as string) === 'all' ? '' : ((val as string) || ''));
+                  break;
+                case 'to':
+                  onDateToChange((val as string) === 'all' ? '' : ((val as string) || ''));
+                  break;
+              }
+            },
+            onReset: () => {
+              onMerchantFilterChange('');
+              onPlanFilterChange('');
+              onStatusFilterChange('');
+              onDateFromChange('');
+              onDateToChange('');
+              onRangeChange('30d');
+            },
+          }}
+          pagination={{
+            page,
+            pageSize,
+            totalCount,
+            onPageChange,
+            onPageSizeChange,
           }}
         />
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8 animate-in fade-in zoom-in duration-300">
-          <ATMStatsCard
-            label="Active Tokens"
-            value={metrics ? metrics.activeTokens : (isLoading ? '...' : 0)}
-            icon={CheckCircle2}
-            variant="emerald"
-          />
-          <ATMStatsCard
-            label="Total Generated"
-            value={metrics ? metrics.totalGenerated : (isLoading ? '...' : 0)}
-            icon={Coins}
-            variant="accent"
-          />
-          <ATMStatsCard
-            label="Token Revenue"
-            value={metrics ? `${metrics.revenueFromTokens.toFixed(2)} ${metrics.revenueCurrency}` : (isLoading ? '...' : 0)}
-            icon={AlertTriangle}
-            variant="purple"
-          />
-          <ATMStatsCard
-            label="Expired / Revoked"
-            value={metrics ? metrics.expiredTokens + metrics.revokedTokens : (isLoading ? '...' : 0)}
-            icon={Ban}
-            variant="rose"
-          />
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-slate-50/10 dark:bg-gray-900/10">
-        <ATMCard title="Search & Filters" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-            <ATMTextField
-              name="search"
-              placeholder="Search by token ID or merchant..."
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              prefix={<Search size={16} />}
-            />
-            <ATMSelectField
-              name="merchantFilter"
-              placeholder="All Merchants"
-              options={[{ label: 'All Merchants', value: '' }, ...merchantOptions]}
-              value={merchantFilter || null}
-              onChange={(val) => onMerchantFilterChange((val as string) || '')}
-            />
-            <ATMSelectField
-              name="planFilter"
-              placeholder="All Plans"
-              options={PLAN_OPTIONS}
-              value={planFilter || null}
-              onChange={(val) => onPlanFilterChange((val as string) || '')}
-            />
-            <ATMSelectField
-              name="statusFilter"
-              placeholder="All Statuses"
-              options={STATUS_OPTIONS}
-              value={statusFilter || null}
-              onChange={(val) => onStatusFilterChange((val as string) || '')}
-            />
-            <ATMSelectField
-              name="rangeFilter"
-              options={RANGE_OPTIONS}
-              value={range}
-              onChange={(val) => onRangeChange((val as string) || '30d')}
-            />
-            <ATMTextField
-              name="dateFrom"
-              type="date"
-              placeholder="From date"
-              value={dateFrom}
-              onChange={(e) => onDateFromChange(e.target.value)}
-            />
-            <ATMTextField
-              name="dateTo"
-              type="date"
-              placeholder="To date"
-              value={dateTo}
-              onChange={(e) => onDateToChange(e.target.value)}
-            />
-          </div>
-        </ATMCard>
-
-        <ATMCard padding="none" className="shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden rounded-2xl">
-          <ATMTable
-            columns={columns}
-            data={tokens}
-            isLoading={isLoading}
-            isFetching={isFetching}
-            rowActions={rowActions}
-            density="compact"
-            emptyMessage={
-              range === 'all'
-                ? 'No tokens found. Generate your first token to get started.'
-                : 'No tokens generated in this date range — switch the range to "All time" to see older history.'
-            }
-            extraHeaderActions={
-              <ATMButton
-                type="button"
-                variant="outline"
-                size="sm"
-                icon={Download}
-                onClick={onExportCsv}
-                className="hover:scale-[1.01] transition-transform"
-              >
-                Export CSV
-              </ATMButton>
-            }
-            pagination={{
-              page,
-              pageSize,
-              totalCount,
-              onPageChange,
-              onPageSizeChange,
-            }}
-          />
-        </ATMCard>
-      </div>
+      </ATMCard>
 
       <ATMModal
         isOpen={revokeTarget !== null}
@@ -399,10 +453,10 @@ export const TokenList: React.FC<TokenListProps> = ({
             value={revokeReason}
             onChange={(e) => onRevokeReasonChange(e.target.value)}
           />
-          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--zen-border)]">
             <ATMButton
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => {
                 onRevokeTargetChange(null);
@@ -445,8 +499,8 @@ export const TokenList: React.FC<TokenListProps> = ({
             Standalone Local-Only terminals apply tokens offline and never report back —
             recording the date here keeps Token Validity and expiry reminders accurate.
           </p>
-          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <ATMButton type="button" variant="secondary" size="sm" onClick={() => onMarkTargetChange(null)}>
+          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--zen-border)]">
+            <ATMButton type="button" variant="outline" size="sm" onClick={() => onMarkTargetChange(null)}>
               Cancel
             </ATMButton>
             <ATMButton

@@ -88,10 +88,11 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
         key: 'companyName',
         header: 'Merchant',
         renderCell: (val, row) => (
-          <div>
+          <div className="min-w-0">
             <Link
               to={`/merchants/${row.merchantId || (row as any).id || ''}`}
-              className="font-bold text-accent-600 hover:underline dark:text-accent-400"
+              className="block max-w-[220px] truncate font-bold text-accent-600 hover:underline dark:text-accent-400"
+              title={val || (row as any).businessName || 'Merchant'}
             >
               {val || (row as any).businessName || 'Merchant'}
             </Link>
@@ -155,7 +156,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
   );
 
   return (
-    <div className="space-y-5 animate-fade-in w-full flex flex-col">
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
       {/* Premium Unified Header */}
       <ATMPageHeader
         title={
@@ -174,6 +175,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
             )}
             <ATMButton
               variant="secondary"
+              size="sm"
               onClick={refetch}
               icon={isFetching ? Loader2 : RefreshCw}
               disabled={isLoading || isFetching}
@@ -231,13 +233,16 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
       </div>
 
       {/* ATMTable Integration */}
-      <div className="flex-1 overflow-hidden w-full bg-zen-surface rounded-2xl border border-gray-100 dark:border-gray-800">
+      <ATMCard padding="none" className="overflow-hidden rounded-2xl">
         {isError ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <AlertTriangle className="h-10 w-10 text-danger" />
             <p className="text-sm font-bold text-surface-700 dark:text-surface-200">
               Failed to load deboardings.
             </p>
+            <ATMButton variant="outline" size="sm" onClick={refetch} icon={RefreshCw} disabled={isLoading || isFetching}>
+              Retry
+            </ATMButton>
           </div>
         ) : (
           <ATMTable<MerchantDeboarding>
@@ -252,7 +257,7 @@ export const DeboardingQueuePage: React.FC<DeboardingQueuePageProps> = ({
             emptyMessage={`No deboardings found in the ${tab} queue.`}
           />
         )}
-      </div>
+      </ATMCard>
     </div>
   );
 };

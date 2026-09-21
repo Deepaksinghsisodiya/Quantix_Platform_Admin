@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Send, Eye, Check } from 'lucide-react';
+import { Mail, Send, Eye, Check, FileText, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -40,6 +40,24 @@ function extractPlaceholders(t: EmailTemplate): string[] {
     if (m[1] && !['if', 'else'].includes(m[1])) found.add(`{{${m[1]}}}`);
   }
   return [...found];
+}
+
+function CardHeader({ icon: Icon, title, subtitle, trailing }: { icon: LucideIcon; title: string; subtitle: string; trailing?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="relative flex items-center gap-3">
+        <div className="absolute -right-6 -top-8 h-20 w-20 rounded-full bg-primary-500/10 blur-2xl" />
+        <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+          <Icon size={18} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-mono text-sm font-bold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+          {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+        </div>
+      </div>
+      {trailing}
+    </div>
+  );
 }
 
 export function EmailTemplatesPage() {
@@ -118,17 +136,20 @@ export function EmailTemplatesPage() {
   }, {});
 
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
-      <div>
-        {/* Title matches the sidebar label. */}
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Email Templates
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-          The templates every transactional email is composed from — edits apply to the very next
-          send. Placeholders: {'{{key}}'}, optional {'{{key:default}}'}, conditional{' '}
-          {'{{#if key}}…{{/if}}'}.
-        </p>
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
+          <Mail size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          {/* Title matches the sidebar label. */}
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Email Templates</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
+            The templates every transactional email is composed from — edits apply to the very
+            next send. Placeholders: {'{{key}}'}, optional {'{{key:default}}'}, conditional{' '}
+            {'{{#if key}}…{{/if}}'}.
+          </p>
+        </div>
       </div>
 
       {loading ? (
@@ -139,7 +160,8 @@ export function EmailTemplatesPage() {
           <div className="lg:col-span-1 flex flex-col gap-4">
             {Object.entries(grouped).map(([category, items]) => (
               <div key={category}>
-                <p className="mb-1.5 px-1 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-gray-500">
+                  <span className="h-1 w-1 rounded-full bg-primary-500/70" />
                   {category}
                 </p>
                 <div className="flex flex-col gap-2">
@@ -149,18 +171,29 @@ export function EmailTemplatesPage() {
                       type="button"
                       onClick={() => handleSelect(t)}
                       className={cn(
-                        'w-full rounded-xl border p-3 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+                        'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
                         selectedId === t.templateId
-                          ? 'border-accent-500 bg-accent-50/10 dark:border-accent-400 dark:bg-accent-950/10'
-                          : 'border-gray-200 bg-white hover:bg-gray-55/20 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800/80',
+                          ? 'border-accent-500 bg-accent-50/10 dark:border-accent-400 dark:bg-accent-950/10 shadow-sm shadow-accent-500/10'
+                          : 'border-slate-200 bg-white hover:bg-slate-55/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80',
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-400 shrink-0" />
-                        <span className="font-mono text-xs font-bold text-gray-900 dark:text-white">{t.templateName}</span>
-                        {!t.isActive && <ATMBadge size="sm" color="warning" label="Inactive" />}
+                      <div
+                        className={cn(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
+                          selectedId === t.templateId
+                            ? 'bg-gradient-to-br from-accent-600 to-accent-400 text-white shadow-md shadow-accent-500/20'
+                            : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500',
+                        )}
+                      >
+                        <FileText size={16} strokeWidth={2.2} />
                       </div>
-                      <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400 font-semibold">{t.subject}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-mono text-xs font-bold text-slate-900 dark:text-white">{t.templateName}</span>
+                          {!t.isActive && <ATMBadge size="sm" color="warning" label="Inactive" />}
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400 font-semibold">{t.subject}</p>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -176,25 +209,33 @@ export function EmailTemplatesPage() {
           {/* Editor */}
           <div className="lg:col-span-2">
             {selected ? (
-              <ATMCard className="glass-card">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-mono text-base font-bold text-gray-900 dark:text-white">{selected.templateName}</h3>
-                  <div className="flex gap-2">
-                    <ATMButton
-                      variant={showPreview ? 'primary' : 'secondary'}
-                      size="sm"
-                      icon={Eye}
-                      onClick={() => setShowPreview(!showPreview)}
-                    >
-                      Preview
-                    </ATMButton>
-                    <ATMButton variant="secondary" size="sm" icon={Send} isLoading={testing} onClick={handleSendTest}>
-                      Send Test
-                    </ATMButton>
-                  </div>
-                </div>
+              <ATMCard
+                className="glass-card"
+                header={
+                  <CardHeader
+                    icon={FileText}
+                    title={selected.templateName}
+                    subtitle={`${selected.category} · ${selected.contentType}${selected.isActive ? '' : ' · Inactive'}`}
+                    trailing={
+                      <div className="flex shrink-0 gap-2">
+                        <ATMButton
+                          variant={showPreview ? 'primary' : 'secondary'}
+                          size="sm"
+                          icon={Eye}
+                          onClick={() => setShowPreview(!showPreview)}
+                        >
+                          Preview
+                        </ATMButton>
+                        <ATMButton variant="secondary" size="sm" icon={Send} isLoading={testing} onClick={handleSendTest}>
+                          Send Test
+                        </ATMButton>
+                      </div>
+                    }
+                  />
+                }
+              >
                 {selected.description && (
-                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400 font-semibold">{selected.description}</p>
+                  <p className="mb-4 text-xs text-slate-500 dark:text-slate-400 font-semibold px-1">{selected.description}</p>
                 )}
 
                 {!showPreview ? (
@@ -208,14 +249,14 @@ export function EmailTemplatesPage() {
 
                     {extractPlaceholders(selected).length > 0 && (
                       <div>
-                        <label className="text-xs font-bold text-gray-550 dark:text-gray-400">Insert placeholder</label>
+                        <label className="text-xs font-bold text-slate-550 dark:text-gray-400">Insert placeholder</label>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {extractPlaceholders(selected).map((v) => (
                             <button
                               key={v}
                               type="button"
                               onClick={() => insertMergeVar(v)}
-                              className="rounded-lg bg-gray-100 px-2 py-1 font-mono text-[10px] font-semibold text-gray-700 hover:bg-gray-250 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-750"
+                              className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] font-semibold text-slate-700 hover:bg-primary-100 hover:text-primary-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750"
                             >
                               {v}
                             </button>
@@ -239,19 +280,19 @@ export function EmailTemplatesPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-gray-200 bg-gray-55/20 p-6 dark:border-gray-800 dark:bg-gray-900/10">
-                    <div className="mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">
-                      <p className="text-xs font-extrabold uppercase tracking-wider text-gray-400">Subject:</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white mt-1">{editSubject}</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-55/20 p-6 dark:border-slate-800 dark:bg-slate-900/10">
+                    <div className="mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+                      <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Subject:</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">{editSubject}</p>
                     </div>
                     {selected.contentType.includes('html') ? (
                       // eslint-disable-next-line react/no-danger
                       <div
-                        className="text-sm leading-relaxed text-gray-700 dark:text-gray-300"
+                        className="text-sm leading-relaxed text-slate-700 dark:text-slate-300"
                         dangerouslySetInnerHTML={{ __html: editBody }}
                       />
                     ) : (
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300 font-medium">
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-medium">
                         {editBody}
                       </div>
                     )}
@@ -259,8 +300,11 @@ export function EmailTemplatesPage() {
                 )}
               </ATMCard>
             ) : (
-              <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-800">
-                <p className="text-sm text-gray-400 dark:text-gray-550 font-bold">Select a template to edit</p>
+              <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40">
+                <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-550">
+                  <Mail className="h-8 w-8 opacity-50" strokeWidth={1.8} />
+                  <p className="text-sm font-bold">Select a template to edit</p>
+                </div>
               </div>
             )}
           </div>

@@ -36,8 +36,10 @@ import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
+import { ATMFieldCell, ATMFormGrid } from '@/shared/components/form';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMProgressBar } from '@/shared/ui/ATMProgressBar';
 import { ATMTabs, ATMAvatar, ATMDetailRow, ATMSectionHeader, ATMActionSidebarItem } from '@/shared/ui';
 import { WelcomeCommunications } from '../components/WelcomeCommunications';
 import EnterprisePanels from '../components/EnterprisePanels';
@@ -197,21 +199,20 @@ function OnboardingChecklistPanel({ checklist }: { checklist: OnboardingChecklis
           <span>Progress</span>
           <span className="text-gray-900 dark:text-white font-black">{progress}%</span>
         </div>
-        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-          <div
-            style={{ width: `${progress}%` }}
-            className={cn('h-full rounded-full transition-all duration-500', progress === 100 ? 'bg-emerald-500' : 'bg-accent-600')}
-          />
-        </div>
+        <ATMProgressBar
+          value={progress}
+          size="sm"
+          variant={progress === 100 ? 'success' : 'info'}
+        />
         <ul className="space-y-2.5">
           {items.map((item) => {
             const done = checklist[item.key] === true;
             return (
               <li key={item.key} className="flex items-center gap-3 text-sm">
                 {done ? (
-                  <CheckCircle2 className="h-4.5 w-4.5 shrink-0 text-emerald-500" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                 ) : (
-                  <Circle className="h-4.5 w-4.5 shrink-0 text-gray-300 dark:text-gray-700" />
+                  <Circle className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
                 )}
                 <span className={cn('font-semibold', done ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100')}>
                   {item.label}
@@ -314,7 +315,7 @@ function DeboardingWorkflowCard({
     : undefined;
 
   return (
-    <ATMCard title="Deboarding Workflow" className="border-amber-250 bg-amber-50/10 dark:border-amber-900/30">
+    <ATMCard title="Deboarding Workflow" className="border-amber-300 dark:border-amber-900/30 bg-amber-50/10 dark:bg-amber-950/10">
       <div className="space-y-4 pt-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -489,8 +490,8 @@ function DeboardingWorkflowCard({
             required
           />
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <ATMButton variant="secondary" size="sm" onClick={() => setCancelOpen(false)}>Cancel</ATMButton>
+        <div className="mt-6 flex justify-end gap-3">
+          <ATMButton variant="outline" size="sm" onClick={() => setCancelOpen(false)}>Cancel</ATMButton>
           <ATMButton
             variant="danger"
             size="sm"
@@ -522,8 +523,8 @@ function DeboardingWorkflowCard({
             This is the point of no return — every earlier step was reversible; this one is not.
           </p>
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <ATMButton variant="secondary" size="sm" onClick={() => setSoftDeleteOpen(false)}>Keep Merchant</ATMButton>
+        <div className="mt-6 flex justify-end gap-3">
+          <ATMButton variant="outline" size="sm" onClick={() => setSoftDeleteOpen(false)}>Keep Merchant</ATMButton>
           <ATMButton
             variant="danger"
             size="sm"
@@ -555,8 +556,8 @@ function DeboardingWorkflowCard({
             required
           />
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <ATMButton variant="secondary" size="sm" onClick={() => setRechargeOpen(false)}>Cancel</ATMButton>
+        <div className="mt-6 flex justify-end gap-3">
+          <ATMButton variant="outline" size="sm" onClick={() => setRechargeOpen(false)}>Cancel</ATMButton>
           <ATMButton
             variant="primary"
             size="sm"
@@ -598,8 +599,8 @@ function DeboardingWorkflowCard({
             placeholder="tx_abc123"
           />
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <ATMButton variant="secondary" size="sm" onClick={() => setRefundOpen(false)}>Cancel</ATMButton>
+        <div className="mt-6 flex justify-end gap-3">
+          <ATMButton variant="outline" size="sm" onClick={() => setRefundOpen(false)}>Cancel</ATMButton>
           <ATMButton
             variant="primary"
             size="sm"
@@ -643,7 +644,7 @@ const NotesTabSection: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
     <div className="space-y-6 pt-2">
       <form onSubmit={handleSubmit} className="space-y-3">
         <textarea
-          className="w-full rounded-xl border border-gray-200 bg-zen-surface px-4 py-3 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-accent-500 dark:border-gray-800 dark:text-white"
+          className="w-full rounded-xl border border-[var(--zen-border)] bg-zen-surface px-4 py-3 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-accent-500 focus:ring-4 focus:ring-accent-500/10 dark:text-white"
           rows={3}
           placeholder="Add an internal staff note..."
           value={noteContent}
@@ -932,17 +933,17 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                           </div>
 
                           <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-2">
-                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
-                              <User size={14} className="text-slate-400 dark:text-gray-500" />
-                              <span className="text-xs font-bold tracking-tight">{merchant.contactPerson}</span>
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 min-w-0">
+                              <User size={14} className="text-slate-400 dark:text-gray-500 shrink-0" />
+                              <span className="text-xs font-bold tracking-tight break-words">{merchant.contactPerson}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
-                              <Mail size={14} className="text-slate-400 dark:text-gray-500" />
-                              <span className="text-xs font-bold lowercase tracking-tight">{merchant.email}</span>
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 min-w-0">
+                              <Mail size={14} className="text-slate-400 dark:text-gray-500 shrink-0" />
+                              <span className="text-xs font-bold lowercase tracking-tight break-words">{merchant.email}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
-                              <Globe size={14} className="text-slate-400 dark:text-gray-500" />
-                              <span className="text-xs font-bold uppercase tracking-tight">{merchant.country}</span>
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 min-w-0">
+                              <Globe size={14} className="text-slate-400 dark:text-gray-500 shrink-0" />
+                              <span className="text-xs font-bold uppercase tracking-tight break-words">{merchant.country}</span>
                             </div>
                           </div>
                         </div>
@@ -1232,7 +1233,6 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
             value={suspendCategory}
             onChange={(val) => setSuspendCategory(val ? String(val) : '')}
             placeholder="Select a category"
-            size="sm"
           />
           <ATMTextField
             label="Detailed Reasons"
@@ -1325,6 +1325,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
           setPlanDiscountPct(0);
         }}
         title="Change Plan"
+        size="lg"
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
@@ -1351,13 +1352,13 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                   type="button"
                   onClick={() => setSelectedNewPlan(plan.planId)}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all font-bold',
+                    'flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all font-bold',
                     selectedNewPlan === plan.planId
                       ? 'border-accent-500 bg-accent-50/50 dark:border-accent-500 dark:bg-accent-950/20'
                       : 'border-gray-100 hover:border-gray-200 dark:border-gray-800/80 dark:hover:border-gray-700',
                   )}
                 >
-                  <span className="text-sm text-gray-900 dark:text-white">
+                  <span className="min-w-0 truncate text-sm text-gray-900 dark:text-white">
                     {plan.displayName}
                     {plan.flavour && plan.flavour !== 'BOT' && (
                       <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
@@ -1365,7 +1366,7 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
                       </span>
                     )}
                   </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="shrink-0 text-sm text-gray-600 dark:text-gray-400">
                     {formatCurrencyOrDash(plan.planPricePerDay ?? 0, platformCurrency)}/day
                   </span>
                 </button>
@@ -1381,31 +1382,33 @@ export const MerchantDetailPage: React.FC<MerchantDetailPageProps> = ({
           {/* Per-merchant pricing — same semantics as onboarding's assign-plan: the
               discounted rate is stored as this merchant's daily price. Prefilled with the
               current subscription's implied discount so the deal carries over. */}
-          <div className="grid grid-cols-2 gap-3 items-end">
-            <ATMTextField
-              label="Merchant Discount (%)"
-              type="number"
-              value={String(planDiscountPct)}
-              onChange={(e) => setPlanDiscountPct(Number(e.target.value) || 0)}
-            />
-            <div className="pb-1">
-              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Effective daily rate
-              </p>
-              {(() => {
-                const sel = planOptions.find((p) => p.planId === selectedNewPlan);
-                if (!sel) {
-                  return <p className="text-sm font-bold text-gray-400 dark:text-gray-500">Select a plan</p>;
-                }
-                const eff = Number(((sel.planPricePerDay ?? 0) * (1 - (planDiscountPct || 0) / 100)).toFixed(2));
+          <ATMFormGrid cols={2}>
+            <ATMFieldCell label="Merchant Discount (%)">
+              <ATMTextField
+                type="number"
+                value={String(planDiscountPct)}
+                onChange={(e) => setPlanDiscountPct(Number(e.target.value) || 0)}
+              />
+            </ATMFieldCell>
+            {(() => {
+              const sel = planOptions.find((p) => p.planId === selectedNewPlan);
+              if (!sel) {
                 return (
-                  <p className={cn('text-lg font-black', planDiscountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white')}>
+                  <ATMFieldCell label="Effective daily rate">
+                    <p className="px-0.5 pt-1 text-sm font-bold text-gray-400 dark:text-gray-500">Select a plan</p>
+                  </ATMFieldCell>
+                );
+              }
+              const eff = Number(((sel.planPricePerDay ?? 0) * (1 - (planDiscountPct || 0) / 100)).toFixed(2));
+              return (
+                <ATMFieldCell label="Effective daily rate">
+                  <p className={cn('px-0.5 pt-0.5 text-lg font-black', planDiscountPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white')}>
                     {formatCurrencyOrDash(eff, platformCurrency)}/day
                   </p>
-                );
-              })()}
-            </div>
-          </div>
+                </ATMFieldCell>
+              );
+            })()}
+          </ATMFormGrid>
           <ATMTextField
             label="Reason (optional)"
             placeholder="Reason / ticket reference…"

@@ -97,7 +97,7 @@ export const RateCardFormModal: React.FC<RateCardFormModalProps> = ({
     >
       <div className="space-y-4">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-150 dark:border-gray-800 gap-1 overflow-x-auto">
+        <div className="flex border-b border-gray-200 dark:border-gray-800 gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}

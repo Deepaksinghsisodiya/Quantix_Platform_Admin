@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Percent, Tag, Layers, KeyRound, Wallet, CalendarDays, Link2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMCard } from '@/shared/ui/ATMCard';
@@ -10,6 +10,7 @@ import { ATMSelectField } from '@/shared/ui/ATMSelectField';
 import { ATMCheckbox } from '@/shared/ui/ATMCheckbox';
 import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
 import { ATMTabs } from '@/shared/ui';
+import { ATMTable, ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
 
 import {
   useGetTaxDefinitionsQuery,
@@ -45,8 +46,32 @@ function DefinitionsTab() {
     isCompound: false, jurisdiction: 'Federal', calculationMethod: 'Exclusive',
     effectiveFromDate: new Date().toISOString().slice(0, 10),
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const setField = (key: keyof CreateTaxDefinitionInput, value: unknown) => {
+    setForm((f) => ({ ...f, [key]: value }) as CreateTaxDefinitionInput);
+    setErrors((p) => {
+      if (!(key in p)) return p;
+      const next = { ...p };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const validateDef = (): boolean => {
+    const next: Record<string, string> = {};
+    if (!form.taxName.trim()) next.taxName = 'Tax name is required';
+    else if (form.taxName.trim().length < 2) next.taxName = 'Tax name must be at least 2 characters';
+    if (!form.taxCode.trim()) next.taxCode = 'Tax code is required';
+    else if (!/^[A-Za-z0-9_]+$/.test(form.taxCode.trim())) next.taxCode = 'Use letters, numbers or underscore only';
+    if (!form.taxRate || form.taxRate <= 0) next.taxRate = 'Rate must be greater than 0';
+    if (!form.taxCategory.trim()) next.taxCategory = 'Category is required';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
   const handleCreate = async () => {
+    if (!validateDef()) return;
     try {
       await createTax(form).unwrap();
       toast.success('Tax created');
@@ -66,44 +91,135 @@ function DefinitionsTab() {
 
   const rows = data?.data ?? [];
 
+  const defColumns: ATMTableColumn<PlatformTaxDefinition>[] = [
+    {
+      key: 'taxName',
+      header: 'Name',
+      renderCell: (_, r) => (
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-sm shrink-0">
+            <Percent size={14} strokeWidth={2.5} />
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-slate-900 dark:text-white text-sm truncate">{r.taxName}</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+              {r.taxCategory}
+              {r.isCompound && (
+                <span className="ml-1.5 inline-flex rounded bg-amber-100 dark:bg-amber-950/40 px-1 py-px text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                  Compound
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'taxCode',
+      header: 'Code',
+      renderCell: (_, r) => (
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-lg px-2 py-1">
+          <Tag size={11} className="text-slate-400" />
+          {r.taxCode}
+        </span>
+      ),
+    },
+    {
+      key: 'taxRate',
+      header: 'Rate',
+      align: 'right',
+      renderCell: (_, r) => (
+        <span className="inline-flex items-baseline text-sm font-black text-slate-900 dark:text-white tabular-nums">
+          {r.taxRate}
+          <span className="ml-0.5 text-xs font-bold text-accent-500 dark:text-accent-400">%</span>
+        </span>
+      ),
+    },
+    {
+      key: 'calculationMethod',
+      header: 'Method',
+      renderCell: (_, r) => (
+        <ATMBadge color={r.calculationMethod === 'Inclusive' ? 'primary' : 'success'} size="sm" label={r.calculationMethod} />
+      ),
+    },
+    {
+      key: 'jurisdiction',
+      header: 'Jurisdiction',
+      renderCell: (_, r) => (
+        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{r.jurisdiction}</span>
+      ),
+    },
+    {
+      key: 'effectiveFromDate',
+      header: 'Effective',
+      renderCell: (_, r) => (
+        <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{r.effectiveFromDate}</span>
+      ),
+    },
+  ];
+
+  const defActions = (r: PlatformTaxDefinition): RowAction<PlatformTaxDefinition>[] => [
+    { label: 'Remove Tax', icon: Trash2, variant: 'danger', onClick: () => handleDelete(r.taxDefinitionId) },
+  ];
+
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <ATMCard title="New Tax" className="glass-card">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-2">
-          <ATMTextField
-            name="taxName"
-            label="Name"
-            placeholder="e.g. GST 18%"
-            value={form.taxName}
-            onChange={(e) => setForm({ ...form, taxName: e.target.value })}
-          />
-          <ATMTextField
-            name="taxCode"
-            label="Code"
-            placeholder="e.g. GST_18"
-            value={form.taxCode}
-            onChange={(e) => setForm({ ...form, taxCode: e.target.value })}
-          />
-          <ATMTextField
-            name="taxRate"
-            type="number"
-            label="Rate %"
-            placeholder="Rate %"
-            value={form.taxRate}
-            onChange={(e) => setForm({ ...form, taxRate: Number(e.target.value) })}
-          />
-          <ATMTextField
-            name="taxCategory"
-            label="Category"
-            placeholder="GST/VAT/Sales"
-            value={form.taxCategory}
-            onChange={(e) => setForm({ ...form, taxCategory: e.target.value })}
-          />
+      <ATMCard
+        className="glass-card"
+        header={
+          <div className="relative flex items-center gap-3">
+            <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+              <Percent size={18} strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">New Tax Definition</h3>
+              <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Add a tax slab — name, rate, jurisdiction &amp; calculation method</p>
+            </div>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-2">
+          <div className="lg:col-span-3 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <ATMTextField
+              name="taxName"
+              label="Name"
+              placeholder="e.g. GST 18%"
+              value={form.taxName}
+              error={errors.taxName}
+              onChange={(e) => setField('taxName', e.target.value)}
+            />
+            <ATMTextField
+              name="taxCode"
+              label="Code"
+              placeholder="e.g. GST_18"
+              value={form.taxCode}
+              error={errors.taxCode}
+              onChange={(e) => setField('taxCode', e.target.value)}
+            />
+            <ATMTextField
+              name="taxRate"
+              type="number"
+              label="Rate %"
+              placeholder="Rate %"
+              value={form.taxRate}
+              error={errors.taxRate}
+              onChange={(e) => setField('taxRate', Number(e.target.value))}
+            />
+            <ATMTextField
+              name="taxCategory"
+              label="Category"
+              placeholder="GST/VAT/Sales"
+              value={form.taxCategory}
+              error={errors.taxCategory}
+              onChange={(e) => setField('taxCategory', e.target.value)}
+            />
+          </div>
           <ATMSelectField
             name="jurisdiction"
             label="Jurisdiction"
             value={form.jurisdiction}
-            onChange={(val) => setForm({ ...form, jurisdiction: (val ? String(val) : 'Federal') as CreateTaxDefinitionInput['jurisdiction'] })}
+            onChange={(val) => setField('jurisdiction', (val ? String(val) : 'Federal') as CreateTaxDefinitionInput['jurisdiction'])}
             options={[
               { label: 'Federal', value: 'Federal' },
               { label: 'State', value: 'State' },
@@ -115,7 +231,7 @@ function DefinitionsTab() {
             name="calculationMethod"
             label="Calculation Method"
             value={form.calculationMethod}
-            onChange={(val) => setForm({ ...form, calculationMethod: (val ? String(val) : 'Exclusive') as CreateTaxDefinitionInput['calculationMethod'] })}
+            onChange={(val) => setField('calculationMethod', (val ? String(val) : 'Exclusive') as CreateTaxDefinitionInput['calculationMethod'])}
             options={[
               { label: 'Exclusive', value: 'Exclusive' },
               { label: 'Inclusive', value: 'Inclusive' },
@@ -137,48 +253,22 @@ function DefinitionsTab() {
         </div>
       </ATMCard>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          <ATMSkeleton className="h-10 w-full" />
-          <ATMSkeleton className="h-10 w-full" />
-          <ATMSkeleton className="h-10 w-full" />
-        </div>
-      ) : (
-        <ATMCard padding="none" className="glass-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-250 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-800/30 text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  <th className="px-4 py-3.5">Name</th>
-                  <th className="px-4 py-3.5">Code</th>
-                  <th className="px-4 py-3.5 text-right">Rate</th>
-                  <th className="px-4 py-3.5">Method</th>
-                  <th className="px-4 py-3.5">Jurisdiction</th>
-                  <th className="px-4 py-3.5 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-semibold">
-                {rows.map((r: PlatformTaxDefinition) => (
-                  <tr key={r.taxDefinitionId} className="transition-colors hover:bg-gray-55/40 dark:hover:bg-gray-800/10">
-                    <td className="px-4 py-3 text-gray-900 dark:text-white font-bold">{r.taxName}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{r.taxCode}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-900 dark:text-white font-bold">{r.taxRate}%</td>
-                    <td className="px-4 py-3">
-                      <ATMBadge color={r.calculationMethod === 'Inclusive' ? 'primary' : 'success'} size="sm" label={r.calculationMethod} />
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{r.jurisdiction}</td>
-                    <td className="px-4 py-3 text-right">
-                      <ATMButton variant="ghost" size="sm" onClick={() => handleDelete(r.taxDefinitionId)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </ATMButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="rounded-2xl border border-[var(--zen-border)] bg-white/80 dark:bg-[#13151a]/90 backdrop-blur-2xl overflow-hidden shadow-sm h-[440px]">
+        {isLoading ? (
+          <div className="space-y-3 p-6">
+            <ATMSkeleton className="h-12 w-full" />
+            <ATMSkeleton className="h-12 w-full" />
+            <ATMSkeleton className="h-12 w-full" />
           </div>
-        </ATMCard>
-      )}
+        ) : (
+          <ATMTable
+            data={rows}
+            columns={defColumns}
+            rowActions={defActions}
+            emptyMessage="No tax definitions yet."
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -192,8 +282,31 @@ function GroupsTab() {
   const [form, setForm] = useState<CreateTaxGroupInput>({
     groupName: '', groupCode: '', description: '', isDefault: false, taxDefinitionIds: [],
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const setField = (key: keyof CreateTaxGroupInput, value: unknown) => {
+    setForm((f) => ({ ...f, [key]: value }) as CreateTaxGroupInput);
+    setErrors((p) => {
+      if (!(key in p)) return p;
+      const next = { ...p };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const validateGroup = (): boolean => {
+    const next: Record<string, string> = {};
+    if (!form.groupName.trim()) next.groupName = 'Group name is required';
+    else if (form.groupName.trim().length < 2) next.groupName = 'Group name must be at least 2 characters';
+    if (!form.groupCode.trim()) next.groupCode = 'Group code is required';
+    else if (!/^[A-Za-z0-9_]+$/.test(form.groupCode.trim())) next.groupCode = 'Use letters, numbers or underscore only';
+    if (form.taxDefinitionIds.length === 0) next.taxDefinitionIds = 'Select at least one tax to include';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
   const handleCreate = async () => {
+    if (!validateGroup()) return;
     try {
       await createGroup(form).unwrap();
       toast.success('Group created');
@@ -214,23 +327,105 @@ function GroupsTab() {
   const groups = groupsData?.data ?? [];
   const defs = defsData?.data ?? [];
 
+  const groupColumns: ATMTableColumn<PlatformTaxGroup>[] = [
+    {
+      key: 'groupName',
+      header: 'Name',
+      renderCell: (_, g) => (
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-sm shrink-0">
+            <Layers size={14} strokeWidth={2.5} />
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-slate-900 dark:text-white text-sm truncate">{g.groupName}</span>
+            {g.description && (
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">{g.description}</span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'groupCode',
+      header: 'Code',
+      renderCell: (_, g) => (
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-lg px-2 py-1">
+          <Tag size={11} className="text-slate-400" />
+          {g.groupCode}
+        </span>
+      ),
+    },
+    {
+      key: 'taxes',
+      header: 'Taxes',
+      renderCell: (_, g) => (
+        <div className="flex flex-wrap gap-1 max-w-xs">
+          {g.taxes.map((t: PlatformTaxDefinition) => (
+            <span
+              key={t.taxDefinitionId}
+              className="inline-flex items-center gap-1 rounded-md bg-accent-50 dark:bg-accent-900/20 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-accent-100/60 dark:border-accent-900/40"
+            >
+              {t.taxName}
+              <span className="text-accent-500 dark:text-accent-400">{t.taxRate}%</span>
+            </span>
+          ))}
+          {g.taxes.length === 0 && (
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">—</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'isDefault',
+      header: 'Default',
+      renderCell: (_, g) =>
+        g.isDefault ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+            <Check size={11} strokeWidth={3} /> Default
+          </span>
+        ) : (
+          <span className="text-[11px] font-semibold text-slate-300 dark:text-slate-600">—</span>
+        ),
+    },
+  ];
+
+  const groupActions = (g: PlatformTaxGroup): RowAction<PlatformTaxGroup>[] => [
+    { label: 'Remove Group', icon: Trash2, variant: 'danger', onClick: () => handleDelete(g.taxGroupId) },
+  ];
+
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <ATMCard title="New Tax Group" className="glass-card">
+      <ATMCard
+        className="glass-card"
+        header={
+          <div className="relative flex items-center gap-3">
+            <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+              <Layers size={18} strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">New Tax Group</h3>
+              <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Bundle one or more taxes into a reusable group</p>
+            </div>
+          </div>
+        }
+      >
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 pt-2">
           <ATMTextField
             name="groupName"
             label="Group Name"
             placeholder="Group name"
             value={form.groupName}
-            onChange={(e) => setForm({ ...form, groupName: e.target.value })}
+            error={errors.groupName}
+            onChange={(e) => setField('groupName', e.target.value)}
           />
           <ATMTextField
             name="groupCode"
             label="Group Code"
             placeholder="Code"
             value={form.groupCode}
-            onChange={(e) => setForm({ ...form, groupCode: e.target.value })}
+            error={errors.groupCode}
+            onChange={(e) => setField('groupCode', e.target.value)}
           />
           <div className="sm:col-span-2">
             <ATMTextField
@@ -238,14 +433,17 @@ function GroupsTab() {
               label="Description"
               placeholder="Description"
               value={form.description ?? ''}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => setField('description', e.target.value)}
             />
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-bold text-gray-550 dark:text-gray-400">Include Taxes</label>
-            <div className="mt-1.5 max-h-32 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50/20 p-3 text-sm dark:border-gray-800 dark:bg-gray-900/10 flex flex-col gap-2 font-semibold">
+            <div className={`mt-1.5 max-h-32 overflow-y-auto rounded-xl border p-2 text-sm flex flex-col gap-0.5 font-semibold ${errors.taxDefinitionIds ? 'border-red-300 dark:border-red-900/60 bg-red-50/30 dark:bg-red-950/10' : 'border-[var(--zen-border)] bg-slate-50/40 dark:bg-slate-950/20'}`}>
+              {defs.length === 0 && (
+                <p className="px-2.5 py-2 text-xs text-slate-400 dark:text-slate-500">No tax definitions yet — add one in the Definitions tab first.</p>
+              )}
               {defs.map((d: PlatformTaxDefinition) => (
-                <label key={d.taxDefinitionId} className="flex items-center gap-2.5 cursor-pointer">
+                <label key={d.taxDefinitionId} className="flex items-center gap-2.5 cursor-pointer rounded-lg px-2.5 py-2 hover:bg-white dark:hover:bg-slate-800/60 transition-colors">
                   <ATMCheckbox
                     name={d.taxDefinitionId}
                     checked={form.taxDefinitionIds.includes(d.taxDefinitionId)}
@@ -254,14 +452,19 @@ function GroupsTab() {
                         ? [...form.taxDefinitionIds, d.taxDefinitionId]
                         : form.taxDefinitionIds.filter((id) => id !== d.taxDefinitionId);
                       setForm({ ...form, taxDefinitionIds: next });
+                      setErrors((p) => { const n = { ...p }; delete n.taxDefinitionIds; return n; });
                     }}
                   />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {d.taxName} ({d.taxRate}% {d.calculationMethod})
+                  <span className="text-gray-700 dark:text-gray-300">{d.taxName}</span>
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-accent-50 dark:bg-accent-900/20 px-1.5 py-0.5 text-[10px] font-bold text-accent-500 dark:text-accent-400 tabular-nums">
+                    <Percent size={10} strokeWidth={2.5} /> {d.taxRate}% · {d.calculationMethod}
                   </span>
                 </label>
               ))}
             </div>
+            {errors.taxDefinitionIds && (
+              <p className="mt-1 text-[10px] font-black uppercase tracking-tight text-red-500 dark:text-red-400">{errors.taxDefinitionIds}</p>
+            )}
           </div>
           <div className="flex items-end pb-3">
             <ATMCheckbox
@@ -279,45 +482,21 @@ function GroupsTab() {
         </div>
       </ATMCard>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          <ATMSkeleton className="h-10 w-full" />
-          <ATMSkeleton className="h-10 w-full" />
-        </div>
-      ) : (
-        <ATMCard padding="none" className="glass-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-250 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-800/30 text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  <th className="px-4 py-3.5">Name</th>
-                  <th className="px-4 py-3.5">Code</th>
-                  <th className="px-4 py-3.5">Taxes</th>
-                  <th className="px-4 py-3.5">Default</th>
-                  <th className="px-4 py-3.5 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-semibold">
-                {groups.map((g: PlatformTaxGroup) => (
-                  <tr key={g.taxGroupId} className="transition-colors hover:bg-gray-55/40 dark:hover:bg-gray-800/10">
-                    <td className="px-4 py-3 text-gray-900 dark:text-white font-bold">{g.groupName}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{g.groupCode}</td>
-                    <td className="px-4 py-3 text-xs text-gray-650 dark:text-gray-400">{g.taxes.map(t => `${t.taxName} (${t.taxRate}%)`).join(', ')}</td>
-                    <td className="px-4 py-3">
-                      {g.isDefault && <ATMBadge color="primary" size="sm" label="Default" />}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <ATMButton variant="ghost" size="sm" onClick={() => handleDelete(g.taxGroupId)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </ATMButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="rounded-2xl border border-[var(--zen-border)] bg-white/80 dark:bg-[#13151a]/90 backdrop-blur-2xl overflow-hidden shadow-sm h-[440px]">
+        {isLoading ? (
+          <div className="space-y-3 p-6">
+            <ATMSkeleton className="h-12 w-full" />
+            <ATMSkeleton className="h-12 w-full" />
           </div>
-        </ATMCard>
-      )}
+        ) : (
+          <ATMTable
+            data={groups}
+            columns={groupColumns}
+            rowActions={groupActions}
+            emptyMessage="No tax groups yet."
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -330,11 +509,18 @@ function GroupsTab() {
  * Merchant-specific tax (exemption certificates) is a FUTURE concept — the backend keeps
  * merchant/plan targeting for it, but this screen deliberately does not expose it.
  */
-const SALE_NATURES: ReadonlyArray<{ scope: 'Subscription' | 'Commission' | 'LicenseTokenSale' | 'ServiceTokenRecharge'; label: string; hint: string }> = [
-  { scope: 'Subscription', label: 'Daily Subscription', hint: 'Daily plan charge billed to Enterprise merchants (taxed on the periodic invoice under the Settlement tax point)' },
-  { scope: 'Commission', label: 'Commission', hint: 'Commission on Enterprise merchant billing revenue (taxed on the periodic invoice under the Settlement tax point)' },
-  { scope: 'LicenseTokenSale', label: 'License Token Sale', hint: 'Outright license token sales to Standalone merchants — always taxed at purchase' },
-  { scope: 'ServiceTokenRecharge', label: 'Service Token Recharge', hint: 'Enterprise wallet recharges — taxed only when the Enterprise tax point (Billing Cycle screen) is set to Recharge' },
+const SALE_NATURES: ReadonlyArray<{
+  scope: 'Subscription' | 'Commission' | 'LicenseTokenSale' | 'ServiceTokenRecharge';
+  label: string;
+  hint: string;
+  icon: typeof CalendarDays;
+  gradient: string;
+  shadow: string;
+}> = [
+  { scope: 'Subscription', label: 'Daily Subscription', hint: 'Daily plan charge billed to Enterprise merchants (taxed on the periodic invoice under the Settlement tax point)', icon: CalendarDays, gradient: 'from-primary-600 to-primary-400', shadow: 'shadow-primary-500/20' },
+  { scope: 'Commission', label: 'Commission', hint: 'Commission on Enterprise merchant billing revenue (taxed on the periodic invoice under the Settlement tax point)', icon: Percent, gradient: 'from-primary-600 to-primary-400', shadow: 'shadow-primary-500/20' },
+  { scope: 'LicenseTokenSale', label: 'License Token Sale', hint: 'Outright license token sales to Standalone merchants — always taxed at purchase', icon: KeyRound, gradient: 'from-primary-600 to-primary-400', shadow: 'shadow-primary-500/20' },
+  { scope: 'ServiceTokenRecharge', label: 'Service Token Recharge', hint: 'Enterprise wallet recharges — taxed only when the Enterprise tax point (Billing Cycle screen) is set to Recharge', icon: Wallet, gradient: 'from-primary-600 to-primary-400', shadow: 'shadow-primary-500/20' },
 ];
 
 function AssociationsTab() {
@@ -396,8 +582,12 @@ function AssociationsTab() {
   return (
     <div className="flex flex-col gap-6 pt-2">
       {/* Inherited default */}
-      <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
-        <div className="text-sm text-blue-800 dark:text-blue-300 font-semibold">
+      <div className="relative overflow-hidden flex items-start gap-3.5 rounded-2xl border border-[var(--zen-border)] bg-primary-50/60 p-4 dark:bg-primary-900/20">
+        <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-primary-500/10 blur-2xl" />
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0 relative">
+          <Link2 size={18} strokeWidth={2.2} />
+        </div>
+        <div className="text-sm text-slate-700 dark:text-slate-300 font-semibold min-w-0 relative">
           <p className="font-black">
             All-sales default: {allAssoc ? groupName(allAssoc.taxGroupId) : 'not configured'}
           </p>
@@ -408,27 +598,46 @@ function AssociationsTab() {
         </div>
       </div>
 
-      <ATMCard title="Tax group per sale nature" className="glass-card">
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {SALE_NATURES.map(({ scope, label, hint }) => {
+      <ATMCard
+        className="glass-card"
+        header={
+          <div className="relative flex items-center gap-3">
+            <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+              <Layers size={18} strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Tax group per sale nature</h3>
+              <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Map each revenue type to the tax group that applies to it</p>
+            </div>
+          </div>
+        }
+      >
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          {SALE_NATURES.map(({ scope, label, hint, icon: Icon, gradient, shadow }) => {
             const exact = exactFor(scope);
             const effective = effectiveGroupId(scope);
             const selected = pending[scope] ?? effective;
             const dirty = selected !== effective;
             return (
-              <div key={scope} className="flex flex-col sm:flex-row sm:items-center gap-3 py-4 first:pt-2 last:pb-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-gray-900 dark:text-white">{label}</span>
-                    <ATMBadge
-                      size="sm"
-                      color={exact ? 'primary' : 'default'}
-                      label={exact ? 'Specific' : 'Inherits default'}
-                    />
+              <div key={scope} className="flex flex-col lg:flex-row lg:items-center gap-3.5 py-4 first:pt-2 last:pb-2">
+                <div className="flex-1 min-w-0 flex items-start gap-3">
+                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-md ${shadow} shrink-0`}>
+                    <Icon size={17} strokeWidth={2.2} />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{hint}</p>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-black text-gray-900 dark:text-white">{label}</span>
+                      <ATMBadge
+                        size="sm"
+                        color={exact ? 'primary' : 'default'}
+                        label={exact ? 'Specific' : 'Inherits default'}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{hint}</p>
+                  </div>
                 </div>
-                <div className="w-full sm:w-64">
+                <div className="w-full lg:w-64 shrink-0">
                   <ATMSelectField
                     name={`assoc-${scope}`}
                     label=""
@@ -440,6 +649,7 @@ function AssociationsTab() {
                 <ATMButton
                   variant="primary"
                   size="sm"
+                  className="shrink-0"
                   disabled={!dirty || savingScope === scope}
                   isLoading={savingScope === scope}
                   onClick={() => handleSave(scope, label)}
@@ -461,13 +671,18 @@ function AssociationsTab() {
 
 export function TaxConfigPage() {
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
-      <div>
-        {/* 2026-08-08: page titles match the sidebar label (user rule — applies everywhere). */}
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Tax Settings</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-          Define taxes, group them, and map each sale nature — daily subscription, commission, token purchase — to a tax group.
-        </p>
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
+          <Percent size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          {/* 2026-08-08: page titles match the sidebar label (user rule — applies everywhere). */}
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Tax Settings</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
+            Define taxes, group them, and map each sale nature — daily subscription, commission, token purchase — to a tax group.
+          </p>
+        </div>
       </div>
 
       <ATMTabs

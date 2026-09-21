@@ -101,60 +101,57 @@ export const UserListWrapper: React.FC = () => {
   }, [params]);
 
   return (
-    <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
+    <div className="flex flex-col gap-6 w-full">
       {/* Page Header and Stats Cards */}
-      <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
-        <ATMPageHeader
-          title="Platform Users"
-          subtitle="Manage admin portal user accounts and permissions. Separate from merchant users."
-          icon={UsersIcon}
-          action={
-            canCreate
-              ? {
-                  label: 'Create User',
-                  onClick: () => navigate('/users/create'),
-                }
-              : undefined
-          }
-        />
+      <ATMPageHeader
+        title="Platform Users"
+        subtitle="Manage admin portal user accounts and permissions. Separate from merchant users."
+        icon={UsersIcon}
+        action={
+          canCreate
+            ? {
+                label: 'Create User',
+                onClick: () => navigate('/users/create'),
+              }
+            : undefined
+        }
+      />
 
-        {/* Stats Grid */}
-        {(() => {
-          const safeUsers = Array.isArray(users) ? users : [];
-          return (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-              <ATMStatsCard
-                label="Total Users"
-                value={totalCount}
-                icon={UsersIcon}
-                variant="accent"
-              />
-              <ATMStatsCard
-                label="Active Users"
-                value={safeUsers.filter((u) => u.status === 'Active').length}
-                icon={UserCheck}
-                variant="emerald"
-              />
-              <ATMStatsCard
-                label="Locked Accounts"
-                value={safeUsers.filter((u) => u.status === 'Locked').length}
-                icon={ShieldAlert}
-                variant="rose"
-              />
-              <ATMStatsCard
-                label="Operators"
-                value={safeUsers.filter((u) => u.role === 'Operator').length}
-                icon={Shield}
-                variant="purple"
-              />
-            </div>
-          );
-        })()}
-      </div>
+      {/* Stats Grid */}
+      {(() => {
+        const safeUsers = Array.isArray(users) ? users : [];
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <ATMStatsCard
+              label="Total Users"
+              value={totalCount}
+              icon={UsersIcon}
+              variant="accent"
+            />
+            <ATMStatsCard
+              label="Active Users"
+              value={safeUsers.filter((u) => u.status === 'Active').length}
+              icon={UserCheck}
+              variant="emerald"
+            />
+            <ATMStatsCard
+              label="Locked Accounts"
+              value={safeUsers.filter((u) => u.status === 'Locked').length}
+              icon={ShieldAlert}
+              variant="rose"
+            />
+            <ATMStatsCard
+              label="Operators"
+              value={safeUsers.filter((u) => u.role === 'Operator').length}
+              icon={Shield}
+              variant="purple"
+            />
+          </div>
+        );
+      })()}
 
       {/* Main Table view container */}
-      <div className="flex-1 overflow-hidden w-full bg-slate-50/10 dark:bg-gray-900/10">
-        <UserList
+      <UserList
           data={users}
           isLoading={isLoading}
           isFetching={isFetching}
@@ -178,7 +175,6 @@ export const UserListWrapper: React.FC = () => {
           onFilterChange={onFilterChange}
           onResetFilters={onResetFilters}
         />
-      </div>
 
       {/* Deactivation confirmation dialog */}
       <ATMConfirmModal

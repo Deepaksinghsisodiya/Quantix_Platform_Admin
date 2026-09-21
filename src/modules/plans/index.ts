@@ -12,6 +12,7 @@ export * from './services/usePlans';
 
 // Components & UI Presenters
 export * from './components/PlanCard';
+export * from './components/PlanCardSkeleton';
 export * from './components/PlanStatsSummary';
 export * from './Form/PlanForm';
 export * from './Detail/PlanDetailModal';

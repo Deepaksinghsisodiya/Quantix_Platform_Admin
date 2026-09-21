@@ -8,13 +8,16 @@
  * trail); other methods record evidence with an optional reference.
  */
 import React from 'react';
-import { AlertTriangle, Coins } from 'lucide-react';
+import { AlertTriangle, CreditCard, ReceiptText } from 'lucide-react';
 
-import { ATMCard, ATMButton, ATMBadge, ATMTextField } from '@/shared/ui';
+import { ATMButton, ATMTextField, ATMCheckbox } from '@/shared/ui';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMFieldCell, ATMFormGrid } from '@/shared/components/form';
 import { cn } from '@/lib/utils/cn';
 import type { PlatformPaymentMethod } from '@/modules/settings/services/settingsApi';
 import type { CardChargeResult } from '../services/tokenApi';
 import { CardChargePanel } from '@/shared/components/payments/CardChargePanel';
+import { TokenWizardSection } from './TokenWizardCard';
 
 export interface PaymentStepProps {
   enabledMethods: PlatformPaymentMethod[];
@@ -50,10 +53,13 @@ export interface PaymentStepProps {
 }
 
 export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
-  <>
-    <ATMCard title="Payment Method" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+  <div className="space-y-7">
+    <TokenWizardSection
+      title={<>Payment Method <CreditCard size={12} className="text-slate-400" /></>}
+      description="Choose how the payment was collected — the method catalog comes from System Setup."
+    >
       {p.methodsLoading ? (
-        <p className="py-4 text-sm font-semibold text-gray-400">Loading payment methods…</p>
+        <ATMSkeleton variant="text" count={3} className="h-12 w-full" />
       ) : p.enabledMethods.length === 0 ? (
         <div className="flex items-start gap-2 py-2">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
@@ -68,11 +74,12 @@ export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
               key={m.methodType}
               type="button"
               onClick={() => p.onSelectMethod(m.methodType)}
+              aria-pressed={p.paymentMethod === m.methodType}
               className={cn(
                 'rounded-xl border px-4 py-3 text-sm font-bold transition-colors text-left',
                 p.paymentMethod === m.methodType
                   ? 'border-accent-500 bg-accent-50/60 text-accent-700 dark:bg-accent-950/30 dark:text-accent-300'
-                  : 'border-gray-150 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300',
+                  : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300',
               )}
             >
               {m.displayName}
@@ -86,7 +93,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
           ))}
         </div>
       )}
-    </ATMCard>
+    </TokenWizardSection>
 
     {p.paymentMethod === 'Card' && (
       // 2026-08-30: extracted to the shared CardChargePanel — the onboarding wizard
@@ -112,33 +119,39 @@ export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
     )}
 
     {p.paymentMethod && p.paymentMethod !== 'Card' && (
-      <ATMCard title="Payment Evidence" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="space-y-4">
-          {p.paymentMethod === 'External' && (
-            <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-              External — the payment was collected outside the platform (bank transfer,
-              outside settlement, unlinked card…). Record the reference: it is the
-              accounting trail linking this collection to you.
-            </p>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <ATMTextField
-              name="amountReceived"
-              label={p.currency ? `Amount Received (${p.currency})` : 'Amount Received'}
-              type="number"
-              value={p.amountReceived}
-              onChange={(e) => p.onAmountReceivedChange(e.target.value)}
-              error={!p.amountValid && p.amountReceived !== '' ? `At least the total price (${p.expectedPrice?.toFixed(2)})` : undefined}
-            />
-            <ATMTextField
-              name="paymentReference"
+      <TokenWizardSection
+        title={<>Payment Evidence <ReceiptText size={12} className="text-slate-400" /></>}
+        description={
+          p.paymentMethod === 'External'
+            ? 'External — the payment was collected outside the platform (bank transfer, outside settlement, unlinked card…). Record the reference: it is the accounting trail linking this collection to you.'
+            : 'Record the collected amount and any supporting reference for the ledger.'
+        }
+        className="border-t border-slate-100 dark:border-slate-800 pt-6"
+      >
+        <div className="space-y-5">
+          <ATMFormGrid>
+            <ATMFieldCell label={p.currency ? `Amount Received (${p.currency})` : 'Amount Received'}>
+              <ATMTextField
+                name="amountReceived"
+                type="number"
+                value={p.amountReceived}
+                onChange={(e) => p.onAmountReceivedChange(e.target.value)}
+                error={!p.amountValid && p.amountReceived !== '' ? `At least the total price (${p.expectedPrice?.toFixed(2)})` : undefined}
+              />
+            </ATMFieldCell>
+            <ATMFieldCell
               label={p.paymentMethod === 'External' ? 'Payment Reference (required)' : 'Payment Reference (optional)'}
-              placeholder={p.paymentMethod === 'External' ? 'Bank/settlement/transaction reference…' : 'Wire ref, cheque no, receipt no…'}
-              value={p.paymentReference}
-              onChange={(e) => p.onPaymentReferenceChange(e.target.value)}
               error={p.paymentMethod === 'External' && !p.paymentReference.trim() ? 'Required for accounting' : undefined}
-            />
-          </div>
+              required={p.paymentMethod === 'External'}
+            >
+              <ATMTextField
+                name="paymentReference"
+                placeholder={p.paymentMethod === 'External' ? 'Bank/settlement/transaction reference…' : 'Wire ref, cheque no, receipt no…'}
+                value={p.paymentReference}
+                onChange={(e) => p.onPaymentReferenceChange(e.target.value)}
+              />
+            </ATMFieldCell>
+          </ATMFormGrid>
           <ATMTextField
             name="note"
             label="Note (optional)"
@@ -146,21 +159,17 @@ export const PaymentStep: React.FC<PaymentStepProps> = (p) => (
             value={p.note}
             onChange={(e) => p.onNoteChange(e.target.value)}
           />
-          <label className="flex items-center gap-2 cursor-pointer border-t border-gray-100 dark:border-gray-800 pt-4">
-            <input
-              type="checkbox"
-              checked={p.paymentConfirmed}
-              onChange={(e) => p.onPaymentConfirmedChange(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              Payment received in full
-            </span>
-          </label>
+          <ATMCheckbox
+            name="paymentConfirmed"
+            label="Payment received in full"
+            checked={p.paymentConfirmed}
+            onChange={p.onPaymentConfirmedChange}
+            className="border-t border-[var(--zen-border)] pt-4"
+          />
         </div>
-      </ATMCard>
+      </TokenWizardSection>
     )}
-  </>
+  </div>
 );
 
 export default PaymentStep;

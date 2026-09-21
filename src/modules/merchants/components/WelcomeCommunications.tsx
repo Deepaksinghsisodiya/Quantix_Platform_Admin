@@ -121,7 +121,7 @@ export function WelcomeCommunications({ merchantId }: WelcomeCommunicationsProps
           <div className="text-xs flex items-center gap-2 flex-wrap font-semibold text-gray-600 dark:text-gray-300">
             <span className="font-bold text-gray-900 dark:text-white">{contactName || '—'}</span>
             <span className="text-gray-400 dark:text-gray-600">&middot;</span>
-            <span className="font-mono text-gray-550 dark:text-gray-400">
+            <span className="font-mono text-gray-500 dark:text-gray-400">
               {contactEmail || 'no contact email on file'}
             </span>
           </div>
@@ -143,7 +143,7 @@ export function WelcomeCommunications({ merchantId }: WelcomeCommunicationsProps
                   className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-zen-surface px-4 py-3 dark:border-gray-800/80 shadow-sm transition-all duration-200 hover:border-gray-200 dark:hover:border-gray-700"
                 >
                   <div className="flex items-start gap-3 min-w-0">
-                    <StatusIcon className={cn('mt-0.5 h-4.5 w-4.5 shrink-0', meta.className)} />
+                    <StatusIcon className={cn('mt-0.5 h-4 w-4 shrink-0', meta.className)} />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{comm.title}</p>
                       <p className="mt-0.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500">

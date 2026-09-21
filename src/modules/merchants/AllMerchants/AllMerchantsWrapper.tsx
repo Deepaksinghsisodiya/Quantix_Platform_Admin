@@ -7,6 +7,7 @@ import AllMerchantsPage from './AllMerchantsPage';
 import { ROUTES } from '@/lib/config/routes';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
+import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMAvatar } from '@/shared/ui/ATMAvatar';
@@ -128,14 +129,14 @@ export const AllMerchantsWrapper: React.FC = () => {
                   />
                 </div>
                 {isActive && (
-                  <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-emerald-500 border-2 border-white dark:border-gray-950 rounded-full shadow-sm" />
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-emerald-500 border-2 border-white dark:border-gray-950 rounded-full shadow-sm" />
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
+                <p className="truncate max-w-[220px] text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors" title={bizName}>
                   {bizName}
                 </p>
-                <p className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none">
+                <p className="truncate max-w-[220px] text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none" title={email}>
                   {email}
                 </p>
               </div>
@@ -237,7 +238,7 @@ export const AllMerchantsWrapper: React.FC = () => {
   }, [params]);
 
   return (
-    <div className="flex flex-col space-y-5 w-full">
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
       {/* Page header and Stats Cards */}
       <div className="flex-shrink-0">
         <ATMPageHeader
@@ -281,7 +282,7 @@ export const AllMerchantsWrapper: React.FC = () => {
       </div>
 
       {/* Main Table view container */}
-      <div className="flex-1 overflow-hidden w-full bg-slate-50/10 dark:bg-gray-900/10">
+      <ATMCard padding="none" className="overflow-hidden rounded-2xl">
         <AllMerchantsPage
           data={merchants as Merchant[]}
           isLoading={isLoading}
@@ -316,8 +317,7 @@ export const AllMerchantsWrapper: React.FC = () => {
                   creation belongs to the Signup Queue. */}
             </>
           }
-        />
-      </div>
+        />      </ATMCard>
     </div>
   );
 };

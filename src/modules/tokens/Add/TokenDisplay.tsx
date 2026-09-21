@@ -38,11 +38,11 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-955',
+        'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/40 dark:border-gray-800 dark:bg-[#13151a]',
         className,
       )}
     >
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+      <div className="flex items-center justify-between border-b border-[var(--zen-border)] px-5 py-4">
         <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Generated Token</h3>
         <TokenStatusBadge status={token.status} />
       </div>
@@ -50,7 +50,7 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
       <div className="p-5">
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex shrink-0 flex-col items-center gap-3">
-            <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-white shadow-md">
+            <div className="rounded-2xl border border-[var(--zen-border)] bg-white p-4 dark:bg-white shadow-md">
               <QRCodeSVG value={token.encodedToken} size={160} level="H" includeMargin={false} />
             </div>
             <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
@@ -66,8 +66,8 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
               <div className="flex items-center gap-3">
                 <code
                   className={cn(
-                    'flex-1 overflow-x-auto rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3 font-bold',
-                    'font-mono text-xs text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 shadow-inner',
+                    'flex-1 overflow-x-auto rounded-xl border border-[var(--zen-border)] bg-gray-50/50 px-4 py-3 font-bold',
+                    'font-mono text-xs text-gray-900 dark:bg-gray-900 dark:text-gray-100 shadow-inner',
                     'select-all break-all',
                   )}
                 >
@@ -83,7 +83,7 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+            <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                   Token ID
@@ -132,7 +132,7 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
 
         {/* 2026-08-29 (user-locked): the complete token in human-readable form — every
             limit count, enabled features and grace phases the merchant is getting. */}
-        <div className="mt-6 border-t border-gray-100 pt-5 dark:border-gray-800">
+        <div className="mt-6 border-t border-[var(--zen-border)] pt-5">
           <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">What this token grants</h3>
           <TokenBreakdown
             limitsPayload={token.limitsPayload}
@@ -141,7 +141,7 @@ export function TokenDisplay({ token, className }: TokenDisplayProps) {
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--zen-border)] pt-4">
           <ATMButton variant="secondary" size="sm" icon={Copy} onClick={handleCopy}>
             Copy to Clipboard
           </ATMButton>

@@ -18,9 +18,12 @@ const AppShell: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen premium-mesh-bg flex flex-col transition-colors duration-300"
+      className="min-h-screen premium-mesh-bg flex flex-col transition-colors duration-300 relative overflow-hidden"
       data-sidebar-collapsed={isCollapsed}
     >
+      {/* Ambient subtle grid pattern overlay */}
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-30 dark:opacity-20 z-0" />
+
       {/* Global Logic Components */}
       {/* <TimerTicker /> */}
       <CommandPalette />
@@ -32,7 +35,7 @@ const AppShell: React.FC = () => {
         onCollapseToggle={() => setIsCollapsed(!isCollapsed)}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 relative z-10">
         {/* Fixed Sidebar */}
         <SidebarWrapper
           mobileOpen={mobileOpen}
@@ -52,17 +55,11 @@ const AppShell: React.FC = () => {
           {!user?.isPasswordChanged && <PasswordWarningBanner />}
 
           <div
-            className="flex-1 flex flex-col overflow-y-auto relative z-10"
-            style={{
-              paddingTop: 'var(--page-padding-y, 1.25rem)',
-              paddingLeft: 'var(--page-padding-x, 1.5rem)',
-              paddingRight: 'var(--page-padding-x, 1.5rem)',
-              paddingBottom: 'var(--page-padding-bottom, 2rem)',
-            }}
+            className="flex-1 flex flex-col overflow-y-auto relative z-10 custom-scrollbar px-4 py-4 lg:px-6 lg:py-6"
           >
             <Suspense fallback={
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-600/20 overflow-hidden z-[100]">
-                <div className="h-full bg-accent-600 animate-[loading_1.5s_infinite_ease-in-out]" style={{ width: '30%' }}></div>
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-600/20 overflow-hidden z-[100]">
+                <div className="h-full bg-gradient-to-r from-blue-600 to-sky-400 animate-[loading_1.5s_infinite_ease-in-out]" style={{ width: '30%' }}></div>
                 <style>{`
                   @keyframes loading {
                     0% { transform: translateX(-100%); width: 30%; }

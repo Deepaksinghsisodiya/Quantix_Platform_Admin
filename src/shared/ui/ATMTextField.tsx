@@ -42,14 +42,14 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
     const containerSizeClasses = {
       sm: 'rounded-lg',
-      md: 'rounded-lg',
-      lg: 'rounded-lg',
+      md: 'rounded-xl',
+      lg: 'rounded-xl',
     };
 
     return (
-      <div className={clsx('flex flex-col gap-2', className)}>
+      <div className={clsx('flex flex-col gap-1.5', className)}>
         {label && (
-          <label className="text-[13px] font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1 px-0.5">
+          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1 px-0.5">
             {label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
           </label>
@@ -57,17 +57,17 @@ export const ATMTextField = React.forwardRef<HTMLInputElement, ATMTextFieldProps
 
         <div
           className={clsx(
-            'relative flex items-center w-full transition-all duration-200 border group shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)]',
+            'relative flex items-center w-full transition-all duration-200 border group shadow-2xs',
             containerSizeClasses[size],
             disabled
-              ? 'border-[var(--zen-border)] bg-gray-50/50 dark:bg-zinc-950/10 opacity-60 cursor-not-allowed'
+              ? 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 opacity-60 cursor-not-allowed'
               : error
-                ? 'border-red-500 bg-red-50/10'
-                : 'hover:border-slate-400 dark:hover:border-slate-600 focus-within:border-primary-500 focus-within:bg-white dark:focus-within:border-primary-400 dark:focus-within:bg-zinc-950/70 focus-within:ring-4 focus-within:ring-primary-500/10 dark:focus-within:ring-primary-400/10 border-[var(--zen-border)] bg-[var(--zen-surface)] dark:bg-zinc-950/50'
+                ? 'border-red-500 bg-red-50/10 focus-within:ring-4 focus-within:ring-red-500/10'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-primary-500 focus-within:bg-white dark:focus-within:border-primary-400 dark:focus-within:bg-slate-900 focus-within:ring-4 focus-within:ring-primary-500/10 dark:focus-within:ring-primary-400/20'
           )}
         >
           {effectivePrefix && (
-            <div className="pl-4 pr-1 flex items-center justify-center text-gray-400 transition-colors group-focus-within:text-accent-600">
+            <div className="pl-3.5 pr-1 flex items-center justify-center text-zinc-400 transition-colors group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400">
               {effectivePrefix}
             </div>
           )}

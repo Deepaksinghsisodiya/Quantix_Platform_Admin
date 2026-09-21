@@ -5,6 +5,7 @@ import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { RateCard } from '../types/rateCard.types';
+import { cn } from '@/lib/utils/cn';
 import { Layers, Coins, Activity, Terminal } from 'lucide-react';
 import {
   MODULES_INFO,
@@ -63,6 +64,79 @@ const validationSchema = Yup.object().shape({
   MWE: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative').required('Required'),
   MBR: Yup.number().typeError('Must be a number').min(0, 'Cannot be negative').required('Required'),
 });
+
+type SectionColor = 'amber' | 'indigo' | 'emerald';
+
+const sectionChip: Record<SectionColor, string> = {
+  amber: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-100/40 dark:border-amber-900/10',
+  indigo: 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/40 dark:border-indigo-900/10',
+  emerald: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/40 dark:border-emerald-900/10',
+};
+
+/** Section header — colored icon chip + title + item count + divider. */
+function SectionHeader({
+  icon: Icon,
+  title,
+  count,
+  color,
+}: {
+  icon: React.ComponentType<any>;
+  title: string;
+  count: number;
+  color: SectionColor;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 pt-1">
+      <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border', sectionChip[color])}>
+        <Icon size={16} className="stroke-[2.2]" />
+      </span>
+      <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{title}</h4>
+      <span className={cn('px-1.5 py-0.5 rounded-md text-[9px] font-black', sectionChip[color])}>{count}</span>
+      <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+    </div>
+  );
+}
+
+/** Price cell — code badge + feature name + compact $-prefixed day-rate input. */
+function PriceItemCell({
+  code,
+  name,
+  unit,
+  value,
+  onChange,
+  chipColor,
+}: {
+  code: string;
+  name: string;
+  unit: string;
+  value: any;
+  onChange: any;
+  chipColor: SectionColor;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-zinc-900/30 p-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className={cn('font-mono text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-md uppercase', sectionChip[chipColor])}>
+          {code}
+        </span>
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 shrink-0">{unit}</span>
+      </div>
+      <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate mb-2" title={name}>
+        {name}
+      </p>
+      <ATMTextField
+        name={code}
+        type="number"
+        size="sm"
+        prefix={<span className="text-[11px] font-bold text-slate-400">$</span>}
+        placeholder="0.00"
+        value={value}
+        onChange={onChange}
+        required
+      />
+    </div>
+  );
+}
 
 export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
   isOpen,
@@ -124,9 +198,10 @@ export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Edit Feature Rate Cards"
+      subtitle="Daily baseline rates per unit — applied to tokens issued from the default rate card."
       size="3xl"
       footer={
-        <div className="flex items-center justify-end gap-3 w-full border-t border-[var(--zen-border)] pt-4">
+        <div className="flex items-center justify-end gap-3 w-full">
           <ATMButton onClick={onClose} variant="outline" size="sm" className="h-9 rounded-lg">
             Cancel
           </ATMButton>
@@ -135,7 +210,7 @@ export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
             onClick={() => formik.handleSubmit()}
             variant="primary"
             size="sm"
-            className="h-9 rounded-lg bg-indigo-650 hover:bg-indigo-700 text-white font-semibold"
+            className="h-9 rounded-lg"
           >
             Save Changes
           </ATMButton>
@@ -143,24 +218,21 @@ export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
       }
     >
       <FormikProvider value={formik}>
-        <form onSubmit={formik.handleSubmit} className="space-y-6 max-h-[500px] overflow-y-auto pr-1">
+        <form onSubmit={formik.handleSubmit} className="space-y-7">
 
           {/* 1. Capacity & Limits */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 border-b border-[var(--zen-border)] pb-1.5">
-              <Terminal className="h-4.5 w-4.5 text-amber-500" />
-              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">Capacity & Limits Rates</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+            <SectionHeader icon={Terminal} title="Capacity & Limits Rates" count={LIMITS_INFO.length} color="amber" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {LIMITS_INFO.map(({ key, name, unit }) => (
-                <ATMTextField
+                <PriceItemCell
                   key={key}
-                  name={key}
-                  label={`${key} - ${name} ($${unit || '/unit'})`}
-                  type="number"
+                  code={key}
+                  name={name}
+                  unit={unit || '/unit'}
                   value={(formik.values as any)[key]}
                   onChange={formik.handleChange}
-                  required
+                  chipColor="amber"
                 />
               ))}
             </div>
@@ -168,20 +240,17 @@ export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
 
           {/* 2. Operation Services — all 10 token codes. */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 border-b border-[var(--zen-border)] pb-1.5">
-              <Activity className="h-4.5 w-4.5 text-indigo-500" />
-              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">Operational Services</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+            <SectionHeader icon={Activity} title="Operational Services" count={SERVICES_INFO.length} color="indigo" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SERVICES_INFO.map(({ key, name }) => (
-                <ATMTextField
+                <PriceItemCell
                   key={key}
-                  name={key}
-                  label={`${key} - ${name} ($/day)`}
-                  type="number"
+                  code={key}
+                  name={name}
+                  unit="/day"
                   value={(formik.values as any)[key]}
                   onChange={formik.handleChange}
-                  required
+                  chipColor="indigo"
                 />
               ))}
             </div>
@@ -189,20 +258,17 @@ export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
 
           {/* 3. Payment Methods — 2026-07-25: moved to 3rd position per user; all 7 token codes shown. */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 border-b border-[var(--zen-border)] pb-1.5">
-              <Coins className="h-4.5 w-4.5 text-emerald-500" />
-              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">Payment Methods</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+            <SectionHeader icon={Coins} title="Payment Methods" count={PAYMENTS_INFO.length} color="emerald" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {PAYMENTS_INFO.map(({ key, name }) => (
-                <ATMTextField
+                <PriceItemCell
                   key={key}
-                  name={key}
-                  label={`${key} - ${name} ($/day)`}
-                  type="number"
+                  code={key}
+                  name={name}
+                  unit="/day"
                   value={(formik.values as any)[key]}
                   onChange={formik.handleChange}
-                  required
+                  chipColor="emerald"
                 />
               ))}
             </div>
@@ -210,24 +276,25 @@ export const RateCardEditModal: React.FC<RateCardEditModalProps> = ({
 
           {/* 4. Premium Modules */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 border-b border-[var(--zen-border)] pb-1.5">
-              <Layers className="h-4.5 w-4.5 text-indigo-500" />
-              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">Premium Modules Add-ons</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+            <SectionHeader icon={Layers} title="Premium Modules Add-ons" count={MODULES_INFO.length} color="indigo" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {MODULES_INFO.map(({ key, name }) => (
-                <ATMTextField
+                <PriceItemCell
                   key={key}
-                  name={key}
-                  label={`${key} - ${name} ($/day)`}
-                  type="number"
+                  code={key}
+                  name={name}
+                  unit="/day"
                   value={(formik.values as any)[key]}
                   onChange={formik.handleChange}
-                  required
+                  chipColor="indigo"
                 />
               ))}
             </div>
           </div>
+
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-4">
+            Prices are daily, per unit or feature. Empty fields fall back to $0.00 on the default card.
+          </p>
 
         </form>
       </FormikProvider>

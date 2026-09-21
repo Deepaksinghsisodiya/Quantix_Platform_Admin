@@ -26,6 +26,7 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({ steps, step, maxRe
             type="button"
             disabled={!reachable}
             onClick={() => reachable && onStepChange(s.id)}
+            aria-current={active ? 'step' : undefined}
             className={cn(
               'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
               active

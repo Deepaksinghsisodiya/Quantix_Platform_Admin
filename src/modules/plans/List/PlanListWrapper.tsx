@@ -4,7 +4,7 @@ import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, BadgeDollarSign } from 'lucide-react';
 import { usePagination } from '@/shared/hooks/usePagination';
 import {
   usePlansList,
@@ -45,7 +45,7 @@ export const PlanListWrapper: React.FC = () => {
     onFilterChange,
   } = usePagination({
     page: 1,
-    pageSize: 6,
+    pageSize: 10,
     search: '',
     statusFilter: 'all',
     typeFilter: 'all',
@@ -59,6 +59,17 @@ export const PlanListWrapper: React.FC = () => {
   // per-day price; marketing bullet points are not stored server-side, so cards show none.
   const rawPlans: Plan[] = useMemo(() => {
     const rows: any[] = (plansQuery.data as any)?.data ?? [];
+
+    // Most-Popular badge (display-only): honour a server flag when present; otherwise mark
+    // the active plan with the most subscribers as the highlight card.
+    const hasPopularFlag = rows.some((p: any) => Boolean(p.isPopular ?? p.popular));
+    const highlightId = !hasPopularFlag
+      ? rows.reduce<(any | null)>(
+          (best, p) => (p.isActive && (p.activeSubscriberCount ?? 0) > (best?.activeSubscriberCount ?? -1) ? p : best),
+          null,
+        )?.planId ?? null
+      : null;
+
     return rows.map((p: any, idx: number) => ({
       id: String(p.planId),
       // Admin lists show the UNIQUE PlanName; displayName ("Basic"/"Pro"/"Advance") repeats
@@ -77,6 +88,7 @@ export const PlanListWrapper: React.FC = () => {
       merchantCount: p.activeSubscriberCount ?? 0,
       status: p.isDeprecated ? 'Deprecated' : p.isActive ? 'Active' : 'Inactive',
       color: PLAN_COLORS[idx % PLAN_COLORS.length] ?? '#3b82f6',
+      popular: Boolean(p.isPopular ?? p.popular) || (highlightId !== null && String(p.planId) === String(highlightId)),
     }));
   }, [plansQuery.data]);
 
@@ -144,9 +156,12 @@ export const PlanListWrapper: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="flex flex-col gap-8 w-full max-w-[1600px] mx-auto animate-page-enter">
       {/* Page Header */}
       <ATMPageHeader
+        icon={BadgeDollarSign}
+        iconColor="purple"
+        breadcrumbs={[{ label: 'Billing' }, { label: 'Subscription & Billing Plans' }]}
         title={
           <div className="flex items-center gap-2.5">
             <span>Subscription & Billing Plans</span>
@@ -173,6 +188,7 @@ export const PlanListWrapper: React.FC = () => {
         activeCount={activeCount}
         inactiveCount={inactiveCount}
         totalMerchants={totalMerchants}
+        isLoading={plansQuery.isLoading}
       />
 
       {/* Main List & Grid View Presenter */}

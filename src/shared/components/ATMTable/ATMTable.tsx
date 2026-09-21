@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useEffect, useRef } from 'react';
 import { MoreVertical, ArrowUp, ArrowDown, Search, X, Filter } from 'lucide-react';
 import clsx from 'clsx';
 import { ATMEmptyState, ATMSwitch, ATMTooltip, ATMTextField, ATMButton, ATMCheckbox, ATMIconButton, ATMSelectField } from '../../ui';
@@ -28,10 +28,11 @@ export interface RowAction<T> {
 export interface FilterField {
   key: string;
   label: string;
-  type: 'select' | 'text' | 'switch';
+  type: 'select' | 'text' | 'switch' | 'date';
   options?: { value: any; label: string }[];
   placeholder?: string;
   multiSelect?: boolean;
+  defaultValue?: any;
 }
 
 export type TableDensity = 'comfortable' | 'compact' | 'high';
@@ -108,6 +109,23 @@ const ATMTableComponent = <T,>({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tempValues, setTempValues] = useState<Record<string, any>>(filterConfig?.values || {});
 
+  // Keep the drawer's temp snapshot in sync with the live committed filter values.
+  // Previously it was taken only once at mount — so opening the drawer a second time
+  // showed stale defaultsainegha, and every "Apply" re-committed ALL fields (which would
+  // clobber values the drawer was never meant to touch, e.g. committing a default date
+  // range over an active custom range on the Tokens list).
+  const filterConfigRef = useRef(filterConfig);
+  filterConfigRef.current = filterConfig;  // refsync every render to keep handlers current
+  const prevOpenRef = useRef(isDrawerOpen);
+  useEffect(() => {
+    if (isDrawerOpen && !prevOpenRef.current) {
+      // Re-snapshot the LIVE values (incl. defaults) whenever the drawer opens, so the
+      // "Active Filters" chips/count reflect what's really driving the table.
+      setTempValues(filterConfigRef.current?.values || {});
+    }
+    prevOpenRef.current = isDrawerOpen;
+  }, [isDrawerOpen]);
+
   const visibleCols = useMemo(() => columns.filter(c => !c.hidden), [columns]);
 
   const toggleRow = (id: string) => {
@@ -123,9 +141,16 @@ const ATMTableComponent = <T,>({
   };
 
   const handleApply = () => {
-    Object.entries(tempValues).forEach(([key, val]) => {
-      filterConfig?.onChange(key, val);
-    });
+    if (filterConfig) {
+      // Only commit fields the user actually changed in the drawer. Committing
+      // every temp entry would re-push untouched values — e.g. re-committing the
+      // default "Last 30 days" range and empty dates would flip a custom date
+      // range back to the default and reset pagination unnecessarily.
+      const committed = filterConfig.values || {};
+      Object.entries(tempValues).forEach(([key, value]) => {
+        if (committed[key] !== value) filterConfig.onChange(key, value);
+      });
+    }
     setIsDrawerOpen(false);
   };
 
@@ -135,7 +160,12 @@ const ATMTableComponent = <T,>({
     setIsDrawerOpen(false);
   };
 
-  const activeFiltersCount = filterConfig ? Object.values(filterConfig.values).filter(v => v && v !== 'all').length : 0;
+  const activeFiltersCount = filterConfig
+    ? Object.entries(filterConfig.values).filter(([key, v]) => {
+      const field = filterConfig.fields.find((f) => f.key === key);
+      return v && v !== 'all' && v !== field?.defaultValue;
+    }).length
+    : 0;
 
   const densityClasses = {
     comfortable: {
@@ -201,7 +231,7 @@ const ATMTableComponent = <T,>({
               >
                 <span>Filters</span>
                 {activeFiltersCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-gray-950">
+                  <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-gray-950">
                     {activeFiltersCount}
                   </span>
                 )}
@@ -250,6 +280,7 @@ const ATMTableComponent = <T,>({
               if (!value || value === 'all') return null;
               const field = filterConfig.fields.find(f => f.key === key);
               if (!field) return null;
+              if (field.defaultValue !== undefined && value === field.defaultValue) return null;
 
               let displayValue = String(value);
               if (field.type === 'select') {
@@ -278,10 +309,10 @@ const ATMTableComponent = <T,>({
 
       <div className="flex-1 overflow-auto custom-scrollbar relative bg-zen-surface">
         <table className="min-w-full border-separate border-spacing-0" role="grid">
-          <thead className="sticky top-0 z-30 bg-zen-surface shadow-sm shadow-slate-100/20 dark:shadow-none" role="rowgroup">
+          <thead className="sticky top-0 z-30 bg-slate-50/80 dark:bg-[#121215]/80 backdrop-blur-md shadow-sm border-b border-[var(--zen-border)]" role="rowgroup">
             <tr role="row">
               {selectable && (
-                <th className={clsx("border-b border-[var(--zen-border)] w-[60px] bg-zen-surface sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.th)} role="columnheader">
+                <th className={clsx("border-b border-[var(--zen-border)] w-[60px] bg-transparent sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.th)} role="columnheader">
                   <ATMCheckbox
                     name="select-all"
                     checked={selectedRows.length === data.length && data.length > 0}
@@ -292,11 +323,11 @@ const ATMTableComponent = <T,>({
               {visibleCols.map(col => (
                 <th
                   key={String(col.key)}
-                   className={clsx(
-                    'border-b border-[var(--zen-border)] bg-zen-surface text-[11px] font-black text-slate-900 dark:text-gray-100 uppercase tracking-widest transition-colors',
+                  className={clsx(
+                    'border-b border-[var(--zen-border)] bg-transparent text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest transition-colors',
                     currentDensity.th,
                     col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
-                    col.sortable && 'cursor-pointer hover:text-accent-600',
+                    col.sortable && 'cursor-pointer hover:text-primary-600 dark:hover:text-primary-400',
                     col.sticky === 'left' && 'sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.02)]',
                     col.sticky === 'right' && 'sticky right-0 z-40 shadow-[-2px_0_5px_rgba(0,0,0,0.02)]'
                   )}
@@ -305,17 +336,17 @@ const ATMTableComponent = <T,>({
                   role="columnheader"
                   colSpan={col.colSpan}
                 >
-                  <div className={clsx('flex items-center gap-2', col.align === 'center' ? 'justify-center' : col.align === 'right' ? 'justify-end' : 'justify-start')}>
+                  <div className={clsx('flex items-center gap-1.5', col.align === 'center' ? 'justify-center' : col.align === 'right' ? 'justify-end' : 'justify-start')}>
                     {col.header}
                     {sortBy === col.key && (
-                      sortDesc ? <ArrowDown size={10} strokeWidth={4} className="text-accent-600" /> : <ArrowUp size={10} strokeWidth={4} className="text-accent-600" />
+                      sortDesc ? <ArrowDown size={11} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400" /> : <ArrowUp size={11} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400" />
                     )}
                   </div>
                 </th>
               ))}
               {rowActions && (
                 <th className={clsx(
-                  "bg-zen-surface font-black text-[10px] text-slate-900 dark:text-gray-100 uppercase tracking-widest text-center w-[160px] border-b border-[var(--zen-border)] sticky right-0 z-40 shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
+                  "bg-transparent font-black text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center w-[160px] border-b border-[var(--zen-border)] sticky right-0 z-40 shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
                   currentDensity.actionTh
                 )} role="columnheader">
                   Actions
@@ -333,14 +364,14 @@ const ATMTableComponent = <T,>({
                     </td>
                   )}
                   {visibleCols.map((_, c) => (
-                    <td 
-                      key={`skeleton-${r}-${c}`} 
+                    <td
+                      key={`skeleton-${r}-${c}`}
                       className={clsx(
                         "border-b border-[var(--zen-border)]",
                         currentDensity.td
                       )}
                     >
-                      <div 
+                      <div
                         className={clsx(
                           "h-3.5 bg-slate-100 dark:bg-gray-800/60 rounded-lg animate-skeleton-pulse",
                           c === 0 ? "w-32" : c === visibleCols.length - 1 ? "w-16 ml-auto" : "w-full max-w-[120px]"
@@ -355,7 +386,7 @@ const ATMTableComponent = <T,>({
                   )}
                 </tr>
               ))
-                        ) : (
+            ) : (
               (Array.isArray(data) ? data : []).map((row, idx) => {
                 const rowId = String((row as any).id || (row as any)._id || idx);
                 const isExpanded = expandedRows.includes(rowId);
@@ -365,10 +396,10 @@ const ATMTableComponent = <T,>({
                   <React.Fragment key={rowId}>
                     <tr
                       className={clsx(
-                        'transition-all duration-150 group cursor-pointer border-b border-[var(--zen-border)]',
-                        'hover:bg-slate-50/40 dark:hover:bg-gray-900/45',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 dark:focus-visible:ring-indigo-500',
-                        isExpanded && 'bg-slate-50/40 dark:bg-gray-900/45'
+                        'transition-colors duration-200 group cursor-pointer border-b border-[var(--zen-border)]',
+                        'hover:bg-slate-50/80 dark:hover:bg-zinc-900/60',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400 dark:focus-visible:ring-primary-500',
+                        isExpanded && 'bg-slate-50 dark:bg-slate-800'
                       )}
                       onClick={() => onRowClick?.(row)}
                       onKeyDown={(e) => {
@@ -382,7 +413,7 @@ const ATMTableComponent = <T,>({
                       aria-expanded={renderExpandedRow ? isExpanded : undefined}
                     >
                       {selectable && (
-                        <td className={clsx("text-center border-b border-[var(--zen-border)] bg-inherit sticky left-0 z-10 group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.td)} onClick={e => e.stopPropagation()} role="gridcell">
+                        <td className={clsx("text-center border-b border-[var(--zen-border)] bg-inherit sticky left-0 z-10 group-hover:bg-zinc-50/70 dark:group-hover:bg-zinc-900 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.02)]", currentDensity.td)} onClick={e => e.stopPropagation()} role="gridcell">
                           <ATMCheckbox
                             name={`select-row-${rowId}`}
                             checked={selectedRows.includes(rowId)}
@@ -394,25 +425,25 @@ const ATMTableComponent = <T,>({
                         <td
                           key={String(col.key)}
                           className={clsx(
-                            'text-[13px] font-medium text-slate-600 dark:text-gray-300 tracking-tight border-b border-[var(--zen-border)] transition-all group-hover:text-slate-900 dark:group-hover:text-white bg-inherit',
+                            'text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-tight border-b border-[var(--zen-border)] transition-colors group-hover:text-slate-900 dark:group-hover:text-white bg-inherit',
                             currentDensity.td,
                             col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
-                            col.sticky === 'left' && 'sticky left-0 z-10 hover:z-30 shadow-[2px_0_5px_rgba(0,0,0,0.02)] group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45',
-                            col.sticky === 'right' && 'sticky right-0 z-10 hover:z-30 shadow-[-2px_0_5px_rgba(0,0,0,0.02)] group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45'
+                            col.sticky === 'left' && 'sticky left-0 z-10 hover:z-30 shadow-[2px_0_5px_rgba(0,0,0,0.02)] group-hover:bg-slate-50/80 dark:group-hover:bg-zinc-900/60',
+                            col.sticky === 'right' && 'sticky right-0 z-10 hover:z-30 shadow-[-2px_0_5px_rgba(0,0,0,0.02)] group-hover:bg-slate-50/80 dark:group-hover:bg-zinc-900/60'
                           )}
                           role="gridcell"
                           colSpan={col.colSpan}
                         >
                           {col.renderCell ? col.renderCell((row as any)[col.key], row) : (
-                            <span className={clsx("truncate block leading-tight", !(row as any)[col.key] ? "text-slate-300 dark:text-gray-700 font-normal" : "text-slate-600 dark:text-gray-300")}>
-                              {String((row as any)[col.key] ?? '-')}
+                            <span className={clsx("truncate block leading-tight", !(row as any)[col.key] ? "text-zinc-300 dark:text-zinc-600 font-normal" : "text-zinc-600 dark:text-zinc-300")}>
+                              {String((row as any)[col.key] ?? '—')}
                             </span>
                           )}
                         </td>
                       ))}
                       {rowActions && (
                         <td className={clsx(
-                          "border-b border-[var(--zen-border)] bg-inherit sticky right-0 z-10 hover:z-50 group-hover:bg-slate-50/40 dark:group-hover:bg-gray-900/45 transition-colors shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
+                          "border-b border-[var(--zen-border)] bg-inherit sticky right-0 z-10 hover:z-50 group-hover:bg-slate-50/80 dark:group-hover:bg-zinc-900/60 transition-colors shadow-[-2px_0_5px_rgba(0,0,0,0.02)]",
                           currentDensity.actionTd
                         )} onClick={e => e.stopPropagation()} role="gridcell">
                           <div className="flex items-center justify-center gap-1.5">
@@ -461,7 +492,7 @@ const ATMTableComponent = <T,>({
       </div>
 
       {pagination && pagination.totalCount > 0 && (
-        <div className="border-t border-slate-50 dark:border-gray-800 px-8 py-3 bg-zen-surface flex-shrink-0" role="navigation">
+        <div className="border-t border-[var(--zen-border)] px-8 py-3 bg-zen-surface flex-shrink-0" role="navigation">
           <ATMPagination
             page={pagination.page}
             pageSize={pagination.pageSize}
@@ -521,6 +552,16 @@ const ATMTableComponent = <T,>({
                         value={tempValues[field.key] || ''}
                         onChange={(e) => setTempValues(prev => ({ ...prev, [field.key]: e.target.value }))}
                         placeholder={field.placeholder || `Search...`}
+                        className="!gap-0"
+                      />
+                    )}
+
+                    {field.type === 'date' && (
+                      <ATMTextField
+                        type="date"
+                        value={tempValues[field.key] || ''}
+                        onChange={(e) => setTempValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder || 'Select date'}
                         className="!gap-0"
                       />
                     )}

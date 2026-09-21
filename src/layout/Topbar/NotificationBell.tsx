@@ -3,18 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, BellOff, ChevronRight } from 'lucide-react';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import { cn } from '@/lib/utils/cn';
-
-function timeAgo(iso: string): string {
-  const secs = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
-  if (secs < 60) return `${secs}s`;
-  const mins = Math.round(secs / 60);
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  const days = Math.round(hrs / 24);
-  if (days < 30) return `${days}d`;
-  return `${Math.round(days / 30)}mo`;
-}
+import { TYPE_META, timeAgo } from '@/modules/notifications/components/notificationMeta';
 
 export const NotificationBell: React.FC = () => {
   const navigate = useNavigate();
@@ -83,35 +72,41 @@ export const NotificationBell: React.FC = () => {
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Nothing new right now.</p>
               </div>
             ) : (
-              recent.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => openItem(n.id, n.link)}
-                  className={cn(
-                    'w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 transition-colors',
-                    n.read
-                      ? 'hover:bg-slate-50 dark:hover:bg-zinc-900/50'
-                      : 'bg-primary-50/50 hover:bg-primary-50 dark:bg-primary-950/10 dark:hover:bg-primary-950/20',
-                  )}
-                >
-                  <div className="flex items-start gap-2">
-                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0 mt-1.5" />}
-                    <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        'text-[12px] truncate',
-                        n.read ? 'font-semibold text-slate-700 dark:text-slate-300' : 'font-bold text-slate-900 dark:text-white',
-                      )}>
-                        {n.title}
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5 leading-snug">
-                        {n.message}
-                      </p>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">{timeAgo(n.createdAt)} ago</p>
+              recent.map((n) => {
+                const meta = TYPE_META[n.type] ?? TYPE_META.Info;
+                const Icon = meta.icon;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => openItem(n.id, n.link)}
+                    className={cn(
+                      'w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 transition-colors',
+                      n.read
+                        ? 'hover:bg-slate-50 dark:hover:bg-zinc-900/50'
+                        : 'bg-primary-50/50 hover:bg-primary-50 dark:bg-primary-950/10 dark:hover:bg-primary-950/20',
+                    )}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border', meta.badge)}>
+                        <Icon size={14} className={meta.accent} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          'text-[12px] truncate',
+                          n.read ? 'font-semibold text-slate-700 dark:text-slate-300' : 'font-bold text-slate-900 dark:text-white',
+                        )}>
+                          {n.title}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5 leading-snug">
+                          {n.message}
+                        </p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">{timeAgo(n.createdAt)}</p>
+                      </div>
+                      {n.link && <ChevronRight size={12} className="text-slate-300 dark:text-slate-600 mt-1 shrink-0" />}
                     </div>
-                    {n.link && <ChevronRight size={12} className="text-slate-300 dark:text-slate-600 mt-1 shrink-0" />}
-                  </div>
-                </button>
-              ))
+                  </button>
+                );
+              })
             )}
           </div>
 

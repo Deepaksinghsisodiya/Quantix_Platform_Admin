@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Clock, Scale, AlertTriangle } from 'lucide-react';
+import { Save, CalendarRange, Scale, AlertTriangle, CloudDownload, Wallet, FileText, Receipt, Info, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -60,26 +60,45 @@ const DAYS_OF_WEEK = [
 
 function CadenceCard({
   title,
+  subtitle,
   description,
+  step,
+  icon: Icon,
   state,
   setState,
   frequencies,
   showAsap = false,
 }: {
   title: string;
+  subtitle: string;
   description: string;
+  step: number;
+  icon: LucideIcon;
   state: CadenceForm;
   setState: (next: CadenceForm) => void;
   frequencies: { label: string; value: string }[];
   showAsap?: boolean;
 }) {
   return (
-    <ATMCard className="glass-card">
-      <div className="flex items-center gap-2 mb-4">
-        <Clock className="h-5 w-5 text-gray-400" />
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
-      </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-6">{description}</p>
+    <ATMCard
+      className="glass-card"
+      header={
+        <div className="relative flex items-center gap-3">
+          <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+          <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+            <Icon size={20} strokeWidth={2.2} />
+            <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[9px] font-black text-primary-700 border-2 border-primary-200 shadow-sm dark:bg-slate-950 dark:border-primary-500/40 dark:text-primary-400">
+              {step}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+            <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>
+          </div>
+        </div>
+      }
+    >
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold px-1 pb-5">{description}</p>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 pt-2">
         <ATMSelectField
@@ -224,21 +243,22 @@ export function BillingCyclePage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-page-enter pb-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
+          <CalendarRange size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
           {/* Title matches the sidebar label. */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Billing Cycle</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Billing Cycle</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
             Configures the automated billing cycle for Enterprise merchants — collect revenue,
             charge commission, produce the periodic document. Wallets hold Service Tokens
-            (money converts at the exchange rate on recharge). Subscription charges come from
-            the merchant's plan and are deducted daily (fixed). On-demand billing remains
-            available from the Billing menus. Standalone License Token sales are taxed at
-            purchase and are not affected by anything here.
+            (money converts at the exchange rate on recharge). Standalone License Token sales
+            are taxed at purchase and are not affected by anything here.
           </p>
         </div>
-        <ATMButton variant="primary" size="md" icon={Save} isLoading={saving} disabled={loading} onClick={saveAll}>
+        <ATMButton variant="primary" size="md" icon={Save} className="ml-auto shrink-0" isLoading={saving} disabled={loading} onClick={saveAll}>
           Save Settings
         </ATMButton>
       </div>
@@ -252,12 +272,22 @@ export function BillingCyclePage() {
       ) : (
         <div className="flex flex-col gap-6">
           {/* Enterprise tax point */}
-          <ATMCard className="glass-card">
-            <div className="flex items-center gap-2 mb-4">
-              <Scale className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Enterprise Tax Point</h2>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-6">
+          <ATMCard
+            className="glass-card"
+            header={
+              <div className="relative flex items-center gap-3">
+                <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+                  <Scale size={20} strokeWidth={2.2} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Enterprise Tax Point</h3>
+                  <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Where tax applies for Enterprise billing</p>
+                </div>
+              </div>
+            }
+          >
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold px-1 pb-5">
               Where tax applies for Enterprise billing — decide together with your tax advisor
               for this deployment's country. Standalone License Token sales are always taxed at
               purchase regardless of this setting.
@@ -273,11 +303,14 @@ export function BillingCyclePage() {
                   { label: 'Tax at wallet recharge — invoice per recharge (ASAP)', value: 'Recharge' },
                 ]}
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold self-end pb-3">
-                {settlementMode
-                  ? 'Recharges issue an untaxed receipt; the periodic invoice taxes subscription + commission per their tax scopes.'
-                  : 'Every recharge generates a taxed Service Token invoice immediately (ServiceTokenRecharge tax scope); the periodic document becomes an untaxed consumption statement.'}
-              </p>
+              <div className="flex items-center gap-2.5 self-center rounded-xl border border-[var(--zen-border)] bg-primary-50/50 dark:bg-primary-900/10 p-3">
+                <Info size={14} className="mt-0.5 shrink-0 text-primary-500 dark:text-primary-400" />
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+                  {settlementMode
+                    ? 'Recharges issue an untaxed receipt; the periodic invoice taxes subscription + commission per their tax scopes.'
+                    : 'Every recharge generates a taxed Service Token invoice immediately (ServiceTokenRecharge tax scope); the periodic document becomes an untaxed consumption statement.'}
+                </p>
+              </div>
             </div>
             {taxPointChanged && (
               <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
@@ -295,7 +328,10 @@ export function BillingCyclePage() {
           </ATMCard>
 
           <CadenceCard
+            step={1}
+            icon={CloudDownload}
             title="Step 1 — Revenue Collection (Bridge API)"
+            subtitle="Automatic data pull cadence from each merchant's Cloud"
             description="Commission is calculated on actual merchant revenue, which the Platform pulls from each Enterprise merchant's Cloud through the Bridge API — this sets how often that data is collected (always up to the last complete day). Subscription billing does not depend on this."
             state={collection}
             setState={setCollection}
@@ -303,7 +339,10 @@ export function BillingCyclePage() {
           />
 
           <CadenceCard
+            step={2}
+            icon={Wallet}
             title="Step 2 — Commission Wallet Charge"
+            subtitle="How commission is deducted from the Service Token wallet"
             description="How often the calculated commission (rate × collected revenue + tax) is deducted from the merchant's Service Token wallet. ASAP deducts as soon as a new revenue collection is ready, throttled by the interval below."
             state={charge}
             setState={setCharge}
@@ -312,7 +351,10 @@ export function BillingCyclePage() {
           />
 
           <CadenceCard
+            step={3}
+            icon={settlementMode ? FileText : Receipt}
             title={settlementMode ? 'Step 3 — Invoice Generation' : 'Step 3 — Statement Generation'}
+            subtitle={settlementMode ? 'Periodic consolidated tax invoice' : 'Periodic untaxed consumption statement'}
             description={
               settlementMode
                 ? 'How often the consolidated tax invoice is produced. Each invoice shows the period\'s subscription charges and commission (taxed per scope), the Service Tokens already deducted from the wallet as adjustment, and the balance payable when the wallet held too little.'

@@ -60,7 +60,7 @@ export const ATMSelectField: React.FC<Props> = ({
       gap: 'gap-2.5'
     },
     lg: {
-      button: 'px-4 py-3 text-sm rounded-lg border',
+      button: 'px-4 py-3 text-sm rounded-xl border',
       icon: 18,
       gap: 'gap-3'
     }
@@ -85,9 +85,9 @@ export const ATMSelectField: React.FC<Props> = ({
   );
 
   return (
-    <div className={`flex flex-col gap-2 ${className}`} ref={containerRef}>
+    <div className={`flex flex-col gap-1.5 ${className}`} ref={containerRef}>
       {label && (
-        <label className="text-[13px] font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1 px-0.5">
+        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1 px-0.5">
           {label}
           {required && <span className="text-red-550 ml-0.5">*</span>}
         </label>
@@ -100,13 +100,13 @@ export const ATMSelectField: React.FC<Props> = ({
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={`
             w-full flex items-center justify-between ${currentSize.button} transition-all duration-200
-            ${disabled ? 'bg-gray-50 dark:bg-slate-900/50 cursor-not-allowed text-gray-400 dark:text-slate-600 opacity-60' : 'bg-[var(--zen-surface)] dark:bg-zinc-950/50 text-slate-800 dark:text-slate-200'}
+            ${disabled ? 'bg-gray-50 dark:bg-slate-900/50 cursor-not-allowed text-gray-400 dark:text-slate-600 opacity-60' : 'bg-white dark:bg-slate-900/60 text-slate-800 dark:text-slate-200'}
             ${
               error
                 ? 'border-red-500 bg-red-50/10'
                 : isOpen
                 ? 'border-primary-500 dark:border-primary-400 ring-4 ring-primary-500/10 dark:ring-primary-400/10'
-                : 'border-[var(--zen-border)] hover:border-slate-400 dark:hover:border-slate-600 shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)]'
+                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 shadow-[inset_0_1px_2px_rgba(0,0,0,0.005)]'
             }
           `}
         >

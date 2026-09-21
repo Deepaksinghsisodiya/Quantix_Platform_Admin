@@ -261,7 +261,9 @@ function StandalonePanels({
       </ATMCard>
 
       {/* Terminals Summary */}
-      {merchantId && <TerminalsCard merchantId={merchantId} />}
+      <div className="sm:col-span-2">
+        {merchantId && <TerminalsCard merchantId={merchantId} />}
+      </div>
     </div>
   );
 }

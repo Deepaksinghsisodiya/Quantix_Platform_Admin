@@ -35,9 +35,9 @@ import type {
 
 function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="font-medium tabular-nums text-gray-900 dark:text-gray-100">{value}</span>
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <span className="shrink-0 text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="min-w-0 text-right font-medium tabular-nums break-words text-gray-900 dark:text-gray-100">{value}</span>
     </div>
   );
 }
@@ -78,7 +78,7 @@ function EnterprisePanels({
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">
       {/* Platform Bridge */}
       <ATMCard title="Platform Bridge" padding="md">
         {bridgeHealth ? (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, FormikProps } from 'formik';
-import { Save, ArrowLeft, AlertCircle } from 'lucide-react';
-import { ATMInputField, ATMPhoneInputField } from '@/shared/components/form';
+import { Save, ArrowLeft, AlertCircle, Globe } from 'lucide-react';
+import { ATMInputField, ATMPhoneInputField, ATMFieldCell, ATMFormGrid } from '@/shared/components/form';
 import { countryName } from '@/lib/utils/countryName';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMIconButton } from '@/shared/ui/ATMIconButton';
@@ -34,7 +34,7 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
   return (
     <div className="w-full h-full bg-zen-surface animate-in fade-in duration-500 flex flex-col overflow-hidden">
       {/* TimeForge Style Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-zen-surface z-25 shadow-sm">
+      <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-zen-surface z-20 shadow-sm">
         <div className="flex items-center gap-5">
           <ATMIconButton
             type="button"
@@ -55,18 +55,18 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
           <ATMButton
             type="button"
             variant="ghost"
+            size="md"
             onClick={onCancel}
-            className="px-10 h-14 font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900"
           >
             Discard
           </ATMButton>
           <ATMButton
             type="submit"
             variant="primary"
+            size="md"
             form="merchant-edit-form"
             isLoading={isSubmitting}
             icon={Save}
-            className="px-16 h-14 bg-accent-600 text-white hover:bg-accent-700 rounded-2xl shadow-2xl shadow-accent-900/20 transition-all active:scale-95 font-black uppercase tracking-[0.2em]"
           >
             Save Changes
           </ATMButton>
@@ -86,7 +86,7 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
               <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">Core corporate details and main point of contact.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pl-6">
+            <ATMFormGrid cols={2}>
               <ATMInputField
                 name="businessName"
                 label="Business Name"
@@ -99,19 +99,19 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
                 placeholder="e.g. Jane Doe"
                 required
               />
-            </div>
+            </ATMFormGrid>
           </div>
 
           {/* Section 2: Contact Information */}
           <div className="space-y-10">
-            <div className="border-l-4 border-slate-300 dark:border-gray-700 pl-5">
+            <div className="border-l-4 border-slate-900 dark:border-accent-600 pl-5">
               <h3 className="text-[11px] font-black text-slate-900 dark:text-gray-100 uppercase tracking-[0.2em]">
                 Communication & Location
               </h3>
               <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-1">Email, telephone, and country configuration.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pl-6">
+            <ATMFormGrid cols={2}>
               <ATMInputField
                 name="email"
                 label="Email Address"
@@ -124,18 +124,19 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
                 placeholder="e.g. 555-0199"
                 required
               />
-              <div className="md:col-span-2">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                  Country
-                </label>
-                <p className="text-sm font-bold text-slate-900 dark:text-gray-100">
-                  {countryName(formikProps.values.country) || '—'}
-                </p>
-                <p className="mt-1 text-[11px] font-medium text-slate-400 dark:text-gray-500">
-                  Single-country deployment — fixed by platform setup, not editable per merchant.
-                </p>
-              </div>
-            </div>
+              <ATMFieldCell
+                className="md:col-span-2"
+                label="Country"
+                hint="Single-country deployment — fixed by platform setup, not editable per merchant."
+              >
+                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-zinc-200/90 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/40 shadow-sm">
+                  <Globe size={15} className="text-slate-400 shrink-0" />
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    {countryName(formikProps.values.country) || '—'}
+                  </span>
+                </div>
+              </ATMFieldCell>
+            </ATMFormGrid>
           </div>
 
           {/* Error Feedback */}

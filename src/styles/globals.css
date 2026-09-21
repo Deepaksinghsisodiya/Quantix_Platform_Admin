@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,170 +11,175 @@
    * Modify any value below to change the ENTIRE application UI globally!
    * ========================================================================= */
   :root {
-    /* 🔤 Primary Font Family */
-    --font-primary: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    /* 🔤 Primary Font Family (Geist + JetBrains Mono) */
+    --font-primary: 'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    /* 🏛️ Layout Metrics & Global Workspace Padding (Change in 1 place to update all pages!) */
-    --radius: 0.5rem;
-    --sidebar-width: 260px;
-    --sidebar-collapsed-width: 68px;
-    --header-height: 56px;
-    --page-padding-x: 1.25rem;
-    /* 20px Left & Right workspace padding */
-    --page-padding-y: 1rem;
-    /* 16px Top workspace padding */
-    --page-padding-bottom: 1.5rem;
-    /* 24px Bottom workspace padding */
+    /* 🏛️ Layout Metrics & Global Workspace Padding */
+    --radius: 0.625rem;
+    --sidebar-width: 270px;
+    --sidebar-collapsed-width: 76px;
+    --header-height: 64px;
+    --page-padding-x: 1.5rem;
+    --page-padding-y: 1.25rem;
+    --page-padding-bottom: 2rem;
 
-    /* 🏙️ Global Light Mode Backgrounds & Card Surfaces */
-    --zen-bg: #fafafa;
-    /* Main page background */
+    /* 🏙️ Global Light Mode Backgrounds & Card Surfaces (Graphite Theme Slate) */
+    --zen-bg: #f8fafc;
     --zen-surface: #ffffff;
-    /* Content containers & drawers */
     --zen-card: #ffffff;
-    /* Cards, panels & table wrappers */
-    --zen-border: #eaeaea;
-    /* Borders & dividers */
+    --zen-border: #e2e8f0;
 
-    /* 🎨 Primary Brand Accent Palette (Pure Indigo theme - RGB format) */
-    --accent-50: 238 242 255;
-    --accent-100: 224 231 255;
-    --accent-200: 199 210 254;
-    --accent-300: 165 180 252;
-    --accent-400: 129 140 248;
-    --accent-500: 99 102 241;
-    --accent-600: 79 70 229;
-    /* Primary Button & Main Brand Color */
-    --accent-700: 67 56 202;
-    --accent-800: 55 48 163;
-    --accent-900: 49 46 129;
-    --accent-950: 30 27 75;
+    /* 🎨 Primary Brand Accent Palette (Sapphire Blue - RGB format) */
+    --accent-50: 235 244 255;
+    --accent-100: 225 235 255;
+    --accent-200: 195 212 255;
+    --accent-300: 154 180 255;
+    --accent-400: 111 138 255;
+    --accent-500: 69 137 255;
+    --accent-600: 15 98 254;
+    /* Primary Sapphire Brand #0F62FE */
+    --accent-700: 0 67 206;
+    --accent-800: 0 45 156;
+    --accent-900: 0 29 108;
+    --accent-950: 0 17 65;
 
     /* 📊 Chart Tooltips */
     --chart-tooltip-bg: #ffffff;
-    --chart-tooltip-border: #e5e7eb;
-    --color-brand: 99 102 241;
+    --chart-tooltip-border: #e2e8f0;
+    --color-brand: 15 98 254;
   }
 
-  /* 🌙 Global Dark Mode Theme Configuration */
+  /* 🌙 Global Dark Mode Theme Configuration (Graphite) */
   .dark {
-    /* Global Dark Mode Backgrounds & Card Surfaces */
-    --zen-bg: #000000;
-    /* Main dark page background */
-    --zen-surface: #0a0a0a;
-    /* Dark containers & drawers */
-    --zen-card: #111111;
-    /* Dark cards & panels */
-    --zen-border: #1f1f1f;
-    /* Dark borders & dividers */
+    /* Graphite dark surfaces with crisp borders */
+    --zen-bg: #090a0f;
+    --zen-surface: #13151a;
+    --zen-card: #13151a;
+    --zen-border: #272a30;
 
-    --chart-tooltip-bg: #0a0a0a;
-    --chart-tooltip-border: #1f1f1f;
+    --chart-tooltip-bg: #13151a;
+    --chart-tooltip-border: #272a30;
   }
 
   html {
-    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-heading {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-heading {
+    font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
   }
 
   * {
-    @apply border-surface-200 dark:border-surface-700;
+    @apply border-slate-200 dark:border-slate-700;
   }
 
   body {
-    @apply bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100;
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50;
   }
 
   ::selection {
-    @apply bg-brand-200 text-brand-900 dark:bg-brand-800 dark:text-brand-100;
+    @apply bg-blue-500/20 text-blue-800 dark:bg-blue-500/30 dark:text-blue-200;
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] p-5 shadow-sm shadow-black/5 transition-all duration-300 hover:shadow-md hover:shadow-black/5 dark:bg-[var(--zen-card)];
+    @apply rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] p-5 shadow-sm shadow-slate-200/50 transition-shadow duration-200 hover:shadow-md dark:bg-[var(--zen-card)] dark:shadow-none dark:hover:border-slate-600;
   }
 
   .card-flat {
-    @apply rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] p-5 shadow-sm shadow-black/5 dark:bg-[var(--zen-card)];
+    @apply rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] p-5 shadow-sm dark:bg-[var(--zen-card)];
+  }
+
+  .glass-card {
+    /* No backdrop-filter: it creates a stacking context that traps absolutely-positioned
+       select dropdowns under the NEXT card. Keep the bg opaque enough to stand alone. */
+    @apply rounded-xl border border-slate-200/80 bg-white/95 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-slate-700/80 dark:bg-slate-800/95 dark:hover:border-slate-600;
   }
 
   .kpi-card {
-    @apply card flex flex-col gap-2;
+    @apply relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600;
   }
 
   .input-base {
-    @apply rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-surface-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:opacity-60 dark:border-surface-600 dark:bg-surface-800 dark:placeholder:text-surface-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20;
+    @apply rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:focus:ring-offset-surface-900;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 dark:focus:ring-offset-slate-900;
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus:ring-brand-500 active:bg-brand-800 dark:bg-brand-500 dark:hover:bg-brand-600;
+    @apply btn bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:bg-blue-800;
   }
 
   .btn-secondary {
-    @apply btn border border-surface-300 bg-white text-surface-700 shadow-sm hover:bg-surface-50 focus:ring-brand-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700;
+    @apply btn border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white;
   }
 
   .btn-ghost {
-    @apply btn text-surface-600 hover:bg-surface-100 hover:text-surface-900 focus:ring-brand-500 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-100;
+    @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white;
   }
 
   .btn-danger {
-    @apply btn bg-danger text-white shadow-sm hover:bg-red-600 focus:ring-danger active:bg-red-700;
+    @apply btn bg-red-600 text-white shadow-sm hover:bg-red-700 focus:ring-red-500 active:bg-red-800;
   }
 
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
 
   .badge-enterprise {
-    @apply badge bg-enterprise-light text-enterprise-dark dark:bg-blue-900/30 dark:text-blue-300;
+    @apply badge bg-blue-50 text-blue-700 border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50;
   }
 
   .badge-standalone {
-    @apply badge bg-standalone-light text-standalone-dark dark:bg-green-900/30 dark:text-green-300;
+    @apply badge bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50;
   }
 
   .table-row {
-    @apply border-b border-surface-100 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50;
+    @apply border-b border-zinc-100 transition-colors hover:bg-zinc-50/80 dark:border-zinc-800/60 dark:hover:bg-zinc-900/50;
   }
 
   .sidebar-item {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 hover:text-surface-900 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-100;
+    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-white/[0.04] dark:hover:text-white;
   }
 
   .sidebar-item-active {
-    @apply sidebar-item bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300;
+    @apply sidebar-item bg-blue-50 text-blue-700 font-semibold dark:bg-blue-950/30 dark:text-blue-300;
   }
 }
 
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.surface.300') transparent;
+    scrollbar-color: theme('colors.zinc.300') transparent;
   }
 
   .dark .scrollbar-thin {
-    scrollbar-color: theme('colors.surface.600') transparent;
+    scrollbar-color: theme('colors.zinc.700') transparent;
   }
 
   .text-gradient {
-    @apply bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-blue-600 via-blue-500 to-sky-400 bg-clip-text text-transparent dark:from-blue-400 dark:via-blue-300 dark:to-cyan-300;
+  }
+
+  .text-gradient-cyan {
+    @apply bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent;
   }
 }
 
@@ -198,32 +205,51 @@
   @apply bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors;
 }
 
-/* Clean Sans-serif Font Override */
+/* Clean Headings Font */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6,
-.font-bold,
-.font-black,
-.font-semibold {
+.font-heading {
   font-family: var(--font-primary), sans-serif !important;
+  letter-spacing: -0.02em;
 }
 
-/* 🌗 Intelligent Dark Mode Global Overrides */
+/* Dedicated Monospace Enforcement for Data, Numbers, Tokens & Code */
+.font-mono,
+[class*="font-mono"],
+code,
+kbd,
+pre {
+  font-family: var(--font-mono), monospace !important;
+  font-feature-settings: 'tnum' on, 'zero' on;
+}
+
+/* Global Lucide Icon Optimization */
+svg.lucide {
+  shape-rendering: geometricPrecision;
+}
+
+/* 🌗 Intelligent Dark Mode Global Overrides (Graphite Palette) */
 .dark .bg-white {
   background-color: var(--zen-card) !important;
 }
 
 .dark .bg-slate-50,
 .dark .bg-gray-50 {
-  background-color: var(--zen-bg) !important;
+  background-color: #090a0f !important;
 }
 
 .dark .bg-slate-100,
 .dark .bg-gray-100 {
-  background-color: #1f2937 !important;
+  background-color: #13151a !important;
+}
+
+.dark .bg-slate-200,
+.dark .bg-gray-200 {
+  background-color: #272a30 !important;
 }
 
 .dark .text-slate-900,
@@ -237,19 +263,23 @@ h6,
 .dark .text-gray-700,
 .dark .text-slate-600,
 .dark .text-gray-600 {
-  color: #cbd5e1 !important;
+  color: #94a3b8 !important;
 }
 
 .dark .text-slate-500,
-.dark .text-gray-500 {
-  color: #94a3b8 !important;
+.dark .text-gray-500,
+.dark .text-slate-400,
+.dark .text-gray-400 {
+  color: #64748b !important;
 }
 
 .dark .border-slate-100,
 .dark .border-gray-100,
 .dark .border-slate-200,
-.dark .border-gray-200 {
-  border-color: var(--zen-border) !important;
+.dark .border-gray-200,
+.dark .border-slate-300,
+.dark .border-gray-300 {
+  border-color: #272a30 !important;
 }
 
 /* Smooth Transitions */
@@ -352,6 +382,39 @@ input:-webkit-autofill:active {
   animation: page-fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Enter animations (tailwindcss-animate-compatible class set) */
+@keyframes ui-enter {
+  from {
+    opacity: var(--enter-opacity, 0);
+    transform: translateY(var(--enter-translate-y, 0)) scale(var(--enter-scale, 1));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-in {
+  animation: ui-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade-in {
+  --enter-opacity: 0;
+}
+
+.zoom-in-95 {
+  --enter-scale: 0.95;
+}
+
+.slide-in-from-top-1 {
+  --enter-translate-y: -4px;
+}
+
+.slide-in-from-top-2 {
+  --enter-translate-y: -8px;
+}
+
 @keyframes skeleton-pulse {
 
   0%,
@@ -372,26 +435,31 @@ input:-webkit-autofill:active {
    🌌 ADVANCED AESTHETIC ENHANCEMENTS
    ═══════════════════════════════════════════════ */
 
-/* 1. SaaS Radial Backdrop Gradients */
+/* 1. SaaS Radial Backdrop Gradients (Removed for clarity) */
 .premium-mesh-bg {
-  background: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.03) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.02) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.02) 0px, transparent 50%),
-    #fafafa;
+  background-color: var(--zen-bg);
 }
+
 .dark .premium-mesh-bg {
-  background: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.02) 0px, transparent 50%),
-    #000000;
+  background-color: var(--zen-bg);
+}
+
+/* Subtle dot-matrix overlay */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(124, 58, 237, 0.12) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.dark .bg-grid-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
 }
 
 /* 2. Micro-Interaction scaling classes */
 .interactive-bounce {
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 .interactive-bounce:active {
   transform: scale(0.97);
 }
@@ -401,33 +469,40 @@ input:-webkit-autofill:active {
   width: 5px;
   height: 5px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 99px;
 }
+
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: #27272a;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #3f3f46;
 }
 
 /* 4. Glassmorphism Card Hover effect */
 .premium-hover-card {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease-out;
 }
+
 .premium-hover-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.03);
-  border-color: rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.05);
+  border-color: rgba(15, 98, 254, 0.3);
 }
+
 .dark .premium-hover-card:hover {
-  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.4);
-  border-color: rgba(59, 130, 246, 0.15);
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.5);
+  border-color: rgba(69, 137, 255, 0.3);
 }

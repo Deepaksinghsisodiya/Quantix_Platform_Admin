@@ -5,15 +5,20 @@
 
 import React, { useState } from 'react';
 import {
-  Building2, Globe, UserCog, Search, RefreshCw, Plus, ArrowRight, X,
+  Building2, Globe, UserCog, Search, RefreshCw, Plus, ArrowRight, X, Clock, TrendingUp,
+  Mail, Phone, User, Calendar, Briefcase, AlertCircle,
 } from 'lucide-react';
 
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMSwitch } from '@/shared/ui/ATMSwitch';
 import { ATMModal } from '@/shared/ui/ATMModal';
 import { ATMTextArea } from '@/shared/ui/ATMTextArea';
+import { ATMIconButton } from '@/shared/ui/ATMIconButton';
+import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
 import type { WizardState, WizardStepKey } from '../OnboardingWizard/wizard.types';
@@ -139,50 +144,59 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
   ];
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 shadow-lg shadow-primary-500/20">
-            <Building2 className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Signup Queue</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              New merchant enquiries. Review the details, then decide — onboard or reject.
-              Onboarded merchants appear in All Merchants once activated.
-            </p>
-          </div>
-        </div>
-        <ATMButton variant="primary" icon={Plus} onClick={onNewSignup}>
-          New Signup
-        </ATMButton>
-      </div>
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
+      {/* Page Header */}
+      <ATMPageHeader
+        title="Signup Queue"
+        subtitle="New merchant enquiries. Review the details, then decide — onboard or reject. Onboarded merchants appear in All Merchants once activated."
+        icon={Building2}
+        iconColor="theme"
+        action={{
+          label: 'New Signup',
+          icon: Plus,
+          onClick: onNewSignup,
+        }}
+      />
 
       {/* Triage stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {tiles.map((t) => (
-          <div key={t.label} className="p-4 rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)]">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-              {t.label}
-            </span>
-            <span className={cn('text-xl font-black mt-1 inline-block', t.accent)}>{t.value}</span>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <ATMStatsCard
+          label="New this week"
+          value={stats.newThisWeek}
+          icon={Clock}
+          variant="accent"
+        />
+        <ATMStatsCard
+          label="From website"
+          value={stats.website}
+          icon={Globe}
+          variant="emerald"
+        />
+        <ATMStatsCard
+          label="Admin-entered"
+          value={stats.admin}
+          icon={UserCog}
+          variant="slate"
+        />
+        <ATMStatsCard
+          label="In onboarding"
+          value={stats.onboarding}
+          icon={TrendingUp}
+          variant="purple"
+        />
       </div>
 
       {/* Toolbar */}
       <ATMCard className="glass-card" padding="md">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--zen-border)] bg-white dark:bg-zinc-950 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
-              placeholder="Search by business name, email, or nature…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <ATMTextField
+            size="md"
+            className="flex-1 min-w-[220px]"
+            prefix={<Search size={14} className="text-slate-400" />}
+            placeholder="Search by business name, email, or nature…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
 
           {/* Stage filter */}
           <div className="flex items-center border border-[var(--zen-border)] rounded-lg p-0.5 bg-slate-50 dark:bg-zinc-950">
@@ -252,46 +266,48 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800/60">
+            <table className="w-full text-left border-separate border-spacing-0">
+              <thead className="bg-slate-50/80 dark:bg-[#121215]/80 backdrop-blur-md">
+                <tr>
                   {['Business', 'Source', 'Business Nature', 'Status', 'Submitted', 'Actions'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                    <th key={h} className="px-5 py-4 border-b border-[var(--zen-border)] text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
+              <tbody>
                 {filteredSignups.map((s) => {
                   const awaiting = isAwaitingDecision(s);
                   return (
                     <tr
                       key={s.merchantId}
-                      className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/40 transition-colors cursor-pointer"
+                      className="transition-colors duration-200 cursor-pointer border-b border-[var(--zen-border)] hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 group"
                       onClick={() => setSelected(s)}
                     >
-                      <td className="px-4 py-3">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white">{s.companyName}</p>
-                        <p className="text-[11px] text-slate-400">{s.basicInfo?.contactEmail}</p>
+                      <td className="px-5 py-4 border-b border-[var(--zen-border)]">
+                        <div className="min-w-0">
+                          <p className="truncate max-w-[220px] text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" title={s.companyName}>{s.companyName}</p>
+                          <p className="truncate max-w-[220px] text-[11px] text-slate-400 font-medium mt-0.5" title={s.basicInfo?.contactEmail}>{s.basicInfo?.contactEmail}</p>
+                        </div>
                       </td>
-                      <td className="px-4 py-3"><SourceBadge source={s.signupSource} /></td>
-                      <td className="px-4 py-3">
-                        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      <td className="px-5 py-4 border-b border-[var(--zen-border)]"><SourceBadge source={s.signupSource} /></td>
+                      <td className="px-5 py-4 border-b border-[var(--zen-border)]">
+                        <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">
                           {s.basicInfo?.businessNature || '—'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4 border-b border-[var(--zen-border)]">
                         {awaiting ? (
                           <ATMBadge variant="warning" size="sm">Awaiting decision</ATMBadge>
                         ) : (
-                          <span className="text-[11px] font-bold text-violet-600 dark:text-violet-400">
+                          <span className="text-[11px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 px-2 py-1 rounded-md">
                             Onboarding — Step {stepNumber(s)} of {stepTotal(s)} ({STEP_LABEL[s.currentStep]})
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-[11px] text-slate-500 dark:text-slate-400">
+                      <td className="px-5 py-4 border-b border-[var(--zen-border)] text-[12px] font-medium text-slate-500 dark:text-slate-400">
                         {formatDate((s as any).createdAt ?? '', 'short') || '—'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4 border-b border-[var(--zen-border)]">
                         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <ATMButton
                             variant="outline" size="sm" icon={ArrowRight}
@@ -299,14 +315,14 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
                           >
                             {awaiting ? 'Onboard' : 'Continue'}
                           </ATMButton>
-                          <button
+                          <ATMIconButton
                             type="button"
-                            title="Reject signup"
+                            icon={X}
+                            variant="danger"
+                            size="sm"
+                            tooltip="Reject signup"
                             onClick={() => openReject(s)}
-                            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>
@@ -318,55 +334,137 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
         )}
       </ATMCard>
 
-      {/* Enquiry details */}
+      {/* Enquiry details modal */}
       <ATMModal
         open={!!selected}
         onClose={() => setSelected(null)}
-        title={selected?.companyName ?? 'Enquiry'}
-        subtitle="Signup enquiry details"
-        size="lg"
+        title={selected?.companyName ?? 'Enquiry Details'}
+        subtitle="Review prospective merchant profile before onboarding"
+        size="2xl"
       >
         {selected && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-              {[
-                ['Company / Individual', selected.companyName],
-                ['Contact person', selected.basicInfo?.contactName],
-                ['Email', selected.basicInfo?.contactEmail],
-                ['Phone', selected.basicInfo?.contactPhone || '—'],
-                ['Business nature', selected.basicInfo?.businessNature || '—'],
-                ['Country', selected.basicInfo?.country],
-                ['Submitted', formatDate((selected as any).createdAt ?? '', 'long') || '—'],
-              ].map(([label, value]) => (
-                <div key={label as string}>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-                  <p className="mt-0.5 font-semibold text-slate-800 dark:text-slate-200">{value}</p>
+          <div className="space-y-6 pt-1">
+            {/* Merchant Identity Card */}
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--zen-border)] bg-slate-50 dark:bg-zinc-900/60 p-5">
+              <div className="absolute -right-10 -top-14 h-40 w-40 rounded-full bg-primary-500/10 blur-2xl" />
+              <div className="relative flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-md shadow-primary-500/20">
+                    <Building2 size={22} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">{selected.companyName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <SourceBadge source={selected.signupSource} />
+                      <span className="text-xs text-slate-400">&bull;</span>
+                      <span className="text-xs font-mono text-slate-400">ID: {selected.merchantId.slice(0, 8)}...</span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Source</p>
-                <p className="mt-0.5"><SourceBadge source={selected.signupSource} /></p>
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</p>
-                <p className="mt-0.5 font-semibold text-slate-800 dark:text-slate-200">
-                  {isAwaitingDecision(selected)
-                    ? 'Awaiting decision'
-                    : `Onboarding — Step ${stepNumber(selected)} of ${stepTotal(selected)} (${STEP_LABEL[selected.currentStep]})`}
-                </p>
+                <div>
+                  {isAwaitingDecision(selected) ? (
+                    <ATMBadge variant="warning" size="md">Awaiting decision</ATMBadge>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 border border-primary-200/50 dark:border-primary-500/20 px-3 py-1.5 rounded-lg">
+                      Step {stepNumber(selected)} of {stepTotal(selected)} ({STEP_LABEL[selected.currentStep]})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-4">
-              <ATMButton variant="outline" size="sm" onClick={() => openReject(selected)}>
-                Reject
-              </ATMButton>
+            {/* Information Grid */}
+            <div>
+              <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                <span className="h-px w-4 bg-slate-200 dark:bg-slate-700" />
+                Merchant Information
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 mt-0.5">
+                    <User size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Contact Person</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{selected.basicInfo?.contactName || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 mt-0.5">
+                    <Mail size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Contact Email</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{selected.basicInfo?.contactEmail || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 mt-0.5">
+                    <Phone size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Contact Phone</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{selected.basicInfo?.contactPhone || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 mt-0.5">
+                    <Briefcase size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Business Nature</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{selected.basicInfo?.businessNature || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 mt-0.5">
+                    <Globe size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Country</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{selected.basicInfo?.country || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 mt-0.5">
+                    <Calendar size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Submission Date</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">{formatDate((selected as any).createdAt ?? '', 'long') || '—'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action Bar */}
+            <div className="flex items-center justify-between gap-3 border-t border-[var(--zen-border)] pt-5">
               <ATMButton
-                variant="primary" size="sm" icon={ArrowRight}
-                onClick={() => onContinue(selected.merchantId)}
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/20"
+                onClick={() => openReject(selected)}
               >
-                {isAwaitingDecision(selected) ? 'Onboard' : 'Continue Onboarding'}
+                Reject Enquiry
               </ATMButton>
+              <div className="flex items-center gap-2.5">
+                <ATMButton variant="ghost" size="sm" onClick={() => setSelected(null)}>
+                  Close
+                </ATMButton>
+                <ATMButton
+                  variant="primary"
+                  size="sm"
+                  icon={ArrowRight}
+                  onClick={() => onContinue(selected.merchantId)}
+                >
+                  {isAwaitingDecision(selected) ? 'Start Onboarding' : 'Continue Onboarding'}
+                </ATMButton>
+              </div>
             </div>
           </div>
         )}
@@ -377,29 +475,40 @@ const SignupQueuePage: React.FC<SignupQueuePageProps> = ({
         open={!!rejecting}
         onClose={() => setRejecting(null)}
         title={`Reject "${rejecting?.companyName ?? ''}"?`}
-        subtitle="The signup is removed from the queue permanently (audit-logged)."
+        subtitle="This enquiry will be permanently removed from the queue and audit logged."
         size="md"
       >
-        <div className="space-y-4">
+        <div className="space-y-5 pt-1">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-50/70 border border-red-200/60 dark:bg-red-950/20 dark:border-red-900/30">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-red-800 dark:text-red-300 leading-relaxed font-medium">
+              Rejecting will remove this enquiry from the active queue. An audit log entry is created with your specified reason.
+            </p>
+          </div>
+
           <ATMTextArea
             name="rejectReason"
-            label="Reason (required)"
-            placeholder="e.g. Duplicate enquiry, spam signup, business type not supported…"
+            label="Reason for Rejection"
+            placeholder="e.g. Duplicate enquiry, unsupported business activity, fake contact info…"
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             rows={3}
+            required
           />
-          <div className="flex justify-end gap-2">
+
+          <div className="flex justify-end gap-3 border-t border-[var(--zen-border)] pt-4">
             <ATMButton variant="outline" size="sm" onClick={() => setRejecting(null)}>
               Cancel
             </ATMButton>
             <ATMButton
-              variant="primary" size="sm" icon={X}
+              variant="danger"
+              size="sm"
+              icon={X}
               isLoading={isRejecting}
               disabled={!rejectReason.trim()}
               onClick={submitReject}
             >
-              Reject Signup
+              Reject & Remove
             </ATMButton>
           </div>
         </div>

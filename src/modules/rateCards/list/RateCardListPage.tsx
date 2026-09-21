@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils/cn';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
+import { ATMStatsCard, ATMEmptyState } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMTable, ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 import { ATMSearch } from '@/shared/components/SearchInput/ATMSearch';
 import { RateCard } from '../types/rateCard.types';
@@ -33,7 +35,8 @@ import {
   Puzzle,
   Layers3,
   Activity,
-  Pencil
+  Pencil,
+  SearchX
 } from 'lucide-react';
 
 export interface PricingItem {
@@ -166,30 +169,34 @@ const RateCardGridSection: React.FC<RateCardGridSectionProps> = ({
 
   const iconBgClass =
     color === 'emerald'
-      ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 border border-emerald-100/40 dark:border-emerald-900/10'
+      ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/40 dark:border-emerald-900/10'
       : color === 'amber'
-      ? 'bg-amber-50 dark:bg-amber-955/15 text-amber-600 dark:text-amber-500 border border-amber-100/40 dark:border-amber-900/10'
-      : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 dark:text-indigo-400 border border-indigo-100/40 dark:border-indigo-900/10';
+      ? 'bg-amber-50 dark:bg-amber-950/15 text-amber-600 dark:text-amber-500 border border-amber-100/40 dark:border-amber-900/10'
+      : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/40 dark:border-indigo-900/10';
 
   const badgeBgClass =
     color === 'emerald'
       ? 'bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100/20'
       : color === 'amber'
-      ? 'bg-amber-50/70 dark:bg-amber-955/20 text-amber-600 dark:text-amber-550 border border-amber-100/20'
-      : 'bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 border border-indigo-100/20';
+      ? 'bg-amber-50/70 dark:bg-amber-950/20 text-amber-600 dark:text-amber-500 border border-amber-100/20'
+      : 'bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100/20';
 
   const priceTextClass =
     color === 'emerald'
       ? 'text-emerald-600 dark:text-emerald-400'
       : color === 'amber'
-      ? 'text-amber-650 dark:text-amber-450'
+      ? 'text-amber-600 dark:text-amber-400'
       : 'text-indigo-600 dark:text-indigo-400';
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 px-1">
-        <Icon className={`h-4.5 w-4.5 text-${color === 'emerald' ? 'emerald' : color === 'amber' ? 'amber' : 'indigo'}-500`} />
-        <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">{title}</h3>
+      <div className="flex items-center gap-2.5 px-1">
+        <span className={cn('flex h-8 w-8 items-center justify-center rounded-lg border shrink-0', iconBgClass)}>
+          <Icon size={16} className="stroke-[2.2]" />
+        </span>
+        <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{title}</h3>
+        <span className={cn('px-1.5 py-0.5 rounded-md text-[9px] font-black', badgeBgClass)}>{items.length}</span>
+        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {items.map(({ key, name, unit }) => {
@@ -198,7 +205,7 @@ const RateCardGridSection: React.FC<RateCardGridSectionProps> = ({
           return (
             <div
               key={key}
-              className={`group relative p-5 rounded-xl border border-slate-150 dark:border-slate-800/80 bg-[var(--zen-surface)] ${borderHoverClass} hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[140px]`}
+              className={`group relative p-5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-[var(--zen-surface)] ${borderHoverClass} hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[140px]`}
             >
               {/* Top Row: Icon & Key Badge */}
               <div className="flex items-center justify-between w-full">
@@ -220,7 +227,7 @@ const RateCardGridSection: React.FC<RateCardGridSectionProps> = ({
               {/* Bottom: Price tag */}
               <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-baseline gap-1">
                 <span className={`text-base font-black ${priceTextClass}`}>
-                  +${price}.00
+                  +${Number(price ?? 0).toFixed(2)}
                 </span>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold tracking-wider">
                   {unit || '/day'}
@@ -336,7 +343,7 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
           row.color === 'emerald'
             ? 'bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-100/20'
             : row.color === 'amber'
-            ? 'bg-amber-50/70 dark:bg-amber-955/20 text-amber-600 dark:text-amber-550 border-amber-100/20'
+            ? 'bg-amber-50/70 dark:bg-amber-950/20 text-amber-600 dark:text-amber-500 border-amber-100/20'
             : 'bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border-indigo-100/20'
         )}>
           {row.key}
@@ -356,7 +363,7 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
               row.color === 'emerald'
                 ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500 border-emerald-100/40 dark:border-emerald-900/10'
                 : row.color === 'amber'
-                ? 'bg-amber-50 dark:bg-amber-955/15 text-amber-500 border-amber-100/40 dark:border-amber-900/10'
+                ? 'bg-amber-50 dark:bg-amber-950/15 text-amber-500 border-amber-100/40 dark:border-amber-900/10'
                 : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 border-indigo-100/40 dark:border-indigo-900/10'
             )}>
                <ItemIcon size={14} className="stroke-[2.2]" />
@@ -389,113 +396,85 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
           row.color === 'emerald'
             ? 'text-emerald-600 dark:text-emerald-400'
             : row.color === 'amber'
-            ? 'text-amber-655 dark:text-amber-450'
+            ? 'text-amber-600 dark:text-amber-400'
             : 'text-indigo-600 dark:text-indigo-400'
         )}>
-          +${row.price}.00 <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-wider">{row.unit || '/day'}</span>
+          +${Number(row.price ?? 0).toFixed(2)} <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-wider">{row.unit || '/day'}</span>
         </span>
       ),
       width: '150px',
     }
   ];
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+return (
+    <div className="flex flex-col gap-8 w-full max-w-[1600px] mx-auto animate-page-enter">
       {/* Header and Controls */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Feature Rate Cards</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Baseline billing rates and features mapped directly from active token specifications
-          </p>
-        </div>
+      <ATMPageHeader
+        title="Feature Rate Cards"
+        subtitle="Baseline billing rates and features mapped directly from active token specifications"
+        icon={Tags}
+        iconColor="indigo"
+        breadcrumbs={[{ label: 'Billing' }, { label: 'Feature Rate Cards' }]}
+        extraActions={
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Pro Search Input */}
+            <ATMSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search code or feature..."
+              className="w-full sm:w-60"
+            />
 
-        {/* Action Controls */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-          {/* Pro Search Input */}
-          <ATMSearch
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search code or feature..."
-            className="w-full sm:w-60"
-          />
+            <div className="flex items-center gap-3">
+              <ATMViewModeToggle value={viewMode} onChange={setViewMode} />
 
-          <div className="flex items-center gap-3">
-            <ATMViewModeToggle value={viewMode} onChange={setViewMode} />
-
-            <ATMButton onClick={onEditOpen} variant="primary" icon={Pencil} size="sm" className="h-9 rounded-lg">
-              Edit Prices
-            </ATMButton>
+              <ATMButton onClick={onEditOpen} variant="primary" icon={Pencil} size="sm" className="h-9 rounded-lg">
+                Edit Prices
+              </ATMButton>
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Clickable Pro Statistics Dashboard for interactive filtering.
-          2026-07-25: reordered to match Edit modal — Limits, Services, Payments, Modules. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div
+           Clicking a tile toggles its category filter (re-click clears back to All). */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <ATMStatsCard
+          label="Capacity Limits"
+          value={LIMITS_INFO.length}
+          icon={Terminal}
+          variant="amber"
+          description="Active capacity limits"
           onClick={() => setActiveCategory(activeCategory === 'limits' ? 'all' : 'limits')}
-          className={cn(
-            "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'limits'
-              ? "border-amber-500 dark:border-amber-500 bg-amber-50/5 dark:bg-amber-950/10 ring-2 ring-amber-500/10"
-              : "border-[var(--zen-border)] hover:border-amber-550/20 dark:hover:border-amber-500/20"
-          )}
-        >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Capacity Limits</span>
-          <span className={cn(
-            "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'limits' ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"
-          )}>{LIMITS_INFO.length} Active</span>
-        </div>
-
-        <div
+          className={cn(activeCategory === 'limits' && 'ring-2 ring-amber-500/30')}
+        />
+        <ATMStatsCard
+          label="Operational Services"
+          value={SERVICES_INFO.length}
+          icon={Activity}
+          variant="indigo"
+          description="Active operational services"
           onClick={() => setActiveCategory(activeCategory === 'services' ? 'all' : 'services')}
-          className={cn(
-            "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'services'
-              ? "border-indigo-500 dark:border-indigo-500 bg-indigo-50/5 dark:bg-indigo-950/10 ring-2 ring-indigo-500/10"
-              : "border-[var(--zen-border)] hover:border-indigo-550/20 dark:hover:border-indigo-500/20"
-          )}
-        >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Operational Services</span>
-          <span className={cn(
-            "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'services' ? "text-indigo-600 dark:text-indigo-400" : "text-slate-900 dark:text-white"
-          )}>{SERVICES_INFO.length} Active</span>
-        </div>
-
-        <div
+          className={cn(activeCategory === 'services' && 'ring-2 ring-indigo-500/30')}
+        />
+        <ATMStatsCard
+          label="Payment Methods"
+          value={PAYMENTS_INFO.length}
+          icon={Coins}
+          variant="emerald"
+          description="Active payment channels"
           onClick={() => setActiveCategory(activeCategory === 'payments' ? 'all' : 'payments')}
-          className={cn(
-            "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'payments'
-              ? "border-emerald-500 dark:border-emerald-500 bg-emerald-50/5 dark:bg-emerald-950/10 ring-2 ring-emerald-500/10"
-              : "border-[var(--zen-border)] hover:border-emerald-555/20 dark:hover:border-emerald-500/20"
-          )}
-        >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Payment Methods</span>
-          <span className={cn(
-            "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'payments' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"
-          )}>{PAYMENTS_INFO.length} Active</span>
-        </div>
-
-        <div
+          className={cn(activeCategory === 'payments' && 'ring-2 ring-emerald-500/30')}
+        />
+        <ATMStatsCard
+          label="Premium Modules"
+          value={MODULES_INFO.length}
+          icon={Layers3}
+          variant="accent"
+          description="Active module add-ons"
           onClick={() => setActiveCategory(activeCategory === 'modules' ? 'all' : 'modules')}
-          className={cn(
-            "p-4 rounded-xl border bg-[var(--zen-surface)] hover:shadow-sm cursor-pointer transition-all duration-300 select-none",
-            activeCategory === 'modules'
-              ? "border-indigo-500 dark:border-indigo-500 bg-indigo-50/5 dark:bg-indigo-950/10 ring-2 ring-indigo-500/10"
-              : "border-[var(--zen-border)] hover:border-indigo-550/20 dark:hover:border-indigo-500/20"
-          )}
-        >
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Premium Modules</span>
-          <span className={cn(
-            "text-xl font-black mt-1 inline-block transition-colors",
-            activeCategory === 'modules' ? "text-indigo-600 dark:text-indigo-400" : "text-slate-900 dark:text-white"
-          )}>{MODULES_INFO.length} Active</span>
-        </div>
+          className={cn(activeCategory === 'modules' && 'ring-2 ring-primary-500/30')}
+        />
       </div>
 
       {/* Render Dynamic Content based on View Mode.
@@ -543,13 +522,15 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
           )}
 
           {!hasAnyMatchingItems && (
-            <div className="p-12 text-center text-sm font-semibold text-slate-500 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-zinc-950/10">
-              No matching pricing items found. Try a different query.
-            </div>
+            <ATMEmptyState
+              icon={SearchX}
+              title="No matching pricing items"
+              description={`Nothing matches "${searchQuery}" — try a different query or clear the category filter.`}
+            />
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-150 dark:border-slate-800 bg-[var(--zen-surface)] overflow-hidden shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[var(--zen-surface)] overflow-hidden shadow-sm">
           <ATMTable
             columns={columns}
             data={filteredItems}

@@ -8,7 +8,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import {
   Copy,
   CheckCircle2,
-  Loader2,
   AlertTriangle,
   Ban,
   Key,
@@ -22,6 +21,8 @@ import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMBadge } from '@/shared/ui/ATMBadge';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMModal } from '@/shared/ui/ATMModal';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMProgressBar } from '@/shared/ui/ATMProgressBar';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/formatDate';
 import { PLAN_TYPE_LABEL } from '@/lib/types/platform-enums';
@@ -37,13 +38,6 @@ export interface TimelineEvent {
   description?: string;
   user?: string;
   type: 'info' | 'success' | 'warning' | 'error';
-}
-
-function getExpiryColor(days: number): string {
-  if (days > 30) return 'bg-emerald-500';
-  if (days > 14) return 'bg-yellow-500';
-  if (days > 7) return 'bg-orange-500';
-  return 'bg-red-500';
 }
 
 function getExpiryTextColor(days: number): string {
@@ -64,23 +58,26 @@ function PayloadSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const isEmpty = Object.keys(data).length === 0;
+  const sectionId = `payload-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
   return (
-    <div className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <div className="border-b border-[var(--zen-border)] last:border-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={sectionId}
         className="flex w-full items-center justify-between px-5 py-4 text-sm font-bold text-gray-900 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-800/50 transition-colors"
       >
         <span>{title}</span>
         <span className="text-gray-400 text-xs font-semibold">{open ? 'Hide' : 'Show'}</span>
       </button>
       {open && (
-        <div className="px-5 pb-4">
+        <div id={sectionId} className="px-5 pb-4">
           {isEmpty ? (
             <p className="text-xs font-semibold text-gray-400 py-2">Nothing recorded.</p>
           ) : (
-            <pre className="overflow-x-auto rounded-xl bg-gray-50/50 p-4 font-mono text-xs text-gray-800 dark:bg-gray-900 dark:text-gray-200 border border-gray-100 dark:border-gray-800 shadow-inner">
+            <pre className="overflow-x-auto rounded-xl bg-gray-50/50 p-4 font-mono text-xs text-gray-800 dark:bg-gray-900 dark:text-gray-200 border border-[var(--zen-border)] shadow-inner">
               {JSON.stringify(data, null, 2)}
             </pre>
           )}
@@ -113,7 +110,7 @@ function TokenTimeline({ events }: { events: TimelineEvent[] }) {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{evt.title}</p>
               {evt.description && (
-                <p className="mt-1 text-xs text-gray-650 dark:text-gray-400 font-medium">{evt.description}</p>
+                <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 font-medium">{evt.description}</p>
               )}
               <p className="mt-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
                 {formatDate(evt.timestamp, 'datetime')}
@@ -170,17 +167,20 @@ export const TokenView: React.FC<TokenViewProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
-          <ATMPageHeader title="Token Detail" onBack={onBack} />
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/10 dark:bg-gray-900/10">
-          <ATMCard padding="lg" className="max-w-7xl mx-auto shadow-sm border border-gray-150">
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-500 dark:text-gray-400">
-              <Loader2 className="h-8 w-8 animate-spin text-accent-600" />
-              <p className="text-sm font-semibold">Loading token details...</p>
+      <div className="flex flex-col gap-6 w-full">
+        <ATMPageHeader title="Token Detail" onBack={onBack} />
+        <div className="w-full max-w-[1600px] mx-auto space-y-6">
+          <ATMSkeleton variant="card" className="h-40 w-full" />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              <ATMSkeleton variant="card" className="h-64 w-full" />
+              <ATMSkeleton variant="card" className="h-64 w-full" />
             </div>
-          </ATMCard>
+            <div className="space-y-6">
+              <ATMSkeleton variant="card" className="h-72 w-full" />
+              <ATMSkeleton variant="card" className="h-40 w-full" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -188,26 +188,22 @@ export const TokenView: React.FC<TokenViewProps> = ({
 
   if (isError || !token) {
     return (
-      <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
-          <ATMPageHeader title="Token Detail" onBack={onBack} />
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/10 dark:bg-gray-900/10">
-          <ATMCard padding="md" className="max-w-7xl mx-auto shadow-sm border border-gray-150">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Failed to load token</p>
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">Please try again.</p>
-                </div>
+      <div className="flex flex-col gap-6 w-full">
+        <ATMPageHeader title="Token Detail" onBack={onBack} />
+        <ATMCard padding="md" className="w-full max-w-[1600px] mx-auto">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Failed to load token</p>
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">Please try again.</p>
               </div>
-              <ATMButton type="button" variant="secondary" size="sm" onClick={refetch}>
-                Retry
-              </ATMButton>
             </div>
-          </ATMCard>
-        </div>
+            <ATMButton type="button" variant="secondary" size="sm" onClick={refetch}>
+              Retry
+            </ATMButton>
+          </div>
+        </ATMCard>
       </div>
     );
   }
@@ -217,36 +213,34 @@ export const TokenView: React.FC<TokenViewProps> = ({
   const gracePolicy = parseJsonRecord<Record<string, number>>(token.gracePolicyDays);
 
   return (
-    <div className="flex flex-col h-full bg-zen-surface animate-in fade-in duration-500 overflow-hidden w-full">
-      <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-zen-surface">
-        <ATMPageHeader
-          title="Token Detail"
-          icon={Key}
-          subtitle={
-            <div className="flex items-center gap-2 mt-1">
-              <code className="font-mono text-xs text-gray-400">{token.tokenId}</code>
-              <TokenStatusBadge status={token.status} />
-            </div>
-          }
-          onBack={onBack}
-          extraActions={
-            (token.status === 'Active' || token.status === 'Superseded') ? (
-              <ATMButton type="button" variant="danger" icon={Ban} onClick={() => setRevokeModal(true)} className="hover:scale-[1.02] active:scale-[0.98]">
-                Revoke
-              </ATMButton>
-            ) : undefined
-          }
-        />
-      </div>
+    <div className="flex flex-col gap-6 w-full">
+      <ATMPageHeader
+        title="Token Detail"
+        icon={Key}
+        subtitle={
+          <div className="flex items-center gap-2 mt-1 min-w-0">
+            <code className="min-w-0 truncate font-mono text-xs text-gray-400">{token.tokenId}</code>
+            <TokenStatusBadge status={token.status} />
+          </div>
+        }
+        onBack={onBack}
+        extraActions={
+          (token.status === 'Active' || token.status === 'Superseded') ? (
+            <ATMButton type="button" variant="danger" icon={Ban} onClick={() => setRevokeModal(true)} className="hover:scale-[1.02] active:scale-[0.98]">
+              Revoke
+            </ATMButton>
+          ) : undefined
+        }
+      />
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/10 dark:bg-gray-900/10">
-        <div className="grid gap-6 lg:grid-cols-3 items-start max-w-7xl mx-auto w-full">
+      <div className="w-full max-w-[1600px] mx-auto">
+        <div className="grid gap-6 lg:grid-cols-3 items-start">
           <div className="space-y-6 lg:col-span-2">
-            <ATMCard title="Token Information" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Token Information" padding="md">
               <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Merchant</dt>
-                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <dd className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100 break-words min-w-0">
                     {token.merchantName || token.merchantId}
                   </dd>
                 </div>
@@ -330,7 +324,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
               </ATMCard>
             )}
 
-            <ATMCard title="Coverage" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Coverage" padding="md">
               {daysRemaining == null ? (
                 <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 py-2">
                   Not applied yet — the {token.validityDays}-day window starts when the merchant applies this token.
@@ -345,12 +339,14 @@ export const TokenView: React.FC<TokenViewProps> = ({
                       {token.validityDays} day validity
                     </span>
                   </div>
-                  <div className="h-3.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200/20 shadow-inner">
-                    <div
-                      className={cn('h-full rounded-full transition-all duration-500', getExpiryColor(daysRemaining))}
-                      style={{ width: `${expiryPercent}%` }}
-                    />
-                  </div>
+                  <ATMProgressBar
+                    value={expiryPercent}
+                    variant={
+                      daysRemaining > 30 ? 'success' : daysRemaining > 7 ? 'warning' : 'danger'
+                    }
+                    size="md"
+                    label={`${daysRemaining} of ${token.validityDays} days remaining`}
+                  />
                   <div className="flex justify-between text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     <span>{token.activatedAt ? formatDate(token.activatedAt, 'short') : ''}</span>
                     <span>{token.expiresAt ? formatDate(token.expiresAt, 'short') : ''}</span>
@@ -359,24 +355,26 @@ export const TokenView: React.FC<TokenViewProps> = ({
               )}
             </ATMCard>
 
-            <ATMCard title="Token String" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Token String" padding="md">
               <div className="flex items-center gap-3">
-                <code className="flex-1 break-all rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3.5 font-mono text-sm font-bold text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 shadow-inner">
+                <code className="flex-1 break-all rounded-xl border border-[var(--zen-border)] bg-gray-50/50 px-4 py-3.5 font-mono text-sm font-bold text-gray-900 dark:bg-gray-900 dark:text-gray-100 shadow-inner">
                   {token.encodedToken}
                 </code>
                 <ATMButton
                   type="button"
                   variant="outline"
-                  className="shrink-0 h-12 w-12 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-100"
+                  className="shrink-0"
                   onClick={handleCopy}
                   icon={copied ? CheckCircle2 : Copy}
+                  aria-label={copied ? 'Token string copied' : 'Copy token string'}
+                  title={copied ? 'Copied' : 'Copy token string'}
                 />
               </div>
             </ATMCard>
 
             {/* 2026-08-29 (user-locked): human-readable breakdown first; raw JSON stays
                 collapsed below for debugging. */}
-            <ATMCard title="What This Token Grants" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="What This Token Grants" padding="md">
               <TokenBreakdown
                 limitsPayload={token.limitsPayload}
                 featurePayload={token.featurePayload}
@@ -384,28 +382,28 @@ export const TokenView: React.FC<TokenViewProps> = ({
               />
             </ATMCard>
 
-            <ATMCard title="Raw Payloads" padding="none" className="shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <ATMCard title="Raw Payloads" padding="none" className="overflow-hidden">
               <PayloadSection title="Limits Configuration" data={limits} />
               <PayloadSection title="Feature Availability Map" data={features} />
               <PayloadSection title="Grace Period Policy" data={gracePolicy} />
             </ATMCard>
 
-            <ATMCard title="Lifecycle Timeline" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Lifecycle Timeline" padding="md">
               <TokenTimeline events={timeline} />
             </ATMCard>
           </div>
 
           <div className="space-y-6">
-            <ATMCard title="QR Activation Code" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="QR Activation Code" padding="md">
               <div className="flex flex-col items-center gap-4 py-4">
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 dark:border-gray-800 dark:bg-white shadow-md">
+                <div className="rounded-2xl border border-[var(--zen-border)] bg-white p-5 dark:bg-white shadow-md">
                   <QRCodeSVG value={token.encodedToken} size={200} level="H" includeMargin />
                 </div>
                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">Scan to apply on POS terminal</p>
               </div>
             </ATMCard>
 
-            <ATMCard title="Activation" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Activation" padding="md">
               <dl className="space-y-3">
                 <div>
                   <dt className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Terminal</dt>
@@ -422,7 +420,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
               </dl>
             </ATMCard>
 
-            <ATMCard title="Quick Actions" padding="md" className="shadow-sm border border-gray-100 dark:border-gray-800">
+            <ATMCard title="Quick Actions" padding="md">
               <div className="space-y-3">
                 <ATMButton type="button" variant="outline" className="w-full font-semibold hover:scale-[1.01] transition-transform duration-100" icon={Copy} onClick={handleCopy}>
                   {copied ? 'Copied!' : 'Copy Token String'}
@@ -469,8 +467,8 @@ export const TokenView: React.FC<TokenViewProps> = ({
             value={revokeReason}
             onChange={(e) => setRevokeReason(e.target.value)}
           />
-          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <ATMButton type="button" variant="secondary" size="sm" onClick={() => { setRevokeModal(false); setRevokeReason(''); }}>
+          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--zen-border)]">
+            <ATMButton type="button" variant="outline" size="sm" onClick={() => { setRevokeModal(false); setRevokeReason(''); }}>
               Cancel
             </ATMButton>
             <ATMButton

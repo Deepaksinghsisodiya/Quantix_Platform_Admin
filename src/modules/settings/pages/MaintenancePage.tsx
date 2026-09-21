@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarPlus, Power, X, AlertTriangle, Info } from 'lucide-react';
+import { CalendarPlus, Power, X, AlertTriangle, Info, Wrench, CalendarClock, Store, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -69,6 +69,22 @@ const EMPTY_FORM = {
   bannerMessage: '',
   preNotifyHours: '24',
 };
+
+function CardHeader({ icon: Icon, title, subtitle, badge }: { icon: LucideIcon; title: string; subtitle: string; badge?: React.ReactNode }) {
+  return (
+    <div className="relative flex items-center gap-3">
+      <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+      <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+        <Icon size={20} strokeWidth={2.2} />
+      </div>
+      <div className="min-w-0">
+        <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+      </div>
+      {badge && <div className="ml-auto shrink-0">{badge}</div>}
+    </div>
+  );
+}
 
 export function MaintenancePage() {
   const [mode, setMode] = useState<MaintenanceMode>({ isActive: false });
@@ -159,24 +175,24 @@ export function MaintenancePage() {
   const past = windows.filter((w) => w.status === 'Completed' || w.status === 'Cancelled');
 
   const windowRow = (w: MaintenanceWindow, cancellable: boolean) => (
-    <tr key={w.windowId} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <tr key={w.windowId} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
       <td className="py-3 pr-4">
-        <p className="text-sm font-bold text-gray-900 dark:text-white">{w.title}</p>
+        <p className="text-sm font-bold text-slate-900 dark:text-white">{w.title}</p>
         {(w.bannerMessage || w.description) && (
-          <p className="mt-0.5 max-w-md truncate text-xs text-gray-500 dark:text-gray-400 font-semibold">
+          <p className="mt-0.5 max-w-md truncate text-xs text-slate-500 dark:text-slate-400 font-semibold">
             {w.bannerMessage || w.description}
           </p>
         )}
       </td>
-      <td className="py-3 pr-4 text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{fmt(w.startsAt)}</td>
-      <td className="py-3 pr-4 text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{fmt(w.endsAt)}</td>
+      <td className="py-3 pr-4 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{fmt(w.startsAt)}</td>
+      <td className="py-3 pr-4 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{fmt(w.endsAt)}</td>
       <td className="py-3 pr-4">
         <ATMBadge size="sm" color={w.severity === 'Full' ? 'error' : 'info'} label={w.severity === 'Full' ? 'Full (blocks)' : w.severity} />
       </td>
       <td className="py-3 pr-4 whitespace-nowrap">
         <ATMBadge size="sm" color={STATUS_COLOR[w.status]} label={w.status} />
         {w.preNotifiedAt && (
-          <p className="mt-1 text-[10px] font-bold text-gray-400" title={fmt(w.preNotifiedAt)}>notified ✓</p>
+          <p className="mt-1 text-[10px] font-bold text-slate-400" title={fmt(w.preNotifiedAt)}>notified ✓</p>
         )}
       </td>
       <td className="py-3 text-right">
@@ -184,7 +200,7 @@ export function MaintenancePage() {
           <button
             type="button"
             onClick={() => handleCancel(w)}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
             title="Cancel window"
           >
             <X className="h-4 w-4" />
@@ -195,14 +211,19 @@ export function MaintenancePage() {
   );
 
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
-      <div>
-        {/* Title matches the sidebar label. */}
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Maintenance</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-          Schedule platform maintenance or start it immediately. Enterprise merchants get an
-          advance email (and SMS when SMS Integration is on); platform staff are never blocked.
-        </p>
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
+          <Wrench size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          {/* Title matches the sidebar label. */}
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Maintenance</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
+            Schedule platform maintenance or start it immediately. Enterprise merchants get an
+            advance email (and SMS when SMS Integration is on); platform staff are never blocked.
+          </p>
+        </div>
       </div>
 
       {loading ? (
@@ -210,46 +231,59 @@ export function MaintenancePage() {
       ) : (
         <>
           {/* Master switch */}
-          <ATMCard className="glass-card">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Power className={mode.isActive ? 'h-5 w-5 text-red-500' : 'h-5 w-5 text-gray-400'} />
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {mode.isActive ? 'Maintenance is ACTIVE' : 'Platform is live'}
-                  </h2>
-                </div>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                  {mode.isActive
-                    ? `Merchant-facing traffic is receiving 503 since ${fmt(mode.activatedAt)} (until ${fmt(mode.scheduledEndAt)}). Staff access is unaffected.`
-                    : 'The emergency switch starts a Full window immediately (1 hour — extend or end below). For planned work, schedule a window instead.'}
-                </p>
+          <ATMCard
+            className="glass-card"
+            header={
+              <div className="flex items-center justify-between gap-4">
+                <CardHeader
+                  icon={Power}
+                  title={mode.isActive ? 'Maintenance is ACTIVE' : 'Platform is live'}
+                  subtitle={
+                    mode.isActive
+                      ? `Merchant-facing traffic receiving 503 since ${fmt(mode.activatedAt)}`
+                      : 'Emergency switch — starts a Full window immediately (1 hour)'
+                  }
+                  badge={
+                    <ATMButton
+                      variant={mode.isActive ? 'primary' : 'outline'}
+                      size="md"
+                      icon={Power}
+                      isLoading={toggling}
+                      onClick={handleToggle}
+                    >
+                      {mode.isActive ? 'End maintenance now' : 'Start now'}
+                    </ATMButton>
+                  }
+                />
               </div>
-              <ATMButton
-                variant={mode.isActive ? 'primary' : 'outline'}
-                size="md"
-                icon={Power}
-                isLoading={toggling}
-                onClick={handleToggle}
-              >
-                {mode.isActive ? 'End maintenance now' : 'Start now'}
-              </ATMButton>
-            </div>
+            }
+          >
+            {mode.isActive && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700 dark:bg-red-950/20 dark:text-red-300 mb-2">
+                Until {fmt(mode.scheduledEndAt)} — staff access is unaffected.
+              </div>
+            )}
+            {!mode.isActive && (
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold px-1 pb-1">
+                For planned work, schedule a window below instead of the emergency switch.
+              </p>
+            )}
             {mode.isActive && mode.message && (
-              <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
-                <p className="text-xs font-semibold text-red-700 dark:text-red-300">{mode.message}</p>
+              <div className="mt-3 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/30">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400 mt-0.5" />
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">{mode.message}</p>
               </div>
             )}
           </ATMCard>
 
           {/* Schedule */}
-          <ATMCard className="glass-card">
-            <div className="flex items-center gap-2 mb-4">
-              <CalendarPlus className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Schedule Maintenance</h2>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ATMCard
+            className="glass-card"
+            header={
+              <CardHeader icon={CalendarPlus} title="Schedule Maintenance" subtitle="Planned window with advance merchant notification" />
+            }
+          >
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-1">
               <ATMTextField name="title" label="Title" placeholder="Database migration"
                 value={form.title} onChange={set('title')} />
               <ATMSelectField
@@ -287,9 +321,9 @@ export function MaintenancePage() {
             </div>
           </ATMCard>
 
-          <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50/50 px-4 py-3 dark:border-blue-900 dark:bg-blue-950/20">
-            <Info className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--zen-border)] bg-primary-50/50 dark:bg-primary-900/10 p-3.5">
+            <Info className="h-4 w-4 shrink-0 text-primary-500 mt-0.5" />
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
               Standalone merchants are unaffected — their POS runs locally. Only Enterprise
               merchants using cloud services (and the merchant self-service portal) experience
               downtime during a Full window.
@@ -297,17 +331,22 @@ export function MaintenancePage() {
           </div>
 
           {/* Windows */}
-          <ATMCard className="glass-card">
-            <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
-              Upcoming & Active
-            </h2>
+          <ATMCard
+            className="glass-card"
+            header={
+              <CardHeader icon={CalendarClock} title="Upcoming & Active" subtitle="Windows currently scheduled or running" />
+            }
+          >
             {current.length === 0 ? (
-              <p className="py-6 text-center text-sm font-semibold text-gray-400">No upcoming maintenance scheduled.</p>
+              <div className="flex flex-col items-center gap-2 py-8 text-slate-400 dark:text-gray-500">
+                <CalendarClock className="h-8 w-8 opacity-50" strokeWidth={1.8} />
+                <p className="text-sm font-bold">No upcoming maintenance scheduled.</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-800 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
                       <th className="py-2 pr-4">Window</th>
                       <th className="py-2 pr-4">Start</th>
                       <th className="py-2 pr-4">End</th>
@@ -323,10 +362,12 @@ export function MaintenancePage() {
           </ATMCard>
 
           {past.length > 0 && (
-            <ATMCard className="glass-card">
-              <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
-                Past Windows
-              </h2>
+            <ATMCard
+              className="glass-card"
+              header={
+                <CardHeader icon={Store} title="Past Windows" subtitle="Completed or cancelled — most recent 20" />
+              }
+            >
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <tbody>{past.slice(0, 20).map((w) => windowRow(w, false))}</tbody>

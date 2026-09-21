@@ -85,6 +85,10 @@ export const AddTokenWrapper: React.FC = () => {
     [merchantsQuery.data],
   );
 
+  const merchantsError = merchantsQuery.isError
+    ? (merchantsQuery.error as any)?.data?.message ?? 'Failed to load merchants — refresh the page and try again.'
+    : null;
+
   const subscription = merchantId ? subscriptionQuery.data?.data ?? null : null;
   const isPos = subscription?.planType === 'StandalonePos';
   // 2026-09-05: currency comes from configuration (platform.currency) only —
@@ -270,6 +274,7 @@ export const AddTokenWrapper: React.FC = () => {
       onStepChange={setStep}
       merchantOptions={merchantOptions}
       merchantsLoading={merchantsQuery.isLoading}
+      merchantsError={merchantsError}
       merchantId={merchantId}
       onMerchantChange={handleMerchantChange}
       subscription={subscription}
@@ -282,6 +287,7 @@ export const AddTokenWrapper: React.FC = () => {
       activeTokenInfo={activeTokenInfo}
       isPos={isPos}
       terminals={terminals}
+      terminalsLoading={!!merchantId && terminalsQuery.isFetching}
       terminalId={terminalId}
       onTerminalChange={setTerminalId}
       validityDays={validityDays}

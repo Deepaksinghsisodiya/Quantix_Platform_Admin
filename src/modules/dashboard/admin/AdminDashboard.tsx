@@ -247,29 +247,47 @@ function KpiCard({ card, index }: { card: KpiCardData; index: number }) {
     <StaggeredFadeIn index={index}>
       <div
         className={cn(
-          'rounded-2xl border-y border-r border-l-4 border-gray-100 bg-white p-5',
-          'dark:border-gray-800 dark:bg-gray-900',
-          'transition-all duration-300 hover:shadow-lg hover:border-accent-500/20 dark:hover:border-accent-500/10 shadow-sm',
+          'group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/90 p-5 backdrop-blur-xl',
+          'dark:border-white/[0.07] dark:bg-zinc-900/70',
+          'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/40 hover:border-zinc-300 dark:hover:border-white/[0.14]',
         )}
-        style={{ borderLeftColor: card.color }}
       >
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-550 dark:text-gray-400">
-              {card.icon}
-              {card.title}
+        {/* Top glowing accent border */}
+        <div
+          className="absolute inset-x-0 top-0 h-[2.5px] opacity-80 transition-all duration-300 group-hover:h-[3.5px] group-hover:opacity-100"
+          style={{
+            background: `linear-gradient(90deg, ${card.color}, transparent 80%)`,
+          }}
+        />
+
+        {/* Ambient background glow spotlight */}
+        <div
+          className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full blur-2xl opacity-10 transition-opacity duration-500 group-hover:opacity-20"
+          style={{ backgroundColor: card.color }}
+        />
+
+        <div className="relative flex items-start justify-between">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-lg border border-zinc-200/60 bg-zinc-100/80 dark:border-zinc-700/60 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 transition-transform duration-300 group-hover:scale-110"
+                style={{ color: card.color }}
+              >
+                {card.icon}
+              </span>
+              <span>{card.title}</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            <p className="font-mono text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-white pt-0.5">
               {card.value}
             </p>
           </div>
           {card.trend && (
             <span
               className={cn(
-                'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold',
+                'inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-xs',
                 isPositive
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400'
-                  : 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400',
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400'
+                  : 'bg-red-500/10 text-red-600 border border-red-500/20 dark:bg-red-500/15 dark:text-red-400',
               )}
             >
               {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -278,14 +296,14 @@ function KpiCard({ card, index }: { card: KpiCardData; index: number }) {
           )}
         </div>
 
-        <div className="mt-4 space-y-1.5 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="relative mt-4 space-y-1.5 pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
           {card.details.map((d, dIdx) => (
             <div
               key={`${d.label}-${dIdx}`}
-              className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
+              className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400"
             >
               <span className="font-medium">{d.label}</span>
-              <span className="font-bold text-gray-700 dark:text-gray-250">{d.value}</span>
+              <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">{d.value}</span>
             </div>
           ))}
         </div>
@@ -297,27 +315,27 @@ function KpiCard({ card, index }: { card: KpiCardData; index: number }) {
 // Service status widget card
 function ServiceCard({ service }: { service: ServiceStatus }) {
   const statusConfig = {
-    Healthy: { icon: <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500" />, badge: 'success' as const },
-    Degraded: { icon: <AlertTriangle className="h-4.5 w-4.5 text-amber-500" />, badge: 'warning' as const },
-    Unhealthy: { icon: <XCircle className="h-4.5 w-4.5 text-red-500" />, badge: 'danger' as const },
+    Healthy: { icon: <CheckCircle2 className="h-[18px] w-[18px] text-emerald-500" />, badge: 'success' as const },
+    Degraded: { icon: <AlertTriangle className="h-[18px] w-[18px] text-amber-500" />, badge: 'warning' as const },
+    Unhealthy: { icon: <XCircle className="h-[18px] w-[18px] text-red-500" />, badge: 'danger' as const },
   };
   const config = statusConfig[service.status] ?? statusConfig.Healthy;
 
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3',
-        'dark:border-gray-800 dark:bg-gray-900/60',
-        'transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700',
+        'flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/90 px-4 py-3.5 backdrop-blur-xl',
+        'dark:border-white/[0.07] dark:bg-zinc-900/70',
+        'transition-all duration-300 hover:shadow-md hover:border-zinc-300 dark:hover:border-white/[0.14]',
       )}
     >
       {config.icon}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
           {service.name}
         </p>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
-          {service.responseTimeMs > 0 ? `${service.responseTimeMs}ms / ` : ''}{service.uptime} uptime
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium font-mono">
+          {service.responseTimeMs > 0 ? `${service.responseTimeMs}ms · ` : ''}{service.uptime} uptime
         </p>
       </div>
       <StatusBadge status={config.badge} label={service.status} />
@@ -567,35 +585,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         label: 'New Merchant Signup',
         icon: <Plus className="h-4 w-4" />,
         route: '/merchants/signups/new',
-        color: 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/10',
+        color: 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm',
         permission: { module: 'merchants', action: 'create' },
       },
       {
         label: 'Generate Recharge Token',
         icon: <Key className="h-4 w-4" />,
         route: ROUTES.TOKENS.GENERATE,
-        color: 'bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/10',
+        color: 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-500/20',
         permission: { module: 'token', action: 'generate' },
       },
       {
         label: 'View Open Tickets',
         icon: <TicketCheck className="h-4 w-4" />,
         route: ROUTES.SUPPORT.QUEUE,
-        color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200',
+        color: 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60',
         permission: { module: 'tickets', action: 'view' },
       },
       {
         label: 'View Overdue Invoices',
         icon: <CreditCard className="h-4 w-4" />,
         route: ROUTES.BILLING.INVOICES,
-        color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200',
+        color: 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60',
         permission: { module: 'invoices', action: 'view' },
       },
       {
         label: 'View Commission Overview',
         icon: <Percent className="h-4 w-4" />,
         route: ROUTES.COMMISSION.OVERVIEW,
-        color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200',
+        color: 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60',
         permission: { module: 'commission', action: 'view' },
       },
       {
@@ -1117,20 +1135,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="space-y-6 w-full">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 dark:border-gray-800 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 dark:border-white/[0.06] pb-5">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Platform overview and key metrics
+          <h1 className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            Platform overview and real-time operational metrics
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-550 bg-gray-50 dark:bg-gray-950/30 px-3 h-9 rounded-xl border border-gray-200 dark:border-gray-800">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 bg-white/80 dark:bg-zinc-900/80 px-2.5 h-9 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-xs">
             <button
               type="button"
               onClick={toggleRefresh}
-              className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 transition-colors"
+              className="rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
               title={paused ? 'Resume auto-refresh' : 'Pause auto-refresh'}
             >
               {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
@@ -1138,43 +1156,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               type="button"
               onClick={refreshNow}
-              className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 transition-colors animate-in duration-300"
+              className="rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors animate-in duration-300"
               title="Refresh now"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
-            {!paused && <span className="tabular-nums font-mono text-gray-400">{secondsUntilRefresh}s</span>}
+            {!paused && <span className="tabular-nums font-mono text-zinc-400 dark:text-zinc-500 text-[11px]">{secondsUntilRefresh}s</span>}
           </div>
 
           <button
             type="button"
             onClick={() => setShowWidgetConfig((v) => !v)}
             className={cn(
-              'flex items-center gap-1.5 rounded-xl border px-3 h-9 text-xs font-bold transition-all duration-300 hover:shadow-sm',
+              'flex items-center gap-1.5 rounded-xl border px-3 h-9 text-xs font-bold transition-all duration-200 shadow-xs',
               showWidgetConfig
-                ? 'border-accent-300 bg-accent-50 text-accent-700 dark:border-accent-600 dark:bg-accent-950/20 dark:text-accent-400'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-900',
+                ? 'border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 dark:border-blue-500/30'
+                : 'border-zinc-200/80 bg-white/80 text-zinc-600 hover:bg-zinc-50 dark:border-white/[0.08] dark:bg-zinc-900/80 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200 backdrop-blur-xl',
             )}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
             Customize
           </button>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-9 w-9 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 text-gray-400 dark:text-gray-500">
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl border border-zinc-200/80 bg-white/80 dark:border-white/[0.08] dark:bg-zinc-900/80 text-zinc-400 dark:text-zinc-500 backdrop-blur-xl shadow-xs">
               <Calendar className="h-4 w-4" />
             </div>
-            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-gray-900 h-9 items-center">
+            <div className="inline-flex rounded-xl border border-zinc-200/80 bg-white/80 p-0.5 dark:border-white/[0.08] dark:bg-zinc-900/80 h-9 items-center backdrop-blur-xl shadow-xs">
               {DATE_RANGES.map((range) => (
                 <button
                   key={range.key}
                   type="button"
                   onClick={() => setDateRange(range.key)}
                   className={cn(
-                    'rounded-lg px-3 h-7 flex items-center justify-center text-xs font-bold transition-all duration-300 uppercase tracking-wider',
+                    'rounded-lg px-2.5 h-7 flex items-center justify-center text-[11px] font-bold transition-all duration-200 uppercase tracking-wider',
                     dateRange === range.key
-                      ? 'bg-gray-950 text-white dark:bg-gray-50 dark:text-gray-950 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100',
                   )}
                 >
                   {range.label}
@@ -1186,13 +1204,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       {hasError && (
-        <div className="rounded-xl border border-red-200 bg-red-50/50 px-4 py-3 text-xs font-bold text-red-700 dark:border-red-950/40 dark:bg-red-950/20 dark:text-red-300 flex items-center gap-2.5">
-          <AlertTriangle className="h-4.5 w-4.5" />
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-2.5">
+          <AlertTriangle className="h-[18px] w-[18px]" />
           <span>One or more dashboard queries failed. Some sections may show stale data.</span>
           <button
             type="button"
             onClick={() => void refreshNow()}
-            className="underline ml-auto font-black hover:text-red-800"
+            className="underline ml-auto font-black hover:text-red-700"
           >
             Retry
           </button>
@@ -1200,18 +1218,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* Type filter pills */}
-      <div className="inline-flex items-center gap-1 bg-gray-50/60 dark:bg-gray-950/30 p-1 rounded-xl border border-gray-200 dark:border-gray-800 h-9">
-        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-2">Filter:</span>
+      <div className="inline-flex items-center gap-1 bg-white/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] h-9 backdrop-blur-xl shadow-xs">
+        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-2">Filter:</span>
         {TYPE_FILTERS.map((filter) => (
           <button
             key={filter.value}
             type="button"
             onClick={() => setMerchantType(filter.value)}
             className={cn(
-              'rounded-lg px-3.5 h-7 flex items-center justify-center text-xs font-bold transition-all duration-300 uppercase tracking-wider',
+              'rounded-lg px-3 h-7 flex items-center justify-center text-[11px] font-bold transition-all duration-200 uppercase tracking-wider',
               merchantTypeFilter === filter.value
-                ? 'bg-accent-600 text-white shadow-sm shadow-accent-500/20'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100',
             )}
           >
             {filter.label}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Clock } from 'lucide-react';
+import { Save, Clock, Store, Cloud, Building2, AlertTriangle, Activity, Lock, Ban, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -23,10 +23,14 @@ import {
  * One policy per plan type; stamped into tokens at issuance and overridable there.
  */
 
-const PLAN_TYPES: ReadonlyArray<{ wire: GracePeriodPolicy['planType']; label: string }> = [
-  { wire: 'StandalonePos', label: 'Standalone POS' },
-  { wire: 'StandaloneCloud', label: 'Standalone Cloud' },
-  { wire: 'EnterpriseCloud', label: 'Enterprise Cloud' },
+const PLAN_TYPES: ReadonlyArray<{
+  wire: GracePeriodPolicy['planType'];
+  label: string;
+  icon: typeof Store;
+}> = [
+  { wire: 'StandalonePos', label: 'Standalone POS', icon: Store },
+  { wire: 'StandaloneCloud', label: 'Standalone Cloud', icon: Cloud },
+  { wire: 'EnterpriseCloud', label: 'Enterprise Cloud', icon: Building2 },
 ];
 
 interface StageField {
@@ -34,8 +38,10 @@ interface StageField {
   name: string;
   timing: string;
   description: string;
+  icon: typeof AlertTriangle;
   color: string;
   bgColor: string;
+  line: string;
 }
 
 const STAGES: StageField[] = [
@@ -44,38 +50,46 @@ const STAGES: StageField[] = [
     name: 'Warning',
     timing: 'days BEFORE expiry',
     description: 'Advance notice while the token is still valid. Everything keeps working — notifications only.',
+    icon: AlertTriangle,
     color: 'text-amber-700 dark:text-amber-300',
-    bgColor: 'bg-amber-100/60 dark:bg-amber-900/30',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
+    line: 'bg-amber-400 dark:bg-amber-500',
   },
   {
     key: 'degradedAfterDays',
     name: 'Degraded',
     timing: 'days after expiry',
     description: 'Token has expired. Advance features stop; core billing continues. 0 = starts at expiry.',
+    icon: Activity,
     color: 'text-orange-700 dark:text-orange-300',
-    bgColor: 'bg-orange-100/60 dark:bg-orange-900/30',
+    bgColor: 'bg-orange-50 dark:bg-orange-950/30',
+    line: 'bg-orange-400 dark:bg-orange-500',
   },
   {
     key: 'restrictedAfterDays',
     name: 'Restricted',
     timing: 'days after expiry',
     description: 'Billing stops. The merchant can still view and download their data and reports.',
+    icon: Lock,
     color: 'text-red-700 dark:text-red-300',
-    bgColor: 'bg-red-100/60 dark:bg-red-900/30',
+    bgColor: 'bg-red-50 dark:bg-red-950/30',
+    line: 'bg-red-400 dark:bg-red-500',
   },
   {
     key: 'suspendedAfterDays',
     name: 'Suspended',
     timing: 'days after expiry',
     description: 'Terminal state — blocked until a new token is applied. There is no later stage.',
+    icon: Ban,
     color: 'text-red-900 dark:text-red-200',
-    bgColor: 'bg-red-200/70 dark:bg-red-900/50',
+    bgColor: 'bg-red-100/80 dark:bg-red-900/40',
+    line: 'bg-red-600 dark:bg-red-400',
   },
 ];
 
 type Values = Record<StageField['key'], number>;
 
-function PolicyCard({ policy, label }: { policy: GracePeriodPolicy; label: string }) {
+function PolicyCard({ policy, label, icon: Icon }: { policy: GracePeriodPolicy; label: string; icon: typeof Store }) {
   const [updatePolicy, { isLoading: saving }] = useUpdateGracePeriodMutation();
   const [values, setValues] = useState<Values>({
     warningDays: policy.warningDays,
@@ -95,10 +109,7 @@ function PolicyCard({ policy, label }: { policy: GracePeriodPolicy; label: strin
     values.restrictedAfterDays > values.suspendedAfterDays;
 
   const handleSave = async () => {
-    if (orderInvalid) {
-      toast.error('Stage order invalid — Degraded ≤ Restricted ≤ Suspended (days after expiry).');
-      return;
-    }
+    if (orderInvalid) return;
     try {
       await updatePolicy({ planType: policy.planType, ...values }).unwrap();
       toast.success(`${label} grace policy saved.`);
@@ -108,43 +119,72 @@ function PolicyCard({ policy, label }: { policy: GracePeriodPolicy; label: strin
   };
 
   return (
-    <ATMCard className="glass-card">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-black text-gray-900 dark:text-white">{label}</h3>
-        <ATMButton
-          variant="primary"
-          size="sm"
-          icon={Save}
-          isLoading={saving}
-          disabled={!dirty}
-          onClick={handleSave}
-        >
-          Save
-        </ATMButton>
-      </div>
-
+    <ATMCard
+      className="glass-card"
+      header={
+        <div className="relative flex items-center gap-3">
+          <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+            <Icon size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{label}</h3>
+            <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">Grace period policy — stamped into tokens at issuance</p>
+          </div>
+          <ATMButton
+            variant="primary"
+            size="sm"
+            icon={Save}
+            className="ml-auto shrink-0"
+            isLoading={saving}
+            disabled={!dirty || orderInvalid}
+            onClick={handleSave}
+          >
+            Save
+          </ATMButton>
+        </div>
+      }
+    >
       {/* Timeline strip */}
-      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
-        <Clock className="h-3.5 w-3.5" />
-        <span className="text-amber-600 dark:text-amber-400">−{values.warningDays}d Warning</span>
-        <span>→</span>
-        <span className="text-gray-600 dark:text-gray-300">Expiry</span>
-        <span>→</span>
-        <span className="text-orange-600 dark:text-orange-400">+{values.degradedAfterDays}d Degraded</span>
-        <span>→</span>
-        <span className="text-red-600 dark:text-red-400">+{values.restrictedAfterDays}d Restricted</span>
-        <span>→</span>
-        <span className="text-red-800 dark:text-red-300">+{values.suspendedAfterDays}d Suspended</span>
+      <div className="flex flex-wrap items-center gap-1.5 px-1 pb-5">
+        <span className="inline-flex items-center rounded-lg bg-amber-100/70 dark:bg-amber-900/30 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+          −{values.warningDays}d Warning
+        </span>
+        <ArrowRight size={12} className="text-slate-400" />
+        <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          <Clock size={10} strokeWidth={3} /> Expiry
+        </span>
+        <ArrowRight size={12} className="text-slate-400" />
+        <span className="inline-flex items-center rounded-lg bg-orange-100/70 dark:bg-orange-900/30 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-orange-700 dark:text-orange-300">
+          +{values.degradedAfterDays}d Degraded
+        </span>
+        <ArrowRight size={12} className="text-slate-400" />
+        <span className="inline-flex items-center rounded-lg bg-red-100/70 dark:bg-red-900/30 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-red-700 dark:text-red-300">
+          +{values.restrictedAfterDays}d Restricted
+        </span>
+        <ArrowRight size={12} className="text-slate-400" />
+        <span className="inline-flex items-center rounded-lg bg-red-200/80 dark:bg-red-900/50 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-red-900 dark:text-red-200">
+          +{values.suspendedAfterDays}d Suspended
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {STAGES.map((stage) => (
-          <div key={stage.key} className={cn('rounded-xl p-4', stage.bgColor)}>
-            <div className="mb-2">
-              <span className={cn('text-sm font-bold', stage.color)}>{stage.name}</span>
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                {stage.timing}
-              </span>
+          <div
+            key={stage.key}
+            className="relative overflow-hidden rounded-xl border border-[var(--zen-border)] bg-white dark:bg-zinc-950 p-4"
+          >
+            <div className={cn('absolute inset-x-0 top-0 h-0.5', stage.line)} />
+            <div className="mb-3 flex items-center gap-2.5">
+              <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg shrink-0', stage.bgColor, stage.color)}>
+                <stage.icon size={16} strokeWidth={2.2} />
+              </div>
+              <div className="min-w-0">
+                <span className={cn('block text-sm font-bold leading-tight', stage.color)}>{stage.name}</span>
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  {stage.timing}
+                </span>
+              </div>
             </div>
             <ATMTextField
               name={`${policy.planType}-${stage.key}`}
@@ -158,7 +198,7 @@ function PolicyCard({ policy, label }: { policy: GracePeriodPolicy; label: strin
               max={60}
               size="sm"
             />
-            <p className="mt-3 text-xs leading-relaxed text-gray-650 dark:text-gray-400 font-semibold">
+            <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400 font-semibold">
               {stage.description}
             </p>
           </div>
@@ -166,9 +206,12 @@ function PolicyCard({ policy, label }: { policy: GracePeriodPolicy; label: strin
       </div>
 
       {orderInvalid && (
-        <p className="mt-3 text-xs font-bold text-red-600 dark:text-red-400">
-          Stage order invalid — Degraded ≤ Restricted ≤ Suspended (days after expiry).
-        </p>
+        <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-red-200/80 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 p-3">
+          <AlertTriangle size={15} className="mt-0.5 text-red-500 shrink-0" />
+          <p className="text-xs font-bold text-red-600 dark:text-red-400">
+            Stage order invalid — Degraded ≤ Restricted ≤ Suspended (days after expiry). Adjust the values before saving.
+          </p>
+        </div>
       )}
     </ATMCard>
   );
@@ -179,17 +222,22 @@ export function GracePeriodConfigPage() {
   const policies = data?.data ?? [];
 
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter">
       {/* Header — title matches the sidebar label. */}
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Grace Period
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-          Four stages anchored to the token expiry date — Warning before expiry; Degraded, Restricted
-          and Suspended after it. Configured per plan type, stamped into tokens at issuance, and
-          overridable in Token Config.
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
+          <Clock size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Grace Period
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
+            Four stages anchored to the token expiry date — Warning before expiry; Degraded, Restricted
+            and Suspended after it. Configured per plan type, stamped into tokens at issuance, and
+            overridable in Token Config.
+          </p>
+        </div>
       </div>
 
       {isLoading ? (
@@ -199,20 +247,23 @@ export function GracePeriodConfigPage() {
           <ATMSkeleton className="h-48 w-full" />
         </div>
       ) : isError ? (
-        <div className="p-8 text-center text-sm font-semibold text-red-500">
-          Failed to load grace policies.
-          <ATMButton variant="outline" size="sm" className="ml-3" onClick={() => refetch()}>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-200/80 dark:border-red-900/50 bg-red-50/60 dark:bg-red-950/20 p-8 text-center">
+          <AlertTriangle className="h-8 w-8 text-red-500" />
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Failed to load grace policies.
+          </p>
+          <ATMButton variant="outline" size="sm" onClick={() => refetch()}>
             Retry
           </ATMButton>
         </div>
       ) : (
-        PLAN_TYPES.map(({ wire, label }) => {
+        PLAN_TYPES.map(({ wire, label, icon }) => {
           const policy = policies.find((p: GracePeriodPolicy) => p.planType === wire);
-          return policy ? <PolicyCard key={wire} policy={policy} label={label} /> : null;
+          return policy ? <PolicyCard key={wire} policy={policy} label={label} icon={icon} /> : null;
         })
       )}
 
-      <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold px-1">
+      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold px-1">
         Changes apply to newly issued tokens only — tokens already in the field keep the grace
         policy encoded at issuance.
       </p>

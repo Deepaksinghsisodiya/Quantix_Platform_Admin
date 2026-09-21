@@ -192,7 +192,7 @@ export const EditPlanWrapper: React.FC<EditPlanWrapperProps> = ({
       subtitle="Update pricing, flavour, limits, features, payments, and service types"
       size="4xl"
       footer={
-        <div className="flex items-center justify-end gap-3 w-full border-t border-gray-100 dark:border-gray-800 pt-4">
+        <div className="flex items-center justify-end gap-3 w-full">
           <ATMButton
             variant="outline"
             type="button"

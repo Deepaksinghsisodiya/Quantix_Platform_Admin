@@ -11,13 +11,16 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Save, Globe, Lock, Percent, ShieldAlert } from 'lucide-react';
+import { Save, Globe, Lock, Percent, ShieldAlert, Settings2, Building2, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMButton } from '@/shared/ui/ATMButton';
 import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMTextField } from '@/shared/ui/ATMTextField';
 import { ATMSelectField } from '@/shared/ui/ATMSelectField';
+import { ATMSkeleton } from '@/shared/ui/ATMSkeleton';
+import { ATMSectionHeader } from '@/shared/ui/ATMSectionHeader';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { countryName } from '@/lib/utils/countryName';
 import {
   useGetSetupStatusQuery,
@@ -37,6 +40,34 @@ const LANGUAGES = [
   { value: 'en', label: 'English' },
 ];
 
+/** Read-only display field used for deployment-locked values (country, currency). */
+function ReadonlyField({
+  icon: Icon,
+  label,
+  value,
+  tag,
+}: {
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  value: React.ReactNode;
+  tag: string;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{label}</label>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-zinc-900/40 px-3.5 py-2.5">
+        <span className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 min-w-0">
+          {Icon && <Icon size={15} className="text-slate-400 dark:text-slate-500 shrink-0" />}
+          <span className="truncate">{value}</span>
+        </span>
+        <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+          <Lock size={9} /> {tag}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function GlobalSettingsPage() {
   const { data: statusRes, isLoading } = useGetSetupStatusQuery();
   const { data: catalogRes } = useGetSetupCatalogQuery();
@@ -55,6 +86,7 @@ export function GlobalSettingsPage() {
   const [form, setForm] = useState({
     country: '', timezone: '', supportEmail: '', dbaName: '', language: 'en',
   });
+  const [errors, setErrors] = useState<{ country?: string; timezone?: string; supportEmail?: string }>({});
   useEffect(() => {
     if (status) {
       setForm({
@@ -67,6 +99,9 @@ export function GlobalSettingsPage() {
     }
   }, [status]);
 
+  const clearError = (key: keyof typeof errors) =>
+    setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+
   const selectedCatalogRow = useMemo(
     () => catalog.find((c) => c.code === form.country),
     [catalog, form.country],
@@ -78,11 +113,15 @@ export function GlobalSettingsPage() {
   const derivedCurrency = selectedCatalogRow?.currency ?? (form.country ? '…' : '—');
 
   const handleSave = async () => {
+    const nextErrors: { country?: string; timezone?: string; supportEmail?: string } = {};
+    if (!isConfigured && !form.country) nextErrors.country = 'Select the deployment country.';
+    if (!isConfigured && !form.timezone) nextErrors.timezone = 'Select a timezone.';
+    if (!form.supportEmail.includes('@')) nextErrors.supportEmail = 'A valid support email is required.';
+    setErrors(nextErrors);
+    if (nextErrors.country || nextErrors.timezone || nextErrors.supportEmail) return;
+
     if (!isConfigured) {
       // ── First-run setup: one-shot, country freezes after this. ──
-      if (!form.country) { toast.error('Select the deployment country.'); return; }
-      if (!form.timezone) { toast.error('Select a timezone.'); return; }
-      if (!form.supportEmail.includes('@')) { toast.error('A valid support email is required.'); return; }
       try {
         await completeSetup({
           country: form.country,
@@ -97,7 +136,6 @@ export function GlobalSettingsPage() {
       }
     } else {
       // ── Post-setup edits: everything except country + currency. ──
-      if (!form.supportEmail.includes('@')) { toast.error('A valid support email is required.'); return; }
       try {
         // Backend PUT /settings/bulk expects a raw UpdateSettingDto[] array.
         await bulkUpdate([
@@ -114,31 +152,46 @@ export function GlobalSettingsPage() {
   };
 
   if (isLoading) {
-    return <div className="p-10 text-center text-sm font-semibold text-slate-400">Loading settings…</div>;
+    return (
+      <div className="flex flex-col gap-6 animate-page-enter max-w-4xl">
+        <ATMPageHeader
+          title="Global Settings"
+          subtitle="One-time platform setup — complete this before any other activity."
+          icon={Settings2}
+          iconColor="theme"
+          breadcrumbs={[{ label: 'System Setup' }, { label: 'Global Settings' }]}
+        />
+        <div className="space-y-4">
+          <ATMSkeleton className="h-40 w-full" />
+          <ATMSkeleton className="h-40 w-full" />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-6 animate-page-enter max-w-4xl">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            Global Settings
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-            {isConfigured
-              ? 'Platform-wide configuration. Country and currency are locked for this deployment.'
-              : 'One-time platform setup — complete this before any other activity.'}
-          </p>
-        </div>
-        <ATMButton variant="primary" size="md" icon={Save} isLoading={settingUp || savingLater} onClick={handleSave}>
-          {isConfigured ? 'Save Changes' : 'Complete Setup'}
-        </ATMButton>
-      </div>
+      <ATMPageHeader
+        title="Global Settings"
+        subtitle={
+          isConfigured
+            ? 'Platform-wide configuration. Country and currency are locked for this deployment.'
+            : 'One-time platform setup — complete this before any other activity.'
+        }
+        icon={Settings2}
+        iconColor="theme"
+        breadcrumbs={[{ label: 'System Setup' }, { label: 'Global Settings' }]}
+        extraActions={
+          <ATMButton variant="primary" size="md" icon={Save} isLoading={settingUp || savingLater} onClick={handleSave}>
+            {isConfigured ? 'Save Changes' : 'Complete Setup'}
+          </ATMButton>
+        }
+      />
 
       {/* First-run banner */}
       {!isConfigured && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 border-s-4 border-s-amber-500 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="text-sm text-amber-800 dark:text-amber-300 font-semibold">
             <p className="font-black">Platform setup required</p>
@@ -152,7 +205,7 @@ export function GlobalSettingsPage() {
 
       {/* 2026-08-08 (tax redesign): advise the operator that platform tax starts at 0%. */}
       {!isConfigured && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+        <div className="flex items-start gap-3 rounded-2xl border border-blue-200 border-s-4 border-s-blue-500 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
           <Percent className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
           <div className="text-sm text-blue-800 dark:text-blue-300 font-semibold">
             <p className="font-black">Platform tax defaults to 0%</p>
@@ -168,54 +221,62 @@ export function GlobalSettingsPage() {
 
       {/* Form Card */}
       <ATMCard className="glass-card">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 pt-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* Deployment */}
+          <div className="md:col-span-2">
+            <ATMSectionHeader icon={Globe} title="Deployment" subtitle="Country, currency and timezone" variant="border-left" color="accent" />
+          </div>
+
           {/* Country — frozen after setup */}
           {isConfigured ? (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Deployment Country</label>
-              <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-150 dark:border-slate-800 bg-slate-50 dark:bg-zinc-900/40">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  {countryName(form.country) || form.country}
-                </span>
-                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  <Lock size={10} /> Locked
-                </span>
-              </div>
-            </div>
+            <ReadonlyField
+              icon={Globe}
+              label="Deployment Country"
+              value={countryName(form.country) || form.country}
+              tag="Locked"
+            />
           ) : (
             <ATMSelectField
               name="country"
               label="Deployment Country"
               required
+              error={errors.country}
               value={form.country}
               onChange={(val) => {
                 const c = val ? String(val) : '';
                 setForm((p) => ({ ...p, country: c, timezone: '' }));
+                clearError('country');
               }}
               options={countryOptions}
             />
           )}
 
           {/* Currency — always derived, never editable */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Currency</label>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-150 dark:border-slate-800 bg-slate-50 dark:bg-zinc-900/40">
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                {isConfigured ? status?.currency : derivedCurrency}
-              </span>
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">From country</span>
-            </div>
-          </div>
+          <ReadonlyField
+            icon={Banknote}
+            label="Currency"
+            value={isConfigured ? status?.currency : derivedCurrency}
+            tag="From country"
+          />
 
           {/* Timezone — options depend on country */}
           <ATMSelectField
             name="timezone"
             label="Timezone"
             required
+            error={errors.timezone}
             value={form.timezone}
-            onChange={(val) => setForm((p) => ({ ...p, timezone: val ? String(val) : '' }))}
+            onChange={(val) => {
+              setForm((p) => ({ ...p, timezone: val ? String(val) : '' }));
+              clearError('timezone');
+            }}
             options={timezones}
           />
+
+          {/* Identity & Regional */}
+          <div className="md:col-span-2">
+            <ATMSectionHeader icon={Building2} title="Identity & Regional" subtitle="How the platform presents itself to merchants" variant="border-left" color="slate" />
+          </div>
 
           {/* Language */}
           <ATMSelectField
@@ -232,9 +293,13 @@ export function GlobalSettingsPage() {
             type="email"
             label="Support Email"
             required
+            error={errors.supportEmail}
             placeholder="support@yourcompany.com"
             value={form.supportEmail}
-            onChange={(e) => setForm((p) => ({ ...p, supportEmail: e.target.value }))}
+            onChange={(e) => {
+              setForm((p) => ({ ...p, supportEmail: e.target.value }));
+              clearError('supportEmail');
+            }}
           />
 
           {/* Platform DBA Name */}
@@ -249,13 +314,18 @@ export function GlobalSettingsPage() {
       </ATMCard>
 
       {/* Info Banner */}
-      <div className="flex items-start gap-3 rounded-xl border border-accent-200 bg-accent-50/50 p-4 dark:border-accent-850 dark:bg-accent-950/20">
+      <div className="flex items-start gap-3 rounded-2xl border border-accent-200 border-s-4 border-s-accent-500 bg-accent-50/50 p-4 dark:border-accent-850 dark:bg-accent-950/20">
         <Globe className="mt-0.5 h-5 w-5 shrink-0 text-accent-600 dark:text-accent-400" />
         <p className="text-sm text-accent-700 dark:text-accent-300 font-semibold">
           This platform serves a single country. Every merchant, plan price, and invoice on this
           deployment uses the country's currency and regulations.
         </p>
       </div>
+
+      {/* Footer hint */}
+      <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center">
+        Values here apply platform-wide. The deployment country and currency cannot be changed after first-run setup.
+      </p>
     </div>
   );
 }

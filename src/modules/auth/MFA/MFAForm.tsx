@@ -58,7 +58,7 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
                       : 'border border-surface-200 bg-surface-50 text-surface-400 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-500',
                 )}
               >
-                {isComplete ? <CheckCircle2 className="h-4.5 w-4.5" /> : stepNum}
+                {isComplete ? <CheckCircle2 className="h-[18px] w-[18px]" /> : stepNum}
               </div>
               <span
                 className={cn(

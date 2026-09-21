@@ -7,7 +7,7 @@
  * real GET /api/v1/tokens (all tokens + merchant identity); filters and paging are applied
  * client-side, transparently; metrics come from the real dashboard endpoint.
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import type { TokenListItem } from '@/lib/types';
@@ -31,6 +31,8 @@ export const TokenListWrapper: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDesc, setSortDesc] = useState(true);
 
   const [revokeTarget, setRevokeTarget] = useState<{ id: string; merchantName: string } | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
@@ -67,7 +69,7 @@ export const TokenListWrapper: React.FC = () => {
     }
   }, [range, dateFrom, dateTo]);
 
-  const { data, isLoading, isFetching } = useAllTokens(window);
+  const { data, isLoading, isFetching, isError } = useAllTokens(window);
   const metricsQuery = useGetTokenMetricsQuery();
   const metrics = metricsQuery.data?.data;
 
@@ -100,10 +102,41 @@ export const TokenListWrapper: React.FC = () => {
     });
   }, [allTokens, search, merchantFilter, planFilter, statusFilter]);
 
+  // Client-side sort (Mirrors the Merchants list UX: clickable headers). Newest first by default.
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      const av = (a as unknown as Record<string, string | number>)[sortBy];
+      const bv = (b as unknown as Record<string, string | number>)[sortBy];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+      return sortDesc ? -cmp : cmp;
+    });
+    return arr;
+  }, [filtered, sortBy, sortDesc]);
+
+  const handleSort = useCallback((field: string) => {
+    if (field === sortBy) {
+      setSortDesc((d) => !d);
+    } else {
+      setSortBy(field);
+      setSortDesc(field === 'createdAt');
+    }
+  }, [sortBy]);
+
   const paged = useMemo(
-    () => filtered.slice((page - 1) * pageSize, page * pageSize),
-    [filtered, page, pageSize],
+    () => sorted.slice((page - 1) * pageSize, page * pageSize),
+    [sorted, page, pageSize],
   );
+
+  // Clamp the page when filters shrink the result set below the current page
+  // (otherwise the table renders empty even though data exists further back).
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, page, pageSize]);
 
   const handleRevoke = useCallback(() => {
     if (!revokeTarget) return;
@@ -186,6 +219,7 @@ export const TokenListWrapper: React.FC = () => {
       tokens={paged as TokenListItem[]}
       isLoading={isLoading}
       isFetching={isFetching}
+      fetchError={isError ? 'Failed to load token history — refresh and try again.' : null}
       totalCount={filtered.length}
       page={page}
       pageSize={pageSize}
@@ -210,6 +244,9 @@ export const TokenListWrapper: React.FC = () => {
       onDateFromChange={(val) => { setDateFrom(val); setRange('custom'); setPage(1); }}
       dateTo={dateTo}
       onDateToChange={(val) => { setDateTo(val); setRange('custom'); setPage(1); }}
+      sortBy={sortBy}
+      sortDesc={sortDesc}
+      onSort={handleSort}
       markTarget={markTarget}
       onMarkTargetChange={(t) => { setMarkTarget(t); setMarkDate(''); }}
       markDate={markDate}

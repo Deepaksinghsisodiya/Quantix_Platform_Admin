@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Save, PlugZap, AlertTriangle } from 'lucide-react';
+import { Mail, Save, PlugZap, AlertTriangle, ShieldCheck, Send, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ATMButton } from '@/shared/ui/ATMButton';
@@ -63,6 +63,21 @@ const SECRET_PROVIDER: Record<SecretField, Provider> = {
   mailgunApiKey: 'Mailgun',
 };
 const NO_SECRETS: Record<SecretField, boolean> = { smtpPassword: false, sendgridApiKey: false, mailgunApiKey: false };
+
+function CardHeader({ icon: Icon, title, subtitle }: { icon: LucideIcon; title: string; subtitle: string }) {
+  return (
+    <div className="relative flex items-center gap-3">
+      <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-primary-500/10 blur-2xl" />
+      <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-md shadow-primary-500/20 shrink-0">
+        <Icon size={20} strokeWidth={2.2} />
+      </div>
+      <div className="min-w-0">
+        <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-400 dark:text-gray-500 font-semibold">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
 
 export function EmailIntegrationPage() {
   const [form, setForm] = useState<EmailForm>(EMPTY_FORM);
@@ -204,17 +219,20 @@ export function EmailIntegrationPage() {
   const unusedSecrets = SECRET_FIELDS.filter((field) => secretsConfigured[field] && SECRET_PROVIDER[field] !== form.provider);
 
   return (
-    <div className="flex flex-col gap-6 animate-page-enter">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto animate-page-enter pb-8">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 text-white flex items-center justify-center shadow-md shadow-primary-500/20 shrink-0">
+          <Mail size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
           {/* Title matches the sidebar label. */}
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Email Integration</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Email Integration</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 font-semibold">
             The provider every transactional email goes through. Changes apply immediately —
             the active provider is resolved on every send.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <ATMButton variant="outline" size="md" icon={PlugZap} isLoading={testing} onClick={handleTest}>
             Test
           </ATMButton>
@@ -228,23 +246,24 @@ export function EmailIntegrationPage() {
         <ATMSkeleton className="h-72 w-full" />
       ) : (
         <>
-          <ATMCard className="glass-card">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Use Email Integration</h2>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                  Master switch. When off, NO email is sent — signup verification (OTP),
-                  password reset, invoices and lifecycle notices are all skipped with a
-                  logged failure. Save to apply.
-                </p>
+          <ATMCard
+            className="glass-card"
+            header={
+              <div className="flex items-center justify-between gap-4">
+                <CardHeader icon={ShieldCheck} title="Use Email Integration" subtitle="Master switch for all transactional email" />
+                <ATMSwitch name="emailEnabled" checked={form.enabled}
+                  onChange={(checked) => setForm((f) => ({ ...f, enabled: checked }))} />
               </div>
-              <ATMSwitch name="emailEnabled" checked={form.enabled}
-                onChange={(checked) => setForm((f) => ({ ...f, enabled: checked }))} />
-            </div>
+            }
+          >
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold px-1 pb-4">
+              When off, NO email is sent — signup verification (OTP), password reset, invoices
+              and lifecycle notices are all skipped with a logged failure. Save to apply.
+            </p>
             {!form.enabled && (
-              <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+              <div className="mt-1 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400 mt-0.5" />
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 leading-relaxed">
                   Email is OFF. New merchants cannot verify their signup email and staff cannot
                   reset passwords until it is re-enabled.
                 </p>
@@ -252,19 +271,20 @@ export function EmailIntegrationPage() {
             )}
           </ATMCard>
 
-          <ATMCard className="glass-card">
-            <div className="flex items-center gap-2 mb-4">
-              <Mail className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Email Provider</h2>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-6">
+          <ATMCard
+            className="glass-card"
+            header={
+              <CardHeader icon={Send} title="Email Provider" subtitle="SMTP, SendGrid or Mailgun — secrets stored encrypted" />
+            }
+          >
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold px-1 pb-5">
               "Use server configuration" defers to the API host's Communication:Email:* keys;
               with neither configured, emails go to the Mock provider (logged, never delivered).
               Secrets are stored encrypted and never displayed again.
             </p>
 
             {unusedSecrets.length > 0 && (
-              <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30">
+              <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
                 <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
                   Stored but unused by the selected provider:
                 </p>
@@ -295,7 +315,7 @@ export function EmailIntegrationPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-2">
               <ATMSelectField
                 name="provider"
                 label="Provider"

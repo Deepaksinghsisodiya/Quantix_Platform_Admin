@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Pencil, UserX } from 'lucide-react';
 import { ATMBadge, StatusBadge } from '@/shared/ui/ATMBadge';
 import { ATMAvatar } from '@/shared/ui/ATMAvatar';
+import { ATMCard } from '@/shared/ui/ATMCard';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
 import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
 import type { PlatformUser, PlatformRole } from '../types/user.types';
@@ -186,7 +187,7 @@ export const UserList: React.FC<UserListProps> = ({
   );
 
   return (
-    <div className="h-full px-6 py-6 overflow-y-auto custom-scrollbar">
+    <ATMCard padding="none" className="overflow-hidden rounded-2xl">
       <ATMTable<PlatformUser>
         columns={columns}
         data={data}
@@ -220,7 +221,7 @@ export const UserList: React.FC<UserListProps> = ({
         onEmptyAction={onCreateClick}
         emptyActionLabel="Create User"
       />
-    </div>
+    </ATMCard>
   );
 };
 

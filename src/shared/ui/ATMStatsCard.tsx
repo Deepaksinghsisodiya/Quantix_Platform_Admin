@@ -27,46 +27,46 @@ export const ATMStatsCard: React.FC<ATMStatsCardProps> = ({
 }) => {
   const variants = {
     accent: {
-      bg: 'bg-primary-50/20 dark:bg-primary-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-primary-600 dark:text-primary-400',
-      iconBg: 'bg-primary-100/50 dark:bg-primary-500/20',
+      bg: 'bg-primary-50/40 dark:bg-primary-500/10',
+      border: 'border-primary-100 dark:border-primary-900/30',
+      text: 'text-primary-700 dark:text-primary-300',
+      iconBg: 'bg-gradient-to-br from-primary-600 to-primary-400 text-white',
     },
     emerald: {
-      bg: 'bg-emerald-50/20 dark:bg-emerald-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-emerald-600 dark:text-emerald-400',
-      iconBg: 'bg-emerald-100/50 dark:bg-emerald-500/20',
+      bg: 'bg-emerald-50/40 dark:bg-emerald-500/10',
+      border: 'border-emerald-100 dark:border-emerald-900/30',
+      text: 'text-emerald-700 dark:text-emerald-300',
+      iconBg: 'bg-gradient-to-br from-emerald-600 to-emerald-400 text-white',
     },
     amber: {
-      bg: 'bg-amber-50/20 dark:bg-amber-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-amber-600 dark:text-amber-400',
-      iconBg: 'bg-amber-100/50 dark:bg-amber-500/20',
+      bg: 'bg-amber-50/40 dark:bg-amber-500/10',
+      border: 'border-amber-100 dark:border-amber-900/30',
+      text: 'text-amber-700 dark:text-amber-300',
+      iconBg: 'bg-gradient-to-br from-amber-500 to-amber-400 text-white',
     },
     rose: {
-      bg: 'bg-rose-50/20 dark:bg-rose-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-rose-600 dark:text-rose-400',
-      iconBg: 'bg-rose-100/50 dark:bg-rose-500/20',
+      bg: 'bg-rose-50/40 dark:bg-rose-500/10',
+      border: 'border-rose-100 dark:border-rose-900/30',
+      text: 'text-rose-700 dark:text-rose-300',
+      iconBg: 'bg-gradient-to-br from-rose-600 to-rose-400 text-white',
     },
     indigo: {
-      bg: 'bg-primary-50/20 dark:bg-primary-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-primary-600 dark:text-primary-400',
-      iconBg: 'bg-primary-100/50 dark:bg-primary-500/20',
+      bg: 'bg-indigo-50/40 dark:bg-indigo-500/10',
+      border: 'border-indigo-100 dark:border-indigo-900/30',
+      text: 'text-indigo-700 dark:text-indigo-300',
+      iconBg: 'bg-gradient-to-br from-indigo-600 to-indigo-400 text-white',
     },
     purple: {
-      bg: 'bg-violet-50/20 dark:bg-violet-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-violet-600 dark:text-violet-400',
-      iconBg: 'bg-violet-100/50 dark:bg-violet-500/20',
+      bg: 'bg-purple-50/40 dark:bg-purple-500/10',
+      border: 'border-purple-100 dark:border-purple-900/30',
+      text: 'text-purple-700 dark:text-purple-300',
+      iconBg: 'bg-gradient-to-br from-purple-600 to-purple-400 text-white',
     },
     slate: {
-      bg: 'bg-slate-50/20 dark:bg-slate-500/5',
-      border: 'border-[var(--zen-border)]',
-      text: 'text-slate-600 dark:text-slate-400',
-      iconBg: 'bg-slate-100/50 dark:bg-slate-500/20',
+      bg: 'bg-slate-50/40 dark:bg-slate-500/10',
+      border: 'border-slate-100 dark:border-slate-800/80',
+      text: 'text-slate-700 dark:text-slate-300',
+      iconBg: 'bg-gradient-to-br from-slate-600 to-slate-400 text-white',
     },
   };
 
@@ -76,43 +76,37 @@ export const ATMStatsCard: React.FC<ATMStatsCardProps> = ({
     <div 
       onClick={onClick}
       className={clsx(
-        "relative p-5 rounded-xl border border-[var(--zen-border)] bg-[var(--zen-surface)] dark:bg-[var(--zen-card)] overflow-hidden transition-all duration-300 group shadow-sm shadow-black/5 hover:shadow-md hover:shadow-black/5 hover:-translate-y-0.5",
-        onClick && "cursor-pointer",
-        style.bg,
+        "relative p-5 rounded-2xl border bg-white/70 dark:bg-[#13151a]/80 backdrop-blur-md overflow-hidden transition-all duration-300 group hover:shadow-lg shadow-sm",
         style.border,
+        onClick && "cursor-pointer",
         className
     )}>
-      {/* Watermark Icon - Decorative background element */}
-      <div className={clsx(
-        "absolute -top-3 -right-3 opacity-[0.03] dark:opacity-[0.05] transform rotate-12 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-0",
-        style.text
-      )}>
-        <Icon size={80} strokeWidth={1} />
-      </div>
+
+      {/* Decorative gradient blur in background */}
+      <div className={clsx("absolute -right-10 -top-10 w-32 h-32 blur-3xl rounded-full opacity-20 dark:opacity-10 pointer-events-none transition-all duration-500 group-hover:scale-110", style.bg)} />
 
       <div className="relative z-10 space-y-3">
         <div className="flex items-center justify-between">
            <div className={clsx(
-             "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:shadow-md",
-             style.iconBg,
-             style.text
+             "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-md",
+             style.iconBg
            )}>
-             <Icon size={16} strokeWidth={2.5} />
+             <Icon size={20} strokeWidth={2} />
            </div>
          </div>
 
         <div>
-          <p className="text-[10px] font-bold text-slate-500 dark:text-gray-500 uppercase tracking-wider mb-1 transition-colors group-hover:text-slate-600 dark:group-hover:text-gray-400">
+          <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 transition-colors">
             {label}
           </p>
           <div className={clsx(
-            "text-2xl font-bold tracking-tight leading-none transition-all duration-300 group-hover:scale-102 origin-left",
+            "font-mono text-3xl font-black tracking-tight leading-none transition-all duration-300",
             style.text
           )}>
             {value}
           </div>
           {description && (
-            <p className="text-[9px] text-slate-500 dark:text-gray-600 mt-1.5 italic font-medium">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">
               {description}
             </p>
           )}

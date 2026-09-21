@@ -118,7 +118,7 @@ const ToggleGrid: React.FC<{
         return (
           <div
             key={key}
-            className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-955/20"
+            className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-950/20"
           >
             <span className={cn('text-xs font-semibold', isOn ? 'text-gray-900 dark:text-white' : 'text-gray-400')}>
               {name}
@@ -212,7 +212,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
 
   return (
     <FormikProvider value={formik}>
-      <form onSubmit={formik.handleSubmit} className="space-y-4 py-1 max-h-[500px] overflow-y-auto pr-1">
+      <form onSubmit={formik.handleSubmit} className="space-y-4 py-1">
         {/* ── Basic Info ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ATMTextField
@@ -280,7 +280,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         </div>
 
         {/* ── Manual Override Section ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg border border-amber-250/20 dark:border-amber-900/30 bg-amber-50/10 dark:bg-amber-955/10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg border border-amber-200/20 dark:border-amber-900/30 bg-amber-50/10 dark:bg-amber-950/10">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-extrabold text-amber-700 dark:text-amber-500">Enable Manual Price Override</p>
@@ -339,7 +339,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         </div>
 
         <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)]">
-          <p className="text-xs font-semibold text-gray-800 dark:text-gray-250">Active — Available for signups</p>
+          <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">Active — Available for signups</p>
           <ATMSwitch
             name="statusSwitch"
             checked={formik.values.status === 'Active'}
@@ -365,7 +365,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
               {ALL_LIMITS.map(({ key, label: name }) => (
                 <div
                   key={key}
-                  className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-955/20"
+                  className="flex items-center justify-between py-2 px-3.5 rounded-lg bg-[var(--zen-surface)] border border-[var(--zen-border)] dark:bg-zinc-950/20"
                 >
                   <div className="min-w-0 flex-1">
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">

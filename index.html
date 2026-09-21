@@ -1,66 +1,71 @@
 <!doctype html>
 <html lang="en" class="h-full">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Quantix Admin Portal" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <title>Quantix</title>
-    <!-- Runtime configuration (apiBaseUrl, mockApi, etc.). Loaded BEFORE the
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Quantix Admin Portal" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <title>Quantix</title>
+  <!-- Runtime configuration (apiBaseUrl, mockApi, etc.). Loaded BEFORE the
          React bundle so window.__QUANTIX_CONFIG__ is populated by the time any
          module reads it. Edit /config.js in the published dist/ to retarget
          the portal without rebuilding. -->
-    <script src="/config.js"></script>
+  <script src="/config.js"></script>
 
-    <!-- 2026-09-05: opened-from-disk guard.
+  <!-- 2026-09-05: opened-from-disk guard.
          This app loads as an ES module and asks for its assets from the site root. Under a
          file:// URL neither works: browsers refuse module scripts from file: origins (they are
          opaque origins), and a leading slash resolves to the DRIVE root, so /assets/... becomes
          D:/assets/... The result is a blank page and a console full of CORS errors, which tells
          a first-time user nothing. This runs as a CLASSIC script, so it still executes from
          file://, and replaces the blank page with what to do instead. -->
-    <script>
-      (function () {
-        if (window.location.protocol !== 'file:') return;
-        document.addEventListener('DOMContentLoaded', function () {
-          document.title = 'Quantix Admin Portal - needs a web server';
-          document.body.style.cssText =
-            'margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
-            'background:#f8fafc;color:#0f172a;font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;';
-          document.body.innerHTML =
-            '<div style="max-width:640px;padding:40px;background:#fff;border:1px solid #e2e8f0;' +
-            'border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin:24px;">' +
-              '<div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;' +
-              'color:#64748b;">Quantix Platform Admin</div>' +
-              '<h1 style="margin:10px 0 14px;font-size:23px;">This page needs to be served over HTTP</h1>' +
-              '<p style="margin:0 0 18px;color:#475569;">You have opened <code>index.html</code> straight ' +
-              'from a folder. Browsers block this app when it loads from a file path, so the page stays ' +
-              'blank. Nothing is wrong with your download.</p>' +
-              '<div style="background:#f1f5f9;border-radius:10px;padding:16px 18px;margin-bottom:16px;">' +
-                '<div style="font-weight:700;margin-bottom:6px;">Easiest fix</div>' +
-                '<div style="color:#475569;">In this same folder, double-click ' +
-                '<code style="background:#fff;padding:2px 6px;border-radius:5px;border:1px solid #e2e8f0;">' +
-                'Start-Portal.bat</code>. It serves this folder and opens the portal for you.</div>' +
-              '</div>' +
-              '<div style="background:#f1f5f9;border-radius:10px;padding:16px 18px;">' +
-                '<div style="font-weight:700;margin-bottom:6px;">Or run it from the API</div>' +
-                '<div style="color:#475569;">Copy everything in this folder into a folder named ' +
-                '<code style="background:#fff;padding:2px 6px;border-radius:5px;border:1px solid #e2e8f0;">' +
-                'wwwroot</code> next to <code>Quantix.PlatformApi.exe</code>, start the API, and open ' +
-                '<a href="http://localhost:5104" style="color:#2563eb;">http://localhost:5104</a>.</div>' +
-              '</div>' +
-              '<p style="margin:18px 0 0;font-size:13px;color:#94a3b8;">The CORS messages in the console ' +
-              'are the symptom of the same thing, not a separate problem.</p>' +
-            '</div>';
-        });
-      })();
-    </script>
-  </head>
-  <body class="h-full bg-surface-50 text-surface-900 antialiased dark:bg-surface-950 dark:text-surface-100">
-    <div id="root" class="h-full"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <script>
+    (function () {
+      if (window.location.protocol !== 'file:') return;
+      document.addEventListener('DOMContentLoaded', function () {
+        document.title = 'Quantix Admin Portal - needs a web server';
+        document.body.style.cssText =
+          'margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+          'background:#f8fafc;color:#0f172a;font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;';
+        document.body.innerHTML =
+          '<div style="max-width:640px;padding:40px;background:#fff;border:1px solid #e2e8f0;' +
+          'border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin:24px;">' +
+          '<div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;' +
+          'color:#64748b;">Quantix Platform Admin</div>' +
+          '<h1 style="margin:10px 0 14px;font-size:23px;">This page needs to be served over HTTP</h1>' +
+          '<p style="margin:0 0 18px;color:#475569;">You have opened <code>index.html</code> straight ' +
+          'from a folder. Browsers block this app when it loads from a file path, so the page stays ' +
+          'blank. Nothing is wrong with your download.</p>' +
+          '<div style="background:#f1f5f9;border-radius:10px;padding:16px 18px;margin-bottom:16px;">' +
+          '<div style="font-weight:700;margin-bottom:6px;">Easiest fix</div>' +
+          '<div style="color:#475569;">In this same folder, double-click ' +
+          '<code style="background:#fff;padding:2px 6px;border-radius:5px;border:1px solid #e2e8f0;">' +
+          'Start-Portal.bat</code>. It serves this folder and opens the portal for you.</div>' +
+          '</div>' +
+          '<div style="background:#f1f5f9;border-radius:10px;padding:16px 18px;">' +
+          '<div style="font-weight:700;margin-bottom:6px;">Or run it from the API</div>' +
+          '<div style="color:#475569;">Copy everything in this folder into a folder named ' +
+          '<code style="background:#fff;padding:2px 6px;border-radius:5px;border:1px solid #e2e8f0;">' +
+          'wwwroot</code> next to <code>Quantix.PlatformApi.exe</code>, start the API, and open ' +
+          '<a href="http://localhost:5104" style="color:#2563eb;">http://localhost:5104</a>.</div>' +
+          '</div>' +
+          '<p style="margin:18px 0 0;font-size:13px;color:#94a3b8;">The CORS messages in the console ' +
+          'are the symptom of the same thing, not a separate problem.</p>' +
+          '</div>';
+      });
+    })();
+  </script>
+</head>
+
+<body class="h-full bg-surface-50 text-surface-900 antialiased dark:bg-surface-950 dark:text-surface-100">
+  <div id="root" class="h-full"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

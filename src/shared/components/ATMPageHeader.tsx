@@ -68,37 +68,37 @@ export const ATMPageHeader: React.FC<Props> = ({
   };
 
   return (
-    <div className={`flex items-center justify-between gap-6 ${className}`}>
-      <div className="flex items-center gap-4">
+    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 ${className}`}>
+      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
         {onBack && (
           <>
             <button
               onClick={onBack}
-              className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-800"
+              className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-800 shrink-0"
             >
               <ArrowLeft size={18} />
             </button>
-            <div className="w-px h-8 bg-gray-100 dark:bg-gray-800" />
+            <div className="w-px h-8 bg-gray-100 dark:bg-gray-800 shrink-0" />
           </>
         )}
 
         {Icon && (
           <div className={
             iconColor === 'theme' 
-              ? "w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-lg shadow-primary-500/30 flex items-center justify-center transition-all duration-300 shrink-0"
-              : `w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 shrink-0 ${colorMaps[iconColor]}`
+              ? "w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-400 text-white shadow-lg shadow-primary-500/30 flex items-center justify-center transition-all duration-300 shrink-0 mt-0.5 sm:mt-0"
+              : `w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 shrink-0 mt-0.5 sm:mt-0 ${colorMaps[iconColor]}`
           }>
-            <Icon size={24} strokeWidth={2} />
+            <Icon size={22} strokeWidth={2} />
           </div>
         )}
 
-        <div className="space-y-1">
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h1>
-          {subtitle && <div className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">{subtitle}</div>}
+        <div className="space-y-1 min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight break-words">{title}</h1>
+          {subtitle && <div className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{subtitle}</div>}
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-start sm:justify-end shrink-0">
         {extraActions}
         {secondaryAction && renderAction(secondaryAction, false)}
         {action && renderAction(action, true)}

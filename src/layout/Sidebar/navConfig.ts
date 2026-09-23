@@ -14,6 +14,9 @@ import {
   Settings,
   BarChart3,
   Bell,
+  Sparkles,
+  Quote,
+  Layers,
   LucideIcon
 } from 'lucide-react';
 
@@ -142,9 +145,10 @@ export const navItems: NavItem[] = [
       { label: 'FAQ', icon: PenSquare, path: '/content/faq', permission: 'content', codes: ['faq.manage'] },
       // 2026-09-08 (content Phase 4): the skeletons blog posts and help articles start from.
       { label: 'Article Templates', icon: PenSquare, path: '/content/templates', permission: 'content', codes: ['blog.manage', 'helpcentre.manage'] },
-      // 2026-09-05 (content Phase 3): the website content types the operator asked for.
+      { label: 'Hero Banners', icon: Sparkles, path: '/content/hero-banners', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Social Proof Metrics', icon: BarChart3, path: '/content/social-proof', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Marketing Content', icon: PenSquare, path: '/content/marketing', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Testimonials', icon: PenSquare, path: '/content/testimonials', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Testimonials', icon: Quote, path: '/content/testimonials', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Announcements', icon: PenSquare, path: '/content/announcements', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Clientele', icon: PenSquare, path: '/content/clientele', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Galleries', icon: PenSquare, path: '/content/galleries', permission: 'content', codes: ['cms.view', 'cms.update'] },

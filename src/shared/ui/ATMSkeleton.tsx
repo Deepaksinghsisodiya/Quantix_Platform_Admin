@@ -18,6 +18,8 @@ type SkeletonVariant =
   | 'clientele-card'
   | 'clientele-row'
   | 'announcement-card'
+  | 'integration-card'
+  | 'integration-row'
   | 'kpi-card';
 
 export interface ATMSkeletonProps {
@@ -518,6 +520,93 @@ function SkeletonUnit({
           </div>
         </div>
       );
+    case 'integration-card':
+      return (
+        <div
+          className={cn(
+            'group relative rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-4 overflow-hidden',
+            className
+          )}
+          aria-hidden="true"
+        >
+          <div className="space-y-3.5">
+            {/* Header: Logo + Title + Sync badge */}
+            <div className="flex items-start justify-between gap-2.5">
+              <div className="flex items-center gap-3">
+                <div className={cn(shimmer, 'h-11 w-11 rounded-xl shrink-0')} />
+                <div className="space-y-1.5">
+                  <div className={cn(shimmer, 'h-4 w-28 rounded-md')} />
+                  <div className={cn(shimmer, 'h-3 w-16 rounded')} />
+                </div>
+              </div>
+              <div className={cn(shimmer, 'h-5 w-20 rounded-full shrink-0')} />
+            </div>
+
+            {/* Description lines */}
+            <div className="space-y-1.5 pt-1">
+              <div className={cn(shimmer, 'h-3.5 w-full rounded')} />
+              <div className={cn(shimmer, 'h-3.5 w-4/5 rounded')} />
+            </div>
+
+            {/* Tags Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <div className={cn(shimmer, 'h-5 w-14 rounded-md')} />
+              <div className={cn(shimmer, 'h-5 w-16 rounded-md')} />
+              <div className={cn(shimmer, 'h-5 w-12 rounded-md')} />
+            </div>
+          </div>
+
+          {/* Card Footer: Action Controls */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center gap-1">
+              <div className={cn(shimmer, 'h-7 w-7 rounded-lg')} />
+              <div className={cn(shimmer, 'h-7 w-7 rounded-lg')} />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className={cn(shimmer, 'h-8 w-8 rounded-lg')} />
+              <div className={cn(shimmer, 'h-8 w-8 rounded-lg')} />
+              <div className={cn(shimmer, 'h-8 w-16 rounded-lg')} />
+              <div className={cn(shimmer, 'h-8 w-8 rounded-lg')} />
+            </div>
+          </div>
+        </div>
+      );
+    case 'integration-row':
+      return (
+        <div
+          className={cn(
+            'flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/70',
+            className
+          )}
+          aria-hidden="true"
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className={cn(shimmer, 'h-7 w-7 rounded-lg shrink-0')} />
+            <div className={cn(shimmer, 'h-11 w-11 rounded-xl shrink-0')} />
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div className={cn(shimmer, 'h-4 w-32 rounded-md')} />
+                <div className={cn(shimmer, 'h-3.5 w-16 rounded-full')} />
+                <div className={cn(shimmer, 'h-4 w-20 rounded-full')} />
+              </div>
+              <div className={cn(shimmer, 'h-3 w-3/4 rounded')} />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex items-center gap-1">
+              <div className={cn(shimmer, 'h-7 w-7 rounded-lg')} />
+              <div className={cn(shimmer, 'h-7 w-7 rounded-lg')} />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className={cn(shimmer, 'h-7.5 w-7.5 rounded-lg')} />
+              <div className={cn(shimmer, 'h-7.5 w-7.5 rounded-lg')} />
+              <div className={cn(shimmer, 'h-7.5 w-16 rounded-lg')} />
+              <div className={cn(shimmer, 'h-7.5 w-7.5 rounded-lg')} />
+            </div>
+          </div>
+        </div>
+      );
     case 'kpi-card':
       return (
         <div
@@ -566,6 +655,7 @@ export const ATMSkeleton: React.FC<ATMSkeletonProps> = ({
   const isContentGrid = variant === 'content-card' || variant === 'testimonial-card' || variant === 'feature-card';
   const isMetricGrid = variant === 'metric-card';
   const isClienteleGrid = variant === 'clientele-card';
+  const isIntegrationGrid = variant === 'integration-card';
 
   return (
     <div
@@ -576,6 +666,8 @@ export const ATMSkeleton: React.FC<ATMSkeletonProps> = ({
           ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full'
           : isClienteleGrid
           ? 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full'
+          : isIntegrationGrid
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full'
           : isContentGrid
           ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full'
           : 'flex flex-col gap-4 w-full',

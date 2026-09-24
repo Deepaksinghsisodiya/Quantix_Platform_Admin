@@ -190,7 +190,11 @@ const SocialProofPage = React.lazy(() => import('@/modules/SocialProof/List/Soci
 const TestimonialsPage = React.lazy(() => import('@/modules/Testimonials/List/TestimonialListWrapper'));
 const AnnouncementsPage = React.lazy(() => import('@/modules/Announcements/List/AnnouncementListWrapper'));
 const ClientelePage = React.lazy(() => import('@/modules/Clientele/List/ClienteleListWrapper'));
+const IntegrationsPage = React.lazy(() => import('@/modules/Integrations/List/IntegrationListWrapper'));
+const AddIntegrationPage = React.lazy(() => import('@/modules/Integrations/pages/AddIntegrationPage'));
+const EditIntegrationPage = React.lazy(() => import('@/modules/Integrations/pages/EditIntegrationPage'));
 const GalleriesPage = React.lazy(() => import('@/modules/content/pages/GalleriesPage'));
+
 // 2026-09-08 (content Phase 4): article templates.
 const ArticleTemplatesPage = React.lazy(() => import('@/modules/content/pages/ArticleTemplatesPage'));
 const BlogListPage = React.lazy(() => import('@/modules/content/pages/BlogListPage'));
@@ -355,7 +359,11 @@ export function AppRouter() {
             <Route path="content/testimonials" element={<RoleGuard module="content"><TestimonialsPage /></RoleGuard>} />
             <Route path="content/announcements" element={<RoleGuard module="content"><AnnouncementsPage /></RoleGuard>} />
             <Route path="content/clientele" element={<RoleGuard module="content"><ClientelePage /></RoleGuard>} />
+            <Route path="content/integrations" element={<RoleGuard module="content"><IntegrationsPage /></RoleGuard>} />
+            <Route path="content/integrations/new" element={<RoleGuard module="content"><AddIntegrationPage /></RoleGuard>} />
+            <Route path="content/integrations/:id/edit" element={<RoleGuard module="content"><EditIntegrationPage /></RoleGuard>} />
             <Route path="content/galleries" element={<RoleGuard module="content"><GalleriesPage /></RoleGuard>} />
+
             <Route path="content/marketing" element={<RoleGuard module="content"><MarketingContentPage /></RoleGuard>} />
             <Route path="content/blog" element={<RoleGuard module="content"><BlogListPage /></RoleGuard>} />
             <Route path="content/blog/new" element={<RoleGuard module="content"><BlogEditorPage /></RoleGuard>} />

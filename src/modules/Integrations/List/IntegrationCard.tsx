@@ -206,15 +206,15 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
               </button>
 
               {/* Edit */}
-              <ATMButton
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => onEdit(integration)}
-                className="flex items-center gap-1 h-7.5 px-2 text-xs"
+                title="Edit Integration"
+                className="inline-flex items-center gap-1.5 h-7.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
               >
-                <Edit2 className="h-3 w-3 text-slate-500" />
+                <Edit2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
                 <span>Edit</span>
-              </ATMButton>
+              </button>
 
               {/* Delete */}
               <button
@@ -404,15 +404,16 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
             {isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
 
-          <ATMButton
-            variant="outline"
-            size="sm"
+          {/* Edit */}
+          <button
+            type="button"
             onClick={() => onEdit(integration)}
-            className="flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold"
+            title="Edit Integration"
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
           >
-            <Edit2 className="h-3.5 w-3.5 text-slate-500" />
+            <Edit2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
             <span>Edit</span>
-          </ATMButton>
+          </button>
 
           <button
             type="button"

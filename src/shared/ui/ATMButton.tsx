@@ -68,21 +68,21 @@ export const ATMButton = React.forwardRef<HTMLButtonElement, ATMButtonProps>(({
       {...rest}
     >
       {isLoading ? (
-        <div className="flex items-center justify-center min-w-0 overflow-hidden">
+        <div className="inline-flex items-center justify-center min-w-0 flex-nowrap whitespace-nowrap">
           <span className="truncate">{children || 'Please wait...'}</span>
           <Loader2 size={iconSizes[size]} className="animate-spin ml-2 shrink-0" />
         </div>
       ) : (
-        <div className="flex items-center justify-center w-full min-w-0 overflow-hidden">
-          {leftIcon && <span className="mr-2 shrink-0">{leftIcon}</span>}
+        <div className="inline-flex items-center justify-center gap-1.5 w-full min-w-0 flex-nowrap whitespace-nowrap">
+          {leftIcon && <span className="inline-flex items-center shrink-0">{leftIcon}</span>}
           {Icon && iconPosition === 'left' && (
-            React.isValidElement(Icon) ? Icon : <Icon size={iconSizes[size]} strokeWidth={2} className="mr-2 opacity-80 shrink-0" />
+            React.isValidElement(Icon) ? Icon : <Icon size={iconSizes[size]} strokeWidth={2} className="opacity-80 shrink-0" />
           )}
-          <span className="truncate">{children}</span>
+          <span className="truncate inline-flex items-center gap-1.5 flex-nowrap whitespace-nowrap">{children}</span>
           {Icon && iconPosition === 'right' && (
-            React.isValidElement(Icon) ? Icon : <Icon size={iconSizes[size]} strokeWidth={2} className="ml-2 opacity-80 shrink-0" />
+            React.isValidElement(Icon) ? Icon : <Icon size={iconSizes[size]} strokeWidth={2} className="opacity-80 shrink-0" />
           )}
-          {rightIcon && <span className="ml-2 shrink-0">{rightIcon}</span>}
+          {rightIcon && <span className="inline-flex items-center shrink-0">{rightIcon}</span>}
         </div>
       )}
     </button>

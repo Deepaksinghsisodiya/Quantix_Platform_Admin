@@ -40,6 +40,7 @@ export const HeroSlideCard: React.FC<HeroSlideCardProps> = ({
   onOpenDelete,
 }) => {
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const imageSrc = slide.mediaAssetId
     ? absoluteMediaUrl(`/api/v1/media/${slide.mediaAssetId}/file`)
@@ -58,13 +59,22 @@ export const HeroSlideCard: React.FC<HeroSlideCardProps> = ({
         {/* Visual Thumbnail */}
         <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-slate-900 border-b border-slate-100 dark:border-slate-800/80">
           {imageSrc && !imgError ? (
-            <img
-              src={imageSrc}
-              alt={slide.heading}
-              onError={() => setImgError(true)}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
+            <>
+              {!imgLoaded && (
+                <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/80" />
+              )}
+              <img
+                src={imageSrc}
+                alt={slide.heading}
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
+                className={cn(
+                  'h-full w-full object-cover transition-all duration-500 group-hover:scale-105',
+                  !imgLoaded ? 'opacity-0' : 'opacity-100'
+                )}
+                loading="lazy"
+              />
+            </>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
               <ImageOff className="h-8 w-8 text-slate-600" />
@@ -198,13 +208,22 @@ export const HeroSlideCard: React.FC<HeroSlideCardProps> = ({
       {/* 1. Left Thumbnail */}
       <div className="relative aspect-video sm:aspect-[16/10] md:h-36 md:w-56 lg:w-64 shrink-0 overflow-hidden rounded-xl bg-slate-900 border border-slate-200/80 dark:border-slate-800">
         {imageSrc && !imgError ? (
-          <img
-            src={imageSrc}
-            alt={slide.heading}
-            onError={() => setImgError(true)}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
+          <>
+            {!imgLoaded && (
+              <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/80" />
+            )}
+            <img
+              src={imageSrc}
+              alt={slide.heading}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
+              className={cn(
+                'h-full w-full object-cover transition-all duration-500 group-hover:scale-105',
+                !imgLoaded ? 'opacity-0' : 'opacity-100'
+              )}
+              loading="lazy"
+            />
+          </>
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
             <ImageOff className="h-7 w-7 text-slate-500" />

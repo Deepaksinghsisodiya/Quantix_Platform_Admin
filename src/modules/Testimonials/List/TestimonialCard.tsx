@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Pencil,
   Trash2,
@@ -49,6 +49,7 @@ export const TestimonialCard: React.FC<TestimonialCardProps> = ({
   onOpenEdit,
   onOpenDelete,
 }) => {
+  const [imgLoaded, setImgLoaded] = useState(false);
   const initials = getInitials(testimonial.personName);
   const rating = Math.max(1, Math.min(5, testimonial.rating || 5));
   const pageLabel = testimonial.pageSlug
@@ -124,11 +125,20 @@ export const TestimonialCard: React.FC<TestimonialCardProps> = ({
           {/* Author Block */}
           <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/70">
             {testimonial.avatarUrl ? (
-              <img
-                src={testimonial.avatarUrl}
-                alt={testimonial.personName}
-                className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-              />
+              <div className="relative h-10 w-10 shrink-0">
+                {!imgLoaded && (
+                  <div className="absolute inset-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                )}
+                <img
+                  src={testimonial.avatarUrl}
+                  alt={testimonial.personName}
+                  onLoad={() => setImgLoaded(true)}
+                  className={cn(
+                    "h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 transition-opacity duration-300",
+                    imgLoaded ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+              </div>
             ) : (
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary-600 to-amber-500 text-xs font-black text-white shadow-xs">
                 {initials}
@@ -215,11 +225,20 @@ export const TestimonialCard: React.FC<TestimonialCardProps> = ({
         </span>
 
         {testimonial.avatarUrl ? (
-          <img
-            src={testimonial.avatarUrl}
-            alt={testimonial.personName}
-            className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-          />
+          <div className="relative h-10 w-10 shrink-0">
+            {!imgLoaded && (
+              <div className="absolute inset-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+            )}
+            <img
+              src={testimonial.avatarUrl}
+              alt={testimonial.personName}
+              onLoad={() => setImgLoaded(true)}
+              className={cn(
+                "h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 transition-opacity duration-300",
+                imgLoaded ? 'opacity-100' : 'opacity-0'
+              )}
+            />
+          </div>
         ) : (
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary-600 to-amber-500 text-xs font-black text-white shadow-xs">
             {initials}

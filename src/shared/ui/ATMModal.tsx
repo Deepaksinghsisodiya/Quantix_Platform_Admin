@@ -16,6 +16,8 @@ interface Props {
   closeOnEsc?: boolean;
   closeOnOutsideClick?: boolean;
   showCloseButton?: boolean;
+  className?: string;
+  containerClassName?: string;
 }
 
 /**
@@ -35,6 +37,8 @@ export const ATMModal: React.FC<Props> = ({
   closeOnEsc = true,
   closeOnOutsideClick = false,
   showCloseButton = true,
+  className,
+  containerClassName,
 }) => {
   const isOpen = !!(externalIsOpen ?? open);
   const [mounted, setMounted] = useState(false);
@@ -87,7 +91,8 @@ export const ATMModal: React.FC<Props> = ({
 
   return createPortal(
     <div className={clsx(
-      "fixed inset-0 z-[9999] flex items-center justify-center p-6 transition-all duration-300 ease-in-out",
+      "fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 transition-all duration-300 ease-in-out",
+      containerClassName,
       isAnimating ? "bg-slate-950/50 backdrop-blur-md opacity-100" : "bg-slate-950/0 backdrop-blur-none opacity-0"
     )}>
       {/* 🧼 Overlay - Logic controlled for strict modals */}
@@ -106,7 +111,8 @@ export const ATMModal: React.FC<Props> = ({
           "shadow-[0_20px_70px_-10px_rgba(0,0,0,0.15),0_10px_30px_-5px_rgba(0,0,0,0.08)]",
           "border border-[var(--zen-border)]",
           sizeClasses[size],
-          "max-h-[85vh]",
+          "max-h-[88vh]",
+          className,
           isAnimating
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-4 scale-[0.96] opacity-0"

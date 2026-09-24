@@ -21,7 +21,7 @@ export const SocialProofListWrapper: React.FC = () => {
   const [deletingMetric, setDeletingMetric] = useState<SocialProofMetric | null>(null);
 
   // Queries & Mutations
-  const { data: metricsRes, isLoading, isError, refetch } = useGetAdminSocialProofMetricsQuery(undefined);
+  const { data: metricsRes, isLoading, isFetching, isError, refetch } = useGetAdminSocialProofMetricsQuery(undefined);
   const [updateMetric] = useUpdateSocialProofMetricMutation();
   const [deleteMetric, deleteState] = useDeleteSocialProofMetricMutation();
   const [reorderMetrics, reorderState] = useReorderSocialProofMetricsMutation();
@@ -114,7 +114,7 @@ export const SocialProofListWrapper: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
         onOpenAdd={() => setIsAddOpen(true)}

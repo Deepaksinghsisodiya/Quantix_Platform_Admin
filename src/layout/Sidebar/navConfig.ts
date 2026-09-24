@@ -16,6 +16,8 @@ import {
   Bell,
   Sparkles,
   Quote,
+  Megaphone,
+  Handshake,
   Layers,
   LucideIcon
 } from 'lucide-react';
@@ -149,8 +151,8 @@ export const navItems: NavItem[] = [
       { label: 'Social Proof Metrics', icon: BarChart3, path: '/content/social-proof', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Marketing Content', icon: PenSquare, path: '/content/marketing', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Testimonials', icon: Quote, path: '/content/testimonials', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Announcements', icon: PenSquare, path: '/content/announcements', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Clientele', icon: PenSquare, path: '/content/clientele', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Announcements', icon: Megaphone, path: '/content/announcements', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Clientele', icon: Handshake, path: '/content/clientele', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Galleries', icon: PenSquare, path: '/content/galleries', permission: 'content', codes: ['cms.view', 'cms.update'] },
       // 2026-09-05 (content Phase 1): Media Library, gated on the cms codes rather than the
       // coarse module flag alone.

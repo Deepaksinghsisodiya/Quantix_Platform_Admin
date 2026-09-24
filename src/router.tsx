@@ -188,8 +188,8 @@ const HelpArticleEditorPage = React.lazy(() => import('@/modules/content/pages/H
 const HeroBannersPage = React.lazy(() => import('@/modules/HeroSection/List/HeroSectionListWrapper'));
 const SocialProofPage = React.lazy(() => import('@/modules/SocialProof/List/SocialProofListWrapper'));
 const TestimonialsPage = React.lazy(() => import('@/modules/Testimonials/List/TestimonialListWrapper'));
-const AnnouncementsPage = React.lazy(() => import('@/modules/content/pages/AnnouncementsPage'));
-const ClientelePage = React.lazy(() => import('@/modules/content/pages/ClientelePage'));
+const AnnouncementsPage = React.lazy(() => import('@/modules/Announcements/List/AnnouncementListWrapper'));
+const ClientelePage = React.lazy(() => import('@/modules/Clientele/List/ClienteleListWrapper'));
 const GalleriesPage = React.lazy(() => import('@/modules/content/pages/GalleriesPage'));
 // 2026-09-08 (content Phase 4): article templates.
 const ArticleTemplatesPage = React.lazy(() => import('@/modules/content/pages/ArticleTemplatesPage'));

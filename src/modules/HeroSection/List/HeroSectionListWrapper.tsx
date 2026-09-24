@@ -21,7 +21,7 @@ export const HeroSectionListWrapper: React.FC = () => {
   const [deletingSlide, setDeletingSlide] = useState<HeroSlide | null>(null);
 
   // Queries & Mutations
-  const { data: slidesRes, isLoading, isError, refetch } = useGetAdminHeroSlidesQuery(undefined);
+  const { data: slidesRes, isLoading, isFetching, isError, refetch } = useGetAdminHeroSlidesQuery(undefined);
   const [updateSlide] = useUpdateHeroSlideMutation();
   const [deleteSlide, deleteState] = useDeleteHeroSlideMutation();
   const [reorderSlides, reorderState] = useReorderHeroSlidesMutation();
@@ -116,7 +116,7 @@ export const HeroSectionListWrapper: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
         onOpenAdd={() => setIsAddOpen(true)}

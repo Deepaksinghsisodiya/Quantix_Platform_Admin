@@ -29,7 +29,7 @@ export const TestimonialListWrapper: React.FC = () => {
   const [deletingItem, setDeletingItem] = useState<TestimonialItem | null>(null);
 
   // Queries & Mutations
-  const { data: testimonialsRes, isLoading, isError, refetch } = useGetAdminTestimonialsQuery(undefined);
+  const { data: testimonialsRes, isLoading, isFetching, isError, refetch } = useGetAdminTestimonialsQuery(undefined);
   const [updateTestimonial] = useUpdateTestimonialMutation();
   const [deleteTestimonial, deleteState] = useDeleteTestimonialMutation();
   const [reorderTestimonials, reorderState] = useReorderTestimonialsMutation();
@@ -122,7 +122,7 @@ export const TestimonialListWrapper: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
         onOpenAdd={() => setIsAddOpen(true)}

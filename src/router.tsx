@@ -193,6 +193,18 @@ const ClientelePage = React.lazy(() => import('@/modules/Clientele/List/Clientel
 const IntegrationsPage = React.lazy(() => import('@/modules/Integrations/List/IntegrationListWrapper'));
 const AddIntegrationPage = React.lazy(() => import('@/modules/Integrations/pages/AddIntegrationPage'));
 const EditIntegrationPage = React.lazy(() => import('@/modules/Integrations/pages/EditIntegrationPage'));
+const HowItWorksPage = React.lazy(() => import('@/modules/HowItWorks/List/HowItWorksListWrapper'));
+const AddHowItWorksPage = React.lazy(() => import('@/modules/HowItWorks/pages/AddHowItWorksPage'));
+const EditHowItWorksPage = React.lazy(() => import('@/modules/HowItWorks/pages/EditHowItWorksPage'));
+const SolutionsPage = React.lazy(() => import('@/modules/Solutions/List/SolutionListWrapper'));
+const AddSolutionPage = React.lazy(() => import('@/modules/Solutions/pages/AddSolutionPage'));
+const EditSolutionPage = React.lazy(() => import('@/modules/Solutions/pages/EditSolutionPage'));
+const CustomerSupportPage = React.lazy(() => import('@/modules/CustomerSupport/List/CustomerSupportListWrapper').then(m => ({ default: m.CustomerSupportListWrapper })));
+const AddCustomerSupportPage = React.lazy(() => import('@/modules/CustomerSupport/pages/AddCustomerSupportPage').then(m => ({ default: m.AddCustomerSupportPage })));
+const EditCustomerSupportPage = React.lazy(() => import('@/modules/CustomerSupport/pages/EditCustomerSupportPage').then(m => ({ default: m.EditCustomerSupportPage })));
+const CtaBannerPage = React.lazy(() => import('@/modules/CtaBanner/List/CtaBannerListWrapper').then(m => ({ default: m.CtaBannerListWrapper })));
+const AddCtaBannerPage = React.lazy(() => import('@/modules/CtaBanner/pages/AddCtaBannerPage').then(m => ({ default: m.AddCtaBannerPage })));
+const EditCtaBannerPage = React.lazy(() => import('@/modules/CtaBanner/pages/EditCtaBannerPage').then(m => ({ default: m.EditCtaBannerPage })));
 const GalleriesPage = React.lazy(() => import('@/modules/content/pages/GalleriesPage'));
 
 // 2026-09-08 (content Phase 4): article templates.
@@ -362,6 +374,18 @@ export function AppRouter() {
             <Route path="content/integrations" element={<RoleGuard module="content"><IntegrationsPage /></RoleGuard>} />
             <Route path="content/integrations/new" element={<RoleGuard module="content"><AddIntegrationPage /></RoleGuard>} />
             <Route path="content/integrations/:id/edit" element={<RoleGuard module="content"><EditIntegrationPage /></RoleGuard>} />
+            <Route path="content/how-it-works" element={<RoleGuard module="content"><HowItWorksPage /></RoleGuard>} />
+            <Route path="content/how-it-works/new" element={<RoleGuard module="content"><AddHowItWorksPage /></RoleGuard>} />
+            <Route path="content/how-it-works/:id/edit" element={<RoleGuard module="content"><EditHowItWorksPage /></RoleGuard>} />
+            <Route path="content/solutions" element={<RoleGuard module="content"><SolutionsPage /></RoleGuard>} />
+            <Route path="content/solutions/new" element={<RoleGuard module="content"><AddSolutionPage /></RoleGuard>} />
+            <Route path="content/solutions/:id/edit" element={<RoleGuard module="content"><EditSolutionPage /></RoleGuard>} />
+            <Route path="content/customer-support" element={<RoleGuard module="content"><CustomerSupportPage /></RoleGuard>} />
+            <Route path="content/customer-support/new" element={<RoleGuard module="content"><AddCustomerSupportPage /></RoleGuard>} />
+            <Route path="content/customer-support/edit/:id" element={<RoleGuard module="content"><EditCustomerSupportPage /></RoleGuard>} />
+            <Route path="content/cta-banner" element={<RoleGuard module="content"><CtaBannerPage /></RoleGuard>} />
+            <Route path="content/cta-banner/new" element={<RoleGuard module="content"><AddCtaBannerPage /></RoleGuard>} />
+            <Route path="content/cta-banner/edit/:id" element={<RoleGuard module="content"><EditCtaBannerPage /></RoleGuard>} />
             <Route path="content/galleries" element={<RoleGuard module="content"><GalleriesPage /></RoleGuard>} />
 
             <Route path="content/marketing" element={<RoleGuard module="content"><MarketingContentPage /></RoleGuard>} />

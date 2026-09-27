@@ -1,0 +1,117 @@
+import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { toast } from 'sonner';
+
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { CtaBannerForm, CtaBannerFormValues } from '../Form/CtaBannerForm';
+import {
+  useGetCtaBannerByIdQuery,
+  useUpdateCtaBannerMutation,
+} from '../Service/CtaBannerService';
+
+const validationSchema = Yup.object().shape({
+  heading: Yup.string().required('Main heading is required').trim(),
+  siteVariant: Yup.string().required('Platform variant is required'),
+  primaryCtaText: Yup.string().required('Primary button label is required').trim(),
+  primaryCtaHref: Yup.string().required('Primary button route is required').trim(),
+});
+
+export const EditCtaBannerPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { data: res, isLoading, isError } = useGetCtaBannerByIdQuery(id!, {
+    skip: !id,
+  });
+
+  const [updateCtaBanner] = useUpdateCtaBannerMutation();
+
+  const item = res?.data;
+
+  if (isLoading) {
+    return (
+      <div className="p-12 text-center text-slate-400 animate-pulse font-syne">
+        Loading CTA Banner configuration...
+      </div>
+    );
+  }
+
+  if (isError || !item) {
+    return (
+      <div className="p-12 text-center text-red-500 font-syne">
+        Final CTA Banner configuration not found.
+      </div>
+    );
+  }
+
+  const initialValues: CtaBannerFormValues = {
+    siteVariant: item.siteVariant || 'Enterprise',
+    badge: item.badge || '',
+    heading: item.heading || '',
+    headingAccent: item.headingAccent || '',
+    subheading: item.subheading || '',
+    primaryCtaText: item.primaryCta?.label || '',
+    primaryCtaHref: item.primaryCta?.href || '',
+    secondaryCtaText: item.secondaryCta?.label || '',
+    secondaryCtaHref: item.secondaryCta?.href || '',
+    telemetryChips: item.telemetryChips || [],
+    trustBadges: item.trustBadges || [],
+    isActive: item.isActive,
+  };
+
+  const handleSubmit = async (values: CtaBannerFormValues) => {
+    try {
+      await updateCtaBanner({
+        id: item.ctaBannerId,
+        siteVariant: values.siteVariant,
+        badge: values.badge?.trim(),
+        heading: values.heading.trim(),
+        headingAccent: values.headingAccent?.trim(),
+        subheading: values.subheading?.trim(),
+        primaryCtaText: values.primaryCtaText.trim(),
+        primaryCtaHref: values.primaryCtaHref.trim(),
+        secondaryCtaText: values.secondaryCtaText?.trim(),
+        secondaryCtaHref: values.secondaryCtaHref?.trim(),
+        telemetryChips: values.telemetryChips,
+        trustBadges: values.trustBadges,
+        isActive: values.isActive,
+      }).unwrap();
+
+      toast.success('Final CTA Banner updated successfully!');
+      navigate('/content/cta-banner');
+    } catch (err: any) {
+      toast.error(err?.data?.message || err?.message || 'Failed to update CTA Banner.');
+    }
+  };
+
+  return (
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+      <ATMPageHeader
+        title={`Edit ${item.siteVariant} CTA Banner`}
+        subtitle="Update banner messaging, conversion URLs, live telemetry chips, and trust badges."
+        breadcrumbs={[
+          { label: 'Content', href: '/content' },
+          { label: 'CTA Banner', href: '/content/cta-banner' },
+          { label: `Edit ${item.siteVariant}` },
+        ]}
+      />
+
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+        enableReinitialize
+      >
+        {(formikProps) => (
+          <CtaBannerForm
+            formikProps={formikProps}
+            isEdit={true}
+            onCancel={() => navigate('/content/cta-banner')}
+          />
+        )}
+      </Formik>
+    </div>
+  );
+};

@@ -58,6 +58,14 @@ export const heroSectionApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Content'],
     }),
+
+    toggleActiveHeroSlide: builder.mutation<ApiResponse<HeroSlide>, string>({
+      query: (id) => ({
+        url: `/api/v1/hero-slides/${id}/toggle-active`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Content'],
+    }),
   }),
   overrideExisting: true,
 });
@@ -69,4 +77,5 @@ export const {
   useUpdateHeroSlideMutation,
   useDeleteHeroSlideMutation,
   useReorderHeroSlidesMutation,
+  useToggleActiveHeroSlideMutation,
 } = heroSectionApi;

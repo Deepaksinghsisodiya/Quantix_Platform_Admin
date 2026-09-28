@@ -11,6 +11,7 @@ import {
   useUpdateHeroSlideMutation,
   useDeleteHeroSlideMutation,
   useReorderHeroSlidesMutation,
+  useToggleActiveHeroSlideMutation,
 } from '../Service/HeroSectionService';
 import type { HeroSlide, SiteVariantTab } from '../Model/HeroSectionTypes';
 
@@ -23,6 +24,7 @@ export const HeroSectionListWrapper: React.FC = () => {
   // Queries & Mutations
   const { data: slidesRes, isLoading, isFetching, isError, refetch } = useGetAdminHeroSlidesQuery(undefined);
   const [updateSlide] = useUpdateHeroSlideMutation();
+  const [toggleActiveSlide] = useToggleActiveHeroSlideMutation();
   const [deleteSlide, deleteState] = useDeleteHeroSlideMutation();
   const [reorderSlides, reorderState] = useReorderHeroSlidesMutation();
 
@@ -51,22 +53,7 @@ export const HeroSectionListWrapper: React.FC = () => {
   // Handlers
   const handleTogglePublished = async (slide: HeroSlide) => {
     try {
-      await updateSlide({
-        id: slide.heroSlideId,
-        siteVariant: slide.siteVariant,
-        badge: slide.badge,
-        heading: slide.heading,
-        subheading: slide.subheading,
-        primaryCtaLabel: slide.primaryCtaLabel,
-        primaryCtaUrl: slide.primaryCtaUrl,
-        secondaryCtaLabel: slide.secondaryCtaLabel,
-        secondaryCtaUrl: slide.secondaryCtaUrl,
-        featureHighlights: slide.featureHighlights,
-        mediaAssetId: slide.mediaAssetId,
-        imageUrl: slide.imageUrl,
-        sortOrder: slide.sortOrder,
-        isActive: !slide.isActive,
-      }).unwrap();
+      await toggleActiveSlide(slide.heroSlideId).unwrap();
       toast.success(
         slide.isActive
           ? 'Slide unpublished (hidden from website).'

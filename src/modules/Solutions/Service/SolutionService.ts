@@ -48,7 +48,7 @@ export const solutionsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Content'],
     }),
 
-    deleteSolution: builder.mutation<ApiResponse<{ message: string }>, string>({
+    deleteSolution: builder.mutation<ApiResponse<{ message: string } | boolean>, string>({
       query: (id) => ({
         url: `/api/v1/solutions/${id}`,
         method: 'DELETE',

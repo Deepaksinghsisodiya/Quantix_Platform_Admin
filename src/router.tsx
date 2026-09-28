@@ -212,7 +212,9 @@ const ArticleTemplatesPage = React.lazy(() => import('@/modules/content/pages/Ar
 const BlogListPage = React.lazy(() => import('@/modules/content/pages/BlogListPage'));
 const BlogEditorPage = React.lazy(() => import('@/modules/content/pages/BlogEditorPage'));
 const HelpArticlesPage = React.lazy(() => import('@/modules/content/pages/HelpArticlesPage'));
-const FAQPage = React.lazy(() => import('@/modules/content/pages/FAQPage'));
+const FAQPage = React.lazy(() => import('@/modules/FAQ/List/FAQListWrapper').then(m => ({ default: m.FAQListWrapper })));
+const AddFAQPage = React.lazy(() => import('@/modules/FAQ/pages/AddFAQPage').then(m => ({ default: m.AddFAQPage })));
+const EditFAQPage = React.lazy(() => import('@/modules/FAQ/pages/EditFAQPage').then(m => ({ default: m.EditFAQPage })));
 
 // Downloads
 const DownloadsPage = React.lazy(() => import('@/modules/downloads/pages/DownloadsPage'));
@@ -396,6 +398,8 @@ export function AppRouter() {
             <Route path="content/help/new" element={<RoleGuard module="content"><HelpArticleEditorPage /></RoleGuard>} />
             <Route path="content/help/:slug/edit" element={<RoleGuard module="content"><HelpArticleEditorPage /></RoleGuard>} />
             <Route path="content/faq" element={<RoleGuard module="content"><FAQPage /></RoleGuard>} />
+            <Route path="content/faq/new" element={<RoleGuard module="content"><AddFAQPage /></RoleGuard>} />
+            <Route path="content/faq/edit/:id" element={<RoleGuard module="content"><EditFAQPage /></RoleGuard>} />
 
             {/* Downloads */}
             <Route path="downloads" element={<RoleGuard module="downloads"><DownloadsPage /></RoleGuard>} />

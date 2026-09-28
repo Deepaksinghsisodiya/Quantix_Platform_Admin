@@ -12,6 +12,7 @@ import {
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
 import { HeroSlideCard } from './HeroSlideCard';
@@ -116,47 +117,29 @@ export const HeroSectionList: React.FC<HeroSectionListProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <ATMCard className="p-4 sm:p-5 flex items-center justify-between border-slate-200/80 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                {activeTab} Hero Slides
-              </p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                {slides.length}
-              </h3>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold">
-              <Sparkles className="h-5 w-5" />
-            </div>
-          </ATMCard>
-
-          <ATMCard className="p-4 sm:p-5 flex items-center justify-between border-slate-200/80 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                Live on Site
-              </p>
-              <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                {activeCount}
-              </h3>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
-              ✓
-            </div>
-          </ATMCard>
-
-          <ATMCard className="p-4 sm:p-5 flex items-center justify-between border-slate-200/80 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Hidden / Draft
-              </p>
-              <h3 className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">
-                {hiddenCount}
-              </h3>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold">
-              —
-            </div>
-          </ATMCard>
+          <ATMStatsCard
+            label={`${activeTab} Slides`}
+            value={slides.length}
+            icon={Sparkles}
+            variant="accent"
+            description="Total slides in layout"
+          />
+          <ATMStatsCard
+            label="Live on Site"
+            value={activeCount}
+            icon={Sparkles}
+            variant="emerald"
+            description="Published & active"
+            onClick={() => setStatusFilter('live')}
+          />
+          <ATMStatsCard
+            label="Hidden / Draft"
+            value={hiddenCount}
+            icon={Sparkles}
+            variant="slate"
+            description="Unpublished drafts"
+            onClick={() => setStatusFilter('hidden')}
+          />
         </div>
       )}
 

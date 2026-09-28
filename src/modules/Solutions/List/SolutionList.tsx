@@ -15,7 +15,8 @@ import {
   Globe,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { cn } from '@/lib/utils/cn';
 import { SolutionCard, SolutionCardSkeleton } from './SolutionCard';
 import type { SolutionItem } from '../Model/SolutionTypes';
@@ -115,82 +116,40 @@ export const SolutionList: React.FC<SolutionListProps> = ({
         }}
       />
 
-      {/* 2. KPI Stats Cards Grid (Matching Clientele & How It Works standards) */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 animate-pulse"
-            >
-              <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
-              <div className="h-7 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
-          {/* Stat 1: Subdomain Cards */}
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
-              <span>Subdomain Cards (Left)</span>
-              <ExternalLink size={13} className="text-amber-500" />
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                {counts.PromoCard}
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-mono text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200/60 dark:border-amber-800/40">
-                Subdomain
-              </span>
-            </div>
-          </div>
-
-          {/* Stat 2: Sector Landing Pages */}
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
-              <span>Sector Solutions (Right)</span>
-              <Layers size={13} className="text-primary-500" />
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                {counts.SectorItem}
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-mono text-primary-600 bg-primary-50 dark:bg-primary-950/40 px-1.5 py-0.5 rounded border border-primary-200/60 dark:border-primary-800/40">
-                Pages
-              </span>
-            </div>
-          </div>
-
-          {/* Stat 3: Live Active */}
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-              Live Active in View
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {liveCount}
-              </span>
-              <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600 font-semibold">
-                <CheckCircle2 className="h-3 w-3" /> Live
-              </span>
-            </div>
-          </div>
-
-          {/* Stat 4: Hidden / Draft */}
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-              Draft / Hidden
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-500 dark:text-slate-400">
-                {hiddenCount}
-              </span>
-              <span className="text-[10px] sm:text-[11px] text-slate-400 font-mono">Hidden</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 2. KPI Stats Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <ATMStatsCard
+          label="Total Solutions"
+          value={counts.All}
+          icon={Compass}
+          variant="accent"
+          description={`${liveCount} live in current view`}
+          onClick={() => onTabChange('All')}
+        />
+        <ATMStatsCard
+          label="Subdomain Cards (Left)"
+          value={counts.PromoCard}
+          icon={ExternalLink}
+          variant="amber"
+          description="Restaurant & Retail showcase"
+          onClick={() => onTabChange('PromoCard')}
+        />
+        <ATMStatsCard
+          label="Sector Solutions (Right)"
+          value={counts.SectorItem}
+          icon={Layers}
+          variant="indigo"
+          description="Sector landing pages"
+          onClick={() => onTabChange('SectorItem')}
+        />
+        <ATMStatsCard
+          label="Live on Navbar"
+          value={liveCount}
+          icon={CheckCircle2}
+          variant="emerald"
+          description={`${hiddenCount} drafts / hidden`}
+        />
+      </div>
 
       {/* 3. Underline Section Tabs (Matching Clientele/HowItWorks styling) */}
       <div className="border-b border-slate-200 dark:border-slate-800">

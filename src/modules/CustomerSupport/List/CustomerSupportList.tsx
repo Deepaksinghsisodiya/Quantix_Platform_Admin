@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { CustomerSupportCard, CustomerSupportCardSkeleton } from './CustomerSupportCard';
 import type { SupportSectionItem, CustomerSupportFilter } from '../Model/CustomerSupportTypes';
 import { cn } from '@/lib/utils/cn';
@@ -97,78 +98,39 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
       />
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Total Support Desks
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.total}
-            </div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-              <span>{stats.active} Live Desks</span>
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Headphones size={22} strokeWidth={2.3} />
-          </div>
-        </div>
-
-        {/* KPI 2 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Enterprise Desk
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.enterprise}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              VIP Escalation Hotline
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-            <Building2 size={22} strokeWidth={2.3} />
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Restaurant Desk
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.restaurant}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Dining Rush-Hour Standby
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-            <Utensils size={22} strokeWidth={2.3} />
-          </div>
-        </div>
-
-        {/* KPI 4 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Retail Desk
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.retail}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Checkout & Hardware Desk
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-            <Store size={22} strokeWidth={2.3} />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <ATMStatsCard
+          label="Total Support Desks"
+          value={stats.total}
+          icon={Headphones}
+          variant="accent"
+          description={`${stats.active} published live`}
+          onClick={() => onFilterChange({ siteVariant: 'all' })}
+        />
+        <ATMStatsCard
+          label="Enterprise Desk"
+          value={stats.enterprise}
+          icon={Building2}
+          variant="indigo"
+          description="VIP Escalation Hotline"
+          onClick={() => onFilterChange({ siteVariant: 'enterprise' })}
+        />
+        <ATMStatsCard
+          label="Restaurant Desk"
+          value={stats.restaurant}
+          icon={Utensils}
+          variant="amber"
+          description="Dining rush-hour standby"
+          onClick={() => onFilterChange({ siteVariant: 'restaurant' })}
+        />
+        <ATMStatsCard
+          label="Retail Desk"
+          value={stats.retail}
+          icon={Store}
+          variant="emerald"
+          description="Checkout & hardware desk"
+          onClick={() => onFilterChange({ siteVariant: 'retail' })}
+        />
       </div>
 
       {/* Tabs & Filter Bar */}

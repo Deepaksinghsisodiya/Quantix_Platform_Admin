@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
-  Sparkles,
   ArrowUp,
   ArrowDown,
   Edit2,
@@ -13,12 +12,11 @@ import {
   Coffee,
   ShoppingBag,
   UtensilsCrossed,
-  CheckCircle2,
   Star,
   MapPin,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import type { ClientBrand } from '../Model/ClienteleTypes';
 
 interface ClienteleCardProps {
@@ -41,10 +39,6 @@ export const getCategoryIcon = (industry?: string | null, category?: string | nu
   if (norm.includes('retail') || norm.includes('shop') || norm.includes('store') || norm.includes('apparel')) return ShoppingBag;
   if (norm.includes('franchise')) return Store;
   return Building2;
-};
-
-export const ClienteleCardSkeleton: React.FC<{ viewMode?: 'grid' | 'list' }> = ({ viewMode = 'grid' }) => {
-  return <ATMSkeleton variant={viewMode === 'list' ? 'clientele-row' : 'clientele-card'} />;
 };
 
 export const ClienteleCard: React.FC<ClienteleCardProps> = ({
@@ -71,337 +65,197 @@ export const ClienteleCard: React.FC<ClienteleCardProps> = ({
   const websiteUrl = brand?.websiteUrl || brand?.linkUrl;
   const logoUrl = !imgError && brand?.logoUrl ? brand.logoUrl : null;
 
-  // 1. LIST VIEW RENDERING (Wide row on desktop, stack on mobile)
+  // ─── LIST VIEW ────────────────────────────────────────────
   if (viewMode === 'list') {
     return (
       <div
         className={cn(
-          'group relative rounded-xl border transition-all duration-200 bg-white dark:bg-slate-900/70 p-3.5 sm:p-4 shadow-xs',
+          'group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border bg-white dark:bg-slate-900/70 p-4 shadow-xs transition-all duration-200 hover:shadow-md',
           isActive
-            ? 'border-slate-200/90 dark:border-slate-800 hover:border-primary-500/50 hover:shadow-md'
-            : 'border-dashed border-slate-300 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 opacity-80'
+            ? 'border-slate-200/90 dark:border-slate-800 hover:border-primary/40'
+            : 'border-dashed border-slate-300 dark:border-slate-800/80 bg-slate-50/50 opacity-80 dark:bg-slate-950/40'
         )}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Logo & Main Info */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="relative w-12 h-12 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-1.5 shrink-0 flex items-center justify-center overflow-hidden">
-              {logoUrl ? (
-                <>
-                  {!imgLoaded && (
-                    <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/80 rounded-xl" />
-                  )}
-                  <img
-                    src={logoUrl}
-                    alt={`${name} logo`}
-                    onLoad={() => setImgLoaded(true)}
-                    onError={() => setImgError(true)}
-                    className={cn(
-                      'max-h-full max-w-full object-contain filter dark:brightness-110 transition-opacity duration-200',
-                      !imgLoaded ? 'opacity-0' : 'opacity-100'
-                    )}
-                  />
-                </>
-              ) : (
-                <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-[#FF4F00] flex items-center justify-center">
-                  <Icon className="w-4 h-4" />
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                  {name}
-                </h3>
-                {industry && (
-                  <span className="text-xs text-slate-500 dark:text-slate-400 truncate hidden md:inline">
-                    • {industry}
-                  </span>
-                )}
-                {isFeatured && (
-                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                    <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
-                    Featured
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="inline-flex items-center gap-1 font-medium">
-                  <Icon className="w-3 h-3 text-[#FF4F00]" />
-                  {category}
-                </span>
-                {locationsCount ? (
-                  <span className="font-mono text-blue-600 dark:text-blue-400">
-                    • {locationsCount}+ Outlets
-                  </span>
-                ) : (
-                  <span>• {brand?.tier || 'Enterprise'}</span>
-                )}
-                {websiteUrl && (
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline max-w-[160px] truncate"
-                  >
-                    <span>Website</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                )}
-              </div>
-            </div>
+        {/* Logo + Info */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="relative w-12 h-12 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-1.5 shrink-0 flex items-center justify-center overflow-hidden">
+            {logoUrl ? (
+              <>
+                {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/80 rounded-xl" />}
+                <img src={logoUrl} alt={`${name} logo`} onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)}
+                  className={cn('max-h-full max-w-full object-contain filter dark:brightness-110 transition-opacity duration-200', !imgLoaded ? 'opacity-0' : 'opacity-100')} />
+              </>
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Icon className="w-4 h-4" /></div>
+            )}
           </div>
 
-          {/* Action Toolbar */}
-          <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80 w-full sm:w-auto justify-between sm:justify-end">
-            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-0.5">
-              <button
-                type="button"
-                disabled={index === 0 || isReordering}
-                onClick={() => onMove(index, 'up')}
-                title="Move Up"
-                className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors"
-              >
-                <ArrowUp className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                disabled={index === totalCount - 1 || isReordering}
-                onClick={() => onMove(index, 'down')}
-                title="Move Down"
-                className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors"
-              >
-                <ArrowDown className="h-3.5 w-3.5" />
-              </button>
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{name}</h3>
+              {industry && <span className="text-xs text-slate-500 dark:text-slate-400 truncate hidden md:inline">• {industry}</span>}
+              {isFeatured && (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />Featured
+                </span>
+              )}
+              <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border', isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700')}>
+                <span className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+                {isActive ? 'Live' : 'Hidden'}
+              </span>
             </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => onToggleFeatured(brand)}
-                title={isFeatured ? 'Remove featured' : 'Mark featured'}
-                className={cn(
-                  'p-1.5 rounded-lg border transition-colors',
-                  isFeatured
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
-                    : 'border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                )}
-              >
-                <Star className={cn('h-3.5 w-3.5', isFeatured && 'fill-amber-500')} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onToggleActive(brand)}
-                title={isActive ? 'Hide brand' : 'Publish brand'}
-                className={cn(
-                  'p-1.5 rounded-lg border transition-colors',
-                  isActive
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                    : 'border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                )}
-              >
-                {isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-              </button>
-
-              {/* Edit */}
-              <button
-                type="button"
-                onClick={() => onEdit(brand)}
-                title="Edit Brand"
-                className="inline-flex items-center gap-1.5 h-7.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
-              >
-                <Edit2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                <span>Edit</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onDelete(brand)}
-                title="Delete Brand"
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1 font-medium"><Icon className="w-3 h-3 text-primary" />{category}</span>
+              {locationsCount ? (
+                <span className="font-mono text-blue-600 dark:text-blue-400">• {locationsCount}+ Outlets</span>
+              ) : (
+                <span>• {brand?.tier || 'Enterprise'}</span>
+              )}
+              {websiteUrl && (
+                <a href={websiteUrl} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-primary dark:text-orange-400 hover:underline">
+                  <Globe className="w-2.5 h-2.5" />Website<ExternalLink className="w-2.5 h-2.5" /></a>
+              )}
             </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800/80 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-0.5">
+            <button type="button" disabled={index === 0 || isReordering} onClick={() => onMove(index, 'up')} title="Move Up"
+              className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors">
+              <ArrowUp className="h-3.5 w-3.5" /></button>
+            <button type="button" disabled={index === totalCount - 1 || isReordering} onClick={() => onMove(index, 'down')} title="Move Down"
+              className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors">
+              <ArrowDown className="h-3.5 w-3.5" /></button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={() => onToggleFeatured(brand)} title={isFeatured ? 'Remove featured' : 'Mark featured'}
+              className={cn('p-1.5 rounded-lg border transition-colors shadow-2xs cursor-pointer', isFeatured ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-amber-500')}>
+              <Star className={cn('h-3.5 w-3.5', isFeatured && 'fill-amber-500')} /></button>
+            <button type="button" onClick={() => onToggleActive(brand)} title={isActive ? 'Hide' : 'Publish'}
+              className={cn('p-1.5 rounded-lg border transition-colors shadow-2xs cursor-pointer', isActive ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-emerald-500')}>
+              {isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
+            <button type="button" onClick={() => onEdit(brand)} title="Edit Brand"
+              className="inline-flex items-center gap-1.5 h-7.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-orange-50 hover:text-[#FF4F00] hover:border-orange-300 dark:hover:bg-orange-950/40 transition-colors shadow-2xs cursor-pointer">
+              <Edit2 className="h-3.5 w-3.5" /><span>Edit</span></button>
+            <button type="button" onClick={() => onDelete(brand)} title="Delete"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors">
+              <Trash2 className="h-3.5 w-3.5" /></button>
           </div>
         </div>
       </div>
     );
   }
 
-  // 2. GRID VIEW RENDERING (Responsive card that looks gorgeous on mobile & desktop)
+  // ─── GRID VIEW ────────────────────────────────────────────
   return (
     <div
       className={cn(
-        'group relative rounded-xl border transition-all duration-200 bg-white dark:bg-slate-900/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-4',
+        'group relative flex flex-col justify-between rounded-2xl border transition-all duration-300 overflow-hidden',
         isActive
-          ? 'border-slate-200/90 dark:border-slate-800 hover:border-primary-500/50 hover:shadow-md'
-          : 'border-dashed border-slate-300 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 opacity-80'
+          ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-primary/40 hover:shadow-lg dark:hover:shadow-primary/5'
+          : 'bg-slate-50/70 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-80'
       )}
     >
-      {/* Top Row: Logo, Brand Title, Category */}
-      <div className="flex items-start gap-3.5 min-w-0">
-        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-2 shrink-0 flex items-center justify-center overflow-hidden">
-          {logoUrl ? (
-            <>
-              {!imgLoaded && (
-                <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/80 rounded-xl" />
-              )}
-              <img
-                src={logoUrl}
-                alt={`${name} logo`}
-                onLoad={() => setImgLoaded(true)}
-                onError={() => setImgError(true)}
-                className={cn(
-                  'max-h-full max-w-full object-contain filter dark:brightness-110 transition-opacity duration-200',
-                  !imgLoaded ? 'opacity-0' : 'opacity-100'
-                )}
-              />
-            </>
-          ) : (
-            <div className="w-9 h-9 rounded-lg bg-orange-500/10 text-[#FF4F00] flex items-center justify-center">
-              <Icon className="w-5 h-5" />
-            </div>
-          )}
+      {/* Top Accent Bar */}
+      <div className={cn('h-1.5 w-full transition-all duration-300', isActive ? 'bg-gradient-to-r from-primary via-orange-500 to-amber-500' : 'bg-slate-300 dark:bg-slate-700')} />
+
+      <div className="p-5 sm:p-6 space-y-5 flex-1 flex flex-col">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            #{index + 1}
+          </span>
+          <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors', isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700')}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+            {isActive ? 'Live on Site' : 'Hidden'}
+          </span>
         </div>
 
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">
-              {name}
-            </h3>
-            <span
-              className={cn(
-                'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0',
-                isActive
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-              )}
-            >
-              {isActive ? 'Active' : 'Draft'}
-            </span>
+        {/* Logo + Name + Category */}
+        <div className="flex items-start gap-3.5">
+          <div className="relative w-16 h-16 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-2.5 shrink-0 flex items-center justify-center overflow-hidden shadow-xs">
+            {logoUrl ? (
+              <>
+                {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700/80 rounded-2xl" />}
+                <img src={logoUrl} alt={`${name} logo`} onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)}
+                  className={cn('max-h-full max-w-full object-contain filter dark:brightness-110 transition-opacity duration-200', !imgLoaded ? 'opacity-0' : 'opacity-100')} />
+              </>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Icon className="w-5 h-5" /></div>
+            )}
           </div>
+          <div className="flex-1 min-w-0 space-y-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">{name}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{industry || category}</p>
+            {websiteUrl && (
+              <a href={websiteUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-mono text-primary dark:text-orange-400 hover:underline max-w-[200px] truncate">
+                <Globe className="w-2.5 h-2.5 shrink-0" />
+                <span className="truncate">{websiteUrl}</span>
+                <ExternalLink className="w-2.5 h-2.5 shrink-0" /></a>
+            )}
+          </div>
+        </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-            {industry || category}
-          </p>
-
-          {websiteUrl && (
-            <a
-              href={websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-mono text-primary-600 dark:text-primary-400 hover:underline max-w-[200px] truncate"
-            >
-              <span>{websiteUrl}</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
+        {/* Badges row */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            <Icon className="w-3 h-3 text-primary" />{category}
+          </span>
+          {isFeatured && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />FEATURED
+            </span>
+          )}
+          {locationsCount ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              <MapPin className="w-2.5 h-2.5" />{locationsCount}+ Units
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              {brand?.tier || 'Enterprise'}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Middle Badges Row */}
-      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-          <Icon className="w-3 h-3 text-[#FF4F00]" />
-          {category}
-        </span>
-
-        {isFeatured && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
-            FEATURED
-          </span>
-        )}
-
-        {locationsCount ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-            <MapPin className="w-2.5 h-2.5" />
-            {locationsCount}+ Units
-          </span>
-        ) : (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            {brand?.tier || 'Enterprise'}
-          </span>
-        )}
-      </div>
-
-      {/* Bottom Action Controls: Reorder buttons on left, Actions on right */}
-      <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-        {/* Reorder Buttons */}
-        <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-0.5">
-          <button
-            type="button"
-            disabled={index === 0 || isReordering}
-            onClick={() => onMove(index, 'up')}
-            title="Move Up"
-            className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors"
-          >
-            <ArrowUp className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            disabled={index === totalCount - 1 || isReordering}
-            onClick={() => onMove(index, 'down')}
-            title="Move Down"
-            className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors"
-          >
-            <ArrowDown className="h-3.5 w-3.5" />
-          </button>
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80">
+        {/* Reorder */}
+        <div className="flex items-center gap-1">
+          <button type="button" disabled={index === 0 || isReordering} onClick={() => onMove(index, 'up')} title="Move Up"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+            <ArrowUp className="h-3.5 w-3.5" /></button>
+          <button type="button" disabled={index === totalCount - 1 || isReordering} onClick={() => onMove(index, 'down')} title="Move Down"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+            <ArrowDown className="h-3.5 w-3.5" /></button>
         </div>
 
-        {/* Feature / Active / Edit / Delete */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onToggleFeatured(brand)}
-            title={isFeatured ? 'Remove featured' : 'Mark featured'}
-            className={cn(
-              'p-2 rounded-lg border transition-colors',
-              isFeatured
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
-                : 'border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-            )}
-          >
-            <Star className={cn('h-4 w-4', isFeatured && 'fill-amber-500')} />
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => onToggleFeatured(brand)} title={isFeatured ? 'Remove featured' : 'Mark featured'}
+            className={cn('p-1.5 rounded-lg border transition-colors shadow-2xs cursor-pointer', isFeatured ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-amber-500 hover:border-amber-300')}>
+            <Star className={cn('h-4 w-4', isFeatured && 'fill-amber-500')} /></button>
+
+          <button type="button" onClick={() => onToggleActive(brand)}
+            className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-2xs cursor-pointer', isActive ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100')}
+            title={isActive ? 'Hide from web' : 'Publish to web'}>
+            <span className={cn('h-2 w-2 rounded-full shrink-0', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+            <span>{isActive ? 'Live' : 'Draft'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => onToggleActive(brand)}
-            title={isActive ? 'Hide from web' : 'Publish to web'}
-            className={cn(
-              'p-2 rounded-lg border transition-colors',
-              isActive
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
-                : 'border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-            )}
-          >
-            {isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          </button>
+          <button type="button" onClick={() => onEdit(brand)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-orange-50 hover:text-[#FF4F00] hover:border-orange-300 dark:hover:bg-orange-950/40 dark:hover:text-orange-400 transition-all shadow-2xs cursor-pointer">
+            <Edit2 size={13} className="text-[#FF4F00]" /><span>Edit</span></button>
 
-          {/* Edit */}
-          <button
-            type="button"
-            onClick={() => onEdit(brand)}
-            title="Edit Brand"
-            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
-          >
-            <Edit2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-            <span>Edit</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDelete(brand)}
-            title="Delete Brand"
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-900/50 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <button type="button" onClick={() => onDelete(brand)} title="Delete Brand"
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all shadow-2xs cursor-pointer">
+            <Trash2 size={14} /></button>
         </div>
       </div>
     </div>

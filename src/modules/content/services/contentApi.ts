@@ -57,7 +57,9 @@ export interface HelpArticleParams extends Partial<PaginationParams> {
 
 export interface FaqParams extends Partial<PaginationParams> {
   readonly category?: string;
+  readonly merchantType?: string;
   readonly search?: string;
+  readonly siteVariant?: string;
 }
 
 export const contentApi = baseApi.injectEndpoints({
@@ -109,11 +111,15 @@ export const contentApi = baseApi.injectEndpoints({
     }),
 
     /** FAQs come back whole on one page — the API never truncates them. */
-    getFaqs: builder.query<PagedResponse<FAQ>, FaqParams>({
+    getFaqs: builder.query<PagedResponse<FAQ>, FaqParams | void>({
       query: (params) => ({
         url: '/api/v1/help-centre/faqs',
         method: 'GET',
-        params,
+        params: params ? {
+          category: params.category,
+          merchantType: params.merchantType,
+          search: params.search,
+        } : undefined,
       }),
       providesTags: ['Content'],
     }),

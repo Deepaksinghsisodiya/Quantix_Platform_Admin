@@ -12,7 +12,8 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton, ATMCard } from '@/shared/ui';
+import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { cn } from '@/lib/utils/cn';
 import { HowItWorksCard, HowItWorksCardSkeleton } from './HowItWorksCard';
 import type { HowItWorksStepItem, SiteVariantTab } from '../Model/HowItWorksTypes';
@@ -104,59 +105,40 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
         }}
       />
 
-      {/* 2. KPI Stats — same style as Clientele */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 animate-pulse">
-              <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
-              <div className="h-7 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-              Total in {activeTab}
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                {safeSteps.length}
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-mono text-primary-600 bg-primary-50 dark:bg-primary-950/40 px-1.5 py-0.5 rounded">
-                Steps
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-              Published Live
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {liveCount}
-              </span>
-              <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" /> Live
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 col-span-2 sm:col-span-1">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-              Draft / Hidden
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-500 dark:text-slate-400">
-                {hiddenCount}
-              </span>
-              <span className="text-[10px] sm:text-[11px] text-slate-400">Hidden</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 2. Top Summary KPI Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <ATMStatsCard
+          label="Total Steps"
+          value={(counts?.Enterprise || 0) + (counts?.Restaurant || 0) + (counts?.Retail || 0)}
+          icon={ListOrdered}
+          variant="accent"
+          description={`${liveCount} live on ${activeTab}`}
+        />
+        <ATMStatsCard
+          label="Enterprise Website"
+          value={counts?.Enterprise || 0}
+          icon={Building2}
+          variant="indigo"
+          description="Enterprise rollout stages"
+          onClick={() => onTabChange('Enterprise')}
+        />
+        <ATMStatsCard
+          label="Restaurant Website"
+          value={counts?.Restaurant || 0}
+          icon={UtensilsCrossed}
+          variant="amber"
+          description="Order & dining stages"
+          onClick={() => onTabChange('Restaurant')}
+        />
+        <ATMStatsCard
+          label="Retail Website"
+          value={counts?.Retail || 0}
+          icon={ShoppingBag}
+          variant="emerald"
+          description="POS scan & cashier stages"
+          onClick={() => onTabChange('Retail')}
+        />
+      </div>
 
       {/* 3. Site Variant Tabs — same underline style as Clientele */}
       <div className="border-b border-slate-200 dark:border-slate-800">

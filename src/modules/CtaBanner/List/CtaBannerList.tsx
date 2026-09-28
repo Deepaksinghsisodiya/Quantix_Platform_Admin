@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { CtaBannerCard, CtaBannerCardSkeleton } from './CtaBannerCard';
 import type { CtaBannerItem, CtaBannerFilter } from '../Model/CtaBannerTypes';
 import { cn } from '@/lib/utils/cn';
@@ -93,78 +94,39 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
       />
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Total Banners
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.total}
-            </div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-              <span>{stats.active} Live Banners</span>
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Layers size={22} strokeWidth={2.3} />
-          </div>
-        </div>
-
-        {/* KPI 2 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Enterprise Banner
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.enterprise}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Multi-Store Scalability
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-            <Building2 size={22} strokeWidth={2.3} />
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Restaurant Banner
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.restaurant}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Dining & Kitchen Line
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-            <Utensils size={22} strokeWidth={2.3} />
-          </div>
-        </div>
-
-        {/* KPI 4 */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Retail Banner
-            </span>
-            <div className="text-2xl sm:text-3xl font-syne font-extrabold text-slate-900 dark:text-white">
-              {stats.retail}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Barcode & Storefront
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-            <Store size={22} strokeWidth={2.3} />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <ATMStatsCard
+          label="Total Banners"
+          value={stats.total}
+          icon={Layers}
+          variant="accent"
+          description={`${stats.active} live banners`}
+          onClick={() => onFilterChange({ siteVariant: 'all' })}
+        />
+        <ATMStatsCard
+          label="Enterprise Banner"
+          value={stats.enterprise}
+          icon={Building2}
+          variant="indigo"
+          description="Multi-store scalability"
+          onClick={() => onFilterChange({ siteVariant: 'enterprise' })}
+        />
+        <ATMStatsCard
+          label="Restaurant Banner"
+          value={stats.restaurant}
+          icon={Utensils}
+          variant="amber"
+          description="Dining & kitchen line"
+          onClick={() => onFilterChange({ siteVariant: 'restaurant' })}
+        />
+        <ATMStatsCard
+          label="Retail Banner"
+          value={stats.retail}
+          icon={Store}
+          variant="emerald"
+          description="Barcode & storefront"
+          onClick={() => onFilterChange({ siteVariant: 'retail' })}
+        />
       </div>
 
       {/* Tabs & Filter Bar */}

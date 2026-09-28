@@ -17,6 +17,7 @@ import {
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
 import { IntegrationCard } from './IntegrationCard';
@@ -131,54 +132,40 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({
         }}
       />
 
-      {/* 2. Top Summary KPI Stats (Light & Dark mode responsive cards matching Clientele) */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse border border-slate-200 dark:border-slate-800" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">Total in {activeTab}</div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{totalCount}</span>
-              <span className="text-[10px] sm:text-[11px] font-mono text-primary-600 bg-primary-50 dark:bg-primary-950/40 px-1.5 py-0.5 rounded font-bold">
-                Connectors
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">Live on Website</div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{liveCount}</span>
-              <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600 font-semibold">
-                <CheckCircle2 className="h-3 w-3" /> Live
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">Featured Popular</div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">{popularCount}</span>
-              <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-amber-600 font-semibold">
-                <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Popular
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">Draft / Hidden</div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-500 dark:text-slate-400">{hiddenCount}</span>
-              <span className="text-[10px] sm:text-[11px] text-slate-400">Hidden</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 2. Top Summary KPI Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <ATMStatsCard
+          label="Total Connectors"
+          value={(counts?.Enterprise || 0) + (counts?.Restaurant || 0) + (counts?.Retail || 0)}
+          icon={Layers}
+          variant="accent"
+          description={`${liveCount} live on ${activeTab}`}
+        />
+        <ATMStatsCard
+          label="Enterprise Website"
+          value={counts?.Enterprise || 0}
+          icon={Building2}
+          variant="indigo"
+          description="ERP & Cloud ledgers"
+          onClick={() => onTabChange('Enterprise')}
+        />
+        <ATMStatsCard
+          label="Restaurant Website"
+          value={counts?.Restaurant || 0}
+          icon={UtensilsCrossed}
+          variant="amber"
+          description="Zomato, Swiggy & KDS"
+          onClick={() => onTabChange('Restaurant')}
+        />
+        <ATMStatsCard
+          label="Retail Website"
+          value={counts?.Retail || 0}
+          icon={ShoppingBag}
+          variant="emerald"
+          description="Barcodes & POS scanners"
+          onClick={() => onTabChange('Retail')}
+        />
+      </div>
 
       {/* 3. Website Variant Navigation Tabs */}
       <div className="border-b border-slate-200 dark:border-slate-800">

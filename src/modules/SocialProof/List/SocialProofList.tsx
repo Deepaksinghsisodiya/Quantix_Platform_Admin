@@ -11,6 +11,7 @@ import {
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
+import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
 import { SocialProofCard } from './SocialProofCard';
@@ -98,66 +99,39 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
       />
 
       {/* 2. Top Summary KPI Stats */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="p-4 sm:p-5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex items-center justify-between animate-pulse"
-            >
-              <div className="space-y-2">
-                <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
-                <div className="h-7 w-16 rounded-md bg-slate-200 dark:bg-slate-800" />
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <ATMCard className="p-4 sm:p-5 flex items-center justify-between border-slate-200/80 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                {activeTab} Metrics
-              </p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                {metrics.length}
-              </h3>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold">
-              #
-            </div>
-          </ATMCard>
-
-          <ATMCard className="p-4 sm:p-5 flex items-center justify-between border-slate-200/80 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                Live on Site
-              </p>
-              <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                {activeCount}
-              </h3>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
-              ✓
-            </div>
-          </ATMCard>
-
-          <ATMCard className="p-4 sm:p-5 flex items-center justify-between border-slate-200/80 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Hidden / Draft
-              </p>
-              <h3 className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">
-                {hiddenCount}
-              </h3>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold">
-              —
-            </div>
-          </ATMCard>
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <ATMStatsCard
+          label="Total Metrics"
+          value={(counts.Enterprise || 0) + (counts.Restaurant || 0) + (counts.Retail || 0)}
+          icon={BarChart3}
+          variant="accent"
+          description={`${activeCount} live in ${activeTab}`}
+        />
+        <ATMStatsCard
+          label="Enterprise Website"
+          value={counts.Enterprise || 0}
+          icon={Building2}
+          variant="indigo"
+          description="B2B & Multi-Store"
+          onClick={() => onTabChange('Enterprise')}
+        />
+        <ATMStatsCard
+          label="Restaurant Website"
+          value={counts.Restaurant || 0}
+          icon={UtensilsCrossed}
+          variant="amber"
+          description="Food & POS Counters"
+          onClick={() => onTabChange('Restaurant')}
+        />
+        <ATMStatsCard
+          label="Retail Website"
+          value={counts.Retail || 0}
+          icon={ShoppingBag}
+          variant="emerald"
+          description="Supermarket & Billing"
+          onClick={() => onTabChange('Retail')}
+        />
+      </div>
 
       {/* 3. Site Filter Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 sm:gap-4 overflow-x-auto pb-px">

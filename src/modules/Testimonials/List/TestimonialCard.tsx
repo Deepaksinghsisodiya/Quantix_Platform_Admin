@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   Pencil,
   Trash2,
@@ -6,13 +6,13 @@ import {
   EyeOff,
   MoveUp,
   MoveDown,
-  CheckCircle2,
   Star,
   Quote,
   TrendingUp,
+  Building2,
+  Tag,
 } from 'lucide-react';
 
-import { ATMBadge } from '@/shared/ui';
 import { cn } from '@/lib/utils/cn';
 import type { TestimonialItem } from '../Model/TestimonialTypes';
 
@@ -56,279 +56,185 @@ export const TestimonialCard: React.FC<TestimonialCardProps> = ({
     ? testimonial.pageSlug.charAt(0).toUpperCase() + testimonial.pageSlug.slice(1)
     : testimonial.merchantType || 'Enterprise';
 
-  if (viewMode === 'grid') {
+  // ─── LIST VIEW ────────────────────────────────────────────
+  if (viewMode === 'list') {
     return (
       <div
         className={cn(
-          'group relative flex flex-col justify-between rounded-2xl border bg-white shadow-xs transition-all duration-200 hover:shadow-lg dark:bg-[#12151c]',
+          'group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border bg-white dark:bg-slate-900/70 p-4 shadow-xs transition-all duration-200 hover:shadow-md',
           testimonial.isActive
-            ? 'border-slate-200/90 dark:border-slate-800'
-            : 'border-slate-200/60 bg-slate-50/50 opacity-75 dark:border-slate-800/80 dark:bg-slate-900/40'
+            ? 'border-slate-200/90 dark:border-slate-800 hover:border-primary/40'
+            : 'border-dashed border-slate-300 dark:border-slate-800/80 bg-slate-50/50 opacity-80 dark:bg-slate-950/40'
         )}
       >
-        {/* Card Header */}
-        <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-b from-slate-900 to-slate-950 p-5 text-white border-b border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="rounded-lg bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/90 backdrop-blur-md">
-              #{index + 1} • {pageLabel}
-            </span>
-            <ATMBadge
-              color={testimonial.isActive ? 'success' : 'default'}
-              label={testimonial.isActive ? 'Live' : 'Hidden'}
-              icon={testimonial.isActive ? <CheckCircle2 className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-            />
-          </div>
+        <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-black text-slate-600 dark:text-slate-400">
+            #{index + 1}
+          </span>
 
-          {/* Star Rating Display */}
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={cn(
-                    'h-4 w-4 transition-colors',
-                    star <= rating
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'fill-slate-700 text-slate-700'
-                  )}
-                />
-              ))}
-              <span className="ml-1.5 text-xs font-bold text-amber-300">
-                {rating}.0
-              </span>
+          {testimonial.avatarUrl ? (
+            <div className="relative h-10 w-10 shrink-0">
+              {!imgLoaded && <div className="absolute inset-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />}
+              <img
+                src={testimonial.avatarUrl}
+                alt={testimonial.personName}
+                onLoad={() => setImgLoaded(true)}
+                className={cn('h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 transition-opacity duration-300', imgLoaded ? 'opacity-100' : 'opacity-0')}
+              />
             </div>
-
-            {testimonial.metricText && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                <TrendingUp className="h-3 w-3" />
-                {testimonial.metricText}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Card Body: Quote & Title */}
-        <div className="flex-1 p-5 space-y-3.5">
-          {testimonial.title && (
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
-              {testimonial.title}
-            </h4>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-amber-500 text-xs font-black text-white shadow-xs">
+              {initials}
+            </div>
           )}
 
-          <div className="relative">
-            <Quote className="absolute -top-1.5 -left-1 h-4 w-4 text-primary-500/20 dark:text-primary-400/20 rotate-180" />
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-4 italic line-clamp-4">
-              &ldquo;{testimonial.body}&rdquo;
-            </p>
-          </div>
-
-          {/* Author Block */}
-          <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/70">
-            {testimonial.avatarUrl ? (
-              <div className="relative h-10 w-10 shrink-0">
-                {!imgLoaded && (
-                  <div className="absolute inset-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                )}
-                <img
-                  src={testimonial.avatarUrl}
-                  alt={testimonial.personName}
-                  onLoad={() => setImgLoaded(true)}
-                  className={cn(
-                    "h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 transition-opacity duration-300",
-                    imgLoaded ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
-              </div>
-            ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary-600 to-amber-500 text-xs font-black text-white shadow-xs">
-                {initials}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                {testimonial.personName}
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                {[testimonial.personRole, testimonial.companyName].filter(Boolean).join(' • ') || 'Verified Client'}
-              </p>
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{testimonial.personName}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{[testimonial.personRole, testimonial.companyName].filter(Boolean).join(' • ')}</span>
+              <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300">{pageLabel}</span>
+              <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border', testimonial.isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700')}>
+                <span className={cn('h-1.5 w-1.5 rounded-full', testimonial.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+                {testimonial.isActive ? 'Live' : 'Hidden'}
+              </span>
             </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className={cn('h-3 w-3', star <= rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-300 text-slate-300 dark:fill-slate-700 dark:text-slate-700')} />
+                ))}
+              </div>
+              {testimonial.title && <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{testimonial.title}</span>}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 italic">&ldquo;{testimonial.body}&rdquo;</p>
           </div>
         </div>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-4 py-2.5 dark:border-slate-800/80 dark:bg-slate-900/50 rounded-b-2xl">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={index === 0 || isReordering}
-              onClick={() => onMoveItem(index, 'up')}
-              title="Move Up"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-            >
-              <MoveUp className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              disabled={index === totalItems - 1 || isReordering}
-              onClick={() => onMoveItem(index, 'down')}
-              title="Move Down"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-            >
-              <MoveDown className="h-3.5 w-3.5" />
-            </button>
+        <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+          <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-0.5">
+            <button type="button" disabled={index === 0 || isReordering} onClick={() => onMoveItem(index, 'up')} title="Move Up"
+              className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors">
+              <MoveUp className="h-3.5 w-3.5" /></button>
+            <button type="button" disabled={index === totalItems - 1 || isReordering} onClick={() => onMoveItem(index, 'down')} title="Move Down"
+              className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors">
+              <MoveDown className="h-3.5 w-3.5" /></button>
           </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => onTogglePublished(testimonial)}
-              title={testimonial.isActive ? 'Hide from website' : 'Publish to website'}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-            >
-              {testimonial.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-slate-400" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenEdit(testimonial)}
-              title="Edit Testimonial"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-primary-950/60 dark:hover:text-primary-400 transition-colors"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenDelete(testimonial)}
-              title="Delete Testimonial"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/60 transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <button type="button" onClick={() => onOpenEdit(testimonial)}
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-orange-50 hover:text-[#FF4F00] hover:border-orange-300 dark:hover:bg-orange-950/40 dark:hover:text-orange-400 transition-colors shadow-2xs cursor-pointer">
+            <Pencil className="h-3.5 w-3.5" /><span>Edit</span></button>
+          <button type="button" onClick={() => onOpenDelete(testimonial)}
+            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors">
+            <Trash2 className="h-3.5 w-3.5" /></button>
         </div>
       </div>
     );
   }
 
-  // List View Mode
+  // ─── GRID VIEW ────────────────────────────────────────────
   return (
     <div
       className={cn(
-        'group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border bg-white p-4 shadow-xs transition-all hover:shadow-md dark:bg-[#12151c]',
+        'group relative flex flex-col justify-between rounded-2xl border transition-all duration-300 overflow-hidden',
         testimonial.isActive
-          ? 'border-slate-200/90 dark:border-slate-800'
-          : 'border-slate-200/60 bg-slate-50/50 opacity-75 dark:border-slate-800/80 dark:bg-slate-900/40'
+          ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-primary/40 hover:shadow-lg dark:hover:shadow-primary/5'
+          : 'bg-slate-50/70 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-80'
       )}
     >
-      <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-          #{index + 1}
-        </span>
+      {/* Top Accent Bar */}
+      <div className={cn('h-1.5 w-full transition-all duration-300', testimonial.isActive ? 'bg-gradient-to-r from-primary via-orange-500 to-amber-500' : 'bg-slate-300 dark:bg-slate-700')} />
 
-        {testimonial.avatarUrl ? (
-          <div className="relative h-10 w-10 shrink-0">
-            {!imgLoaded && (
-              <div className="absolute inset-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-            )}
-            <img
-              src={testimonial.avatarUrl}
-              alt={testimonial.personName}
-              onLoad={() => setImgLoaded(true)}
-              className={cn(
-                "h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 transition-opacity duration-300",
-                imgLoaded ? 'opacity-100' : 'opacity-0'
-              )}
-            />
-          </div>
-        ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary-600 to-amber-500 text-xs font-black text-white shadow-xs">
-            {initials}
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-              {testimonial.personName}
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-              {[testimonial.personRole, testimonial.companyName].filter(Boolean).join(' • ')}
-            </span>
-            <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-              {pageLabel}
-            </span>
-          </div>
-
+      <div className="p-5 sm:p-6 space-y-5 flex-1 flex flex-col">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={cn(
-                    'h-3 w-3',
-                    star <= rating
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'fill-slate-300 text-slate-300 dark:fill-slate-700 dark:text-slate-700'
-                  )}
-                />
-              ))}
-            </div>
-            {testimonial.title && (
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
-                {testimonial.title}
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              #{index + 1}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary dark:text-orange-400 border border-primary/20 text-xs font-bold">
+              <Building2 size={11} />{pageLabel}
+            </span>
           </div>
+          <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors', testimonial.isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700')}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', testimonial.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+            {testimonial.isActive ? 'Live on Site' : 'Hidden'}
+          </span>
+        </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 italic">
+        {/* Stars + metric */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star key={star} className={cn('h-4 w-4 transition-colors', star <= rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200 dark:fill-slate-700 dark:text-slate-700')} />
+            ))}
+            <span className="ml-1.5 text-xs font-bold text-amber-500 dark:text-amber-400">{rating}.0</span>
+          </div>
+          {testimonial.metricText && (
+            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="h-3 w-3" />{testimonial.metricText}
+            </span>
+          )}
+        </div>
+
+        {/* Quote body */}
+        <div className="relative flex-1">
+          <Quote className="absolute -top-1.5 -left-1 h-4 w-4 text-primary/20 rotate-180" />
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pl-4 italic line-clamp-4">
             &ldquo;{testimonial.body}&rdquo;
           </p>
+          {testimonial.title && (
+            <h4 className="mt-2 text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{testimonial.title}</h4>
+          )}
+        </div>
+
+        {/* Author block */}
+        <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/70">
+          {testimonial.avatarUrl ? (
+            <div className="relative h-10 w-10 shrink-0">
+              {!imgLoaded && <div className="absolute inset-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />}
+              <img
+                src={testimonial.avatarUrl} alt={testimonial.personName} onLoad={() => setImgLoaded(true)}
+                className={cn('h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 transition-opacity duration-300', imgLoaded ? 'opacity-100' : 'opacity-0')}
+              />
+            </div>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-amber-500 text-xs font-black text-white shadow-xs">
+              {initials}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{testimonial.personName}</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+              {[testimonial.personRole, testimonial.companyName].filter(Boolean).join(' • ') || 'Verified Client'}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
-        <ATMBadge
-          color={testimonial.isActive ? 'success' : 'default'}
-          label={testimonial.isActive ? 'Live' : 'Hidden'}
-        />
-
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center gap-1">
+          <button type="button" disabled={index === 0 || isReordering} onClick={() => onMoveItem(index, 'up')} title="Move Up"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+            <MoveUp className="h-3.5 w-3.5" /></button>
+          <button type="button" disabled={index === totalItems - 1 || isReordering} onClick={() => onMoveItem(index, 'down')} title="Move Down"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+            <MoveDown className="h-3.5 w-3.5" /></button>
+        </div>
+        <div className="flex items-center gap-2">
           <button
-            type="button"
-            disabled={index === 0 || isReordering}
-            onClick={() => onMoveItem(index, 'up')}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            type="button" onClick={() => onTogglePublished(testimonial)}
+            className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-2xs cursor-pointer', testimonial.isActive ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100')}
+            title={testimonial.isActive ? 'Click to hide' : 'Click to publish'}
           >
-            <MoveUp className="h-3.5 w-3.5" />
+            <span className={cn('h-2 w-2 rounded-full shrink-0', testimonial.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+            <span>{testimonial.isActive ? 'Live' : 'Draft'}</span>
           </button>
-          <button
-            type="button"
-            disabled={index === totalItems - 1 || isReordering}
-            onClick={() => onMoveItem(index, 'down')}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            <MoveDown className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onTogglePublished(testimonial)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            {testimonial.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 text-slate-400" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => onOpenEdit(testimonial)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onOpenDelete(testimonial)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-400"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <button type="button" onClick={() => onOpenEdit(testimonial)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-orange-50 hover:text-[#FF4F00] hover:border-orange-300 dark:hover:bg-orange-950/40 dark:hover:text-orange-400 transition-all shadow-2xs cursor-pointer">
+            <Pencil size={13} className="text-[#FF4F00]" /><span>Edit</span></button>
+          <button type="button" onClick={() => onOpenDelete(testimonial)} title="Delete"
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all shadow-2xs cursor-pointer">
+            <Trash2 size={14} /></button>
         </div>
       </div>
     </div>

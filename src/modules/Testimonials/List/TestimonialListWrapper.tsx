@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ATMModal } from '@/shared/ui';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
 import { TestimonialList } from './TestimonialList';
-import { AddTestimonialWrapper } from '../Add/AddTestimonialWrapper';
-import { EditTestimonialWrapper } from '../Edit/EditTestimonialWrapper';
 import {
   useGetAdminTestimonialsQuery,
   useUpdateTestimonialMutation,
@@ -23,9 +21,8 @@ function matchesTab(item: TestimonialItem, tab: SiteVariantTab): boolean {
 }
 
 export const TestimonialListWrapper: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SiteVariantTab>('Enterprise');
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<TestimonialItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<TestimonialItem | null>(null);
 
   // Queries & Mutations
@@ -125,46 +122,13 @@ export const TestimonialListWrapper: React.FC = () => {
         isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
-        onOpenAdd={() => setIsAddOpen(true)}
-        onOpenEdit={(item) => setEditingItem(item)}
+        onOpenAdd={() => navigate(`/content/testimonials/new?siteVariant=${activeTab}`)}
+        onOpenEdit={(item) => navigate(`/content/testimonials/${item.testimonialId}/edit`)}
         onOpenDelete={(item) => setDeletingItem(item)}
         onTogglePublished={handleTogglePublished}
         onMoveItem={handleMoveItem}
         isReordering={reorderState.isLoading}
       />
-
-      {/* Add Testimonial Modal */}
-      <ATMModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={`Add ${activeTab} Client Review`}
-        description="Configure client reviewer credentials, star rating, outcome headline, quote, and key metrics."
-        size="4xl"
-      >
-        <AddTestimonialWrapper
-          siteVariant={activeTab}
-          defaultSortOrder={items.length + 1}
-          onSuccess={() => setIsAddOpen(false)}
-          onCancel={() => setIsAddOpen(false)}
-        />
-      </ATMModal>
-
-      {/* Edit Testimonial Modal */}
-      <ATMModal
-        isOpen={!!editingItem}
-        onClose={() => setEditingItem(null)}
-        title={`Edit ${editingItem?.personName || 'Client'} Review`}
-        description="Modify quote contents, star rating, reviewer role, or publishing visibility."
-        size="4xl"
-      >
-        {editingItem && (
-          <EditTestimonialWrapper
-            testimonial={editingItem}
-            onSuccess={() => setEditingItem(null)}
-            onCancel={() => setEditingItem(null)}
-          />
-        )}
-      </ATMModal>
 
       {/* Delete Confirmation Modal */}
       <ATMConfirmModal

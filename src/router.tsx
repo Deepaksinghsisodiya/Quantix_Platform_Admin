@@ -186,10 +186,24 @@ const MediaLibraryPage = React.lazy(() => import('@/modules/content/pages/MediaL
 const HelpArticleEditorPage = React.lazy(() => import('@/modules/content/pages/HelpArticleEditorPage'));
 // 2026-09-05 (content Phase 3): Hero Banners CMS with Container/Presenter pattern & Yup validation
 const HeroBannersPage = React.lazy(() => import('@/modules/HeroSection/List/HeroSectionListWrapper'));
+const AddHeroBannerPage = React.lazy(() => import('@/modules/HeroSection/pages/AddHeroBannerPage'));
+const EditHeroBannerPage = React.lazy(() => import('@/modules/HeroSection/pages/EditHeroBannerPage'));
+
 const SocialProofPage = React.lazy(() => import('@/modules/SocialProof/List/SocialProofListWrapper'));
+const AddSocialProofPage = React.lazy(() => import('@/modules/SocialProof/pages/AddSocialProofPage'));
+const EditSocialProofPage = React.lazy(() => import('@/modules/SocialProof/pages/EditSocialProofPage'));
+
 const TestimonialsPage = React.lazy(() => import('@/modules/Testimonials/List/TestimonialListWrapper'));
+const AddTestimonialPage = React.lazy(() => import('@/modules/Testimonials/pages/AddTestimonialPage'));
+const EditTestimonialPage = React.lazy(() => import('@/modules/Testimonials/pages/EditTestimonialPage'));
+
 const AnnouncementsPage = React.lazy(() => import('@/modules/Announcements/List/AnnouncementListWrapper'));
+const AddAnnouncementPage = React.lazy(() => import('@/modules/Announcements/pages/AddAnnouncementPage'));
+const EditAnnouncementPage = React.lazy(() => import('@/modules/Announcements/pages/EditAnnouncementPage'));
+
 const ClientelePage = React.lazy(() => import('@/modules/Clientele/List/ClienteleListWrapper'));
+const AddClientelePage = React.lazy(() => import('@/modules/Clientele/pages/AddClientelePage'));
+const EditClientelePage = React.lazy(() => import('@/modules/Clientele/pages/EditClientelePage'));
 const IntegrationsPage = React.lazy(() => import('@/modules/Integrations/List/IntegrationListWrapper'));
 const AddIntegrationPage = React.lazy(() => import('@/modules/Integrations/pages/AddIntegrationPage'));
 const EditIntegrationPage = React.lazy(() => import('@/modules/Integrations/pages/EditIntegrationPage'));
@@ -199,6 +213,12 @@ const EditHowItWorksPage = React.lazy(() => import('@/modules/HowItWorks/pages/E
 const SolutionsPage = React.lazy(() => import('@/modules/Solutions/List/SolutionListWrapper'));
 const AddSolutionPage = React.lazy(() => import('@/modules/Solutions/pages/AddSolutionPage'));
 const EditSolutionPage = React.lazy(() => import('@/modules/Solutions/pages/EditSolutionPage'));
+const FeaturesPage = React.lazy(() => import('@/modules/Features/List/FeatureListWrapper').then(m => ({ default: m.FeatureListWrapper })));
+const AddFeaturePage = React.lazy(() => import('@/modules/Features/pages/AddFeaturePage').then(m => ({ default: m.AddFeaturePage })));
+const EditFeaturePage = React.lazy(() => import('@/modules/Features/pages/EditFeaturePage').then(m => ({ default: m.EditFeaturePage })));
+const BusinessProblemsPage = React.lazy(() => import('@/modules/BusinessProblems/List/BusinessProblemListWrapper').then(m => ({ default: m.BusinessProblemListWrapper })));
+const AddBusinessProblemPage = React.lazy(() => import('@/modules/BusinessProblems/pages/AddBusinessProblemPage').then(m => ({ default: m.AddBusinessProblemPage })));
+const EditBusinessProblemPage = React.lazy(() => import('@/modules/BusinessProblems/pages/EditBusinessProblemPage').then(m => ({ default: m.EditBusinessProblemPage })));
 const CustomerSupportPage = React.lazy(() => import('@/modules/CustomerSupport/List/CustomerSupportListWrapper').then(m => ({ default: m.CustomerSupportListWrapper })));
 const AddCustomerSupportPage = React.lazy(() => import('@/modules/CustomerSupport/pages/AddCustomerSupportPage').then(m => ({ default: m.AddCustomerSupportPage })));
 const EditCustomerSupportPage = React.lazy(() => import('@/modules/CustomerSupport/pages/EditCustomerSupportPage').then(m => ({ default: m.EditCustomerSupportPage })));
@@ -368,11 +388,21 @@ export function AppRouter() {
             <Route path="content/leads/:id" element={<RoleGuard module="content"><LeadDetailPage /></RoleGuard>} />
             <Route path="content/templates" element={<RoleGuard module="content"><ArticleTemplatesPage /></RoleGuard>} />
             <Route path="content/hero-banners" element={<RoleGuard module="content"><HeroBannersPage /></RoleGuard>} />
+            <Route path="content/hero-banners/new" element={<RoleGuard module="content"><AddHeroBannerPage /></RoleGuard>} />
+            <Route path="content/hero-banners/:id/edit" element={<RoleGuard module="content"><EditHeroBannerPage /></RoleGuard>} />
             <Route path="content/social-proof" element={<RoleGuard module="content"><SocialProofPage /></RoleGuard>} />
+            <Route path="content/social-proof/new" element={<RoleGuard module="content"><AddSocialProofPage /></RoleGuard>} />
+            <Route path="content/social-proof/:id/edit" element={<RoleGuard module="content"><EditSocialProofPage /></RoleGuard>} />
             <Route path="content/media" element={<RoleGuard module="content"><MediaLibraryPage /></RoleGuard>} />
             <Route path="content/testimonials" element={<RoleGuard module="content"><TestimonialsPage /></RoleGuard>} />
+            <Route path="content/testimonials/new" element={<RoleGuard module="content"><AddTestimonialPage /></RoleGuard>} />
+            <Route path="content/testimonials/:id/edit" element={<RoleGuard module="content"><EditTestimonialPage /></RoleGuard>} />
             <Route path="content/announcements" element={<RoleGuard module="content"><AnnouncementsPage /></RoleGuard>} />
+            <Route path="content/announcements/new" element={<RoleGuard module="content"><AddAnnouncementPage /></RoleGuard>} />
+            <Route path="content/announcements/:id/edit" element={<RoleGuard module="content"><EditAnnouncementPage /></RoleGuard>} />
             <Route path="content/clientele" element={<RoleGuard module="content"><ClientelePage /></RoleGuard>} />
+            <Route path="content/clientele/new" element={<RoleGuard module="content"><AddClientelePage /></RoleGuard>} />
+            <Route path="content/clientele/:id/edit" element={<RoleGuard module="content"><EditClientelePage /></RoleGuard>} />
             <Route path="content/integrations" element={<RoleGuard module="content"><IntegrationsPage /></RoleGuard>} />
             <Route path="content/integrations/new" element={<RoleGuard module="content"><AddIntegrationPage /></RoleGuard>} />
             <Route path="content/integrations/:id/edit" element={<RoleGuard module="content"><EditIntegrationPage /></RoleGuard>} />
@@ -382,6 +412,13 @@ export function AppRouter() {
             <Route path="content/solutions" element={<RoleGuard module="content"><SolutionsPage /></RoleGuard>} />
             <Route path="content/solutions/new" element={<RoleGuard module="content"><AddSolutionPage /></RoleGuard>} />
             <Route path="content/solutions/:id/edit" element={<RoleGuard module="content"><EditSolutionPage /></RoleGuard>} />
+            <Route path="content/features" element={<RoleGuard module="content"><FeaturesPage /></RoleGuard>} />
+            <Route path="content/features/new" element={<RoleGuard module="content"><AddFeaturePage /></RoleGuard>} />
+            <Route path="content/features/:id/edit" element={<RoleGuard module="content"><EditFeaturePage /></RoleGuard>} />
+            <Route path="content/business-problems" element={<RoleGuard module="content"><BusinessProblemsPage /></RoleGuard>} />
+            <Route path="content/business-problems/new" element={<RoleGuard module="content"><AddBusinessProblemPage /></RoleGuard>} />
+            <Route path="content/business-problems/:id/edit" element={<RoleGuard module="content"><EditBusinessProblemPage /></RoleGuard>} />
+            <Route path="content/business-problems/edit/:id" element={<RoleGuard module="content"><EditBusinessProblemPage /></RoleGuard>} />
             <Route path="content/customer-support" element={<RoleGuard module="content"><CustomerSupportPage /></RoleGuard>} />
             <Route path="content/customer-support/new" element={<RoleGuard module="content"><AddCustomerSupportPage /></RoleGuard>} />
             <Route path="content/customer-support/edit/:id" element={<RoleGuard module="content"><EditCustomerSupportPage /></RoleGuard>} />

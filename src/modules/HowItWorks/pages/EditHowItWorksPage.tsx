@@ -55,6 +55,7 @@ export const EditHowItWorksPage: React.FC = () => {
       <ATMPageHeader
         title={`Edit Step: ${step.title}`}
         subtitle={`Update content, image, metric pill, and telemetry chips for Step ${step.stepNumber} on the ${step.siteVariant} website.`}
+        onBack={() => navigate('/content/how-it-works')}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content', href: '/content/marketing' },

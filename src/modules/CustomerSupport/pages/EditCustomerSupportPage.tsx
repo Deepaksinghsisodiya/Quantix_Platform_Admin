@@ -113,6 +113,7 @@ export const EditCustomerSupportPage: React.FC = () => {
       <ATMPageHeader
         title={`Edit ${item.siteVariant} Support Desk`}
         subtitle="Update 24/7 technical guarantees, response time SLAs, and direct phone hotline numbers."
+        onBack={() => navigate('/content/customer-support')}
         breadcrumbs={[
           { label: 'Content', href: '/content' },
           { label: 'Customer Support', href: '/content/customer-support' },

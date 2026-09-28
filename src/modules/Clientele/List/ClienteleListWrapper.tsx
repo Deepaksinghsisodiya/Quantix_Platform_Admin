@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ATMModal } from '@/shared/ui';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
 import { ClienteleList } from './ClienteleList';
-import { AddClienteleWrapper } from '../Add/AddClienteleWrapper';
-import { EditClienteleWrapper } from '../Edit/EditClienteleWrapper';
 import {
   useGetAdminClienteleQuery,
   useToggleActiveClientBrandMutation,
@@ -16,9 +14,8 @@ import {
 import type { ClientBrand, SiteVariantTab } from '../Model/ClienteleTypes';
 
 export const ClienteleListWrapper: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SiteVariantTab>('Enterprise');
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingBrand, setEditingBrand] = useState<ClientBrand | null>(null);
   const [deletingBrand, setDeletingBrand] = useState<ClientBrand | null>(null);
 
   // Queries & Mutations
@@ -118,51 +115,14 @@ export const ClienteleListWrapper: React.FC = () => {
         isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
-        onOpenAdd={() => setIsAddOpen(true)}
-        onOpenEdit={(brand) => setEditingBrand(brand)}
+        onOpenAdd={() => navigate(`/content/clientele/new?siteVariant=${activeTab}`)}
+        onOpenEdit={(brand) => navigate(`/content/clientele/${brand.brandId || brand.id}/edit`)}
         onOpenDelete={(brand) => setDeletingBrand(brand)}
         onToggleActive={handleToggleActive}
         onToggleFeatured={handleToggleFeatured}
         onMove={handleMoveBrand}
         isReordering={reorderState.isLoading}
       />
-
-      {/* Add Brand Modal */}
-      <ATMModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={`Add New ${activeTab} Brand Partner`}
-        description="Configure brand name, industry category, logo image URL, scale units, and preview."
-        size="2xl"
-        containerClassName="lg:pl-[270px]"
-        className="max-w-[760px]"
-      >
-        <AddClienteleWrapper
-          siteVariant={activeTab}
-          defaultSortOrder={brands.length + 1}
-          onSuccess={() => setIsAddOpen(false)}
-          onCancel={() => setIsAddOpen(false)}
-        />
-      </ATMModal>
-
-      {/* Edit Brand Modal */}
-      <ATMModal
-        isOpen={!!editingBrand}
-        onClose={() => setEditingBrand(null)}
-        title={`Edit ${editingBrand?.siteVariant || ''} Brand Partner`}
-        description="Modify brand name, category, logo image URL, units count, or featured badge."
-        size="2xl"
-        containerClassName="lg:pl-[270px]"
-        className="max-w-[760px]"
-      >
-        {editingBrand && (
-          <EditClienteleWrapper
-            brand={editingBrand}
-            onSuccess={() => setEditingBrand(null)}
-            onCancel={() => setEditingBrand(null)}
-          />
-        )}
-      </ATMModal>
 
       {/* Delete Confirmation Modal */}
       <ATMConfirmModal

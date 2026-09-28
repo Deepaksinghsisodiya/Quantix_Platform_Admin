@@ -87,6 +87,7 @@ export const AddCustomerSupportPage: React.FC = () => {
       <ATMPageHeader
         title="Add Customer Support Desk"
         subtitle="Configure a dedicated 24/7 technical assistance desk, service pillars, and direct hotline numbers."
+        onBack={() => navigate('/content/customer-support')}
         breadcrumbs={[
           { label: 'Content', href: '/content' },
           { label: 'Customer Support', href: '/content/customer-support' },

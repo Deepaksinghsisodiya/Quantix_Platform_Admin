@@ -142,6 +142,7 @@ export const EditSolutionPage: React.FC = () => {
       <ATMPageHeader
         title={`Edit: ${item?.title || 'Solution Item'}`}
         subtitle="Update MegaMenu dropdown configuration and landing page contents."
+        onBack={() => navigate('/content/solutions')}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content', href: '/content/marketing' },

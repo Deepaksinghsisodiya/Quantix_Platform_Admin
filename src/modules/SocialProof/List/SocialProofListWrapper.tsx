@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ATMModal } from '@/shared/ui';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
 import { SocialProofList } from './SocialProofList';
-import { AddSocialProofWrapper } from '../Add/AddSocialProofWrapper';
-import { EditSocialProofWrapper } from '../Edit/EditSocialProofWrapper';
 import {
   useGetAdminSocialProofMetricsQuery,
   useUpdateSocialProofMetricMutation,
@@ -15,9 +13,8 @@ import {
 import type { SocialProofMetric, SiteVariantTab } from '../Model/SocialProofTypes';
 
 export const SocialProofListWrapper: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SiteVariantTab>('Enterprise');
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingMetric, setEditingMetric] = useState<SocialProofMetric | null>(null);
   const [deletingMetric, setDeletingMetric] = useState<SocialProofMetric | null>(null);
 
   // Queries & Mutations
@@ -117,46 +114,13 @@ export const SocialProofListWrapper: React.FC = () => {
         isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
-        onOpenAdd={() => setIsAddOpen(true)}
-        onOpenEdit={(metric) => setEditingMetric(metric)}
+        onOpenAdd={() => navigate(`/content/social-proof/new?siteVariant=${activeTab}`)}
+        onOpenEdit={(metric) => navigate(`/content/social-proof/${metric.metricId}/edit`)}
         onOpenDelete={(metric) => setDeletingMetric(metric)}
         onTogglePublished={handleTogglePublished}
         onMoveMetric={handleMoveMetric}
         isReordering={reorderState.isLoading}
       />
-
-      {/* Add Metric Modal */}
-      <ATMModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={`Add New ${activeTab} Metric`}
-        description="Configure metric values, numeric target for count-up animation, Lucide icon, and accent color."
-        size="4xl"
-      >
-        <AddSocialProofWrapper
-          siteVariant={activeTab}
-          defaultSortOrder={metrics.length + 1}
-          onSuccess={() => setIsAddOpen(false)}
-          onCancel={() => setIsAddOpen(false)}
-        />
-      </ATMModal>
-
-      {/* Edit Metric Modal */}
-      <ATMModal
-        isOpen={!!editingMetric}
-        onClose={() => setEditingMetric(null)}
-        title={`Edit ${editingMetric?.siteVariant || ''} Metric`}
-        description="Modify metric values, count-up animation, icon, or visual accent styling."
-        size="4xl"
-      >
-        {editingMetric && (
-          <EditSocialProofWrapper
-            metric={editingMetric}
-            onSuccess={() => setEditingMetric(null)}
-            onCancel={() => setEditingMetric(null)}
-          />
-        )}
-      </ATMModal>
 
       {/* Delete Confirmation Modal */}
       <ATMConfirmModal

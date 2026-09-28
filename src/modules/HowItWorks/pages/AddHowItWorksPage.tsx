@@ -15,6 +15,7 @@ export const AddHowItWorksPage: React.FC = () => {
       <ATMPageHeader
         title="Add New Workflow Step"
         subtitle={`Configure a new How It Works step for the ${siteVariant} website — step number, badge, image, metric pill, and telemetry chips.`}
+        onBack={() => navigate('/content/how-it-works')}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content', href: '/content/marketing' },

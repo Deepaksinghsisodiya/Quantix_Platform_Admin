@@ -40,6 +40,7 @@ export const EditIntegrationPage: React.FC = () => {
       <ATMPageHeader
         title={`Edit Integration: ${integration.name}`}
         subtitle={`Update copy, specs, and publication settings for ${integration.name} (${integration.siteVariant}).`}
+        onBack={() => navigate('/content/integrations')}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content', href: '/content/marketing' },

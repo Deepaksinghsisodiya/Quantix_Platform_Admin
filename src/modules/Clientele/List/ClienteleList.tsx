@@ -16,7 +16,7 @@ import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { ClienteleCard, ClienteleCardSkeleton } from './ClienteleCard';
+import { ClienteleCard } from './ClienteleCard';
 import type { ClientBrand, SiteVariantTab } from '../Model/ClienteleTypes';
 
 interface ClienteleListProps {

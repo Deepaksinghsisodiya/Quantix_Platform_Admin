@@ -21,6 +21,8 @@ import {
   Layers,
   ListOrdered,
   Compass,
+  Zap,
+  AlertTriangle,
   LucideIcon
 } from 'lucide-react';
 
@@ -158,6 +160,8 @@ export const navItems: NavItem[] = [
       { label: 'Integrations', icon: Layers, path: '/content/integrations', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'How It Works', icon: ListOrdered, path: '/content/how-it-works', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Solutions (MegaMenu)', icon: Compass, path: '/content/solutions', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Features (Bento & Vault)', icon: Zap, path: '/content/features', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Business Problems', icon: AlertTriangle, path: '/content/business-problems', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Customer Support', icon: Headphones, path: '/content/customer-support', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Final CTA Banner', icon: Sparkles, path: '/content/cta-banner', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Galleries', icon: PenSquare, path: '/content/galleries', permission: 'content', codes: ['cms.view', 'cms.update'] },

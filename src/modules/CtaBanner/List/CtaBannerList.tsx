@@ -86,6 +86,8 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
       <ATMPageHeader
         title="Final CTA Banner"
         subtitle="Manage the primary bottom conversion banner, telemetry sync badges, and high-impact CTAs across Enterprise, Restaurant, and Retail platforms."
+        icon={Sparkles}
+        iconColor="theme"
         action={{
           label: 'Add CTA Banner',
           onClick: onAddNew,

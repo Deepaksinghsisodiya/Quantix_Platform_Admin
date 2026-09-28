@@ -17,7 +17,7 @@ import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { AnnouncementCard, AnnouncementCardSkeleton } from './AnnouncementCard';
+import { AnnouncementCard } from './AnnouncementCard';
 import type { Announcement, SiteVariantTab } from '../Model/AnnouncementTypes';
 
 interface AnnouncementListProps {

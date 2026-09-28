@@ -117,6 +117,7 @@ export const AddSolutionPage: React.FC = () => {
       <ATMPageHeader
         title="Add New Solution"
         subtitle="Configure a new MegaMenu dropdown card or sector landing page for the Enterprise website."
+        onBack={() => navigate('/content/solutions')}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content', href: '/content/marketing' },

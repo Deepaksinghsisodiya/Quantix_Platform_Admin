@@ -91,6 +91,7 @@ export const EditCtaBannerPage: React.FC = () => {
       <ATMPageHeader
         title={`Edit ${item.siteVariant} CTA Banner`}
         subtitle="Update banner messaging, conversion URLs, live telemetry chips, and trust badges."
+        onBack={() => navigate('/content/cta-banner')}
         breadcrumbs={[
           { label: 'Content', href: '/content' },
           { label: 'CTA Banner', href: '/content/cta-banner' },

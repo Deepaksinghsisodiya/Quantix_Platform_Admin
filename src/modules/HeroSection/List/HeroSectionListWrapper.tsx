@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ATMModal } from '@/shared/ui';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
 import { HeroSectionList } from './HeroSectionList';
-import { AddHeroSectionWrapper } from '../Add/AddHeroSectionWrapper';
-import { EditHeroSectionWrapper } from '../Edit/EditHeroSectionWrapper';
 import {
   useGetAdminHeroSlidesQuery,
   useUpdateHeroSlideMutation,
@@ -16,9 +14,8 @@ import {
 import type { HeroSlide, SiteVariantTab } from '../Model/HeroSectionTypes';
 
 export const HeroSectionListWrapper: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SiteVariantTab>('Enterprise');
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [deletingSlide, setDeletingSlide] = useState<HeroSlide | null>(null);
 
   // Queries & Mutations
@@ -106,46 +103,13 @@ export const HeroSectionListWrapper: React.FC = () => {
         isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
-        onOpenAdd={() => setIsAddOpen(true)}
-        onOpenEdit={(slide) => setEditingSlide(slide)}
+        onOpenAdd={() => navigate(`/content/hero-banners/new?siteVariant=${activeTab}`)}
+        onOpenEdit={(slide) => navigate(`/content/hero-banners/${slide.heroSlideId}/edit`)}
         onOpenDelete={(slide) => setDeletingSlide(slide)}
         onTogglePublished={handleTogglePublished}
         onMoveSlide={handleMoveSlide}
         isReordering={reorderState.isLoading}
       />
-
-      {/* Add Slide Modal */}
-      <ATMModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={`Add Hero Slide — ${activeTab} Website`}
-        subtitle="Create a new hero slide banner with dynamic headlines, CTA buttons, and showcase visuals."
-        size="4xl"
-      >
-        <AddHeroSectionWrapper
-          siteVariant={activeTab}
-          defaultSortOrder={slides.length + 1}
-          onSuccess={() => setIsAddOpen(false)}
-          onCancel={() => setIsAddOpen(false)}
-        />
-      </ATMModal>
-
-      {/* Edit Slide Modal */}
-      <ATMModal
-        isOpen={!!editingSlide}
-        onClose={() => setEditingSlide(null)}
-        title={`Edit Hero Slide — ${editingSlide?.siteVariant || activeTab}`}
-        subtitle={`Slide ID: ${editingSlide?.heroSlideId}`}
-        size="4xl"
-      >
-        {editingSlide && (
-          <EditHeroSectionWrapper
-            slide={editingSlide}
-            onSuccess={() => setEditingSlide(null)}
-            onCancel={() => setEditingSlide(null)}
-          />
-        )}
-      </ATMModal>
 
       {/* Delete Confirmation Modal */}
       <ATMConfirmModal

@@ -91,6 +91,7 @@ export const AddCtaBannerPage: React.FC = () => {
       <ATMPageHeader
         title="Create Final CTA Banner"
         subtitle="Configure high-converting storefront hero CTA banner with telemetry metrics, dual conversion routes, and trust guarantees."
+        onBack={() => navigate('/content/cta-banner')}
         breadcrumbs={[
           { label: 'Content', href: '/content' },
           { label: 'CTA Banner', href: '/content/cta-banner' },

@@ -90,6 +90,8 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
       <ATMPageHeader
         title="24/7 Dedicated Customer Support"
         subtitle="Manage live customer support guarantees, technical pillars, hotline channels, and support desks across Enterprise, Restaurant, and Retail platforms."
+        icon={Headphones}
+        iconColor="theme"
         action={{
           label: 'Add Support Config',
           onClick: onAddNew,

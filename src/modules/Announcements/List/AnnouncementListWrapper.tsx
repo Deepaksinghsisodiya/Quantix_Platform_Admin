@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ATMModal } from '@/shared/ui';
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
 import { AnnouncementList } from './AnnouncementList';
-import { AddAnnouncementWrapper } from '../Add/AddAnnouncementWrapper';
-import { EditAnnouncementWrapper } from '../Edit/EditAnnouncementWrapper';
 import {
   useGetAdminAnnouncementsQuery,
   useToggleActiveAnnouncementMutation,
@@ -16,9 +14,8 @@ import {
 import type { Announcement, SiteVariantTab } from '../Model/AnnouncementTypes';
 
 export const AnnouncementListWrapper: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SiteVariantTab>('Enterprise');
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [deletingAnnouncement, setDeletingAnnouncement] = useState<Announcement | null>(null);
 
   // Queries & Mutations
@@ -121,51 +118,14 @@ export const AnnouncementListWrapper: React.FC = () => {
         isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
-        onOpenAdd={() => setIsAddOpen(true)}
-        onOpenEdit={(announcement) => setEditingAnnouncement(announcement)}
+        onOpenAdd={() => navigate(`/content/announcements/new?siteVariant=${activeTab}`)}
+        onOpenEdit={(announcement) => navigate(`/content/announcements/${announcement.id}/edit`)}
         onOpenDelete={(announcement) => setDeletingAnnouncement(announcement)}
         onToggleActive={handleToggleActive}
         onTogglePinned={handleTogglePinned}
         onMove={handleMoveAnnouncement}
         isReordering={reorderState.isLoading}
       />
-
-      {/* Add Announcement Modal */}
-      <ATMModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={`Add New ${activeTab} Announcement`}
-        description="Configure banner messaging, badge classification, target link, and live navbar preview."
-        size="2xl"
-        containerClassName="lg:pl-[270px]"
-        className="max-w-[760px]"
-      >
-        <AddAnnouncementWrapper
-          siteVariant={activeTab}
-          defaultSortOrder={announcements.length + 1}
-          onSuccess={() => setIsAddOpen(false)}
-          onCancel={() => setIsAddOpen(false)}
-        />
-      </ATMModal>
-
-      {/* Edit Announcement Modal */}
-      <ATMModal
-        isOpen={!!editingAnnouncement}
-        onClose={() => setEditingAnnouncement(null)}
-        title={`Edit ${editingAnnouncement?.siteVariant || ''} Announcement`}
-        description="Modify promotional banner text, CTA link, pin priority, or publication status."
-        size="2xl"
-        containerClassName="lg:pl-[270px]"
-        className="max-w-[760px]"
-      >
-        {editingAnnouncement && (
-          <EditAnnouncementWrapper
-            announcement={editingAnnouncement}
-            onSuccess={() => setEditingAnnouncement(null)}
-            onCancel={() => setEditingAnnouncement(null)}
-          />
-        )}
-      </ATMModal>
 
       {/* Delete Confirmation Modal */}
       <ATMConfirmModal

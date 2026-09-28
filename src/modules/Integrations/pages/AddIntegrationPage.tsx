@@ -14,6 +14,7 @@ export const AddIntegrationPage: React.FC = () => {
       <ATMPageHeader
         title="Add New Integration"
         subtitle={`Configure a new connector, terminal, or gateway for the ${siteVariant} website catalog.`}
+        onBack={() => navigate('/content/integrations')}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content', href: '/content/marketing' },

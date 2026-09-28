@@ -160,6 +160,8 @@ export const FAQList: React.FC<FAQListProps> = ({
       <ATMPageHeader
         title="Frequently Asked Questions (FAQ)"
         subtitle="Manage questions, answers, categorization, and publication status across Enterprise, Restaurant, and Retail platforms."
+        icon={HelpCircle}
+        iconColor="theme"
         action={{
           label: 'Add FAQ',
           onClick: onAddNew,

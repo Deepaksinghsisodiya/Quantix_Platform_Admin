@@ -5,6 +5,7 @@ import * as Yup from 'yup';
 import { toast } from 'sonner';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMSkeleton } from '@/shared/ui';
 import { CustomerSupportForm, CustomerSupportFormValues } from '../Form/CustomerSupportForm';
 import {
   useGetSupportSectionByIdQuery,
@@ -30,8 +31,19 @@ export const EditCustomerSupportPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="p-12 text-center text-slate-400 animate-pulse font-syne">
-        Loading support desk configuration...
+      <div className="w-full space-y-6 max-w-[1200px] mx-auto px-1 sm:px-2 py-4 animate-fade-in">
+        <div className="space-y-2">
+          <ATMSkeleton variant="text" width="35%" height="2.2rem" />
+          <ATMSkeleton variant="text" width="55%" height="1.1rem" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+          <div className="lg:col-span-2 space-y-4">
+            <ATMSkeleton variant="card" height="26rem" />
+          </div>
+          <div>
+            <ATMSkeleton variant="card" height="18rem" />
+          </div>
+        </div>
       </div>
     );
   }

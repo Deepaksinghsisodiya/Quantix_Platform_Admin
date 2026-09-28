@@ -331,6 +331,7 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
               announcement={announcement}
               index={idx}
               totalCount={filteredAnnouncements.length}
+              viewMode={viewMode}
               onEdit={onOpenEdit}
               onDelete={onOpenDelete}
               onToggleActive={onToggleActive}

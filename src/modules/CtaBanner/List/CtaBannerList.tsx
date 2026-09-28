@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   Plus,
@@ -9,9 +9,10 @@ import {
   Layers,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
-import { CtaBannerCard, CtaBannerCardSkeleton } from './CtaBannerCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
+import { CtaBannerCard } from './CtaBannerCard';
 import type { CtaBannerItem, CtaBannerFilter } from '../Model/CtaBannerTypes';
 import { cn } from '@/lib/utils/cn';
 
@@ -36,6 +37,8 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
   onOpenDelete,
   onToggleActive,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   // Compute KPI Stats
   const stats = useMemo(() => {
     const total = items.length;
@@ -75,19 +78,24 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
 
   const tabs = [
     { id: 'all', label: 'All Platforms', count: stats.total, icon: Sparkles },
-    { id: 'enterprise', label: 'Enterprise Website', count: stats.enterprise, icon: Building2 },
-    { id: 'restaurant', label: 'Restaurant Website', count: stats.restaurant, icon: Utensils },
-    { id: 'retail', label: 'Retail Website', count: stats.retail, icon: Store },
+    { id: 'enterprise', label: 'Enterprise Platform', count: stats.enterprise, icon: Building2 },
+    { id: 'restaurant', label: 'Restaurant & Dining', count: stats.restaurant, icon: Utensils },
+    { id: 'retail', label: 'Retail & Checkout', count: stats.retail, icon: Store },
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12 max-w-[1600px] mx-auto px-1 sm:px-2">
       {/* Header */}
       <ATMPageHeader
         title="Final CTA Banner"
         subtitle="Manage the primary bottom conversion banner, telemetry sync badges, and high-impact CTAs across Enterprise, Restaurant, and Retail platforms."
         icon={Sparkles}
         iconColor="theme"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content', href: '/content/marketing' },
+          { label: 'CTA Banner' },
+        ]}
         action={{
           label: 'Add CTA Banner',
           onClick: onAddNew,
@@ -98,35 +106,35 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <ATMStatsCard
-          label="Total Banners"
+          label="Total CTA Banners"
           value={stats.total}
           icon={Layers}
           variant="accent"
-          description={`${stats.active} live banners`}
+          description={`${stats.active} published live`}
           onClick={() => onFilterChange({ siteVariant: 'all' })}
         />
         <ATMStatsCard
-          label="Enterprise Banner"
+          label="Enterprise Website"
           value={stats.enterprise}
           icon={Building2}
           variant="indigo"
-          description="Multi-store scalability"
+          description="B2B Multi-Store Banner"
           onClick={() => onFilterChange({ siteVariant: 'enterprise' })}
         />
         <ATMStatsCard
-          label="Restaurant Banner"
+          label="Restaurant Website"
           value={stats.restaurant}
           icon={Utensils}
           variant="amber"
-          description="Dining & kitchen line"
+          description="Dining & Kitchen Banner"
           onClick={() => onFilterChange({ siteVariant: 'restaurant' })}
         />
         <ATMStatsCard
-          label="Retail Banner"
+          label="Retail Website"
           value={stats.retail}
           icon={Store}
           variant="emerald"
-          description="Barcode & storefront"
+          description="Checkout & Store Banner"
           onClick={() => onFilterChange({ siteVariant: 'retail' })}
         />
       </div>
@@ -146,7 +154,7 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
                 className={cn(
                   'flex items-center gap-2 pb-3.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap',
                   isActive
-                    ? 'border-primary text-primary dark:text-primary-light'
+                    ? 'border-[#FF4F00] text-[#FF4F00] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                 )}
               >
@@ -154,9 +162,9 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[10.5px] font-bold',
+                    'px-2 py-0.5 rounded-full text-[10.5px] font-mono font-bold',
                     isActive
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-orange-500/15 text-[#FF4F00]'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                   )}
                 >
@@ -167,8 +175,8 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
           })}
         </div>
 
-        {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+        {/* Filter Controls Bar with Dual View Toggle */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           {/* Search Box */}
           <div className="relative w-full sm:w-80">
             <Search
@@ -177,65 +185,81 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
             />
             <input
               type="text"
-              placeholder="Search by heading, badge, or keyword..."
+              placeholder="Search by heading, badge, or accent..."
               value={filter.searchQuery}
               onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-primary transition-colors shadow-2xs"
+              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FF4F00]"
             />
           </div>
 
-          {/* Status Segmented Filter */}
-          <div className="flex items-center gap-1.5 self-end sm:self-auto bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold">
-            {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => onFilterChange({ status: st })}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg transition-all cursor-pointer capitalize text-[11px] font-bold',
-                  filter.status === st
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                )}
-              >
-                {st === 'ALL' ? 'All' : st === 'ACTIVE' ? 'Live' : 'Draft'}
-              </button>
-            ))}
+          {/* Status Select Filter & View Mode Toggle */}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-semibold">
+              {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => onFilterChange({ status })}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                    filter.status === status
+                      ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                  )}
+                >
+                  {status === 'ALL' ? 'All' : status === 'ACTIVE' ? 'Live' : 'Hidden'}
+                </button>
+              ))}
+            </div>
+
+            <ATMViewModeToggle
+              value={viewMode}
+              onChange={setViewMode}
+              gridLabel="Cards"
+              listLabel="List"
+            />
           </div>
         </div>
       </div>
 
-      {/* Cards Grid / Empty / Loading */}
+      {/* Grid or List View with ATMSkeleton */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          <CtaBannerCardSkeleton />
-          <CtaBannerCardSkeleton />
-          <CtaBannerCardSkeleton />
-        </div>
+        <ATMSkeleton
+          variant={viewMode === 'grid' ? 'card' : 'table-row'}
+          count={viewMode === 'grid' ? 3 : 4}
+        />
       ) : filteredItems.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 p-12 text-center space-y-4">
-          <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-            <Sparkles size={24} />
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-12 text-center space-y-4">
+          <div className="mx-auto h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 text-[#FF4F00] flex items-center justify-center">
+            <Sparkles size={28} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+            <h4 className="text-base font-bold text-slate-900 dark:text-white font-syne">
               No CTA Banners Found
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Create your first Final CTA conversion banner for your storefronts.
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              {filter.searchQuery
+                ? 'No CTA banners match your search criteria. Try a different keyword.'
+                : 'Create your first conversion banner for the platform.'}
             </p>
           </div>
-          <ATMButton variant="primary" onClick={onAddNew} size="sm">
-            <Plus size={14} className="mr-1.5" />
+          <ATMButton variant="primary" onClick={onAddNew} className="text-xs" icon={Plus}>
             Create CTA Banner
           </ATMButton>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div
+          className={cn(
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
+              : 'flex flex-col gap-3'
+          )}
+        >
           {filteredItems.map((item) => (
             <CtaBannerCard
               key={item.ctaBannerId}
               item={item}
+              viewMode={viewMode}
               onOpenEdit={onOpenEdit}
               onOpenDelete={onOpenDelete}
               onToggleActive={onToggleActive}

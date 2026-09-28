@@ -8,14 +8,13 @@ import {
   Store,
   Sparkles,
   Layers,
-  CheckCircle2,
   X,
-  Filter,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
-import { FAQCard, FAQCardSkeleton } from './FAQCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
+import { FAQCard } from './FAQCard';
 import type { FAQItem, FAQFilter } from '../Model/FAQTypes';
 import { cn } from '@/lib/utils/cn';
 
@@ -44,9 +43,8 @@ export const FAQList: React.FC<FAQListProps> = ({
   onOpenDelete,
   onToggleActive,
   onMove,
-  onReorder,
 }) => {
-  const [draggedFaqId, setDraggedFaqId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Helper to determine if an item belongs to a platform
   const matchPlatform = (item: FAQItem, platform: string): boolean => {
@@ -124,29 +122,6 @@ export const FAQList: React.FC<FAQListProps> = ({
     });
   }, [items, filter]);
 
-  // Drag and drop handler
-  const handleDrop = (targetId: string) => {
-    if (!draggedFaqId || draggedFaqId === targetId || !onReorder) {
-      setDraggedFaqId(null);
-      return;
-    }
-
-    const fromIdx = filteredItems.findIndex((x) => x.faqId === draggedFaqId);
-    const toIdx = filteredItems.findIndex((x) => x.faqId === targetId);
-    if (fromIdx === -1 || toIdx === -1) {
-      setDraggedFaqId(null);
-      return;
-    }
-
-    const reordered = [...filteredItems];
-    const [moved] = reordered.splice(fromIdx, 1);
-    if (!moved) return;
-    reordered.splice(toIdx, 0, moved);
-
-    setDraggedFaqId(null);
-    onReorder(reordered.map((x) => x.faqId));
-  };
-
   const tabs = [
     { id: 'all', label: 'All Platforms', count: stats.total, icon: Sparkles },
     { id: 'enterprise', label: 'Enterprise Website', count: stats.enterprise, icon: Building2 },
@@ -160,6 +135,11 @@ export const FAQList: React.FC<FAQListProps> = ({
       <ATMPageHeader
         title="Frequently Asked Questions (FAQ)"
         subtitle="Manage questions, answers, categorization, and publication status across Enterprise, Restaurant, and Retail platforms."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content Management' },
+          { label: 'Frequently Asked Questions' },
+        ]}
         icon={HelpCircle}
         iconColor="theme"
         action={{
@@ -192,7 +172,7 @@ export const FAQList: React.FC<FAQListProps> = ({
           value={stats.restaurant}
           icon={Utensils}
           variant="amber"
-          description="Dining & kitchen line"
+          description="Dining and kitchen line"
           onClick={() => onFilterChange({ siteVariant: 'restaurant', category: 'all' })}
         />
         <ATMStatsCard
@@ -200,7 +180,7 @@ export const FAQList: React.FC<FAQListProps> = ({
           value={stats.retail}
           icon={Store}
           variant="emerald"
-          description="Barcode & storefront"
+          description="Barcode and storefront"
           onClick={() => onFilterChange({ siteVariant: 'retail', category: 'all' })}
         />
       </div>
@@ -220,7 +200,7 @@ export const FAQList: React.FC<FAQListProps> = ({
                 className={cn(
                   'flex items-center gap-2 pb-3.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap',
                   isActive
-                    ? 'border-primary text-primary dark:text-primary-light'
+                    ? 'border-[#FF4F00] text-[#FF4F00] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                 )}
               >
@@ -228,9 +208,9 @@ export const FAQList: React.FC<FAQListProps> = ({
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[10.5px] font-bold',
+                    'px-2 py-0.5 rounded-full text-[10.5px] font-mono font-bold',
                     isActive
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-orange-500/15 text-[#FF4F00]'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                   )}
                 >
@@ -254,7 +234,7 @@ export const FAQList: React.FC<FAQListProps> = ({
               placeholder="Search by question, answer, or category..."
               value={filter.searchQuery}
               onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
-              className="w-full pl-10 pr-9 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-primary transition-colors shadow-2xs"
+              className="w-full pl-10 pr-9 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-[#FF4F00] transition-colors shadow-2xs"
             />
             {filter.searchQuery && (
               <button
@@ -297,7 +277,7 @@ export const FAQList: React.FC<FAQListProps> = ({
                   className={cn(
                     'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px]',
                     filter.status === st
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-bold'
                       : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                   )}
                 >
@@ -305,24 +285,31 @@ export const FAQList: React.FC<FAQListProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* View Mode Toggle */}
+            <ATMViewModeToggle
+              value={viewMode}
+              onChange={setViewMode}
+              gridLabel="Cards"
+              listLabel="List"
+            />
           </div>
         </div>
       </div>
 
       {/* Cards List or Skeletons */}
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <FAQCardSkeleton key={i} />
-          ))}
-        </div>
+        <ATMSkeleton
+          variant={viewMode === 'grid' ? 'card' : 'table-row'}
+          count={viewMode === 'grid' ? 4 : 5}
+        />
       ) : filteredItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-12 text-center space-y-4">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
+          <div className="h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 text-[#FF4F00] mx-auto flex items-center justify-center">
             <HelpCircle className="h-8 w-8" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-syne">
               No FAQs found
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
@@ -336,20 +323,24 @@ export const FAQList: React.FC<FAQListProps> = ({
           </ATMButton>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3.5">
+        <div
+          className={cn(
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 gap-4'
+              : 'flex flex-col gap-3'
+          )}
+        >
           {filteredItems.map((item, index) => (
             <FAQCard
               key={item.faqId}
               item={item}
               index={index}
               totalCount={filteredItems.length}
+              viewMode={viewMode}
               onOpenEdit={onOpenEdit}
               onOpenDelete={onOpenDelete}
               onToggleActive={onToggleActive}
               onMove={onMove}
-              onDragStart={() => setDraggedFaqId(item.faqId)}
-              onDrop={() => handleDrop(item.faqId)}
-              isDragging={draggedFaqId === item.faqId}
             />
           ))}
         </div>

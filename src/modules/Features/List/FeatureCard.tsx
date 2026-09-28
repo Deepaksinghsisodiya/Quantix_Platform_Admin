@@ -1,9 +1,5 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
-  Edit2,
-  Trash2,
-  Eye,
-  EyeOff,
   Store,
   Boxes,
   ChefHat,
@@ -16,12 +12,14 @@ import {
   Navigation,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { ATMContentActionButtons } from '@/shared/components/ATMContentActionButtons';
 import type { PlatformFeature } from '../Model/FeatureTypes';
 
 interface FeatureCardProps {
   item: PlatformFeature;
   index: number;
   total: number;
+  viewMode?: 'grid' | 'list';
   onOpenEdit: (item: PlatformFeature) => void;
   onOpenDelete: (item: PlatformFeature) => void;
   onToggleActive: (item: PlatformFeature) => void;
@@ -47,6 +45,9 @@ export const FeatureCardSkeleton: React.FC = () => {
 
 export const FeatureCard: React.FC<FeatureCardProps> = ({
   item,
+  index,
+  total,
+  viewMode = 'grid',
   onOpenEdit,
   onOpenDelete,
   onToggleActive,
@@ -78,6 +79,107 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
 
   const IconComp = getIcon(item.iconKey);
 
+  // ==========================================
+  // LIST / TABLE ROW VIEW
+  // ==========================================
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={cn(
+          'flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border p-3.5 sm:p-4 transition-all duration-200 bg-white dark:bg-[#12151c]',
+          isActive
+            ? 'border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-orange-500/30'
+            : 'border-dashed border-slate-300 dark:border-slate-800 opacity-70 bg-slate-50/50 dark:bg-slate-900/30'
+        )}
+      >
+        <div className="flex items-center gap-3.5 flex-1 min-w-0">
+          <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-slate-100 dark:bg-slate-850 overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-center">
+            {item.imageUrl && !imgError ? (
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                onError={() => setImgError(true)}
+                className="h-full w-full object-contain p-1"
+              />
+            ) : (
+              <span className="text-[#FF4F00]">
+                <IconComp size={20} />
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {item.numberLabel && (
+                <span className="text-xs font-mono font-bold text-[#FF4F00]">
+                  [{item.numberLabel}]
+                </span>
+              )}
+              <h4 className="text-sm sm:text-base font-syne font-bold text-slate-900 dark:text-white truncate">
+                {item.title}
+              </h4>
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                {item.siteVariant} • {item.category}
+              </span>
+              {item.showInNavbar && (
+                <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">
+                  <Navigation size={9} /> Navbar
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+              {item.shortDescription || item.fullDescription || 'No description provided.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => onToggleNavbar(item)}
+            className={cn(
+              'text-[10.5px] font-bold px-2 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer',
+              item.showInNavbar
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+            )}
+            title="Toggle navbar visibility"
+          >
+            <Navigation size={11} />
+            <span className="hidden md:inline">{item.showInNavbar ? 'Navbar: Live' : 'Navbar: Off'}</span>
+          </button>
+
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-colors',
+              isActive
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+            )}
+          >
+            <span
+              className={cn(
+                'h-1.5 w-1.5 rounded-full',
+                isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+              )}
+            />
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+
+          <ATMContentActionButtons
+            isActive={isActive}
+            onToggleActive={() => onToggleActive(item)}
+            onEdit={() => onOpenEdit(item)}
+            onDelete={() => onOpenDelete(item)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // GRID / CARD VIEW
+  // ==========================================
   return (
     <div
       className={cn(
@@ -92,7 +194,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
         className={cn(
           'absolute top-0 left-0 right-0 h-1 transition-opacity duration-300 z-10',
           isActive
-            ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-primary-500'
+            ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-[#FF4F00]'
             : 'bg-slate-300 dark:bg-slate-700'
         )}
       />
@@ -115,18 +217,22 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
                 <Navigation size={10} /> Navbar
               </span>
             )}
-            <button
-              onClick={() => onToggleActive(item)}
+            <span
               className={cn(
-                'inline-flex items-center gap-1 text-[10.5px] font-bold px-2.5 py-0.5 rounded-full border transition-all',
+                'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border transition-colors',
                 isActive
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
               )}
             >
-              {isActive ? <Eye size={11} /> : <EyeOff size={11} />}
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                )}
+              />
               {isActive ? 'Active' : 'Inactive'}
-            </button>
+            </span>
           </div>
         </div>
 
@@ -170,12 +276,13 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
         </div>
       </div>
 
-      {/* Footer Actions Bar */}
+      {/* Footer Actions Bar with Unified Action Buttons */}
       <div className="p-4 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
         <button
+          type="button"
           onClick={() => onToggleNavbar(item)}
           className={cn(
-            'text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5',
+            'text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer',
             item.showInNavbar
               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -185,22 +292,12 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
           <span>{item.showInNavbar ? 'In Navbar' : 'Add to Navbar'}</span>
         </button>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => onOpenEdit(item)}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-[#FF4F00] dark:hover:text-orange-400 hover:bg-orange-500/10 rounded-xl transition-all"
-            title="Edit Feature"
-          >
-            <Edit2 size={15} />
-          </button>
-          <button
-            onClick={() => onOpenDelete(item)}
-            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
-            title="Delete Feature"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
+        <ATMContentActionButtons
+          isActive={isActive}
+          onToggleActive={() => onToggleActive(item)}
+          onEdit={() => onOpenEdit(item)}
+          onDelete={() => onOpenDelete(item)}
+        />
       </div>
     </div>
   );

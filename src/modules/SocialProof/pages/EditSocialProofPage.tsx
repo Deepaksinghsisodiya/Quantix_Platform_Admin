@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { EditSocialProofWrapper } from '../Edit/EditSocialProofWrapper';
 import { useGetSocialProofMetricByIdQuery } from '../Service/SocialProofService';
 
@@ -18,9 +18,19 @@ export const EditSocialProofPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full py-16 text-center space-y-3">
-        <RefreshCw size={28} className="mx-auto animate-spin text-[#FF4F00]" />
-        <p className="text-sm font-syne font-bold text-slate-600 dark:text-slate-400">Loading Metric Details...</p>
+      <div className="w-full space-y-6 max-w-[1600px] mx-auto px-1 sm:px-2 py-4 animate-fade-in">
+        <div className="space-y-2">
+          <ATMSkeleton variant="text" width="35%" height="2.2rem" />
+          <ATMSkeleton variant="text" width="55%" height="1.1rem" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+          <div className="lg:col-span-2 space-y-4">
+            <ATMSkeleton variant="card" height="26rem" />
+          </div>
+          <div>
+            <ATMSkeleton variant="card" height="18rem" />
+          </div>
+        </div>
       </div>
     );
   }

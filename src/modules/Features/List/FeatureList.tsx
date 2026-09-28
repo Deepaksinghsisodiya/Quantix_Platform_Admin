@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   Plus,
@@ -15,10 +15,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { FeatureCard, FeatureCardSkeleton } from './FeatureCard';
+import { FeatureCard } from './FeatureCard';
 import type { PlatformFeature } from '../Model/FeatureTypes';
 
 interface FeatureListProps {
@@ -56,6 +57,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({
   onToggleActive,
   onToggleNavbar,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
 
@@ -96,6 +98,11 @@ export const FeatureList: React.FC<FeatureListProps> = ({
         subtitle="Manage product features across Navbar dropdown, Bento Grid, Homepage Vault, and single feature detail pages."
         icon={Zap}
         iconColor="theme"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content', href: '/content/marketing' },
+          { label: 'Features' },
+        ]}
         action={{
           label: 'Add New Feature',
           onClick: onOpenAdd,
@@ -136,7 +143,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({
       </div>
 
       {/* Variant Selector Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 overflow-x-auto pb-px">
         {VARIANT_TABS.map((tab) => {
           const IconComponent = tab.icon;
           const isActiveTab = activeVariant.toLowerCase() === tab.id.toLowerCase();
@@ -144,12 +151,13 @@ export const FeatureList: React.FC<FeatureListProps> = ({
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => onVariantChange(tab.id)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-syne font-bold transition-all whitespace-nowrap',
+                'group flex items-center gap-2.5 py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer',
                 isActiveTab
-                  ? 'bg-[#FF4F00] text-white shadow-md shadow-orange-500/20'
-                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  ? 'border-[#FF4F00] text-[#FF4F00] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200'
               )}
             >
               <IconComponent size={16} />
@@ -158,8 +166,8 @@ export const FeatureList: React.FC<FeatureListProps> = ({
                 className={cn(
                   'ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-mono font-bold',
                   isActiveTab
-                    ? 'bg-white/20 text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                    ? 'bg-orange-500/15 text-[#FF4F00]'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 )}
               >
                 {count}
@@ -169,7 +177,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({
         })}
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Filter & Search Bar with Dual View Toggle */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="relative w-full sm:w-80">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -183,25 +191,60 @@ export const FeatureList: React.FC<FeatureListProps> = ({
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <select
-            value={statusFilter}
-            onChange={(e: any) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 font-syne font-bold focus:outline-hidden"
-          >
-            <option value="all">All Statuses</option>
-            <option value="live">Active Only</option>
-            <option value="hidden">Inactive Only</option>
-          </select>
+          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'all'
+                  ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('live')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'live'
+                  ? 'bg-white shadow-xs text-emerald-600 dark:bg-slate-900 dark:text-emerald-400 font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
+            >
+              Live ({liveCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('hidden')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'hidden'
+                  ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
+            >
+              Hidden ({safeItems.length - liveCount})
+            </button>
+          </div>
+
+          <ATMViewModeToggle
+            value={viewMode}
+            onChange={setViewMode}
+            gridLabel="Cards"
+            listLabel="List"
+          />
         </div>
       </div>
 
-      {/* Grid List Content */}
+      {/* Grid / List Content with ATMSkeleton */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <FeatureCardSkeleton key={i} />
-          ))}
-        </div>
+        <ATMSkeleton
+          variant={viewMode === 'grid' ? 'feature-card' : 'feature-row'}
+          count={6}
+        />
       ) : isError ? (
         <div className="p-8 text-center bg-red-500/5 rounded-2xl border border-red-500/20 text-red-600 dark:text-red-400 space-y-3">
           <AlertCircle size={32} className="mx-auto" />
@@ -222,13 +265,20 @@ export const FeatureList: React.FC<FeatureListProps> = ({
           </ATMButton>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div
+          className={cn(
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'
+              : 'flex flex-col gap-3'
+          )}
+        >
           {filteredItems.map((item, idx) => (
             <FeatureCard
               key={item.featureId || item.id}
               item={item}
               index={idx}
               total={filteredItems.length}
+              viewMode={viewMode}
               onOpenEdit={onOpenEdit}
               onOpenDelete={onOpenDelete}
               onToggleActive={onToggleActive}

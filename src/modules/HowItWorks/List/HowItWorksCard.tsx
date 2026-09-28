@@ -1,26 +1,20 @@
 import React, { useState } from 'react';
 import {
-  ArrowUp,
-  ArrowDown,
-  Edit2,
-  Trash2,
-  Eye,
   EyeOff,
-  CheckCircle2,
-  Radio,
   Image as ImageIcon,
-  GripVertical,
   Activity,
   Layers,
   Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { ATMContentActionButtons } from '@/shared/components/ATMContentActionButtons';
 import type { HowItWorksStepItem } from '../Model/HowItWorksTypes';
 
 interface HowItWorksCardProps {
   step: HowItWorksStepItem;
   index: number;
   total: number;
+  viewMode?: 'grid' | 'list';
   onOpenEdit: (step: HowItWorksStepItem) => void;
   onOpenDelete: (step: HowItWorksStepItem) => void;
   onToggleActive: (step: HowItWorksStepItem) => void;
@@ -30,27 +24,20 @@ interface HowItWorksCardProps {
 
 export const HowItWorksCardSkeleton: React.FC = () => {
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 shadow-sm space-y-4 animate-pulse">
+    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 shadow-xs space-y-4 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="h-6 w-28 bg-slate-200 dark:bg-slate-800 rounded-md" />
         <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
       </div>
-      <div className="h-60 rounded-xl bg-slate-200 dark:bg-slate-800" />
+      <div className="h-44 rounded-xl bg-slate-200 dark:bg-slate-800" />
       <div className="space-y-2">
         <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
         <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-4 w-5/6 bg-slate-200 dark:bg-slate-800 rounded" />
       </div>
-      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-4 w-4/5 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="h-8 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
       </div>
-      <div className="grid grid-cols-2 gap-2 pt-2">
-        <div className="h-12 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-        <div className="h-12 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-      </div>
-      <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl pt-2" />
     </div>
   );
 };
@@ -59,6 +46,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
   step,
   index,
   total,
+  viewMode = 'grid',
   onOpenEdit,
   onOpenDelete,
   onToggleActive,
@@ -66,37 +54,102 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
   isReordering = false,
 }) => {
   const [imgError, setImgError] = useState(false);
+
   const isActive = step.isActive ?? true;
+  const stepNumber = String(step.stepNumber || index + 1).padStart(2, '0');
+  const badgeLabel = step.badgeLabel || `Stage ${stepNumber}`;
+  const statVal = step.statValue;
+  const statLbl = step.statLabel;
 
-  // Normalize step number
-  const stepNumber = step.stepNumber || step.number || `0${index + 1}`;
-  const badgeLabel = step.badgeLabel || `Step ${stepNumber}`;
+  // ─── LIST VIEW ──────────────────────────────────────────────
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={cn(
+          'group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border transition-all duration-200',
+          isActive
+            ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-[#FF4F00]/30 shadow-2xs hover:shadow-xs'
+            : 'bg-slate-50/70 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-80'
+        )}
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          {/* Thumbnail Preview */}
+          <div className="relative w-14 h-14 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 shrink-0 overflow-hidden flex items-center justify-center">
+            {step.imageUrl && !imgError ? (
+              <img
+                src={step.imageUrl}
+                alt={step.imageAlt || step.title}
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <ImageIcon className="w-5 h-5 text-slate-500" />
+            )}
+            <div className="absolute top-1 left-1 px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-black/75 text-orange-400">
+              {stepNumber}
+            </div>
+          </div>
 
-  // Normalize stats
-  const statVal = step.stat?.value || step.statValue;
-  const statLbl = step.stat?.label || step.statLabel;
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-500/10 text-[#FF4F00] border border-orange-500/20">
+                {badgeLabel}
+              </span>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate font-syne">
+                {step.title}
+              </h4>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                  isActive
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                )}
+              >
+                <span className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+                {isActive ? 'Live' : 'Hidden'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+              {step.description}
+            </p>
+          </div>
+        </div>
 
-  // Normalized bullets
-  const bullets = Array.isArray(step.bullets) ? step.bullets : [];
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+          <ATMContentActionButtons
+            isActive={isActive}
+            onToggleActive={() => onToggleActive(step)}
+            onEdit={() => onOpenEdit(step)}
+            onDelete={() => onOpenDelete(step)}
+            onMoveUp={() => onMove(index, 'up')}
+            onMoveDown={() => onMove(index, 'down')}
+            canMoveUp={index > 0 && !isReordering}
+            canMoveDown={index < total - 1 && !isReordering}
+            moveTooltip={{ up: 'Move Step Up', down: 'Move Step Down' }}
+          />
+        </div>
+      </div>
+    );
+  }
 
-  // Normalized chips
-  const chips = Array.isArray(step.telemetryChips) ? step.telemetryChips : [];
-
+  // ─── GRID VIEW ──────────────────────────────────────────────
   return (
     <div
       className={cn(
-        'group relative flex flex-col justify-between rounded-2xl border bg-white dark:bg-[#13151a]/95 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden',
+        'group relative flex flex-col justify-between rounded-2xl border transition-all duration-300 overflow-hidden',
         isActive
-          ? 'border-slate-200/90 dark:border-gray-800/80 hover:border-primary-500/50 dark:hover:border-primary-500/40'
-          : 'border-dashed border-slate-300 dark:border-slate-800/80 opacity-75 bg-slate-50/50 dark:bg-slate-950/40'
+          ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-[#FF4F00]/40 hover:shadow-xl dark:hover:shadow-[#FF4F00]/5'
+          : 'bg-slate-50/70 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-80'
       )}
     >
-      {/* Top Accent Gradient Bar */}
+      {/* Top Accent Line */}
       <div
         className={cn(
-          'absolute top-0 left-0 right-0 h-1 transition-opacity duration-300 z-10',
+          'h-1.5 w-full transition-all duration-300',
           isActive
-            ? 'bg-gradient-to-r from-primary-500 via-orange-500 to-amber-400'
+            ? 'bg-gradient-to-r from-[#FF4F00] via-orange-500 to-amber-500'
             : 'bg-slate-300 dark:bg-slate-700'
         )}
       />
@@ -106,24 +159,21 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
         {/* Header: Step Number, Badge & Status */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* Step number badge */}
             <span
               className={cn(
                 'inline-flex items-center justify-center h-8 px-2.5 rounded-lg font-mono font-bold text-xs border shrink-0 shadow-2xs',
                 isActive
-                  ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/30'
+                  ? 'bg-orange-500/10 text-[#FF4F00] border-orange-500/30'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
               )}
             >
               Step {stepNumber}
             </span>
 
-            {/* Badge Label */}
-            <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 truncate max-w-[200px]">
+            <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 truncate max-w-[180px]">
               {badgeLabel}
             </span>
 
-            {/* Sort order pill */}
             <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800">
               #{step.sortOrder ?? index + 1}
             </span>
@@ -131,20 +181,20 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
 
           {/* Status Badge */}
           {isActive ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/60 shrink-0 shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 shrink-0 shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">
-              <EyeOff className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">
+              <EyeOff className="w-3 h-3" />
               Hidden
             </span>
           )}
         </div>
 
-        {/* Large Media Image Preview Container (Increased Height) */}
-        <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 h-56 sm:h-64 flex items-center justify-center shrink-0 shadow-inner group/img">
+        {/* Large Media Image Preview */}
+        <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 h-48 sm:h-52 flex items-center justify-center shrink-0 shadow-inner group/img">
           {step.imageUrl && !imgError ? (
             <>
               <img
@@ -161,7 +211,6 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
                 <ImageIcon className="w-6 h-6 stroke-[1.5]" />
               </div>
               <span className="text-xs font-medium">No Image Configured</span>
-              <span className="text-[10px] text-slate-500">Provide image URL in edit form</span>
             </div>
           )}
 
@@ -181,147 +230,63 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
               </div>
             </div>
           )}
-
-          {/* Site Variant Tag on Image Top-Right */}
-          <div className="absolute top-3 right-3 rounded-md bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/10 text-[10px] font-mono text-slate-300 z-10">
-            {step.siteVariant}
-          </div>
         </div>
 
-        {/* Step Title & Full Description */}
-        <div className="space-y-1.5 pt-1">
-          <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-snug group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+        {/* Titles & Copy */}
+        <div className="space-y-1.5 flex-1">
+          <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#FF4F00] transition-colors font-syne">
             {step.title}
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-            {step.description || 'No description provided.'}
-          </p>
+          {step.description && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+              {step.description}
+            </p>
+          )}
         </div>
 
-        {/* Key Highlights / Bullets (Fully Displayed, No Hidden Truncation) */}
-        {bullets.length > 0 && (
-          <div className="rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 p-3.5 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                Workflow Capabilities ({bullets.length})
-              </span>
+        {/* Bullet Highlights */}
+        {step.bullets && step.bullets.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/70 space-y-1">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Step Highlights ({step.bullets.length})</span>
             </div>
-            <ul className="space-y-1.5">
-              {bullets.map((bullet, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
-                  <span>{bullet}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Telemetry Chips Grid */}
-        {chips.length > 0 && (
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-primary-500" />
-              Live Telemetry Indicators
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {chips.map((chip, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-xl bg-slate-50 dark:bg-slate-900/80 p-2.5 border border-slate-200/80 dark:border-slate-800 flex items-start gap-2"
+            <div className="flex flex-wrap gap-1.5">
+              {step.bullets.slice(0, 3).map((bullet, bIdx) => (
+                <span
+                  key={bIdx}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 truncate max-w-[220px]"
                 >
-                  <Radio
-                    className={cn(
-                      'w-3.5 h-3.5 shrink-0 mt-0.5',
-                      chip.status === 'active' && 'text-orange-500 animate-pulse',
-                      chip.status === 'verified' && 'text-emerald-500',
-                      chip.status === 'ready' && 'text-amber-500'
-                    )}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                      {chip.label}
-                    </div>
-                    {chip.sublabel && (
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        {chip.sublabel}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  <span className="w-1 h-1 rounded-full bg-orange-500 shrink-0" />
+                  <span className="truncate">{bullet}</span>
+                </span>
               ))}
+              {step.bullets.length > 3 && (
+                <span className="text-[10px] text-slate-400 self-center pl-1 font-mono">
+                  +{step.bullets.length - 3} more
+                </span>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Footer (Dashboard style) */}
-      <div className="px-5 py-3.5 bg-slate-50/90 dark:bg-slate-900/90 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between gap-3">
-        {/* Reordering Controls */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onMove(index, 'up')}
-            disabled={index === 0 || isReordering}
-            title="Move step earlier in sequence"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onMove(index, 'down')}
-            disabled={index === total - 1 || isReordering}
-            title="Move step later in sequence"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
-          </button>
-          <span className="text-[11px] font-mono text-slate-400 pl-1">
-            {index + 1}/{total}
-          </span>
-        </div>
-
-        {/* Action Buttons: Toggle, Edit, Delete */}
-        <div className="flex items-center gap-2">
-          {/* Toggle Active */}
-          <button
-            type="button"
-            onClick={() => onToggleActive(step)}
-            title={isActive ? 'Hide from live website' : 'Publish to live website'}
-            className={cn(
-              'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors',
-              isActive
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
-            )}
-          >
-            {isActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isActive ? 'Live' : 'Hidden'}</span>
-          </button>
-
-          {/* Edit Button */}
-          <button
-            type="button"
-            onClick={() => onOpenEdit(step)}
-            title="Edit Step Details"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-2xs"
-          >
-            <Edit2 className="w-3.5 h-3.5 text-primary-500" />
-            <span>Edit</span>
-          </button>
-
-          {/* Delete Button */}
-          <button
-            type="button"
-            onClick={() => onOpenDelete(step)}
-            title="Delete Step"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      {/* Footer Action Bar with ATMContentActionButtons */}
+      <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <span className="text-[11px] font-mono text-slate-400">
+          Position: #{index + 1} of {total}
+        </span>
+        <ATMContentActionButtons
+          isActive={isActive}
+          onToggleActive={() => onToggleActive(step)}
+          onEdit={() => onOpenEdit(step)}
+          onDelete={() => onOpenDelete(step)}
+          onMoveUp={() => onMove(index, 'up')}
+          onMoveDown={() => onMove(index, 'down')}
+          canMoveUp={index > 0 && !isReordering}
+          canMoveDown={index < total - 1 && !isReordering}
+          moveTooltip={{ up: 'Move Step Up', down: 'Move Step Down' }}
+        />
       </div>
     </div>
   );

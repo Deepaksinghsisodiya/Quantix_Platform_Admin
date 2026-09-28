@@ -1,20 +1,18 @@
-import React, { useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Headphones,
   Plus,
   Search,
-  Filter,
   Building2,
   Utensils,
   Store,
-  Clock,
   Sparkles,
-  Phone,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
-import { CustomerSupportCard, CustomerSupportCardSkeleton } from './CustomerSupportCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
+import { CustomerSupportCard } from './CustomerSupportCard';
 import type { SupportSectionItem, CustomerSupportFilter } from '../Model/CustomerSupportTypes';
 import { cn } from '@/lib/utils/cn';
 
@@ -39,6 +37,8 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
   onOpenDelete,
   onToggleActive,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   // Compute KPI Stats
   const stats = useMemo(() => {
     const total = items.length;
@@ -79,19 +79,24 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
 
   const tabs = [
     { id: 'all', label: 'All Platforms', count: stats.total, icon: Sparkles },
-    { id: 'enterprise', label: 'Enterprise Website', count: stats.enterprise, icon: Building2 },
-    { id: 'restaurant', label: 'Restaurant Website', count: stats.restaurant, icon: Utensils },
-    { id: 'retail', label: 'Retail Website', count: stats.retail, icon: Store },
+    { id: 'enterprise', label: 'Enterprise Platform', count: stats.enterprise, icon: Building2 },
+    { id: 'restaurant', label: 'Restaurant & Dining', count: stats.restaurant, icon: Utensils },
+    { id: 'retail', label: 'Retail & Checkout', count: stats.retail, icon: Store },
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12 max-w-[1600px] mx-auto px-1 sm:px-2">
       {/* Header */}
       <ATMPageHeader
         title="24/7 Dedicated Customer Support"
         subtitle="Manage live customer support guarantees, technical pillars, hotline channels, and support desks across Enterprise, Restaurant, and Retail platforms."
         icon={Headphones}
         iconColor="theme"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content', href: '/content/marketing' },
+          { label: 'Customer Support' },
+        ]}
         action={{
           label: 'Add Support Config',
           onClick: onAddNew,
@@ -150,7 +155,7 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
                 className={cn(
                   'flex items-center gap-2 pb-3.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap',
                   isActive
-                    ? 'border-primary text-primary dark:text-primary-light'
+                    ? 'border-[#FF4F00] text-[#FF4F00] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                 )}
               >
@@ -158,9 +163,9 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[10.5px] font-bold',
+                    'px-2 py-0.5 rounded-full text-[10.5px] font-mono font-bold',
                     isActive
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-orange-500/15 text-[#FF4F00]'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                   )}
                 >
@@ -171,8 +176,8 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
           })}
         </div>
 
-        {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+        {/* Filter Controls Bar with Dual View Toggle */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           {/* Search Box */}
           <div className="relative w-full sm:w-80">
             <Search
@@ -184,47 +189,49 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
               placeholder="Search by title, contact, or hotline..."
               value={filter.searchQuery}
               onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
-              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-2xs"
+              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FF4F00]"
             />
           </div>
 
-          {/* Status Select Filter */}
+          {/* Status Select Filter & View Mode Toggle */}
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-              <Filter size={12} />
-              Status:
-            </span>
-            <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-850 p-1 border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-semibold">
               {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((status) => (
                 <button
                   key={status}
                   type="button"
                   onClick={() => onFilterChange({ status })}
                   className={cn(
-                    'px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                    'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
                     filter.status === status
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
                   )}
                 >
-                  {status === 'ALL' ? 'All' : status === 'ACTIVE' ? 'Live' : 'Draft'}
+                  {status === 'ALL' ? 'All' : status === 'ACTIVE' ? 'Live' : 'Hidden'}
                 </button>
               ))}
             </div>
+
+            <ATMViewModeToggle
+              value={viewMode}
+              onChange={setViewMode}
+              gridLabel="Cards"
+              listLabel="List"
+            />
           </div>
         </div>
       </div>
 
-      {/* Grid of Support Sections */}
+      {/* Grid or List View with ATMSkeleton */}
       {isLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <CustomerSupportCardSkeleton key={i} />
-          ))}
-        </div>
+        <ATMSkeleton
+          variant={viewMode === 'grid' ? 'card' : 'table-row'}
+          count={viewMode === 'grid' ? 3 : 4}
+        />
       ) : filteredItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-12 text-center space-y-4">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 text-primary flex items-center justify-center">
+          <div className="mx-auto h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 text-[#FF4F00] flex items-center justify-center">
             <Headphones size={28} />
           </div>
           <div className="space-y-1">
@@ -237,17 +244,23 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
                 : 'Create your first 24/7 dedicated customer support desk for your storefronts.'}
             </p>
           </div>
-          <ATMButton variant="primary" onClick={onAddNew} className="text-xs">
-            <Plus size={14} className="mr-1" />
+          <ATMButton variant="primary" onClick={onAddNew} className="text-xs" icon={Plus}>
             Create Support Configuration
           </ATMButton>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div
+          className={cn(
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
+              : 'flex flex-col gap-3'
+          )}
+        >
           {filteredItems.map((item) => (
             <CustomerSupportCard
               key={item.supportSectionId}
               item={item}
+              viewMode={viewMode}
               onOpenEdit={onOpenEdit}
               onOpenDelete={onOpenDelete}
               onToggleActive={onToggleActive}

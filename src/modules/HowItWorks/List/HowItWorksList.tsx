@@ -14,8 +14,9 @@ import {
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { HowItWorksCard, HowItWorksCardSkeleton } from './HowItWorksCard';
+import { HowItWorksCard } from './HowItWorksCard';
 import type { HowItWorksStepItem, SiteVariantTab } from '../Model/HowItWorksTypes';
 
 interface HowItWorksListProps {
@@ -60,17 +61,16 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
   onMove,
   isReordering = false,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
 
-  const safeSteps = useMemo(() => steps || [], [steps]);
-
   const filteredSteps = useMemo(() => {
-    return safeSteps.filter((s) => {
+    return steps.filter((step) => {
       const q = (searchQuery || '').toLowerCase().trim();
-      const title = (s.title || '').toLowerCase();
-      const desc = (s.description || '').toLowerCase();
-      const badge = (s.badgeLabel || '').toLowerCase();
+      const title = (step.title || '').toLowerCase();
+      const desc = (step.description || '').toLowerCase();
+      const badge = (step.badgeLabel || '').toLowerCase();
 
       const matchesSearch =
         q === '' ||
@@ -78,167 +78,160 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
         desc.includes(q) ||
         badge.includes(q);
 
+      const isActive = step.isActive ?? true;
       const matchesStatus =
         statusFilter === 'all' ||
-        (statusFilter === 'live' && s.isActive) ||
-        (statusFilter === 'hidden' && !s.isActive);
+        (statusFilter === 'live' && isActive) ||
+        (statusFilter === 'hidden' && !isActive);
 
       return matchesSearch && matchesStatus;
     });
-  }, [safeSteps, searchQuery, statusFilter]);
+  }, [steps, searchQuery, statusFilter]);
 
-  const liveCount = useMemo(() => safeSteps.filter((s) => s.isActive).length, [safeSteps]);
-  const hiddenCount = useMemo(() => safeSteps.filter((s) => !s.isActive).length, [safeSteps]);
+  const liveCount = useMemo(() => steps.filter((s) => s.isActive ?? true).length, [steps]);
+  const hiddenCount = useMemo(() => steps.filter((s) => !(s.isActive ?? true)).length, [steps]);
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
-      {/* 1. Page Header */}
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+      {/* 1. Header */}
       <ATMPageHeader
-        title="How It Works Steps CMS"
-        subtitle="Manage the interactive workflow steps and live terminal stages displayed across Enterprise, Restaurant, and Retail websites."
-        icon={ListOrdered}
-        iconColor="theme"
+        title="How It Works (Workflow Engine)"
+        subtitle="Manage the step-by-step interactive workflow sequences presented on Enterprise, Restaurant, and Retail landing pages."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content Management' },
+          { label: 'How It Works' },
+        ]}
         action={{
-          label: `Add ${activeTab} Step`,
+          label: 'Add Step',
           onClick: onOpenAdd,
           icon: Plus,
         }}
       />
 
-      {/* 2. Top Summary KPI Stats */}
+      {/* 2. KPI Metrics Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <ATMStatsCard
-          label="Total Steps"
-          value={(counts?.Enterprise || 0) + (counts?.Restaurant || 0) + (counts?.Retail || 0)}
+          label="Total Workflow Steps"
+          value={steps.length}
           icon={ListOrdered}
           variant="accent"
           description={`${liveCount} live on ${activeTab}`}
         />
         <ATMStatsCard
-          label="Enterprise Website"
-          value={counts?.Enterprise || 0}
+          label="Enterprise Sequence"
+          value={counts.Enterprise || 0}
           icon={Building2}
           variant="indigo"
-          description="Enterprise rollout stages"
+          description="Multi-store rollout steps"
           onClick={() => onTabChange('Enterprise')}
         />
         <ATMStatsCard
-          label="Restaurant Website"
-          value={counts?.Restaurant || 0}
+          label="Restaurant Sequence"
+          value={counts.Restaurant || 0}
           icon={UtensilsCrossed}
           variant="amber"
-          description="Order & dining stages"
+          description="Kitchen & floor flow"
           onClick={() => onTabChange('Restaurant')}
         />
         <ATMStatsCard
-          label="Retail Website"
-          value={counts?.Retail || 0}
+          label="Retail Sequence"
+          value={counts.Retail || 0}
           icon={ShoppingBag}
           variant="emerald"
-          description="POS scan & cashier stages"
+          description="Barcode & checkout flow"
           onClick={() => onTabChange('Retail')}
         />
       </div>
 
-      {/* 3. Site Variant Tabs — same underline style as Clientele */}
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <nav className="flex space-x-1.5 sm:space-x-3 overflow-x-auto pb-px scrollbar-none" aria-label="Website Tabs">
-          {SITE_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const count = counts?.[tab.id] ?? 0;
-            const isCurrent = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
+      {/* 3. Underline Site Variant Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
+        {SITE_TABS.map((tab) => {
+          const TabIcon = tab.icon;
+          const isActive = activeTab === tab.id;
+          const count = counts[tab.id] || 0;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onTabChange(tab.id)}
+              className={cn(
+                'flex items-center gap-2 pb-3.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap',
+                isActive
+                  ? 'border-[#FF4F00] text-[#FF4F00] font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+              )}
+            >
+              <TabIcon size={15} />
+              <span>{tab.label}</span>
+              <span
                 className={cn(
-                  'group inline-flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 transition-all duration-150 whitespace-nowrap',
-                  isCurrent
-                    ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20'
-                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
+                  'px-2 py-0.5 rounded-full text-[10.5px] font-mono font-bold',
+                  isActive
+                    ? 'bg-orange-500/15 text-[#FF4F00]'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                 )}
               >
-                <Icon
-                  className={cn('h-4 w-4 transition-colors', isCurrent ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400')}
-                />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.shortLabel}</span>
-                {isLoading ? (
-                  <div className="ml-1 h-4 w-5 rounded-full animate-pulse bg-slate-200 dark:bg-slate-800" />
-                ) : (
-                  <span
-                    className={cn(
-                      'ml-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[11px] font-semibold',
-                      isCurrent
-                        ? 'bg-primary-600 text-white dark:bg-primary-500'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                    )}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* 4. Controls Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[180px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search steps by title, badge, or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-            />
-          </div>
+      {/* 4. Controls Bar: Search + Status Filter + View Toggle */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+        {/* Search */}
+        <div className="relative w-full sm:w-80">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by title, badge, or keyword..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-9 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-[#FF4F00] transition-colors shadow-2xs"
+          />
+        </div>
 
-          {/* Status Filter */}
-          <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-900 text-xs">
+        {/* Status Filter & View Mode Toggle */}
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold">
             {([
               { key: 'all', label: 'All' },
-              { key: 'live', label: 'Live', icon: Eye },
-              { key: 'hidden', label: 'Hidden', icon: EyeOff },
+              { key: 'live', label: 'Live' },
+              { key: 'hidden', label: 'Hidden' },
             ] as const).map(({ key, label }) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setStatusFilter(key)}
                 className={cn(
-                  'px-2.5 py-1 rounded-md font-medium transition-colors',
+                  'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px]',
                   statusFilter === key
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                 )}
               >
-                {key === 'live' ? (
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                    {label}
-                  </span>
-                ) : (
-                  label
-                )}
+                {label}
               </button>
             ))}
           </div>
+
+          <ATMViewModeToggle
+            value={viewMode}
+            onChange={setViewMode}
+            gridLabel="Cards"
+            listLabel="List"
+          />
         </div>
       </div>
 
       {/* 5. Main Content Area */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          <HowItWorksCardSkeleton />
-          <HowItWorksCardSkeleton />
-          <HowItWorksCardSkeleton />
-        </div>
+        <ATMSkeleton
+          variant={viewMode === 'grid' ? 'card' : 'table-row'}
+          count={viewMode === 'grid' ? 3 : 4}
+        />
       ) : isError ? (
         <ATMCard className="p-8 text-center border-rose-200 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20">
           <div className="inline-flex p-3 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400 mb-3">
@@ -259,7 +252,7 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
           <div className="inline-flex p-3 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 mb-3">
             <ListOrdered className="h-6 w-6" />
           </div>
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white font-syne">
             {searchQuery ? 'No matching steps found' : `No workflow steps yet for ${activeTab}`}
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -277,13 +270,20 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
           )}
         </ATMCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div
+          className={cn(
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+              : 'flex flex-col gap-3'
+          )}
+        >
           {filteredSteps.map((step, idx) => (
             <HowItWorksCard
               key={step.stepId || step.id}
               step={step}
               index={idx}
               total={filteredSteps.length}
+              viewMode={viewMode}
               onOpenEdit={onOpenEdit}
               onOpenDelete={onOpenDelete}
               onToggleActive={onToggleActive}

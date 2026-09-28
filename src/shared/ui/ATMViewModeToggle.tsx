@@ -33,7 +33,7 @@ export const ATMViewModeToggle: React.FC<ATMViewModeToggleProps> = ({
       className={cn(
         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
         value === 'grid'
-          ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
+          ? 'bg-white dark:bg-gray-900 text-[#FF4F00] dark:text-orange-400 shadow-sm'
           : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
       )}
     >
@@ -46,7 +46,7 @@ export const ATMViewModeToggle: React.FC<ATMViewModeToggleProps> = ({
       className={cn(
         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
         value === 'list'
-          ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
+          ? 'bg-white dark:bg-gray-900 text-[#FF4F00] dark:text-orange-400 shadow-sm'
           : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
       )}
     >

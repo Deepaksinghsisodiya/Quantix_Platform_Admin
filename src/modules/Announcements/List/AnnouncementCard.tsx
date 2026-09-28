@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Pin,
   Sparkles,
@@ -14,12 +14,14 @@ import {
   Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { ATMContentActionButtons } from '@/shared/components/ATMContentActionButtons';
 import type { Announcement } from '../Model/AnnouncementTypes';
 
 interface AnnouncementCardProps {
   announcement: Announcement;
   index: number;
   totalCount: number;
+  viewMode?: 'grid' | 'list';
   onEdit: (announcement: Announcement) => void;
   onDelete: (announcement: Announcement) => void;
   onToggleActive: (announcement: Announcement) => void;
@@ -31,7 +33,7 @@ interface AnnouncementCardProps {
 export const getKindTheme = (kind?: string | null) => {
   switch (kind?.toLowerCase()) {
     case 'promo':
-      return { badgeBg: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20', dot: 'bg-orange-500', label: 'Promo', accentBar: 'from-primary via-orange-500 to-amber-500' };
+      return { badgeBg: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20', dot: 'bg-orange-500', label: 'Promo', accentBar: 'from-[#FF4F00] via-orange-500 to-amber-500' };
     case 'news':
       return { badgeBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', dot: 'bg-blue-500', label: 'News', accentBar: 'from-blue-400 via-cyan-500 to-sky-400' };
     case 'notice':
@@ -49,6 +51,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   announcement,
   index,
   totalCount,
+  viewMode = 'grid',
   onEdit,
   onDelete,
   onToggleActive,
@@ -65,19 +68,96 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   const isPinned = !!announcement?.isPinned;
   const isActive = announcement?.isActive ?? true;
 
+  // ─── LIST VIEW ──────────────────────────────────────────────
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={cn(
+          'group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border transition-all duration-200',
+          isActive
+            ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-[#FF4F00]/30 shadow-2xs hover:shadow-xs'
+            : 'bg-slate-50/70 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-80'
+        )}
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          <div className="h-10 w-10 rounded-xl bg-orange-500/10 text-[#FF4F00] flex items-center justify-center shrink-0 border border-orange-500/20">
+            <Megaphone size={18} />
+          </div>
+
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={cn('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border', theme.badgeBg)}>
+                <span className={cn('h-1.5 w-1.5 rounded-full', theme.dot)} />
+                {theme.label}
+              </span>
+              {badge && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  {badge}
+                </span>
+              )}
+              {isPinned && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <Pin size={10} className="fill-amber-500" /> PINNED
+                </span>
+              )}
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate font-syne">
+                {title}
+              </h4>
+            </div>
+            {body && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                {body}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => onTogglePinned(announcement)}
+            title={isPinned ? 'Unpin from top' : 'Pin to top'}
+            className={cn(
+              'h-8 w-8 rounded-lg border flex items-center justify-center transition-all cursor-pointer shadow-2xs',
+              isPinned
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-amber-500 hover:border-amber-300'
+            )}
+          >
+            <Pin size={14} className={cn(isPinned && 'fill-amber-500')} />
+          </button>
+
+          <ATMContentActionButtons
+            isActive={isActive}
+            onToggleActive={() => onToggleActive(announcement)}
+            onEdit={() => onEdit(announcement)}
+            onDelete={() => onDelete(announcement)}
+            onMoveUp={() => onMove(index, 'up')}
+            onMoveDown={() => onMove(index, 'down')}
+            canMoveUp={index > 0 && !isReordering}
+            canMoveDown={index < totalCount - 1 && !isReordering}
+            moveTooltip={{ up: 'Move Announcement Up', down: 'Move Announcement Down' }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ─── GRID VIEW ──────────────────────────────────────────────
   return (
     <div
       className={cn(
         'group relative flex flex-col justify-between rounded-2xl border transition-all duration-300 overflow-hidden',
         isActive
-          ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-primary/40 hover:shadow-lg dark:hover:shadow-primary/5'
+          ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-[#FF4F00]/40 hover:shadow-lg dark:hover:shadow-[#FF4F00]/5'
           : 'bg-slate-50/70 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-80'
       )}
     >
       {/* Top Accent Bar */}
       <div className={cn('h-1.5 w-full transition-all duration-300', isActive ? `bg-gradient-to-r ${theme.accentBar}` : 'bg-slate-300 dark:bg-slate-700')} />
 
-      <div className="p-5 sm:p-6 space-y-5 flex-1 flex flex-col">
+      <div className="p-5 sm:p-6 space-y-4 flex-1 flex flex-col">
         {/* Header row: kind badge + pinned + status */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -98,81 +178,70 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           </div>
           <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors', isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700')}>
             <span className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
-            {isActive ? 'Live on Site' : 'Hidden'}
+            {isActive ? 'Live' : 'Hidden'}
           </span>
         </div>
 
-        {/* Icon + Title */}
-        <div className="flex items-start gap-3.5">
-          <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border shadow-xs', isActive ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400')}>
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words">
-              {title}
-            </h3>
-            {body && (
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed break-words">
-                {body}
-              </p>
-            )}
-          </div>
+        {/* Title & Body */}
+        <div className="space-y-2 flex-1">
+          <h3 className="font-syne font-bold text-base text-slate-900 dark:text-white line-clamp-2 group-hover:text-[#FF4F00] transition-colors">
+            {title}
+          </h3>
+          {body && (
+            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+              {body}
+            </p>
+          )}
         </div>
 
-        {/* Live Banner Preview strip */}
-        <div className="rounded-xl bg-slate-950 border border-orange-500/20 px-3 py-2.5 flex items-center gap-2 overflow-hidden">
-          <BellRing className="h-3.5 w-3.5 text-orange-400 shrink-0" />
-          <span className="text-xs text-slate-300 truncate flex-1">{body || title}</span>
-          <span className="text-slate-600 shrink-0">|</span>
-          <span className="text-[11px] font-bold text-[#FF7332] shrink-0 inline-flex items-center gap-0.5">
-            {ctaLabel}<ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+        {/* CTA Preview */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-3 text-xs">
+          <span className="inline-flex items-center gap-1 font-semibold text-[#FF4F00]">
+            <Sparkles className="h-3.5 w-3.5" />
+            {ctaLabel}
           </span>
+          {linkUrl && (
+            <span className="text-[11px] font-mono text-slate-400 truncate max-w-[140px]">
+              ↗ {linkUrl}
+            </span>
+          )}
         </div>
-
-        {/* Link URL if any */}
-        {linkUrl && (
-          <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 truncate">
-            ↗ {linkUrl}
-          </p>
-        )}
       </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-3 px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80">
-        {/* Reorder */}
-        <div className="flex items-center gap-1">
-          <button type="button" disabled={index === 0 || isReordering} onClick={() => onMove(index, 'up')} title="Move Up"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors">
-            <ArrowUp className="h-3.5 w-3.5" /></button>
-          <button type="button" disabled={index === totalCount - 1 || isReordering} onClick={() => onMove(index, 'down')} title="Move Down"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors">
-            <ArrowDown className="h-3.5 w-3.5" /></button>
-        </div>
+        <span className="text-[11px] font-mono text-slate-400">
+          #{index + 1} of {totalCount}
+        </span>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Pin toggle */}
-          <button type="button" onClick={() => onTogglePinned(announcement)} title={isPinned ? 'Unpin' : 'Pin to top'}
-            className={cn('p-1.5 rounded-lg border transition-colors shadow-2xs cursor-pointer', isPinned ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-amber-500 hover:border-amber-300')}>
-            <Pin className={cn('h-3.5 w-3.5', isPinned && 'fill-amber-500')} /></button>
-
-          {/* Toggle active */}
-          <button type="button" onClick={() => onToggleActive(announcement)}
-            className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-2xs cursor-pointer', isActive ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100')}
-            title={isActive ? 'Hide from website' : 'Publish to website'}>
-            <span className={cn('h-2 w-2 rounded-full shrink-0', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
-            <span>{isActive ? 'Live' : 'Draft'}</span>
+          <button
+            type="button"
+            onClick={() => onTogglePinned(announcement)}
+            title={isPinned ? 'Unpin' : 'Pin to top'}
+            className={cn(
+              'h-8 w-8 rounded-lg border flex items-center justify-center transition-all cursor-pointer shadow-2xs',
+              isPinned
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-amber-500 hover:border-amber-300'
+            )}
+          >
+            <Pin size={14} className={cn(isPinned && 'fill-amber-500')} />
           </button>
 
-          {/* Edit */}
-          <button type="button" onClick={() => onEdit(announcement)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-orange-50 hover:text-[#FF4F00] hover:border-orange-300 dark:hover:bg-orange-950/40 dark:hover:text-orange-400 transition-all shadow-2xs cursor-pointer">
-            <Edit2 size={13} className="text-[#FF4F00]" /><span>Edit</span></button>
-
-          {/* Delete */}
-          <button type="button" onClick={() => onDelete(announcement)} title="Delete"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all shadow-2xs cursor-pointer">
-            <Trash2 size={14} /></button>
+          <ATMContentActionButtons
+            isActive={isActive}
+            onToggleActive={() => onToggleActive(announcement)}
+            onEdit={() => onEdit(announcement)}
+            onDelete={() => onDelete(announcement)}
+            onMoveUp={() => onMove(index, 'up')}
+            onMoveDown={() => onMove(index, 'down')}
+            canMoveUp={index > 0 && !isReordering}
+            canMoveDown={index < totalCount - 1 && !isReordering}
+            moveTooltip={{ up: 'Move Announcement Up', down: 'Move Announcement Down' }}
+          />
         </div>
       </div>
     </div>

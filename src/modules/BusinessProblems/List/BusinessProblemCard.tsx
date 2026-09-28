@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   TrendingDown,
   AlertTriangle,
@@ -15,13 +15,9 @@ import {
   ShieldAlert,
   Zap,
   CheckCircle2,
-  Edit2,
-  Trash2,
-  Eye,
-  EyeOff,
-  HelpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { ATMContentActionButtons } from '@/shared/components/ATMContentActionButtons';
 import type { BusinessProblem } from '../Model/BusinessProblemTypes';
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -41,6 +37,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 
 interface BusinessProblemCardProps {
   problem: BusinessProblem;
+  viewMode?: 'grid' | 'list';
   onEdit: (item: BusinessProblem) => void;
   onDelete: (item: BusinessProblem) => void;
   onToggleActive: (item: BusinessProblem) => void;
@@ -48,6 +45,7 @@ interface BusinessProblemCardProps {
 
 export const BusinessProblemCard: React.FC<BusinessProblemCardProps> = ({
   problem,
+  viewMode = 'grid',
   onEdit,
   onDelete,
   onToggleActive,
@@ -71,6 +69,82 @@ export const BusinessProblemCard: React.FC<BusinessProblemCardProps> = ({
     }
   })();
 
+  // ==========================================
+  // LIST / TABLE ROW VIEW
+  // ==========================================
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={cn(
+          'flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border p-3.5 sm:p-4 transition-all duration-200 bg-white dark:bg-[#12151c]',
+          problem.isActive
+            ? 'border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-orange-500/30'
+            : 'border-dashed border-slate-300 dark:border-slate-800 opacity-70 bg-slate-50/50 dark:bg-slate-900/30'
+        )}
+      >
+        <div className="flex items-center gap-3.5 flex-1 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-orange-500/10 dark:bg-orange-500/20 text-[#FF4F00] border-orange-500/20">
+            <MainIcon size={18} />
+          </div>
+
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-mono font-bold text-slate-400">
+                #{problem.sortOrder}
+              </span>
+              <h4 className="text-sm sm:text-base font-syne font-bold text-slate-900 dark:text-white truncate">
+                {problem.title}
+              </h4>
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                Tab: {problem.shortTabLabel || problem.tag}
+              </span>
+              <span
+                className={cn(
+                  'text-[9.5px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border',
+                  severityStyles
+                )}
+              >
+                {problem.severity || 'CRITICAL'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+              {problem.visualMeter?.quantixText || problem.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-colors',
+              problem.isActive
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+            )}
+          >
+            <span
+              className={cn(
+                'h-1.5 w-1.5 rounded-full',
+                problem.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+              )}
+            />
+            {problem.isActive ? 'Live' : 'Hidden'}
+          </span>
+
+          <ATMContentActionButtons
+            isActive={problem.isActive}
+            onToggleActive={() => onToggleActive(problem)}
+            onEdit={() => onEdit(problem)}
+            onDelete={() => onDelete(problem)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // GRID / CARD VIEW
+  // ==========================================
   return (
     <div
       className={cn(
@@ -241,48 +315,18 @@ export const BusinessProblemCard: React.FC<BusinessProblemCardProps> = ({
         </div>
       </div>
 
-      {/* Card Action Footer */}
+      {/* Card Action Footer with Unified Action Buttons */}
       <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <span className="text-[11px] font-mono text-slate-400">
           Order: #{problem.sortOrder}
         </span>
 
-        <div className="flex items-center gap-1">
-          {/* Toggle Active Button */}
-          <button
-            type="button"
-            onClick={() => onToggleActive(problem)}
-            title={problem.isActive ? 'Hide on Website' : 'Publish Live'}
-            className={cn(
-              'p-1.5 rounded-lg border transition-all cursor-pointer text-xs flex items-center gap-1',
-              problem.isActive
-                ? 'border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            )}
-          >
-            {problem.isActive ? <Eye size={13} /> : <EyeOff size={13} />}
-          </button>
-
-          {/* Edit Button */}
-          <button
-            type="button"
-            onClick={() => onEdit(problem)}
-            title="Edit Problem"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-[#FF4F00] hover:border-orange-500/40 hover:bg-orange-500/5 transition-all cursor-pointer"
-          >
-            <Edit2 size={13} />
-          </button>
-
-          {/* Delete Button */}
-          <button
-            type="button"
-            onClick={() => onDelete(problem)}
-            title="Delete Problem"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all cursor-pointer"
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
+        <ATMContentActionButtons
+          isActive={problem.isActive}
+          onToggleActive={() => onToggleActive(problem)}
+          onEdit={() => onEdit(problem)}
+          onDelete={() => onDelete(problem)}
+        />
       </div>
     </div>
   );

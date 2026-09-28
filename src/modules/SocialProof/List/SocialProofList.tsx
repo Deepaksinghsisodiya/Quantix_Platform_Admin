@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   BarChart3,
   Plus,
@@ -7,6 +7,9 @@ import {
   UtensilsCrossed,
   ShoppingBag,
   Search,
+  Eye,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
@@ -15,6 +18,7 @@ import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
 import { SocialProofCard } from './SocialProofCard';
+import { SocialProofLiveRibbon } from '../components/SocialProofLiveRibbon';
 import type { SocialProofMetric, SiteVariantTab } from '../Model/SocialProofTypes';
 
 interface SocialProofListProps {
@@ -36,12 +40,11 @@ interface SocialProofListProps {
 const SITE_TABS: Array<{
   id: SiteVariantTab;
   label: string;
-  shortLabel: string;
   icon: React.ComponentType<{ className?: string; size?: number }>;
 }> = [
-  { id: 'Enterprise', label: 'Enterprise Website', shortLabel: 'Enterprise', icon: Building2 },
-  { id: 'Restaurant', label: 'Restaurant Website', shortLabel: 'Restaurant', icon: UtensilsCrossed },
-  { id: 'Retail', label: 'Retail Website', shortLabel: 'Retail', icon: ShoppingBag },
+  { id: 'Enterprise', label: 'Enterprise Platform', icon: Building2 },
+  { id: 'Restaurant', label: 'Restaurant & Dining', icon: UtensilsCrossed },
+  { id: 'Retail', label: 'Retail & Checkout', icon: ShoppingBag },
 ];
 
 export const SocialProofList: React.FC<SocialProofListProps> = ({
@@ -65,11 +68,12 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
 
   const filteredMetrics = useMemo(() => {
     return metrics.filter((m) => {
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        searchQuery.trim() === '' ||
-        m.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.description && m.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        q === '' ||
+        m.value.toLowerCase().includes(q) ||
+        m.label.toLowerCase().includes(q) ||
+        (m.description && m.description.toLowerCase().includes(q));
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -80,17 +84,22 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
     });
   }, [metrics, searchQuery, statusFilter]);
 
-  const activeCount = useMemo(() => metrics.filter((m) => m.isActive).length, [metrics]);
+  const liveCount = useMemo(() => metrics.filter((m) => m.isActive).length, [metrics]);
   const hiddenCount = useMemo(() => metrics.filter((m) => !m.isActive).length, [metrics]);
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
-      {/* 1. Header with Responsive Action */}
+      {/* 1. Header with Breadcrumbs & Action */}
       <ATMPageHeader
         title="Social Proof & Metrics Ribbon CMS"
-        subtitle="Manage key metrics (outlets, GMV, uptime SLA, global markets), animated numbers, Lucide icons, and accent colors across all websites."
+        subtitle="Manage live platform proof points (outlets, GMV, uptime SLA, global markets), animated numbers, Lucide icons, and accent colors across all websites."
         icon={BarChart3}
         iconColor="theme"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content', href: '/content/marketing' },
+          { label: 'Social Proof' },
+        ]}
         action={{
           label: `Add ${activeTab} Metric`,
           onClick: onOpenAdd,
@@ -105,7 +114,7 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
           value={(counts.Enterprise || 0) + (counts.Restaurant || 0) + (counts.Retail || 0)}
           icon={BarChart3}
           variant="accent"
-          description={`${activeCount} live in ${activeTab}`}
+          description={`${liveCount} live in ${activeTab}`}
         />
         <ATMStatsCard
           label="Enterprise Website"
@@ -133,7 +142,7 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
         />
       </div>
 
-      {/* 3. Site Filter Tabs */}
+      {/* 3. Site Variant Filter Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 sm:gap-4 overflow-x-auto pb-px">
         {SITE_TABS.map((tab) => {
           const Icon = tab.icon;
@@ -146,34 +155,33 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
               type="button"
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                'group flex items-center gap-2.5 py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition-all whitespace-nowrap',
+                'group flex items-center gap-2.5 py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer',
                 isSelected
-                  ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                  ? 'border-[#FF4F00] text-[#FF4F00] dark:text-[#FF4F00] font-bold'
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200'
               )}
             >
-              <Icon className={cn('h-4 w-4', isSelected ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 group-hover:text-slate-600')} />
+              <Icon className={cn('h-4 w-4', isSelected ? 'text-[#FF4F00]' : 'text-slate-400 group-hover:text-slate-600')} />
               <span>{tab.label}</span>
-              {isLoading ? (
-                <div className="ml-1 h-4 w-5 rounded-full animate-pulse bg-slate-200 dark:bg-slate-800" />
-              ) : (
-                <span
-                  className={cn(
-                    'ml-1 rounded-full px-2 py-0.5 text-[10px] font-black',
-                    isSelected
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                  )}
-                >
-                  {count}
-                </span>
-              )}
+              <span
+                className={cn(
+                  'ml-1 rounded-full px-2 py-0.5 text-[10px] font-mono font-bold',
+                  isSelected
+                    ? 'bg-orange-500/15 text-[#FF4F00]'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                )}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {/* 4. Controls Bar: Search, Status Filter & View Mode */}
+      {/* 4. Live Ribbon Website View Mockup */}
+      <SocialProofLiveRibbon metrics={metrics} activeVariant={activeTab} />
+
+      {/* 5. Controls Bar: Search, Status Filter & Dual View Toggle */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs dark:bg-[#12151c] dark:border-slate-800">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -181,8 +189,8 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${activeTab} metrics...`}
-            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/60 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-white"
+            placeholder={`Search ${activeTab} metrics by title, value...`}
+            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/60 focus:outline-hidden focus:ring-2 focus:ring-[#FF4F00]/20 focus:border-[#FF4F00] text-slate-900 dark:text-white"
           />
         </div>
 
@@ -191,23 +199,38 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
-              className={cn('px-2.5 py-1 rounded-lg transition-all', statusFilter === 'all' ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'all'
+                  ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
             >
               All
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('live')}
-              className={cn('px-2.5 py-1 rounded-lg transition-all', statusFilter === 'live' ? 'bg-white shadow-xs text-emerald-600 dark:bg-slate-900 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'live'
+                  ? 'bg-white shadow-xs text-emerald-600 dark:bg-slate-900 dark:text-emerald-400 font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
             >
-              Live
+              Live ({liveCount})
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('hidden')}
-              className={cn('px-2.5 py-1 rounded-lg transition-all', statusFilter === 'hidden' ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'hidden'
+                  ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
             >
-              Hidden
+              Hidden ({hiddenCount})
             </button>
           </div>
 
@@ -220,7 +243,7 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
         </div>
       </div>
 
-      {/* 5. Metrics Cards Grid / List or Empty / Error / Loading States */}
+      {/* 6. Content Section: Skeletons, Error, Empty, or Dual View Data */}
       {isLoading ? (
         <ATMSkeleton
           variant={viewMode === 'grid' ? 'metric-card' : 'metric-row'}
@@ -277,3 +300,5 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
     </div>
   );
 };
+
+export default SocialProofList;

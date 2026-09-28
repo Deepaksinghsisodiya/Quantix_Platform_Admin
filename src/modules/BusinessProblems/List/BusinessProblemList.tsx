@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   AlertTriangle,
   Plus,
@@ -14,10 +14,11 @@ import {
   Layers,
 } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { BusinessProblemCard, BusinessProblemCardSkeleton } from './BusinessProblemCard';
+import { BusinessProblemCard } from './BusinessProblemCard';
 import type { BusinessProblem } from '../Model/BusinessProblemTypes';
 
 interface BusinessProblemListProps {
@@ -53,6 +54,7 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
   onOpenDelete,
   onToggleActive,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
 
@@ -169,8 +171,8 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
         })}
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+      {/* Search & Filter Bar with Dual View Toggle */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="relative w-full sm:w-80">
           <Search
             size={16}
@@ -185,26 +187,61 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#FF4F00]"
-          >
-            <option value="all">All Statuses</option>
-            <option value="live">Live Only</option>
-            <option value="hidden">Hidden Only</option>
-          </select>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'all'
+                  ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('live')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'live'
+                  ? 'bg-white shadow-xs text-emerald-600 dark:bg-slate-900 dark:text-emerald-400 font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
+            >
+              Live ({liveCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('hidden')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer',
+                statusFilter === 'hidden'
+                  ? 'bg-white shadow-xs text-slate-900 dark:bg-slate-900 dark:text-white font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              )}
+            >
+              Hidden ({safeItems.length - liveCount})
+            </button>
+          </div>
+
+          <ATMViewModeToggle
+            value={viewMode}
+            onChange={setViewMode}
+            gridLabel="Cards"
+            listLabel="List"
+          />
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area with ATMSkeleton */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <BusinessProblemCardSkeleton />
-          <BusinessProblemCardSkeleton />
-          <BusinessProblemCardSkeleton />
-        </div>
+        <ATMSkeleton
+          variant={viewMode === 'grid' ? 'card' : 'table-row'}
+          count={viewMode === 'grid' ? 3 : 4}
+        />
       ) : isError ? (
         <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/20">
           <AlertCircle size={36} className="text-rose-500 mb-2" />
@@ -244,11 +281,18 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
           </ATMButton>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          className={cn(
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+              : 'flex flex-col gap-3'
+          )}
+        >
           {filteredItems.map((prob) => (
             <BusinessProblemCard
               key={prob.businessProblemId || prob.id}
               problem={prob}
+              viewMode={viewMode}
               onEdit={onOpenEdit}
               onDelete={onOpenDelete}
               onToggleActive={onToggleActive}

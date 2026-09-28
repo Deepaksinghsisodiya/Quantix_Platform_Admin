@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, RefreshCw, AlertCircle } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMSkeleton } from '@/shared/ui';
 import { BusinessProblemForm } from '../Form/BusinessProblemForm';
 import {
   useGetBusinessProblemByIdQuery,
@@ -82,11 +83,18 @@ export const EditBusinessProblemPage: React.FC = () => {
 
   if (isFetching) {
     return (
-      <div className="w-full space-y-6 max-w-[1600px] mx-auto px-2 pb-12 animate-pulse">
-        <div className="h-16 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          <div className="xl:col-span-7 h-96 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-          <div className="xl:col-span-5 h-96 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+      <div className="w-full space-y-6 max-w-[1600px] mx-auto px-1 sm:px-2 py-4 animate-fade-in">
+        <div className="space-y-2">
+          <ATMSkeleton variant="text" width="35%" height="2.2rem" />
+          <ATMSkeleton variant="text" width="55%" height="1.1rem" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+          <div className="lg:col-span-2 space-y-4">
+            <ATMSkeleton variant="card" height="26rem" />
+          </div>
+          <div>
+            <ATMSkeleton variant="card" height="18rem" />
+          </div>
         </div>
       </div>
     );

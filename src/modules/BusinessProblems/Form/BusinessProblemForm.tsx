@@ -23,6 +23,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { ATMButton } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { SaveBusinessProblemDto } from '../Model/BusinessProblemTypes';
 
@@ -95,8 +96,18 @@ export const BusinessProblemForm: React.FC<BusinessProblemFormProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-      {/* LEFT COLUMN: Inputs (7 Cols) */}
+    <div className="space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Problem'}
+        formId="business-problem-form"
+      />
+
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        {/* LEFT COLUMN: Inputs (7 Cols) */}
       <div className="xl:col-span-7 space-y-6">
         {/* Section 1: Classification & Target Platform */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
@@ -586,29 +597,8 @@ export const BusinessProblemForm: React.FC<BusinessProblemFormProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Form Action Controls (Bottom of Preview column) */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading || isSubmitting}
-            className="flex-1 py-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <X size={14} />
-            <span>Cancel</span>
-          </button>
-
-          <button
-            type="submit"
-            disabled={isLoading || isSubmitting}
-            className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-[#FF4F00] to-[#FF6B2B] text-white text-xs font-semibold shadow-sm shadow-orange-500/25 hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-          >
-            <Save size={14} />
-            <span>{isLoading || isSubmitting ? 'Saving...' : isEdit ? 'Update Problem' : 'Create Problem'}</span>
-          </button>
-        </div>
       </div>
     </div>
-  );
+  </div>
+);
 };

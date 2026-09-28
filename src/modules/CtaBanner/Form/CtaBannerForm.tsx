@@ -21,6 +21,7 @@ import {
   ATMTextArea,
   ATMCheckbox,
 } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { TelemetryChip } from '../Model/CtaBannerTypes';
 
@@ -133,7 +134,15 @@ export const CtaBannerForm: React.FC<CtaBannerFormProps> = ({
   };
 
   return (
-    <Form className="space-y-8">
+    <Form id="cta-banner-form" className="space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create CTA Banner'}
+        formId="cta-banner-form"
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* ========================================================================= */}
         {/* LEFT COLUMN: EDITABLE FIELDS (8 COLS)                                     */}
@@ -534,28 +543,6 @@ export const CtaBannerForm: React.FC<CtaBannerFormProps> = ({
                 checked={values.isActive}
                 onChange={(checked) => setFieldValue('isActive', checked)}
               />
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <ATMButton
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="flex-1"
-                disabled={isSubmitting}
-                isLoading={isSubmitting}
-              >
-                {isEdit ? 'Update CTA Banner' : 'Create CTA Banner'}
-              </ATMButton>
-              <ATMButton
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={onCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </ATMButton>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   HelpCircle,
   Building2,
@@ -58,8 +58,9 @@ export const FAQCard: React.FC<FAQCardProps> = ({
 
   // Platform discriminator & accent colors
   const getSiteVariantConfig = () => {
-    const mt = (item.merchantType || '').toLowerCase();
-    const cat = (item.category || '').toLowerCase();
+    const mt = (item?.merchantType || '').toLowerCase();
+    const cat = (item?.category || '').toLowerCase();
+    const qText = (item?.question || '').toLowerCase();
 
     if (mt === 'enterprise' || cat === 'enterprise') {
       return {
@@ -72,8 +73,8 @@ export const FAQCard: React.FC<FAQCardProps> = ({
     if (
       mt === 'restaurant' ||
       cat === 'restaurant' ||
-      item.question.toLowerCase().includes('restaurant') ||
-      item.question.toLowerCase().includes('kds')
+      qText.includes('restaurant') ||
+      qText.includes('kds')
     ) {
       return {
         label: 'Restaurant & Dining',
@@ -85,8 +86,8 @@ export const FAQCard: React.FC<FAQCardProps> = ({
     if (
       mt === 'retail' ||
       cat === 'retail' ||
-      item.question.toLowerCase().includes('retail') ||
-      item.question.toLowerCase().includes('barcode')
+      qText.includes('retail') ||
+      qText.includes('barcode')
     ) {
       return {
         label: 'Retail & Checkout',
@@ -97,7 +98,7 @@ export const FAQCard: React.FC<FAQCardProps> = ({
     }
 
     return {
-      label: item.merchantType || 'Global Platform',
+      label: item?.merchantType || 'Global Platform',
       icon: HelpCircle,
       accentColor: '#FF4F00',
       badgeColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',

@@ -203,8 +203,17 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
               placeholder="Search announcements..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+              className="w-full pl-9 pr-7 py-1.5 text-xs sm:text-sm rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           {/* Status Filter */}
@@ -213,49 +222,53 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
               type="button"
               onClick={() => setStatusFilter('all')}
               className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-colors',
                 statusFilter === 'all'
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               )}
             >
-              All
+              <span>All</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 font-bold">{safeAnnouncements.length}</span>
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('live')}
               className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-colors',
                 statusFilter === 'live'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               )}
             >
-              Live
+              <span>Live</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200/50 dark:border-emerald-800/40">{liveCount}</span>
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('pinned')}
               className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-colors',
                 statusFilter === 'pinned'
                   ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               )}
             >
-              Pinned
+              <span>Pinned</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold border border-amber-200/50 dark:border-amber-800/40">{pinnedCount}</span>
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('hidden')}
               className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-colors',
                 statusFilter === 'hidden'
                   ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               )}
             >
-              Drafts
+              <span>Drafts</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 font-bold">{hiddenCount}</span>
             </button>
           </div>
         </div>

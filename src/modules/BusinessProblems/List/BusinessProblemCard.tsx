@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   TrendingDown,
   AlertTriangle,
@@ -53,11 +53,11 @@ export const BusinessProblemCard: React.FC<BusinessProblemCardProps> = ({
   const [activeTab, setActiveTab] = useState<'problem' | 'solution'>('problem');
   const isSolution = activeTab === 'solution';
 
-  const MainIcon = ICON_MAP[problem.iconKey] || AlertTriangle;
-  const MeterIcon = ICON_MAP[problem.visualMeter?.iconKey || ''] || ArrowRightLeft;
+  const MainIcon = ICON_MAP[problem?.iconKey || ''] || AlertTriangle;
+  const MeterIcon = ICON_MAP[problem?.visualMeter?.iconKey || ''] || ArrowRightLeft;
 
   const severityStyles = (() => {
-    switch ((problem.severity || '').toUpperCase()) {
+    switch ((problem?.severity || '').toUpperCase()) {
       case 'CRITICAL':
         return 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20';
       case 'HIGH RISK':

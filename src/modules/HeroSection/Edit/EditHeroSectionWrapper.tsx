@@ -66,10 +66,14 @@ export const EditHeroSectionWrapper: React.FC<EditHeroSectionWrapperProps> = ({
 
     try {
       await updateSlide({ id: slide.heroSlideId, ...payload }).unwrap();
-      toast.success('Hero slide updated successfully.');
+      toast.success('Hero Slide Updated', {
+        description: `Changes to "${values.heading}" have been saved.`,
+      });
       onSuccess();
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to update hero slide.');
+      toast.error('Failed to update hero slide', {
+        description: err?.data?.message || err?.message || 'Please check your input and try again.',
+      });
     } finally {
       setSubmitting(false);
     }

@@ -323,7 +323,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
             <Icon className="w-3 h-3 text-primary-600" />
-            {integration.category.toUpperCase()}
+            {(integration?.category || 'General').toUpperCase()}
           </span>
 
           {isPopular && (

@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   BarChart3,
   Plus,
@@ -66,14 +66,21 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
 
+  const safeMetrics = useMemo(() => metrics || [], [metrics]);
+
   const filteredMetrics = useMemo(() => {
-    return metrics.filter((m) => {
-      const q = searchQuery.toLowerCase().trim();
+    return safeMetrics.filter((m) => {
+      if (!m) return false;
+      const q = (searchQuery || '').toLowerCase().trim();
+      const val = (m.value || '').toLowerCase();
+      const lbl = (m.label || '').toLowerCase();
+      const desc = (m.description || '').toLowerCase();
+
       const matchesSearch =
         q === '' ||
-        m.value.toLowerCase().includes(q) ||
-        m.label.toLowerCase().includes(q) ||
-        (m.description && m.description.toLowerCase().includes(q));
+        val.includes(q) ||
+        lbl.includes(q) ||
+        desc.includes(q);
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -82,10 +89,10 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
 
       return matchesSearch && matchesStatus;
     });
-  }, [metrics, searchQuery, statusFilter]);
+  }, [safeMetrics, searchQuery, statusFilter]);
 
-  const liveCount = useMemo(() => metrics.filter((m) => m.isActive).length, [metrics]);
-  const hiddenCount = useMemo(() => metrics.filter((m) => !m.isActive).length, [metrics]);
+  const liveCount = useMemo(() => safeMetrics.filter((m) => m?.isActive).length, [safeMetrics]);
+  const hiddenCount = useMemo(() => safeMetrics.filter((m) => !m?.isActive).length, [safeMetrics]);
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">

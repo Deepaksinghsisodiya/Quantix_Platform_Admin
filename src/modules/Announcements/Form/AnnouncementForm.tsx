@@ -12,6 +12,7 @@ import {
   Info,
 } from 'lucide-react';
 import { ATMButton, ATMTextField, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { AnnouncementFormValues } from '../Model/AnnouncementTypes';
 import { getKindTheme } from '../List/AnnouncementCard';
@@ -44,7 +45,15 @@ export const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
   const previewCta = values.ctaLabel || (values.linkUrl ? 'Learn More' : 'Claim Offer');
 
   return (
-    <Form className="space-y-5">
+    <Form id="announcement-form" className="space-y-5">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Announcement'}
+        formId="announcement-form"
+      />
       {/* 1. INTERACTIVE LIVE NAVBAR PREVIEW BAR (At the top of form for immediate visual feedback) */}
       <div className="rounded-xl border border-orange-500/30 bg-slate-950 p-4 shadow-md text-white space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -233,15 +242,7 @@ export const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
         </div>
       </div>
 
-      {/* FOOTER ACTIONS */}
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-        <ATMButton variant="outline" type="button" onClick={onCancel} disabled={isSubmitting || isLoading}>
-          Cancel
-        </ATMButton>
-        <ATMButton variant="primary" type="submit" isLoading={isSubmitting || isLoading}>
-          {isEdit ? 'Save Changes' : 'Create Announcement'}
-        </ATMButton>
-      </div>
+
     </Form>
   );
 };

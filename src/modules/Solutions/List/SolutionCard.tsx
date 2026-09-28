@@ -67,9 +67,19 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
   const isActive = item.isActive ?? true;
   const isPromo = item.itemType === 'PromoCard';
 
-  const pointsCount = item.points?.length ?? (item.pointsJson ? JSON.parse(item.pointsJson).length : 0);
-  const workflowsCount = item.workflows?.length ?? (item.workflowsJson ? JSON.parse(item.workflowsJson).length : 0);
-  const faqsCount = item.faqs?.length ?? (item.faqsJson ? JSON.parse(item.faqsJson).length : 0);
+  const safeJsonCount = (jsonStr?: string) => {
+    if (!jsonStr) return 0;
+    try {
+      const parsed = JSON.parse(jsonStr);
+      return Array.isArray(parsed) ? parsed.length : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const pointsCount = item?.points?.length ?? safeJsonCount(item?.pointsJson);
+  const workflowsCount = item?.workflows?.length ?? safeJsonCount(item?.workflowsJson);
+  const faqsCount = item?.faqs?.length ?? safeJsonCount(item?.faqsJson);
 
   return (
     <div

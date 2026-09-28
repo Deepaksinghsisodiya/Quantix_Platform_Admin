@@ -31,6 +31,7 @@ import {
   ATMCheckbox,
   ATMTextArea,
 } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { SolutionFormValues, KeyPoint, Workflow, SolutionFaq } from '../Model/SolutionTypes';
 
@@ -122,7 +123,15 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
   };
 
   return (
-    <Form className="w-full space-y-6">
+    <Form id="solution-form" className="w-full space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Solution'}
+        formId="solution-form"
+      />
       {/* 2-Column Responsive Full Width Layout (Matching IntegrationForm exactly) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* ========================================================================= */}
@@ -764,28 +773,6 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
                 />
               </div>
             </div>
-          </div>
-
-          {/* FORM ACTION BUTTONS */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
-            <ATMButton
-              type="submit"
-              variant="primary"
-              className="w-full justify-center text-sm py-3 font-bold"
-              isLoading={isLoading || isSubmitting}
-            >
-              {isEdit ? 'Save Changes' : 'Create Solution'}
-            </ATMButton>
-
-            <ATMButton
-              type="button"
-              variant="secondary"
-              className="w-full justify-center text-sm py-2.5"
-              onClick={onCancel}
-              disabled={isLoading || isSubmitting}
-            >
-              Cancel
-            </ATMButton>
           </div>
         </div>
       </div>

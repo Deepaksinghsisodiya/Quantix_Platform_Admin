@@ -79,10 +79,14 @@ export const AddHeroSectionWrapper: React.FC<AddHeroSectionWrapperProps> = ({
 
     try {
       await createSlide(payload).unwrap();
-      toast.success('Hero slide created successfully.');
+      toast.success('Hero Slide Created', {
+        description: `"${values.heading}" has been added to ${values.siteVariant}.`,
+      });
       onSuccess();
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to create hero slide.');
+      toast.error('Failed to create hero slide', {
+        description: err?.data?.message || err?.message || 'Please check your input and try again.',
+      });
     } finally {
       setSubmitting(false);
     }

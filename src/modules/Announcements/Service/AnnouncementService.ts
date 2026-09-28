@@ -50,19 +50,53 @@ export const announcementsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Content'],
     }),
 
-    toggleActiveAnnouncement: builder.mutation<ApiResponse<Announcement>, string>({
+    toggleActiveAnnouncement: builder.mutation<ApiResponse<boolean>, string>({
       query: (id) => ({
         url: `/api/v1/announcements/${id}/toggle-active`,
         method: 'PATCH',
       }),
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          announcementsApi.util.updateQueryData('getAdminAnnouncements', undefined, (draft) => {
+            if (draft?.data) {
+              const item = (draft.data as any[]).find((a) => a.id === id);
+              if (item) {
+                item.isActive = !item.isActive;
+              }
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ['Content'],
     }),
 
-    togglePinnedAnnouncement: builder.mutation<ApiResponse<Announcement>, string>({
+    togglePinnedAnnouncement: builder.mutation<ApiResponse<boolean>, string>({
       query: (id) => ({
         url: `/api/v1/announcements/${id}/toggle-pinned`,
         method: 'PATCH',
       }),
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          announcementsApi.util.updateQueryData('getAdminAnnouncements', undefined, (draft) => {
+            if (draft?.data) {
+              const item = (draft.data as any[]).find((a) => a.id === id);
+              if (item) {
+                item.isPinned = !item.isPinned;
+              }
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ['Content'],
     }),
 

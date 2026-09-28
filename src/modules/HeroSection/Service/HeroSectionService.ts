@@ -64,6 +64,23 @@ export const heroSectionApi = baseApi.injectEndpoints({
         url: `/api/v1/hero-slides/${id}/toggle-active`,
         method: 'PATCH',
       }),
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          heroSectionApi.util.updateQueryData('getAdminHeroSlides', undefined, (draft) => {
+            if (draft?.data) {
+              const item = (draft.data as any[]).find((s) => s.heroSlideId === id);
+              if (item) {
+                item.isActive = !item.isActive;
+              }
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ['Content'],
     }),
   }),

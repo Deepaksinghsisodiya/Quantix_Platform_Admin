@@ -80,7 +80,7 @@ export const AddBusinessProblemPage: React.FC = () => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        <Form>
+        <Form id="business-problem-form">
           <BusinessProblemForm
             isLoading={isLoading}
             onCancel={() => navigate('/content/business-problems')}

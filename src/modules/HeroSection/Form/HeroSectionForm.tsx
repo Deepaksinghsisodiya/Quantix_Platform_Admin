@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { ATMButton, ATMTextField, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { MediaPicker } from '@/modules/content/components/MediaPicker';
 import { absoluteMediaUrl } from '@/modules/content/services/mediaApi';
 import type { HeroSlideFormValues } from '../Model/HeroSectionTypes';
@@ -33,7 +34,16 @@ export const HeroSectionForm: React.FC<HeroSectionFormProps> = ({
   const highlights = [values.highlight1, values.highlight2, values.highlight3].filter(Boolean);
 
   return (
-    <Form className="space-y-6">
+    <Form id="hero-section-form" className="space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Publish Slide'}
+        formId="hero-section-form"
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT COLUMN: Content & Real-Time Card Preview (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
@@ -363,25 +373,6 @@ export const HeroSectionForm: React.FC<HeroSectionFormProps> = ({
         imagesOnly
         title="Choose a Hero Showcase Image"
       />
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
-        <span className="text-xs text-slate-500 dark:text-slate-400">
-          {isEdit ? 'Updating existing slide' : 'Creating new hero slide'}
-        </span>
-        <div className="flex gap-2">
-          <ATMButton variant="ghost" type="button" onClick={onCancel}>
-            Cancel
-          </ATMButton>
-          <ATMButton
-            variant="primary"
-            type="submit"
-            isLoading={isSubmitting || isLoading}
-          >
-            {isEdit ? 'Update Slide' : 'Publish Slide'}
-          </ATMButton>
-        </div>
-      </div>
     </Form>
   );
 };

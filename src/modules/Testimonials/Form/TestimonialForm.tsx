@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { ATMButton, ATMTextField, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { TestimonialFormValues } from '../Model/TestimonialTypes';
 import { getInitials } from '../List/TestimonialCard';
@@ -31,7 +32,15 @@ export const TestimonialForm: React.FC<TestimonialFormProps> = ({
   const rating = Math.max(1, Math.min(5, values.rating || 5));
 
   return (
-    <Form className="space-y-6">
+    <Form id="testimonial-form" className="space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Review'}
+        formId="testimonial-form"
+      />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT COLUMN: Testimonial Details (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
@@ -296,24 +305,6 @@ export const TestimonialForm: React.FC<TestimonialFormProps> = ({
         </div>
       </div>
 
-      {/* Form Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <ATMButton
-          type="button"
-          variant="secondary"
-          onClick={onCancel}
-          disabled={isLoading || isSubmitting}
-        >
-          Cancel
-        </ATMButton>
-        <ATMButton
-          type="submit"
-          variant="primary"
-          isLoading={isLoading || isSubmitting}
-        >
-          {isEdit ? 'Update Review' : 'Create Review'}
-        </ATMButton>
-      </div>
     </Form>
   );
 };

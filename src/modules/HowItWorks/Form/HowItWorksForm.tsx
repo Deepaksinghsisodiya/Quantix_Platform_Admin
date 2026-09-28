@@ -21,6 +21,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { ATMButton, ATMCard } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { HowItWorksFormValues, SiteVariantTab } from '../Model/HowItWorksTypes';
 
@@ -88,55 +89,15 @@ export const HowItWorksForm: React.FC<HowItWorksFormProps> = ({
     : [];
 
   return (
-    <Form className="w-full space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80 dark:border-gray-800/80">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="p-2 rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#13151a] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
-            title="Return to How It Works List"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              {isEdit ? `Edit Step: ${values.title || values.stepNumber}` : 'Create New Workflow Step'}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Configure copy, media, SLA metric pills, and real-time telemetry chips for {values.siteVariant} website.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 sm:flex-initial px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#13151a] text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading || isSubmitting}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading || isSubmitting ? (
-              <>
-                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                <span>{isEdit ? 'Save Changes' : 'Create Step'}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+    <Form id="how-it-works-form" className="w-full space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Step'}
+        formId="how-it-works-form"
+      />
 
       {/* Main Form Grid: 12 Columns (7 cols left for inputs, 5 cols right for Live Preview & Publishing) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

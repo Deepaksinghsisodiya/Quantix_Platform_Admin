@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { ATMButton, ATMTextField, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { SocialProofFormValues } from '../Model/SocialProofTypes';
 import { ICON_MAP, getColorTheme } from '../List/SocialProofCard';
@@ -55,7 +56,15 @@ export const SocialProofForm: React.FC<SocialProofFormProps> = ({
   const colorTheme = getColorTheme(values.accentColor);
 
   return (
-    <Form className="space-y-6">
+    <Form id="social-proof-form" className="space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Metric'}
+        formId="social-proof-form"
+      />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT COLUMN: Metric Fields (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
@@ -311,25 +320,7 @@ export const SocialProofForm: React.FC<SocialProofFormProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Form Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <ATMButton
-          type="button"
-          variant="secondary"
-          onClick={onCancel}
-          disabled={isLoading || isSubmitting}
-        >
-          Cancel
-        </ATMButton>
-        <ATMButton
-          type="submit"
-          variant="primary"
-          isLoading={isLoading || isSubmitting}
-        >
-          {isEdit ? 'Update Metric' : 'Create Metric'}
-        </ATMButton>
-      </div>
     </Form>
+
   );
 };

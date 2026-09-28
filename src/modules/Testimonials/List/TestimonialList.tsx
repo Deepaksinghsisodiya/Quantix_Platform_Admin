@@ -64,16 +64,25 @@ export const TestimonialList: React.FC<TestimonialListProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
   const [ratingFilter, setRatingFilter] = useState<'all' | '5' | '4'>('all');
 
+  const safeTestimonials = useMemo(() => testimonials || [], [testimonials]);
+
   const filteredItems = useMemo(() => {
-    return testimonials.filter((item) => {
-      const q = searchQuery.toLowerCase().trim();
+    return safeTestimonials.filter((item) => {
+      if (!item) return false;
+      const q = (searchQuery || '').toLowerCase().trim();
+      const name = (item.personName || '').toLowerCase();
+      const company = (item.companyName || '').toLowerCase();
+      const role = (item.personRole || '').toLowerCase();
+      const title = (item.title || '').toLowerCase();
+      const body = (item.body || '').toLowerCase();
+
       const matchesSearch =
         q === '' ||
-        item.personName.toLowerCase().includes(q) ||
-        (item.companyName && item.companyName.toLowerCase().includes(q)) ||
-        (item.personRole && item.personRole.toLowerCase().includes(q)) ||
-        (item.title && item.title.toLowerCase().includes(q)) ||
-        item.body.toLowerCase().includes(q);
+        name.includes(q) ||
+        company.includes(q) ||
+        role.includes(q) ||
+        title.includes(q) ||
+        body.includes(q);
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -87,15 +96,15 @@ export const TestimonialList: React.FC<TestimonialListProps> = ({
 
       return matchesSearch && matchesStatus && matchesRating;
     });
-  }, [testimonials, searchQuery, statusFilter, ratingFilter]);
+  }, [safeTestimonials, searchQuery, statusFilter, ratingFilter]);
 
-  const activeCount = useMemo(() => testimonials.filter((t) => t.isActive).length, [testimonials]);
-  const fiveStarCount = useMemo(() => testimonials.filter((t) => t.rating === 5).length, [testimonials]);
+  const activeCount = useMemo(() => safeTestimonials.filter((t) => t?.isActive).length, [safeTestimonials]);
+  const fiveStarCount = useMemo(() => safeTestimonials.filter((t) => t?.rating === 5).length, [safeTestimonials]);
   const avgRating = useMemo(() => {
-    if (testimonials.length === 0) return '5.0';
-    const sum = testimonials.reduce((acc, t) => acc + (t.rating || 5), 0);
-    return (sum / testimonials.length).toFixed(1);
-  }, [testimonials]);
+    if (safeTestimonials.length === 0) return '5.0';
+    const sum = safeTestimonials.reduce((acc, t) => acc + (t?.rating || 5), 0);
+    return (sum / safeTestimonials.length).toFixed(1);
+  }, [safeTestimonials]);
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">

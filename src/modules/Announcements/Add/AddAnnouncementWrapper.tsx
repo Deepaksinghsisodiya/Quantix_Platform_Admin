@@ -68,13 +68,19 @@ export const AddAnnouncementWrapper: React.FC<AddAnnouncementWrapperProps> = ({
     try {
       const res = await createAnnouncement(payload).unwrap();
       if (res?.success) {
-        toast.success('Announcement banner created successfully');
+        toast.success('Announcement banner created successfully!', {
+          description: `"${payload.title}" is now added to the ${payload.siteVariant} website.`,
+        });
         onSuccess();
       } else {
-        toast.error(res?.message || 'Failed to create announcement');
+        toast.error('Failed to create announcement', {
+          description: res?.message || 'Please check the form fields and retry.',
+        });
       }
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Network error creating announcement');
+      toast.error('Failed to create announcement', {
+        description: err?.data?.message || err?.message || 'Network error occurred.',
+      });
     } finally {
       setSubmitting(false);
     }

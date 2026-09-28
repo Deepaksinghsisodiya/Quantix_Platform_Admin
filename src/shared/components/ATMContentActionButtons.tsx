@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils/cn';
 export interface ATMContentActionButtonsProps {
   isActive?: boolean;
   onToggleActive?: () => void;
+  toggleType?: 'switch' | 'icon';
   onEdit?: () => void;
   onDelete?: () => void;
   onMoveUp?: () => void;
@@ -24,6 +25,7 @@ export interface ATMContentActionButtonsProps {
 export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = ({
   isActive,
   onToggleActive,
+  toggleType = 'switch',
   onEdit,
   onDelete,
   onMoveUp,
@@ -31,7 +33,7 @@ export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = (
   canMoveUp,
   canMoveDown,
   activeLabel = 'Live',
-  inactiveLabel = 'Draft',
+  inactiveLabel = 'Hidden',
   editLabel = 'Edit',
   deleteLabel = 'Delete',
   showLabels = false,
@@ -43,7 +45,7 @@ export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = (
   const iconSize = size === 'sm' ? 13 : 14;
 
   return (
-    <div className={cn('flex items-center gap-1.5 shrink-0', className)}>
+    <div className={cn('flex items-center gap-2 shrink-0', className)}>
       {/* Reorder Buttons (Optional) */}
       {(onMoveUp || onMoveDown) && (
         <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-0.5 shadow-2xs">
@@ -72,23 +74,69 @@ export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = (
         </div>
       )}
 
-      {/* Toggle Active Button */}
+      {/* Toggle Active Switch or Icon Button */}
       {onToggleActive && (
-        <button
-          type="button"
-          onClick={onToggleActive}
-          title={isActive ? 'Click to hide from website' : 'Click to publish on website'}
-          className={cn(
-            'inline-flex items-center justify-center rounded-lg border font-bold transition-all cursor-pointer shadow-2xs',
-            showLabels ? 'h-8 px-2.5 gap-1.5 text-xs' : btnSizeClass,
-            isActive
-              ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
-              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-          )}
-        >
-          {isActive ? <Eye size={iconSize} /> : <EyeOff size={iconSize} />}
-          {showLabels && <span>{isActive ? activeLabel : inactiveLabel}</span>}
-        </button>
+        toggleType === 'icon' ? (
+          <button
+            type="button"
+            onClick={onToggleActive}
+            title={isActive ? 'Click to hide from website' : 'Click to publish on website'}
+            className={cn(
+              'inline-flex items-center justify-center rounded-lg border font-bold transition-all cursor-pointer shadow-2xs',
+              showLabels ? 'h-8 px-2.5 gap-1.5 text-xs' : btnSizeClass,
+              isActive
+                ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+            )}
+          >
+            {isActive ? <Eye size={iconSize} /> : <EyeOff size={iconSize} />}
+            {showLabels && <span>{isActive ? activeLabel : inactiveLabel}</span>}
+          </button>
+        ) : (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isActive}
+            onClick={onToggleActive}
+            title={isActive ? 'Status: Published Live (Click to hide from website)' : 'Status: Hidden Draft (Click to publish on website)'}
+            className={cn(
+              'h-8 rounded-lg border inline-flex items-center gap-2 transition-all duration-200 cursor-pointer select-none text-xs font-semibold shadow-2xs group',
+              showLabels ? 'px-2.5' : 'px-2',
+              isActive
+                ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/90 hover:border-emerald-300 dark:hover:bg-emerald-900/50'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:border-slate-300'
+            )}
+          >
+            {/* Animated Slider Track */}
+            <span
+              className={cn(
+                'relative inline-flex h-4 w-7 p-0.5 items-center rounded-full transition-colors duration-200 ease-in-out shrink-0',
+                isActive
+                  ? 'bg-emerald-500'
+                  : 'bg-slate-300 dark:bg-slate-600'
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow-xs transform transition-transform duration-200 ease-in-out',
+                  isActive ? 'translate-x-3' : 'translate-x-0'
+                )}
+              />
+            </span>
+
+            {/* Label */}
+            {showLabels && (
+              <span
+                className={cn(
+                  'text-xs font-semibold transition-colors leading-none',
+                  isActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200'
+                )}
+              >
+                {isActive ? activeLabel : inactiveLabel}
+              </span>
+            )}
+          </button>
+        )
       )}
 
       {/* Edit Button */}

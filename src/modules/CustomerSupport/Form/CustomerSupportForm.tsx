@@ -24,6 +24,7 @@ import {
   ATMTextArea,
   ATMCheckbox,
 } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { SupportPillar } from '../Model/CustomerSupportTypes';
 
@@ -137,7 +138,15 @@ export const CustomerSupportForm: React.FC<CustomerSupportFormProps> = ({
   };
 
   return (
-    <Form className="space-y-8 max-w-[1600px] mx-auto pb-16">
+    <Form id="customer-support-form" className="space-y-6 max-w-[1600px] mx-auto">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Publish Support Desk'}
+        formId="customer-support-form"
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* ========================================================================= */}
         {/* ── LEFT COLUMN (8 COLS): Configuration Cards ──────────────────────────── */}
@@ -694,29 +703,6 @@ export const CustomerSupportForm: React.FC<CustomerSupportFormProps> = ({
               onChange={(checked) => setFieldValue('isActive', checked)}
               helperText="When enabled, this customer support section appears live on the homepage."
             />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-            <ATMButton
-              type="submit"
-              variant="primary"
-              isLoading={isSubmitting}
-              className="w-full justify-center py-2.5 font-syne font-bold text-sm shadow-md"
-            >
-              <CheckCircle2 size={16} className="mr-1.5" />
-              {isEdit ? 'Update Support Desk' : 'Publish Support Desk'}
-            </ATMButton>
-
-            <ATMButton
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isSubmitting}
-              className="w-full justify-center py-2 text-xs font-semibold"
-            >
-              Cancel &amp; Return
-            </ATMButton>
           </div>
         </div>
       </div>

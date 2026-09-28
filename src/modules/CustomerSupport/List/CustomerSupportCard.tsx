@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Clock,
   Phone,
@@ -52,8 +52,8 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
   onOpenDelete,
   onToggleActive,
 }) => {
-  const getVariantDetails = (variant: string) => {
-    switch (variant.toLowerCase()) {
+  const getVariantDetails = (variant?: string) => {
+    switch ((variant || '').toLowerCase()) {
       case 'enterprise':
         return {
           label: 'Enterprise Platform',
@@ -74,18 +74,18 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
         };
       default:
         return {
-          label: variant,
+          label: variant || 'Platform',
           icon: Headphones,
           color: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700',
         };
     }
   };
 
-  const variantInfo = getVariantDetails(item.siteVariant);
+  const variantInfo = getVariantDetails(item?.siteVariant);
   const VariantIcon = variantInfo.icon;
 
   const renderPillarIcon = (key?: string) => {
-    switch (key?.toLowerCase()) {
+    switch ((key || '').toLowerCase()) {
       case 'zap':
       case 'lightning':
         return Zap;
@@ -259,14 +259,14 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
         </div>
 
         {/* 3 Pillars Summary Cards */}
-        {item.pillars && item.pillars.length > 0 && (
+        {item?.pillars && item.pillars.length > 0 && (
           <div className="space-y-1.5 pt-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Support Pillars ({item.pillars.length})
             </span>
             <div className="grid grid-cols-1 gap-1.5">
-              {item.pillars.slice(0, 3).map((pillar, pIdx) => {
-                const PillarIcon = renderPillarIcon(pillar.iconKey);
+              {(item.pillars || []).slice(0, 3).map((pillar, pIdx) => {
+                const PillarIcon = renderPillarIcon(pillar?.iconKey);
                 return (
                   <div
                     key={pIdx}
@@ -277,10 +277,10 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
-                        {pillar.title}
+                        {pillar?.title || 'Support Feature'}
                       </div>
                       <div className="text-[9.5px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                        {pillar.desc}
+                        {pillar?.desc || ''}
                       </div>
                     </div>
                   </div>

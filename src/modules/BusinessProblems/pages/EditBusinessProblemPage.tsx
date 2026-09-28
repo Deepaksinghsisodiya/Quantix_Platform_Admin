@@ -153,7 +153,7 @@ export const EditBusinessProblemPage: React.FC = () => {
         enableReinitialize
         onSubmit={handleSubmit}
       >
-        <Form>
+        <Form id="business-problem-form">
           <BusinessProblemForm
             isLoading={isUpdating}
             onCancel={() => navigate('/content/business-problems')}

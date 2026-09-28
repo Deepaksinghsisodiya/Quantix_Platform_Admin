@@ -24,6 +24,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { ATMButton, ATMTextField, ATMSelectField, ATMCheckbox, ATMTextArea } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type {
   IntegrationFormValues,
@@ -187,7 +188,15 @@ export const IntegrationForm: React.FC<IntegrationFormProps> = ({
   };
 
   return (
-    <Form className="w-full space-y-6">
+    <Form id="integration-form" className="w-full space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Integration'}
+        formId="integration-form"
+      />
       {/* 2-Column Responsive Full Width Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* ========================================================================= */}
@@ -1056,28 +1065,6 @@ export const IntegrationForm: React.FC<IntegrationFormProps> = ({
                 />
               </div>
             </div>
-          </div>
-
-          {/* FORM ACTIONS */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
-            <ATMButton
-              type="submit"
-              variant="primary"
-              className="w-full justify-center text-sm py-3"
-              isLoading={isLoading || isSubmitting}
-            >
-              {isEdit ? 'Save Changes' : 'Create Integration'}
-            </ATMButton>
-
-            <ATMButton
-              type="button"
-              variant="secondary"
-              className="w-full justify-center text-sm py-2.5"
-              onClick={onCancel}
-              disabled={isLoading || isSubmitting}
-            >
-              Cancel
-            </ATMButton>
           </div>
         </div>
       </div>

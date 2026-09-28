@@ -16,6 +16,7 @@ import {
   ATMTextArea,
   ATMCheckbox,
 } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 
 export interface FAQFormValues {
@@ -85,7 +86,14 @@ export const FAQForm: React.FC<FAQFormProps> = ({
   ];
 
   return (
-    <Form className="space-y-8 animate-fadeIn pb-16">
+    <Form id="faq-form" className="space-y-8 animate-fadeIn">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create FAQ'}
+        formId="faq-form"
+      />
       {/* 1. Target Storefront Platform */}
       <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 shadow-xs space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -305,15 +313,7 @@ export const FAQForm: React.FC<FAQFormProps> = ({
         </div>
       </div>
 
-      {/* Form Action Buttons */}
-      <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur p-4 shadow-lg">
-        <ATMButton variant="ghost" type="button" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </ATMButton>
-        <ATMButton variant="primary" type="submit" isLoading={isSubmitting}>
-          {isEdit ? 'Save Changes' : 'Create FAQ'}
-        </ATMButton>
-      </div>
+
     </Form>
   );
 };

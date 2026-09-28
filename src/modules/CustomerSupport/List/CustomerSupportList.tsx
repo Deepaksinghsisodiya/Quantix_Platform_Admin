@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Headphones,
   Plus,
@@ -41,20 +41,24 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
 
   // Compute KPI Stats
   const stats = useMemo(() => {
-    const total = items.length;
-    const enterprise = items.filter((x) => x.siteVariant.toLowerCase() === 'enterprise').length;
-    const restaurant = items.filter((x) => x.siteVariant.toLowerCase() === 'restaurant').length;
-    const retail = items.filter((x) => x.siteVariant.toLowerCase() === 'retail').length;
-    const active = items.filter((x) => x.isActive).length;
+    const list = items || [];
+    const total = list.length;
+    const enterprise = list.filter((x) => (x?.siteVariant || '').toLowerCase() === 'enterprise').length;
+    const restaurant = list.filter((x) => (x?.siteVariant || '').toLowerCase() === 'restaurant').length;
+    const retail = list.filter((x) => (x?.siteVariant || '').toLowerCase() === 'retail').length;
+    const active = list.filter((x) => Boolean(x?.isActive)).length;
 
     return { total, enterprise, restaurant, retail, active };
   }, [items]);
 
   // Filter items
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const list = items || [];
+    return list.filter((item) => {
+      if (!item) return false;
+      const itemVariant = (item.siteVariant || '').toLowerCase();
       // Site variant tab filter
-      if (filter.siteVariant !== 'all' && item.siteVariant.toLowerCase() !== filter.siteVariant.toLowerCase()) {
+      if (filter.siteVariant !== 'all' && itemVariant !== filter.siteVariant.toLowerCase()) {
         return false;
       }
 
@@ -63,9 +67,9 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
       if (filter.status === 'INACTIVE' && item.isActive) return false;
 
       // Search query
-      if (filter.searchQuery.trim()) {
+      if (filter.searchQuery?.trim()) {
         const q = filter.searchQuery.toLowerCase();
-        const matchTitle = item.mainTitle.toLowerCase().includes(q);
+        const matchTitle = (item.mainTitle || '').toLowerCase().includes(q);
         const matchHighlight = item.highlightWord?.toLowerCase().includes(q);
         const matchDesc = item.description?.toLowerCase().includes(q);
         const matchRep = item.repName?.toLowerCase().includes(q);

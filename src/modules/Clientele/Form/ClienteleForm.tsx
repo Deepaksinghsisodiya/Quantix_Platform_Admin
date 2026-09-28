@@ -12,6 +12,7 @@ import {
   Info,
 } from 'lucide-react';
 import { ATMButton, ATMTextField, ATMSelectField, ATMCheckbox } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type { ClienteleFormValues } from '../Model/ClienteleTypes';
 import { getCategoryIcon } from '../List/ClienteleCard';
@@ -54,7 +55,15 @@ export const ClienteleForm: React.FC<ClienteleFormProps> = ({
   const previewLogoUrl = !imgError && values.logoUrl ? values.logoUrl : null;
 
   return (
-    <Form className="space-y-5">
+    <Form id="clientele-form" className="space-y-5">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Add Brand Partner'}
+        formId="clientele-form"
+      />
       {/* 1. INTERACTIVE LIVE BRAND CARD PREVIEW (At top for instant feedback) */}
       <div className="rounded-xl border border-orange-500/30 bg-slate-950 p-4 shadow-md text-white space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -295,15 +304,7 @@ export const ClienteleForm: React.FC<ClienteleFormProps> = ({
         </div>
       </div>
 
-      {/* FOOTER ACTIONS */}
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-        <ATMButton variant="outline" type="button" onClick={onCancel} disabled={isSubmitting || isLoading}>
-          Cancel
-        </ATMButton>
-        <ATMButton variant="primary" type="submit" isLoading={isSubmitting || isLoading}>
-          {isEdit ? 'Save Changes' : 'Add Brand Partner'}
-        </ATMButton>
-      </div>
+
     </Form>
   );
 };

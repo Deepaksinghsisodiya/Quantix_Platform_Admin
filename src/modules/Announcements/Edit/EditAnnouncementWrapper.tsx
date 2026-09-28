@@ -57,13 +57,19 @@ export const EditAnnouncementWrapper: React.FC<EditAnnouncementWrapperProps> = (
       }).unwrap();
 
       if (res?.success) {
-        toast.success('Announcement updated successfully');
+        toast.success('Announcement updated successfully!', {
+          description: `Changes to "${payload.title}" on ${payload.siteVariant} website are now saved.`,
+        });
         onSuccess();
       } else {
-        toast.error(res?.message || 'Failed to update announcement');
+        toast.error('Failed to update announcement', {
+          description: res?.message || 'Please check the form fields and retry.',
+        });
       }
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Network error updating announcement');
+      toast.error('Failed to update announcement', {
+        description: err?.data?.message || err?.message || 'Network error updating announcement.',
+      });
     } finally {
       setSubmitting(false);
     }

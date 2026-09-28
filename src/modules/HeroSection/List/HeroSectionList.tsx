@@ -64,13 +64,21 @@ export const HeroSectionList: React.FC<HeroSectionListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
 
+  const safeSlides = useMemo(() => slides || [], [slides]);
+
   const filteredSlides = useMemo(() => {
-    return slides.filter((slide) => {
+    return safeSlides.filter((slide) => {
+      if (!slide) return false;
+      const q = (searchQuery || '').trim().toLowerCase();
+      const heading = (slide.heading || '').toLowerCase();
+      const badge = (slide.badge || '').toLowerCase();
+      const subheading = (slide.subheading || '').toLowerCase();
+
       const matchesSearch =
-        searchQuery.trim() === '' ||
-        slide.heading.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        slide.badge.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (slide.subheading && slide.subheading.toLowerCase().includes(searchQuery.toLowerCase()));
+        q === '' ||
+        heading.includes(q) ||
+        badge.includes(q) ||
+        subheading.includes(q);
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -79,10 +87,10 @@ export const HeroSectionList: React.FC<HeroSectionListProps> = ({
 
       return matchesSearch && matchesStatus;
     });
-  }, [slides, searchQuery, statusFilter]);
+  }, [safeSlides, searchQuery, statusFilter]);
 
-  const activeCount = useMemo(() => slides.filter((s) => s.isActive).length, [slides]);
-  const hiddenCount = useMemo(() => slides.filter((s) => !s.isActive).length, [slides]);
+  const activeCount = useMemo(() => safeSlides.filter((s) => s?.isActive).length, [safeSlides]);
+  const hiddenCount = useMemo(() => safeSlides.filter((s) => !s?.isActive).length, [safeSlides]);
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
@@ -207,8 +215,17 @@ export const HeroSectionList: React.FC<HeroSectionListProps> = ({
               placeholder="Search headings, badges, descriptions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900/60 dark:text-white dark:placeholder-slate-500 dark:focus:bg-slate-900"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900/60 dark:text-white dark:placeholder-slate-500 dark:focus:bg-slate-900"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2">

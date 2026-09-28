@@ -35,6 +35,7 @@ import {
   ATMCheckbox,
   ATMTextArea,
 } from '@/shared/ui';
+import { ATMFormHeaderActions } from '@/shared/components/ATMFormHeaderActions';
 import { cn } from '@/lib/utils/cn';
 import type {
   SavePlatformFeatureDto,
@@ -226,7 +227,15 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
   const CurrentIcon = selectedIconObj?.icon ?? Store;
 
   return (
-    <Form className="w-full space-y-6">
+    <Form id="feature-form" className="w-full space-y-6">
+      <ATMFormHeaderActions
+        onCancel={onCancel}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isEdit={isEdit}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Feature'}
+        formId="feature-form"
+      />
       {/* 2-Column Responsive Full Width Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* ========================================================================= */}
@@ -1050,28 +1059,6 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
                 />
               </div>
             </div>
-          </div>
-
-          {/* FORM ACTIONS */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
-            <ATMButton
-              type="submit"
-              variant="primary"
-              className="w-full py-3 bg-[#FF4F00] hover:bg-[#e04500] text-white font-syne font-bold text-sm shadow-lg shadow-orange-500/20"
-              isLoading={isLoading || isSubmitting}
-            >
-              {isEdit ? 'Save Changes' : 'Publish Feature'}
-            </ATMButton>
-
-            <ATMButton
-              type="button"
-              variant="secondary"
-              className="w-full py-2.5 text-xs font-bold"
-              onClick={onCancel}
-              disabled={isLoading || isSubmitting}
-            >
-              Cancel
-            </ATMButton>
           </div>
         </div>
       </div>

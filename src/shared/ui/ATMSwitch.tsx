@@ -19,8 +19,8 @@ export const ATMSwitch: React.FC<Props> = ({
   className = '',
 }) => {
   const sizes = {
-    sm: { track: 'w-8 h-4', thumb: 'w-3 h-3', translate: 'translate-x-4' },
-    md: { track: 'w-11 h-6', thumb: 'w-5 h-5', translate: 'translate-x-5' },
+    sm: { track: 'w-8 h-4.5', thumb: 'w-3.5 h-3.5', translate: 'translate-x-3.5' },
+    md: { track: 'w-10 h-5.5', thumb: 'w-4.5 h-4.5', translate: 'translate-x-4.5' },
   };
 
   const { track, thumb, translate } = sizes[size];
@@ -28,12 +28,12 @@ export const ATMSwitch: React.FC<Props> = ({
   return (
     <label
       className={`
-        flex items-center gap-3 select-none cursor-pointer group
+        inline-flex items-center gap-2.5 select-none cursor-pointer group
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
     >
-      <div className="relative inline-block">
+      <div className="relative inline-flex items-center">
         <input
           type="checkbox"
           className="sr-only"
@@ -43,18 +43,18 @@ export const ATMSwitch: React.FC<Props> = ({
         />
         <div
           className={`
-            ${track} rounded-full transition-colors duration-200 ease-in-out
-            ${checked ? 'bg-accent-600' : 'bg-gray-200 dark:bg-gray-800 group-hover:bg-gray-300 dark:group-hover:bg-gray-700'}
+            ${track} rounded-full transition-colors duration-200 ease-in-out p-0.5
+            ${checked ? 'bg-emerald-500 shadow-inner' : 'bg-slate-300 dark:bg-slate-600 group-hover:bg-slate-400 dark:group-hover:bg-slate-500'}
           `}
         />
         <div
           className={`
-            absolute left-0.5 top-0.5 bg-white dark:bg-gray-200 ${thumb} rounded-full transition-transform duration-200 ease-in-out shadow-sm
+            absolute left-0.5 top-0.5 bg-white ${thumb} rounded-full transition-transform duration-200 ease-in-out shadow-xs pointer-events-none
             ${checked ? translate : 'translate-x-0'}
           `}
         />
       </div>
-      {label && <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>}
+      {label && <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label}</span>}
     </label>
   );
 };

@@ -49,26 +49,39 @@ export const HeroSectionListWrapper: React.FC = () => {
 
   // Handlers
   const handleTogglePublished = async (slide: HeroSlide) => {
+    const willBeActive = !slide.isActive;
     try {
       await toggleActiveSlide(slide.heroSlideId).unwrap();
-      toast.success(
-        slide.isActive
-          ? 'Slide unpublished (hidden from website).'
-          : 'Slide published to website successfully.'
-      );
+      if (willBeActive) {
+        toast.success(`Published: "${slide.heading}" is now Live!`, {
+          description: `Visible in the hero carousel on ${slide.siteVariant} website.`,
+        });
+      } else {
+        toast.info(`Unpublished: "${slide.heading}" is now Hidden (Draft)`, {
+          description: `Removed from public ${slide.siteVariant} website homepage.`,
+        });
+      }
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to update slide status.');
+      toast.error('Failed to update slide status', {
+        description: err?.data?.message || err?.message || 'Server error. Please try again.',
+      });
     }
   };
 
   const handleConfirmDelete = async () => {
     if (!deletingSlide) return;
+    const title = deletingSlide.heading;
+    const site = deletingSlide.siteVariant;
     try {
       await deleteSlide(deletingSlide.heroSlideId).unwrap();
-      toast.success('Hero slide deleted successfully.');
+      toast.success('Hero slide deleted successfully', {
+        description: `"${title}" has been removed from ${site} website.`,
+      });
       setDeletingSlide(null);
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to delete hero slide.');
+      toast.error('Failed to delete hero slide', {
+        description: err?.data?.message || err?.message || 'Server error. Please try again.',
+      });
     }
   };
 
@@ -87,9 +100,13 @@ export const HeroSectionListWrapper: React.FC = () => {
 
     try {
       await reorderSlides({ orderedIds }).unwrap();
-      toast.success('Slide order updated.');
+      toast.success('Slide sequence updated', {
+        description: `"${moved.heading}" moved ${direction}. New display order saved.`,
+      });
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to update slide order.');
+      toast.error('Failed to update slide order', {
+        description: err?.data?.message || err?.message || 'Server error.',
+      });
     }
   };
 
@@ -100,7 +117,7 @@ export const HeroSectionListWrapper: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
-        isLoading={isLoading || isFetching}
+        isLoading={isLoading && allSlides.length === 0}
         isError={isError}
         onRetry={refetch}
         onOpenAdd={() => navigate(`/content/hero-banners/new?siteVariant=${activeTab}`)}

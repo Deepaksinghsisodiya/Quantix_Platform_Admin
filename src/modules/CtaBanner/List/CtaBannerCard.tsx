@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Sparkles,
   Building2,
@@ -44,7 +44,7 @@ export const CtaBannerCard: React.FC<CtaBannerCardProps> = ({
   onToggleActive,
 }) => {
   const getSiteVariantBadge = () => {
-    switch (item.siteVariant.toLowerCase()) {
+    switch ((item?.siteVariant || '').toLowerCase()) {
       case 'restaurant':
         return {
           label: 'Restaurant & Dining',

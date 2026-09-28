@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { ATMBadge } from '@/shared/ui';
+import { ATMContentActionButtons } from '@/shared/components/ATMContentActionButtons';
 import { cn } from '@/lib/utils/cn';
 import { absoluteMediaUrl } from '@/modules/content/services/mediaApi';
 import type { HeroSlide } from '../Model/HeroSectionTypes';
@@ -86,11 +87,34 @@ export const HeroSlideCard: React.FC<HeroSlideCardProps> = ({
           </span>
 
           <div className="absolute top-2.5 right-2.5">
-            <ATMBadge
-              color={slide.isActive ? 'success' : 'default'}
-              label={slide.isActive ? 'Live' : 'Hidden'}
-              icon={slide.isActive ? <CheckCircle2 className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-            />
+            <button
+              type="button"
+              role="switch"
+              aria-checked={slide.isActive}
+              onClick={() => onTogglePublished(slide)}
+              title={slide.isActive ? 'Status: Published Live (Click to hide from website)' : 'Status: Hidden Draft (Click to publish on website)'}
+              className={cn(
+                'h-7 rounded-lg border inline-flex items-center gap-2 px-2 transition-all duration-200 cursor-pointer select-none text-[11px] font-semibold shadow-md backdrop-blur-md',
+                slide.isActive
+                  ? 'border-emerald-300/80 bg-white/95 text-emerald-700 hover:bg-emerald-50'
+                  : 'border-slate-300/80 bg-white/95 text-slate-600 hover:bg-slate-100'
+              )}
+            >
+              <span
+                className={cn(
+                  'relative inline-flex h-3.5 w-6.5 p-0.5 items-center rounded-full transition-colors duration-200 ease-in-out shrink-0',
+                  slide.isActive ? 'bg-emerald-500' : 'bg-slate-300'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-2.5 w-2.5 rounded-full bg-white shadow-xs transform transition-transform duration-200 ease-in-out',
+                    slide.isActive ? 'translate-x-3' : 'translate-x-0'
+                  )}
+                />
+              </span>
+              <span className="leading-none">{slide.isActive ? 'Live' : 'Hidden'}</span>
+            </button>
           </div>
         </div>
 
@@ -143,53 +167,21 @@ export const HeroSlideCard: React.FC<HeroSlideCardProps> = ({
 
         {/* Card Action Footer */}
         <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900/40 rounded-b-2xl">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={index === 0 || isReordering}
-              onClick={() => onMoveSlide(index, 'up')}
-              title="Move Up"
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-slate-700 disabled:opacity-30 dark:hover:bg-slate-800 cursor-pointer"
-            >
-              <MoveUp size={15} />
-            </button>
-            <button
-              type="button"
-              disabled={index === totalSlides - 1 || isReordering}
-              onClick={() => onMoveSlide(index, 'down')}
-              title="Move Down"
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-slate-700 disabled:opacity-30 dark:hover:bg-slate-800 cursor-pointer"
-            >
-              <MoveDown size={15} />
-            </button>
-          </div>
+          <span className="text-[11px] font-mono text-slate-400">
+            #{index + 1} of {totalSlides}
+          </span>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onTogglePublished(slide)}
-              title={slide.isActive ? 'Hide from website' : 'Publish to website'}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              {slide.isActive ? <Eye size={15} /> : <EyeOff size={15} className="text-amber-500" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenEdit(slide)}
-              title="Edit Slide"
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-primary-600 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <Pencil size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenDelete(slide)}
-              title="Delete Slide"
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-            >
-              <Trash2 size={15} />
-            </button>
-          </div>
+          <ATMContentActionButtons
+            isActive={slide.isActive}
+            onToggleActive={() => onTogglePublished(slide)}
+            onEdit={() => onOpenEdit(slide)}
+            onDelete={() => onOpenDelete(slide)}
+            onMoveUp={() => onMoveSlide(index, 'up')}
+            onMoveDown={() => onMoveSlide(index, 'down')}
+            canMoveUp={index > 0 && !isReordering}
+            canMoveDown={index < totalSlides - 1 && !isReordering}
+            moveTooltip={{ up: 'Move Slide Up', down: 'Move Slide Down' }}
+          />
         </div>
       </div>
     );
@@ -297,55 +289,22 @@ export const HeroSlideCard: React.FC<HeroSlideCardProps> = ({
         </div>
       </div>
 
-      {/* 3. Right / Bottom Action Toolbar */}
-      <div className="flex md:flex-col items-center justify-between md:justify-center gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800/80 md:pl-3">
-        <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-800/60 p-1 rounded-xl">
-          <button
-            type="button"
-            disabled={index === 0 || isReordering}
-            onClick={() => onMoveSlide(index, 'up')}
-            title="Move Up"
-            className="rounded-lg p-2 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-25 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <MoveUp size={16} />
-          </button>
-          <button
-            type="button"
-            disabled={index === totalSlides - 1 || isReordering}
-            onClick={() => onMoveSlide(index, 'down')}
-            title="Move Down"
-            className="rounded-lg p-2 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-25 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <MoveDown size={16} />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onTogglePublished(slide)}
-            title={slide.isActive ? 'Hide from website' : 'Publish to website'}
-            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            {slide.isActive ? <Eye size={17} /> : <EyeOff size={17} className="text-amber-500" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => onOpenEdit(slide)}
-            title="Edit Slide"
-            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-primary-600 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <Pencil size={17} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onOpenDelete(slide)}
-            title="Delete Slide"
-            className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-          >
-            <Trash2 size={17} />
-          </button>
-        </div>
+      {/* 3. Right Action Toolbar */}
+      <div className="flex items-center gap-2 shrink-0 self-end md:self-center pt-2 md:pt-0 border-t md:border-0 border-slate-100 dark:border-slate-800">
+        <ATMContentActionButtons
+          isActive={slide.isActive}
+          showLabels={true}
+          activeLabel="Live"
+          inactiveLabel="Hidden"
+          onToggleActive={() => onTogglePublished(slide)}
+          onEdit={() => onOpenEdit(slide)}
+          onDelete={() => onOpenDelete(slide)}
+          onMoveUp={() => onMoveSlide(index, 'up')}
+          onMoveDown={() => onMoveSlide(index, 'down')}
+          canMoveUp={index > 0 && !isReordering}
+          canMoveDown={index < totalSlides - 1 && !isReordering}
+          moveTooltip={{ up: 'Move Slide Up', down: 'Move Slide Down' }}
+        />
       </div>
     </div>
   );

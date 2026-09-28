@@ -52,39 +52,59 @@ export const AnnouncementListWrapper: React.FC = () => {
 
   // Handlers
   const handleToggleActive = async (announcement: Announcement) => {
+    const willBeActive = !announcement.isActive;
     try {
       await toggleActive(announcement.id).unwrap();
-      toast.success(
-        announcement.isActive
-          ? 'Announcement unpublished (hidden from website navbar).'
-          : 'Announcement published live to website navbar.'
-      );
+      if (willBeActive) {
+        toast.success(`Published: "${announcement.title}" is now Live!`, {
+          description: `Now visible on ${announcement.siteVariant} website top notification bar.`,
+        });
+      } else {
+        toast.info(`Unpublished: "${announcement.title}" is now Hidden (Draft)`, {
+          description: `Removed from public ${announcement.siteVariant} website navbar.`,
+        });
+      }
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to toggle announcement status.');
+      toast.error('Failed to change announcement status', {
+        description: err?.data?.message || err?.message || 'Server error. Please try again.',
+      });
     }
   };
 
   const handleTogglePinned = async (announcement: Announcement) => {
+    const willBePinned = !announcement.isPinned;
     try {
       await togglePinned(announcement.id).unwrap();
-      toast.success(
-        announcement.isPinned
-          ? 'Announcement unpinned.'
-          : 'Announcement pinned to top of rotation cycle.'
-      );
+      if (willBePinned) {
+        toast.success(`Pinned: "${announcement.title}"`, {
+          description: 'This announcement now has priority in the rotation cycle.',
+        });
+      } else {
+        toast.info(`Unpinned: "${announcement.title}"`, {
+          description: 'Returned to standard rotational display order.',
+        });
+      }
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to toggle pin state.');
+      toast.error('Failed to update pin state', {
+        description: err?.data?.message || err?.message || 'Server error. Please try again.',
+      });
     }
   };
 
   const handleConfirmDelete = async () => {
     if (!deletingAnnouncement) return;
+    const title = deletingAnnouncement.title;
+    const site = deletingAnnouncement.siteVariant;
     try {
       await deleteAnnouncement(deletingAnnouncement.id).unwrap();
-      toast.success('Announcement deleted successfully.');
+      toast.success('Announcement deleted successfully', {
+        description: `"${title}" has been permanently removed from ${site} website.`,
+      });
       setDeletingAnnouncement(null);
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to delete announcement.');
+      toast.error('Failed to delete announcement', {
+        description: err?.data?.message || err?.message || 'Server error. Please try again.',
+      });
     }
   };
 
@@ -102,9 +122,13 @@ export const AnnouncementListWrapper: React.FC = () => {
     const orderedIds = reordered.map((a) => a.id);
     try {
       await reorderAnnouncements({ orderedIds }).unwrap();
-      toast.success('Announcement display order updated.');
+      toast.success('Display order updated', {
+        description: `"${moved.title}" moved ${direction}. New sequence saved.`,
+      });
     } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to update order.');
+      toast.error('Failed to update order', {
+        description: err?.data?.message || err?.message || 'Server error.',
+      });
     }
   };
 
@@ -115,7 +139,7 @@ export const AnnouncementListWrapper: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
-        isLoading={isLoading || isFetching}
+        isLoading={isLoading && allAnnouncements.length === 0}
         isError={isError}
         onRetry={refetch}
         onOpenAdd={() => navigate(`/content/announcements/new?siteVariant=${activeTab}`)}

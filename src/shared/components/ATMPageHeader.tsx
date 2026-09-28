@@ -98,7 +98,7 @@ export const ATMPageHeader: React.FC<Props> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-start sm:justify-end shrink-0">
+      <div id="atm-header-actions" className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-start sm:justify-end shrink-0">
         {extraActions}
         {secondaryAction && renderAction(secondaryAction, false)}
         {action && renderAction(action, true)}

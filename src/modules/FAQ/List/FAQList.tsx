@@ -48,11 +48,13 @@ export const FAQList: React.FC<FAQListProps> = ({
 
   // Helper to determine if an item belongs to a platform
   const matchPlatform = (item: FAQItem, platform: string): boolean => {
-    const p = platform.toLowerCase();
+    if (!item) return false;
+    const p = (platform || '').toLowerCase();
     if (p === 'all') return true;
 
     const mt = (item.merchantType || '').toLowerCase();
     const cat = (item.category || '').toLowerCase();
+    const qText = (item.question || '').toLowerCase();
 
     if (p === 'enterprise') {
       return mt === 'enterprise' || cat === 'enterprise';
@@ -62,10 +64,10 @@ export const FAQList: React.FC<FAQListProps> = ({
         mt === 'standalone' ||
         mt === 'restaurant' ||
         cat === 'restaurant' ||
-        item.question.toLowerCase().includes('restaurant') ||
-        item.question.toLowerCase().includes('kds') ||
-        item.question.toLowerCase().includes('menu') ||
-        item.question.toLowerCase().includes('zomato')
+        qText.includes('restaurant') ||
+        qText.includes('kds') ||
+        qText.includes('menu') ||
+        qText.includes('zomato')
       );
     }
     if (p === 'retail') {
@@ -73,9 +75,9 @@ export const FAQList: React.FC<FAQListProps> = ({
         mt === 'standalone' ||
         mt === 'retail' ||
         cat === 'retail' ||
-        item.question.toLowerCase().includes('retail') ||
-        item.question.toLowerCase().includes('barcode') ||
-        item.question.toLowerCase().includes('inventory')
+        qText.includes('retail') ||
+        qText.includes('barcode') ||
+        qText.includes('inventory')
       );
     }
     return true;
@@ -83,18 +85,21 @@ export const FAQList: React.FC<FAQListProps> = ({
 
   // Compute KPI stats
   const stats = useMemo(() => {
-    const total = items.length;
-    const enterprise = items.filter((x) => matchPlatform(x, 'enterprise')).length;
-    const restaurant = items.filter((x) => matchPlatform(x, 'restaurant')).length;
-    const retail = items.filter((x) => matchPlatform(x, 'retail')).length;
-    const active = items.filter((x) => x.isActive).length;
+    const list = items || [];
+    const total = list.length;
+    const enterprise = list.filter((x) => matchPlatform(x, 'enterprise')).length;
+    const restaurant = list.filter((x) => matchPlatform(x, 'restaurant')).length;
+    const retail = list.filter((x) => matchPlatform(x, 'retail')).length;
+    const active = list.filter((x) => Boolean(x?.isActive)).length;
 
     return { total, enterprise, restaurant, retail, active };
   }, [items]);
 
   // Filter items
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const list = items || [];
+    return list.filter((item) => {
+      if (!item) return false;
       // Site variant tab filter
       if (filter.siteVariant !== 'all' && !matchPlatform(item, filter.siteVariant)) {
         return false;
@@ -110,10 +115,10 @@ export const FAQList: React.FC<FAQListProps> = ({
       if (filter.status === 'INACTIVE' && item.isActive) return false;
 
       // Search query
-      if (filter.searchQuery.trim()) {
+      if (filter.searchQuery?.trim()) {
         const q = filter.searchQuery.toLowerCase();
-        const matchQ = item.question.toLowerCase().includes(q);
-        const matchA = item.answer.toLowerCase().includes(q);
+        const matchQ = (item.question || '').toLowerCase().includes(q);
+        const matchA = (item.answer || '').toLowerCase().includes(q);
         const matchC = (item.category || '').toLowerCase().includes(q);
         return matchQ || matchA || matchC;
       }

@@ -57,7 +57,12 @@ export const baseApi = createApi({
     'Downloads', 'FeatureCatalog', 'DashboardLayout',
     // 2026-09-05 (content Phase 1/2): the content module had NO tags at all, so a save
     // never refreshed a list. 'Media' is the library; 'Content' is blog/FAQ/help/CMS.
-    'Media', 'Content'
+    'Media', 'Content',
+    // Social proof gets its own tags instead of sharing 'Content'. 'Content' is provided
+    // by 45 endpoints across 18 modules, so invalidating it from a single publish toggle
+    // refetched the whole admin app. 'SocialProofMetrics' is the list,
+    // 'SocialProofMetric' scopes the single-record query.
+    'SocialProofMetrics', 'SocialProofMetric'
   ],
   endpoints: () => ({}),
 });

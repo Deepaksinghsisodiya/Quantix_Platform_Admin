@@ -6,6 +6,8 @@ export interface ATMContentActionButtonsProps {
   isActive?: boolean;
   onToggleActive?: () => void;
   toggleType?: 'switch' | 'icon';
+  /** Disables only the publish toggle, e.g. while its mutation is in flight. */
+  toggleDisabled?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onMoveUp?: () => void;
@@ -26,6 +28,7 @@ export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = (
   isActive,
   onToggleActive,
   toggleType = 'switch',
+  toggleDisabled = false,
   onEdit,
   onDelete,
   onMoveUp,
@@ -80,9 +83,10 @@ export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = (
           <button
             type="button"
             onClick={onToggleActive}
+            disabled={toggleDisabled}
             title={isActive ? 'Click to hide from website' : 'Click to publish on website'}
             className={cn(
-              'inline-flex items-center justify-center rounded-lg border font-bold transition-all cursor-pointer shadow-2xs',
+              'inline-flex items-center justify-center rounded-lg border font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-55 disabled:cursor-not-allowed',
               showLabels ? 'h-8 px-2.5 gap-1.5 text-xs' : btnSizeClass,
               isActive
                 ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
@@ -98,9 +102,10 @@ export const ATMContentActionButtons: React.FC<ATMContentActionButtonsProps> = (
             role="switch"
             aria-checked={isActive}
             onClick={onToggleActive}
+            disabled={toggleDisabled}
             title={isActive ? 'Status: Published Live (Click to hide from website)' : 'Status: Hidden Draft (Click to publish on website)'}
             className={cn(
-              'h-8 rounded-lg border inline-flex items-center gap-2 transition-all duration-200 cursor-pointer select-none text-xs font-semibold shadow-2xs group',
+              'h-8 rounded-lg border inline-flex items-center gap-2 transition-all duration-200 cursor-pointer select-none text-xs font-semibold shadow-2xs group disabled:opacity-55 disabled:cursor-not-allowed',
               showLabels ? 'px-2.5' : 'px-2',
               isActive
                 ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/90 hover:border-emerald-300 dark:hover:bg-emerald-900/50'

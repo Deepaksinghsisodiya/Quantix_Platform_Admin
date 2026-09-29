@@ -14,6 +14,7 @@ import {
   Laptop,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { getRibbonLayout, getRibbonSeparator, MAX_RIBBON_CARDS } from '../utils/ribbonLayout';
 import type { SocialProofMetric, SiteVariantTab } from '../Model/SocialProofTypes';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -101,6 +102,8 @@ export const SocialProofLiveRibbon: React.FC<SocialProofLiveRibbonProps> = ({
   activeVariant,
 }) => {
   const liveMetrics = metrics.filter((m) => m.isActive);
+  const visibleMetrics = liveMetrics.slice(0, MAX_RIBBON_CARDS);
+  const layout = getRibbonLayout(visibleMetrics.length);
 
   return (
     <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-4 sm:p-5 shadow-xl text-white overflow-hidden relative">
@@ -134,20 +137,24 @@ export const SocialProofLiveRibbon: React.FC<SocialProofLiveRibbonProps> = ({
       <div className="relative rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_80%_at_50%_-20%,rgba(255,79,0,0.12),transparent_75%)]" />
 
-        {liveMetrics.length === 0 ? (
+        {visibleMetrics.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
             No active metrics currently published for {activeVariant}. Toggle a metric to live state to preview here.
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/10">
-            {liveMetrics.slice(0, 4).map((metric, idx) => {
-              const IconComp = ICON_MAP[metric.iconKey] || Sparkles;
+          <div className={cn('grid', layout.gridClass)}>
+            {visibleMetrics.map((metric, idx) => {
+              const IconComp = (metric.iconKey && ICON_MAP[metric.iconKey]) || Sparkles;
               const theme = (metric.accentColor && COLOR_THEMES[metric.accentColor.toLowerCase()]) || DEFAULT_THEME;
 
               return (
                 <div
                   key={metric.metricId || idx}
-                  className="relative p-4 sm:p-5 flex flex-col items-center justify-center text-center group hover:bg-white/[0.03] transition-colors"
+                  className={cn(
+                    'relative p-4 sm:p-5 flex flex-col items-center justify-center text-center group hover:bg-white/[0.03] transition-colors',
+                    getRibbonSeparator(idx, visibleMetrics.length, layout.baseCols, '', 'border-white/10'),
+                    getRibbonSeparator(idx, visibleMetrics.length, layout.wideCols, layout.wideBp, 'border-white/10')
+                  )}
                 >
                   {/* Laser Beam Accent */}
                   <div

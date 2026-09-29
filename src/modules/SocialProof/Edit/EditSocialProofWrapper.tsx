@@ -1,6 +1,7 @@
 import React from 'react';
 import { Formik, FormikHelpers } from 'formik';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils/apiError';
 
 import { useUpdateSocialProofMetricMutation } from '../Service/SocialProofService';
 import { SocialProofForm } from '../Form/SocialProofForm';
@@ -59,19 +60,15 @@ export const EditSocialProofWrapper: React.FC<EditSocialProofWrapperProps> = ({
     };
 
     try {
-      const res = await updateMetric({
+      await updateMetric({
         id: metric.metricId,
         ...payload,
       }).unwrap();
 
-      if (res?.success) {
-        toast.success('Social proof metric updated successfully');
-        onSuccess();
-      } else {
-        toast.error(res?.message || 'Failed to update metric');
-      }
-    } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Network error updating metric');
+      toast.success('Social proof metric updated successfully');
+      onSuccess();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to update metric.'));
     } finally {
       setSubmitting(false);
     }

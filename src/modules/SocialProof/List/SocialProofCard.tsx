@@ -102,6 +102,7 @@ interface SocialProofCardProps {
   totalMetrics: number;
   viewMode?: 'grid' | 'list';
   isReordering?: boolean;
+  isToggling?: boolean;
   onMoveMetric: (index: number, direction: 'up' | 'down') => void;
   onTogglePublished: (metric: SocialProofMetric) => void;
   onOpenEdit: (metric: SocialProofMetric) => void;
@@ -114,6 +115,7 @@ export const SocialProofCard: React.FC<SocialProofCardProps> = ({
   totalMetrics,
   viewMode = 'grid',
   isReordering = false,
+  isToggling = false,
   onMoveMetric,
   onTogglePublished,
   onOpenEdit,
@@ -193,6 +195,7 @@ export const SocialProofCard: React.FC<SocialProofCardProps> = ({
           <ATMContentActionButtons
             isActive={metric.isActive}
             onToggleActive={() => onTogglePublished(metric)}
+            toggleDisabled={isToggling}
             onEdit={() => onOpenEdit(metric)}
             onDelete={() => onOpenDelete(metric)}
             onMoveUp={() => onMoveMetric(index, 'up')}
@@ -303,6 +306,7 @@ export const SocialProofCard: React.FC<SocialProofCardProps> = ({
         <ATMContentActionButtons
           isActive={metric.isActive}
           onToggleActive={() => onTogglePublished(metric)}
+          toggleDisabled={isToggling}
           onEdit={() => onOpenEdit(metric)}
           onDelete={() => onOpenDelete(metric)}
           onMoveUp={() => onMoveMetric(index, 'up')}

@@ -1,8 +1,10 @@
-﻿import React from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RefreshCw, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMSkeleton } from '@/shared/ui';
+import { apiErrorMessage } from '@/lib/utils/apiError';
 import { EditSocialProofWrapper } from '../Edit/EditSocialProofWrapper';
 import { useGetSocialProofMetricByIdQuery } from '../Service/SocialProofService';
 
@@ -10,11 +12,29 @@ export const EditSocialProofPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: response, isLoading, isError, refetch } = useGetSocialProofMetricByIdQuery(id || '', {
+  const {
+    data: response,
+    error: detailError,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetSocialProofMetricByIdQuery(id || '', {
     skip: !id,
   });
 
   const metric = response?.data;
+
+  const hasToastedLoadError = useRef(false);
+  useEffect(() => {
+    if (isError && !hasToastedLoadError.current) {
+      hasToastedLoadError.current = true;
+      toast.error(apiErrorMessage(detailError, 'Failed to load metric details.'));
+    }
+    if (!isError) {
+      hasToastedLoadError.current = false;
+    }
+  }, [isError, detailError]);
+
 
   if (isLoading) {
     return (

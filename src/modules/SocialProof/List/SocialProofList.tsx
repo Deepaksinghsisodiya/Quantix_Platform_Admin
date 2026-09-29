@@ -35,6 +35,24 @@ interface SocialProofListProps {
   onTogglePublished: (metric: SocialProofMetric) => void;
   onMoveMetric: (index: number, direction: 'up' | 'down') => void;
   isReordering?: boolean;
+  isToggling?: boolean;
+}
+
+/**
+ * Cards must fill the row instead of leaving empty columns when fewer than four are
+ * published: 1 spans the full width, 2 split it in half, 3 take a third each, 4 the
+ * normal quarter grid. Anything above four falls back to the four column grid.
+ */
+const GRID_CLASS_BY_COUNT: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+};
+const DEFAULT_GRID_CLASS = GRID_CLASS_BY_COUNT[4]!;
+
+function getGridClass(count: number): string {
+  return GRID_CLASS_BY_COUNT[count] ?? DEFAULT_GRID_CLASS;
 }
 
 const SITE_TABS: Array<{
@@ -61,6 +79,7 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
   onTogglePublished,
   onMoveMetric,
   isReordering = false,
+  isToggling = false,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -281,13 +300,7 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
           </ATMButton>
         </ATMCard>
       ) : (
-        <div
-          className={cn(
-            viewMode === 'grid'
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'
-              : 'flex flex-col gap-3'
-          )}
-        >
+        <div className={cn(viewMode === 'grid' ? 'grid gap-4' : 'flex flex-col gap-3', viewMode === 'grid' && getGridClass(filteredMetrics.length))}>
           {filteredMetrics.map((metric, index) => (
             <SocialProofCard
               key={metric.metricId}
@@ -296,6 +309,7 @@ export const SocialProofList: React.FC<SocialProofListProps> = ({
               totalMetrics={filteredMetrics.length}
               viewMode={viewMode}
               isReordering={isReordering}
+              isToggling={isToggling}
               onMoveMetric={onMoveMetric}
               onTogglePublished={onTogglePublished}
               onOpenEdit={onOpenEdit}

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ATMConfirmModal } from '@/shared/components/ATMConfirmModal';
+import { apiErrorMessage } from '@/lib/utils/apiError';
 import { SocialProofList } from './SocialProofList';
 import {
   useGetAdminSocialProofMetricsQuery,
@@ -18,12 +19,31 @@ export const SocialProofListWrapper: React.FC = () => {
   const [deletingMetric, setDeletingMetric] = useState<SocialProofMetric | null>(null);
 
   // Queries & Mutations
-  const { data: metricsRes, isLoading, isFetching, isError, refetch } = useGetAdminSocialProofMetricsQuery(undefined);
-  const [updateMetric] = useUpdateSocialProofMetricMutation();
+  const {
+    data: metricsRes,
+    error: listError,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAdminSocialProofMetricsQuery(undefined);
+  const [updateMetric, updateState] = useUpdateSocialProofMetricMutation();
   const [deleteMetric, deleteState] = useDeleteSocialProofMetricMutation();
   const [reorderMetrics, reorderState] = useReorderSocialProofMetricsMutation();
 
   const allMetrics = useMemo(() => metricsRes?.data || [], [metricsRes?.data]);
+
+  // Surface a failed list load once per failure instead of leaving it as a silent
+  // inline error card. Guarded so re-renders do not stack duplicate toasts.
+  const hasToastedLoadError = useRef(false);
+  useEffect(() => {
+    if (isError && !hasToastedLoadError.current) {
+      hasToastedLoadError.current = true;
+      toast.error(apiErrorMessage(listError, 'Failed to load social proof metrics.'));
+    }
+    if (!isError) {
+      hasToastedLoadError.current = false;
+    }
+  }, [isError, listError]);
 
   // Tab counts calculated dynamically across all websites
   const counts: Record<SiteVariantTab, number> = useMemo(
@@ -68,8 +88,8 @@ export const SocialProofListWrapper: React.FC = () => {
           ? 'Metric unpublished (hidden from website).'
           : 'Metric published to website successfully.'
       );
-    } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to update metric status.');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to update metric status.'));
     }
   };
 
@@ -79,8 +99,8 @@ export const SocialProofListWrapper: React.FC = () => {
       await deleteMetric(deletingMetric.metricId).unwrap();
       toast.success('Social proof metric deleted successfully.');
       setDeletingMetric(null);
-    } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to delete metric.');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to delete metric.'));
     }
   };
 
@@ -99,8 +119,8 @@ export const SocialProofListWrapper: React.FC = () => {
     try {
       await reorderMetrics({ orderedIds }).unwrap();
       toast.success('Metric display order updated.');
-    } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Failed to update metric order.');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to update metric order.'));
     }
   };
 
@@ -111,7 +131,7 @@ export const SocialProofListWrapper: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
-        isLoading={isLoading || isFetching}
+        isLoading={isLoading}
         isError={isError}
         onRetry={refetch}
         onOpenAdd={() => navigate(`/content/social-proof/new?siteVariant=${activeTab}`)}
@@ -120,6 +140,7 @@ export const SocialProofListWrapper: React.FC = () => {
         onTogglePublished={handleTogglePublished}
         onMoveMetric={handleMoveMetric}
         isReordering={reorderState.isLoading}
+        isToggling={updateState.isLoading}
       />
 
       {/* Delete Confirmation Modal */}

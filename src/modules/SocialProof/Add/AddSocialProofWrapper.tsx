@@ -2,6 +2,7 @@ import React from 'react';
 import { Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils/apiError';
 
 import { useCreateSocialProofMetricMutation } from '../Service/SocialProofService';
 import { SocialProofForm } from '../Form/SocialProofForm';
@@ -72,15 +73,11 @@ export const AddSocialProofWrapper: React.FC<AddSocialProofWrapperProps> = ({
     };
 
     try {
-      const res = await createMetric(payload).unwrap();
-      if (res?.success) {
-        toast.success('Social proof metric created successfully');
-        onSuccess();
-      } else {
-        toast.error(res?.message || 'Failed to create metric');
-      }
-    } catch (err: any) {
-      toast.error(err?.data?.message || err?.message || 'Network error creating metric');
+      await createMetric(payload).unwrap();
+      toast.success('Social proof metric created successfully');
+      onSuccess();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to create metric.'));
     } finally {
       setSubmitting(false);
     }

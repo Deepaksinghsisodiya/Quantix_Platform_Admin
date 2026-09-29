@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   AlertTriangle,
   Plus,
@@ -114,21 +114,21 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <ATMStatsCard
           label="Total Problems"
-          value={safeItems.length.toString()}
+          value={isLoading ? <ATMSkeleton width="44px" height="28px" className="rounded-md" /> : safeItems.length.toString()}
           description={`Registered cards for ${activeVariant}`}
           icon={Layers}
           variant="accent"
         />
         <ATMStatsCard
           label="Live On Website"
-          value={liveCount.toString()}
+          value={isLoading ? <ATMSkeleton width="44px" height="28px" className="rounded-md" /> : liveCount.toString()}
           description="Currently visible to public visitors"
           icon={Eye}
           variant="emerald"
         />
         <ATMStatsCard
           label="Critical Severities"
-          value={criticalCount.toString()}
+          value={isLoading ? <ATMSkeleton width="44px" height="28px" className="rounded-md" /> : criticalCount.toString()}
           description="High-friction operational issues highlighted"
           icon={AlertTriangle}
           variant="amber"
@@ -236,12 +236,94 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
         </div>
       </div>
 
-      {/* Main Content Area with ATMSkeleton */}
+      {/* Main Content Area with Layout-Accurate Skeleton */}
       {isLoading ? (
-        <ATMSkeleton
-          variant={viewMode === 'grid' ? 'card' : 'table-row'}
-          count={viewMode === 'grid' ? 3 : 4}
-        />
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4"
+              >
+                {/* Header Skeleton */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <ATMSkeleton width="40px" height="40px" className="rounded-xl" />
+                    <div className="space-y-1.5">
+                      <ATMSkeleton width="80px" height="12px" className="rounded" />
+                      <ATMSkeleton width="110px" height="14px" className="rounded" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <ATMSkeleton width="60px" height="20px" className="rounded" />
+                    <ATMSkeleton width="45px" height="20px" className="rounded-full" />
+                  </div>
+                </div>
+
+                {/* Title & Description Skeleton */}
+                <div className="space-y-2 pt-1">
+                  <ATMSkeleton width="85%" height="18px" className="rounded" />
+                  <ATMSkeleton width="100%" height="12px" className="rounded" />
+                  <ATMSkeleton width="70%" height="12px" className="rounded" />
+                </div>
+
+                {/* Operational Reality Micro-Meter Box */}
+                <div className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-2.5 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <ATMSkeleton width="100px" height="12px" className="rounded" />
+                    <ATMSkeleton width="70px" height="12px" className="rounded" />
+                  </div>
+                  <ATMSkeleton width="90%" height="14px" className="rounded" />
+                </div>
+
+                {/* Interactive Segmented Switcher & Dynamic Box */}
+                <div className="space-y-2">
+                  <ATMSkeleton width="100%" height="32px" className="rounded-xl" />
+                  <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 space-y-1.5 min-h-[70px]">
+                    <ATMSkeleton width="80px" height="12px" className="rounded" />
+                    <ATMSkeleton width="100%" height="12px" className="rounded" />
+                    <ATMSkeleton width="60%" height="12px" className="rounded" />
+                  </div>
+                </div>
+
+                {/* Bottom Action Footer */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <ATMSkeleton width="80px" height="20px" className="rounded" />
+                  <div className="flex items-center gap-1.5">
+                    <ATMSkeleton width="30px" height="30px" className="rounded-lg" />
+                    <ATMSkeleton width="30px" height="30px" className="rounded-lg" />
+                    <ATMSkeleton width="30px" height="30px" className="rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 p-3.5 sm:p-4 bg-white dark:bg-[#12151c]"
+              >
+                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                  <ATMSkeleton width="40px" height="40px" className="rounded-xl shrink-0" />
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <ATMSkeleton width="24px" height="16px" className="rounded" />
+                      <ATMSkeleton width="180px" height="16px" className="rounded" />
+                      <ATMSkeleton width="70px" height="16px" className="rounded" />
+                    </div>
+                    <ATMSkeleton width="60%" height="12px" className="rounded" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <ATMSkeleton width="55px" height="22px" className="rounded-full" />
+                  <ATMSkeleton width="100px" height="32px" className="rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : isError ? (
         <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/20">
           <AlertCircle size={36} className="text-rose-500 mb-2" />

@@ -83,17 +83,87 @@ export const EditBusinessProblemPage: React.FC = () => {
 
   if (isFetching) {
     return (
-      <div className="w-full space-y-6 max-w-[1600px] mx-auto px-1 sm:px-2 py-4 animate-fade-in">
-        <div className="space-y-2">
-          <ATMSkeleton variant="text" width="35%" height="2.2rem" />
-          <ATMSkeleton variant="text" width="55%" height="1.1rem" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-          <div className="lg:col-span-2 space-y-4">
-            <ATMSkeleton variant="card" height="26rem" />
+      <div className="w-full space-y-6 max-w-[1600px] mx-auto px-2 pb-12 animate-fade-in">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
+          <div className="space-y-2">
+            <ATMSkeleton width="220px" height="14px" className="rounded" />
+            <ATMSkeleton width="320px" height="28px" className="rounded-lg" />
+            <ATMSkeleton width="260px" height="14px" className="rounded" />
           </div>
-          <div>
-            <ATMSkeleton variant="card" height="18rem" />
+          <div className="flex items-center gap-2">
+            <ATMSkeleton width="80px" height="38px" className="rounded-xl" />
+            <ATMSkeleton width="120px" height="38px" className="rounded-xl" />
+          </div>
+        </div>
+
+        {/* Form and Preview Layout Skeleton */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start pt-2">
+          {/* Left Form Sections (7 Cols) */}
+          <div className="xl:col-span-7 space-y-6">
+            {/* Section 1 */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 border-b pb-3 border-slate-100 dark:border-slate-800">
+                <ATMSkeleton width="24px" height="24px" className="rounded-full" />
+                <ATMSkeleton width="200px" height="16px" className="rounded" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <ATMSkeleton height="38px" className="rounded-lg" />
+                <ATMSkeleton height="38px" className="rounded-lg" />
+                <ATMSkeleton height="38px" className="rounded-lg" />
+              </div>
+            </div>
+
+            {/* Section 2 */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 border-b pb-3 border-slate-100 dark:border-slate-800">
+                <ATMSkeleton width="24px" height="24px" className="rounded-full" />
+                <ATMSkeleton width="180px" height="16px" className="rounded" />
+              </div>
+              <div className="space-y-3">
+                <ATMSkeleton height="38px" className="rounded-lg" />
+                <ATMSkeleton height="76px" className="rounded-lg" />
+                <ATMSkeleton height="60px" className="rounded-lg" />
+              </div>
+            </div>
+
+            {/* Section 3 */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 border-b pb-3 border-slate-100 dark:border-slate-800">
+                <ATMSkeleton width="24px" height="24px" className="rounded-full" />
+                <ATMSkeleton width="220px" height="16px" className="rounded" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ATMSkeleton height="38px" className="rounded-lg" />
+                <ATMSkeleton height="38px" className="rounded-lg" />
+              </div>
+              <div className="space-y-2 pt-2">
+                <ATMSkeleton height="38px" className="rounded-lg" />
+                <ATMSkeleton height="38px" className="rounded-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Live Preview Card (5 Cols) */}
+          <div className="xl:col-span-5 sticky top-24">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4 shadow-sm">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+                <ATMSkeleton width="140px" height="16px" className="rounded" />
+                <ATMSkeleton width="60px" height="20px" className="rounded-full" />
+              </div>
+              <div className="flex justify-between items-center">
+                <ATMSkeleton width="44px" height="44px" className="rounded-2xl" />
+                <ATMSkeleton width="80px" height="20px" className="rounded" />
+              </div>
+              <div className="space-y-2">
+                <ATMSkeleton width="85%" height="20px" className="rounded" />
+                <ATMSkeleton width="100%" height="14px" className="rounded" />
+                <ATMSkeleton width="70%" height="14px" className="rounded" />
+              </div>
+              <ATMSkeleton height="60px" className="rounded-xl" />
+              <ATMSkeleton height="36px" className="rounded-xl" />
+              <ATMSkeleton height="80px" className="rounded-xl" />
+            </div>
           </div>
         </div>
       </div>

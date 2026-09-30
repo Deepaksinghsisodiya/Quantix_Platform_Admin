@@ -7,7 +7,7 @@ import { RefreshCw, AlertCircle } from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton } from '@/shared/ui';
-import { SolutionForm } from '../Form/SolutionForm';
+import { SolutionForm, SolutionFormSkeleton } from '../Form/SolutionForm';
 import { useGetSolutionByIdQuery, useUpdateSolutionMutation } from '../Service/SolutionService';
 import type { SolutionFormValues, SaveSolutionItemDto } from '../Model/SolutionTypes';
 
@@ -186,12 +186,7 @@ export const EditSolutionPage: React.FC = () => {
         ]}
       />
 
-      {isLoading && (
-        <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#13151a]">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-primary-500 mb-2" />
-          <p className="text-sm text-slate-500">Loading solution details...</p>
-        </div>
-      )}
+      {isLoading && <SolutionFormSkeleton />}
 
       {isError && (
         <div className="p-8 text-center rounded-2xl border border-rose-200 bg-rose-50/50 dark:border-rose-900/50 dark:bg-rose-950/20 space-y-3">

@@ -20,6 +20,8 @@ import {
   Image as ImageIcon,
   Compass,
   ArrowRight,
+  ShoppingBag,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { SolutionItem } from '../Model/SolutionTypes';
@@ -28,6 +30,7 @@ interface SolutionCardProps {
   item: SolutionItem;
   index: number;
   total: number;
+  viewMode?: 'grid' | 'list';
   onOpenEdit: (item: SolutionItem) => void;
   onOpenDelete: (item: SolutionItem) => void;
   onToggleActive: (item: SolutionItem) => void;
@@ -53,10 +56,32 @@ export const SolutionCardSkeleton: React.FC = () => {
   );
 };
 
+export const SolutionListRowSkeleton: React.FC = () => {
+  return (
+    <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 shadow-xs animate-pulse">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0" />
+          <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+          <div className="space-y-2 flex-1 max-w-md">
+            <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-3 w-64 bg-slate-200 dark:bg-slate-800 rounded" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const SolutionCard: React.FC<SolutionCardProps> = ({
   item,
   index,
   total,
+  viewMode = 'grid',
   onOpenEdit,
   onOpenDelete,
   onToggleActive,
@@ -65,7 +90,7 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
   const isActive = item.isActive ?? true;
-  const isPromo = item.itemType === 'PromoCard';
+  const isPromo = item.itemType === 'PromoCard' || item.isSubdomain || (item.siteVariant || '').toLowerCase() === 'subdomains';
 
   const safeJsonCount = (jsonStr?: string) => {
     if (!jsonStr) return 0;
@@ -81,6 +106,160 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
   const workflowsCount = item?.workflows?.length ?? safeJsonCount(item?.workflowsJson);
   const faqsCount = item?.faqs?.length ?? safeJsonCount(item?.faqsJson);
 
+  const displayImage = item.imageUrl || item.imageSrc || item.detailImageUrl;
+
+  // 1. LIST VIEW RENDERING
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={cn(
+          'group relative rounded-xl border transition-all duration-200 bg-white dark:bg-slate-900/70 p-3.5 sm:p-4 shadow-xs',
+          isActive
+            ? 'border-slate-200/90 dark:border-slate-800 hover:border-primary-500/50 hover:shadow-md'
+            : 'border-dashed border-slate-300 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 opacity-80'
+        )}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          {/* Main Info */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Index Badge */}
+            <div className="flex flex-col items-center justify-center shrink-0 w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
+              #{item.sortOrder ?? index + 1}
+            </div>
+
+            {/* Thumbnail */}
+            <div className="relative w-12 h-12 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-900 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+              {displayImage && !imgError ? (
+                <img
+                  src={displayImage}
+                  alt={item.imageAlt || item.title}
+                  onError={() => setImgError(true)}
+                  className="max-h-full max-w-full object-contain filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300"
+                />
+              ) : (
+                <ImageIcon className="w-5 h-5 text-slate-500" />
+              )}
+            </div>
+
+            {/* Text details */}
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate font-syne">
+                  {item.title}
+                </h3>
+
+                {/* Variant Pill */}
+                <span
+                  className={cn(
+                    'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border shadow-2xs',
+                    (item.siteVariant || '').toLowerCase() === 'restaurant'
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                      : (item.siteVariant || '').toLowerCase() === 'retail'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      : (item.siteVariant || '').toLowerCase() === 'subdomains' || item.isSubdomain
+                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
+                      : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                  )}
+                >
+                  {item.siteVariant || 'Enterprise'}
+                </span>
+
+                {/* Type identifier */}
+                {isPromo ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60">
+                    Subdomain Project
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-300 border border-primary-200/70 dark:border-primary-800/60">
+                    Sector Solution
+                  </span>
+                )}
+
+                {item.slug && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    /{item.slug}
+                  </span>
+                )}
+
+                {item.liveMetric && (
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200">
+                    {item.liveMetric}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xl">
+                {item.tagline || item.description || 'No description provided'}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Toolbar */}
+          <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80 w-full sm:w-auto justify-between sm:justify-end">
+            {/* Reorder Buttons */}
+            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-0.5">
+              <button
+                type="button"
+                disabled={index === 0 || isReordering}
+                onClick={() => onMove(index, 'up')}
+                title="Move Up"
+                className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                disabled={index === total - 1 || isReordering}
+                onClick={() => onMove(index, 'down')}
+                title="Move Down"
+                className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Visibility Toggle Switch */}
+            <button
+              type="button"
+              onClick={() => onToggleActive(item)}
+              title={isActive ? 'Hide from website' : 'Publish live to website'}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer',
+                isActive
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20'
+                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-200'
+              )}
+            >
+              {isActive ? <Eye className="h-3.5 w-3.5 text-emerald-500" /> : <EyeOff className="h-3.5 w-3.5 text-slate-400" />}
+              <span className="hidden md:inline">{isActive ? 'Live' : 'Hidden'}</span>
+            </button>
+
+            {/* Edit Button */}
+            <button
+              type="button"
+              onClick={() => onOpenEdit(item)}
+              title="Edit Solution"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-primary-500 hover:text-primary-600 transition-colors cursor-pointer"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Delete Button */}
+            <button
+              type="button"
+              onClick={() => onOpenDelete(item)}
+              title="Delete Solution"
+              className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. GRID / CARD VIEW RENDERING
   return (
     <div
       className={cn(
@@ -127,6 +306,8 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
                   ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
                   : (item.siteVariant || '').toLowerCase() === 'retail'
                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                  : (item.siteVariant || '').toLowerCase() === 'subdomains' || item.isSubdomain
+                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
                   : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
               )}
             >
@@ -169,10 +350,10 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
 
         {/* Media Image Showcase Container (h-52 sm:h-56) */}
         <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 h-52 sm:h-56 flex items-center justify-center shrink-0 shadow-inner group/img p-4">
-          {item.imageUrl && !imgError ? (
+          {displayImage && !imgError ? (
             <>
               <img
-                src={item.imageUrl}
+                src={displayImage}
                 alt={item.imageAlt || item.title}
                 onError={() => setImgError(true)}
                 className="max-h-full max-w-full object-contain filter drop-shadow-lg group-hover/img:scale-105 transition-transform duration-700"
@@ -323,19 +504,20 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
 
         {/* Actions: Toggle, Edit, Delete */}
         <div className="flex items-center gap-2">
-          {/* Toggle Button */}
+          {/* Toggle Switch */}
           <button
             type="button"
             onClick={() => onToggleActive(item)}
             className={cn(
-              'p-2 rounded-lg border text-xs font-semibold transition-colors shadow-2xs',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-2xs cursor-pointer',
               isActive
                 ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
                 : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
             )}
             title={isActive ? 'Hide from website' : 'Publish live to website'}
           >
-            {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
+            {isActive ? <Eye size={13} className="text-emerald-500" /> : <EyeOff size={13} className="text-slate-400" />}
+            <span>{isActive ? 'Live' : 'Hidden'}</span>
           </button>
 
           {/* Edit Button */}

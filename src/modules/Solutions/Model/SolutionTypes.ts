@@ -192,6 +192,8 @@ export interface SolutionFormValues {
   liveMetric?: string;
   tags?: string[];
   tagsInput?: string; // Comma-separated helper in form
+  subSectors?: SubSector[];
+  overviewFeatures?: OverviewFeature[];
   accentColor?: string;
   glowColor?: string;
   category?: string;

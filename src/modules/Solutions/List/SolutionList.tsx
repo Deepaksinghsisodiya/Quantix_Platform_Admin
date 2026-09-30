@@ -17,8 +17,9 @@ import {
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { SolutionCard, SolutionCardSkeleton } from './SolutionCard';
+import { SolutionCard, SolutionCardSkeleton, SolutionListRowSkeleton } from './SolutionCard';
 import type { SolutionItem, SiteVariantTab } from '../Model/SolutionTypes';
 
 interface SolutionListProps {
@@ -76,6 +77,7 @@ export const SolutionList: React.FC<SolutionListProps> = ({
   onMove,
   isReordering = false,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'hidden'>('all');
 
@@ -211,7 +213,7 @@ export const SolutionList: React.FC<SolutionListProps> = ({
         />
       </div>
 
-      {/* 3. Underline Section Tabs (Matching Clientele/HowItWorks styling) */}
+      {/* 3. Underline Section Tabs */}
       <div className="border-b border-slate-200 dark:border-slate-800">
         <nav className="flex space-x-1.5 sm:space-x-3 overflow-x-auto pb-px scrollbar-none" aria-label="Solutions Navigation Tabs">
           {SECTION_TABS.map((tab) => {
@@ -256,7 +258,7 @@ export const SolutionList: React.FC<SolutionListProps> = ({
         </nav>
       </div>
 
-      {/* 4. Controls Toolbar: Search & Live/Hidden Filter Pills */}
+      {/* 4. Controls Toolbar: Search, Filters & View Mode Toggle */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
           {/* Search Box */}
@@ -277,7 +279,7 @@ export const SolutionList: React.FC<SolutionListProps> = ({
               type="button"
               onClick={() => setStatusFilter('all')}
               className={cn(
-                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all',
+                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer',
                 statusFilter === 'all'
                   ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -289,7 +291,7 @@ export const SolutionList: React.FC<SolutionListProps> = ({
               type="button"
               onClick={() => setStatusFilter('live')}
               className={cn(
-                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1',
+                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1 cursor-pointer',
                 statusFilter === 'live'
                   ? 'bg-white text-emerald-700 shadow-xs dark:bg-slate-900 dark:text-emerald-400'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -302,7 +304,7 @@ export const SolutionList: React.FC<SolutionListProps> = ({
               type="button"
               onClick={() => setStatusFilter('hidden')}
               className={cn(
-                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1',
+                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1 cursor-pointer',
                 statusFilter === 'hidden'
                   ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -314,8 +316,18 @@ export const SolutionList: React.FC<SolutionListProps> = ({
           </div>
         </div>
 
-        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium self-center">
-          Showing <span className="font-bold text-slate-800 dark:text-white">{filteredItems.length}</span> of {safeItems.length}
+        {/* View Mode Toggle (Cards / List Table) & Counter */}
+        <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+          <ATMViewModeToggle
+            value={viewMode}
+            onChange={setViewMode}
+            gridLabel="Cards"
+            listLabel="List"
+          />
+
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Showing <span className="font-bold text-slate-800 dark:text-white">{filteredItems.length}</span> of {safeItems.length}
+          </div>
         </div>
       </div>
 
@@ -328,8 +340,8 @@ export const SolutionList: React.FC<SolutionListProps> = ({
           <div className="font-bold">Multi-Platform Solutions & Subdomains Architecture:</div>
           <p className="text-amber-800/90 dark:text-amber-300/80 leading-relaxed">
             • <strong>Enterprise Platform:</strong> Exactly 3 Core Sector Solutions (Restaurant POS System, Retail POS System, Cloud Multi-Store POS System) leading to deep sector pages.<br />
-            • <strong>Restaurant Platform:</strong> 7 Dedicated dining solutions (Fine Dine, QSR, Cafe, Cloud Kitchen, Bar & Brewery, Pizzeria, Dessert).<br />
-            • <strong>Retail Platform:</strong> 7 Dedicated retail solutions (Supermarket, Apparel, Electronics, Pharmacy, Convenience, Departmental, Footwear).<br />
+            • <strong>Restaurant Platform:</strong> Dedicated dining solutions (Fine Dine, QSR, Cafe, Cloud Kitchen, Bar & Brewery, Pizzeria, Dessert).<br />
+            • <strong>Retail Platform:</strong> Dedicated retail solutions (Supermarket, Apparel, Electronics, Pharmacy, Convenience, Departmental, Footwear).<br />
             • <strong>Subdomains (Projects):</strong> Exactly 2 Standalone external projects (Restaurant on Port 3002 & Retail on Port 3001) that open in a new window.
           </p>
         </div>
@@ -347,13 +359,21 @@ export const SolutionList: React.FC<SolutionListProps> = ({
         </div>
       )}
 
-      {/* 7. Loading Skeletons */}
+      {/* 7. Loading Skeletons matching Card/List views */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <SolutionCardSkeleton key={i} />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SolutionCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SolutionListRowSkeleton key={i} />
+            ))}
+          </div>
+        )
       )}
 
       {/* 8. Empty State */}
@@ -374,23 +394,43 @@ export const SolutionList: React.FC<SolutionListProps> = ({
         </div>
       )}
 
-      {/* 9. Solution Cards Grid (Matching standard layout) */}
+      {/* 9. Solution Cards Grid or List Table */}
       {!isLoading && !isError && filteredItems.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredItems.map((item, idx) => (
-            <SolutionCard
-              key={item.solutionId || item.id || idx}
-              item={item}
-              index={idx}
-              total={filteredItems.length}
-              onOpenEdit={onOpenEdit}
-              onOpenDelete={onOpenDelete}
-              onToggleActive={onToggleActive}
-              onMove={onMove}
-              isReordering={isReordering}
-            />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {filteredItems.map((item, idx) => (
+              <SolutionCard
+                key={item.solutionId || item.id || idx}
+                item={item}
+                index={idx}
+                total={filteredItems.length}
+                viewMode="grid"
+                onOpenEdit={onOpenEdit}
+                onOpenDelete={onOpenDelete}
+                onToggleActive={onToggleActive}
+                onMove={onMove}
+                isReordering={isReordering}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredItems.map((item, idx) => (
+              <SolutionCard
+                key={item.solutionId || item.id || idx}
+                item={item}
+                index={idx}
+                total={filteredItems.length}
+                viewMode="list"
+                onOpenEdit={onOpenEdit}
+                onOpenDelete={onOpenDelete}
+                onToggleActive={onToggleActive}
+                onMove={onMove}
+                isReordering={isReordering}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );

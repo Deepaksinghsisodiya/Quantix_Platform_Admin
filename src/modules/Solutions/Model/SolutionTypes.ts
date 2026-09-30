@@ -1,4 +1,5 @@
 export type SolutionTab = 'PromoCard' | 'SectorItem';
+export type SiteVariantTab = 'Enterprise' | 'Restaurant' | 'Retail' | 'Subdomains' | 'All';
 
 export interface KeyPoint {
   title: string;
@@ -14,6 +15,18 @@ export interface SolutionFaq {
   id?: string;
   question: string;
   answer: string;
+}
+
+export interface SubSector {
+  label: string;
+  href: string;
+}
+
+export interface OverviewFeature {
+  title: string;
+  desc: string;
+  icon?: string;
+  badge?: string;
 }
 
 export interface SolutionItem {
@@ -60,6 +73,19 @@ export interface SolutionItem {
   faqs?: SolutionFaq[];
   faqsJson?: string;
 
+  // Overview / Card specific
+  tagline?: string;
+  liveMetric?: string;
+  tags?: string[];
+  tagsJson?: string;
+  subSectors?: SubSector[];
+  subSectorsJson?: string;
+  overviewFeatures?: OverviewFeature[];
+  overviewFeaturesJson?: string;
+  accentColor?: string;
+  glowColor?: string;
+  category?: string;
+
   sortOrder: number;
   isActive: boolean;
   createdAt?: string;
@@ -104,6 +130,19 @@ export interface SaveSolutionItemDto {
   faqs?: SolutionFaq[];
   faqsJson?: string;
 
+  // Overview / Card specific
+  tagline?: string;
+  liveMetric?: string;
+  tags?: string[];
+  tagsJson?: string;
+  subSectors?: SubSector[];
+  subSectorsJson?: string;
+  overviewFeatures?: OverviewFeature[];
+  overviewFeaturesJson?: string;
+  accentColor?: string;
+  glowColor?: string;
+  category?: string;
+
   sortOrder: number;
   isActive: boolean;
 }
@@ -147,6 +186,15 @@ export interface SolutionFormValues {
   points: KeyPoint[];
   workflows: Workflow[];
   faqs: SolutionFaq[];
+
+  // Overview / Card specific
+  tagline?: string;
+  liveMetric?: string;
+  tags?: string[];
+  tagsInput?: string; // Comma-separated helper in form
+  accentColor?: string;
+  glowColor?: string;
+  category?: string;
 
   sortOrder: number;
   isActive: boolean;

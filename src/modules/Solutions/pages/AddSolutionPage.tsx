@@ -16,13 +16,14 @@ const validationSchema = Yup.object().shape({
 export const AddSolutionPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialItemType = (searchParams.get('itemType') as 'PromoCard' | 'SectorItem') || 'PromoCard';
+  const initialSiteVariant = (searchParams.get('siteVariant') as 'Enterprise' | 'Restaurant' | 'Retail' | 'Subdomains') || 'Enterprise';
+  const initialItemType = (searchParams.get('itemType') as 'PromoCard' | 'SectorItem') || (initialSiteVariant === 'Subdomains' ? 'PromoCard' : 'SectorItem');
   const defaultSortOrder = Number(searchParams.get('order') || '1');
 
   const [createSolution, { isLoading }] = useCreateSolutionMutation();
 
   const initialValues: SolutionFormValues = {
-    siteVariant: 'Enterprise',
+    siteVariant: initialSiteVariant,
     itemType: initialItemType,
     title: '',
     description: '',
@@ -34,12 +35,23 @@ export const AddSolutionPage: React.FC = () => {
     href: '',
     isSubdomain: initialItemType === 'PromoCard',
 
+    // Overview Card / Venue Metadata
+    tagline: '',
+    liveMetric: '',
+    category: '',
+    tags: [],
+    tagsInput: '',
+    accentColor: '#F59E0B',
+    glowColor: 'rgba(245, 158, 11, 0.15)',
+    subSectors: [],
+    overviewFeatures: [],
+
     // Promo Card
     ctaText: 'Visit Site',
     externalUrl: 'http://localhost:3002',
 
     // Sector Item
-    categoryTitle: 'RESTAURANT & FOODSERVICE SOFTWARE',
+    categoryTitle: initialSiteVariant === 'Restaurant' ? 'RESTAURANT VENUE SOLUTIONS' : initialSiteVariant === 'Retail' ? 'RETAIL VENUE SOLUTIONS' : 'RESTAURANT & FOODSERVICE SOFTWARE',
     iconKey: 'Utensils',
     iconColor: 'text-amber-500',
 
@@ -72,11 +84,23 @@ export const AddSolutionPage: React.FC = () => {
 
   const handleSubmit = async (values: SolutionFormValues) => {
     try {
+      const parsedTags = values.tagsInput
+        ? values.tagsInput.split(',').map((t) => t.trim()).filter(Boolean)
+        : values.tags;
+
       const payload: SaveSolutionItemDto = {
-        siteVariant: 'Enterprise',
+        siteVariant: values.siteVariant || initialSiteVariant,
         itemType: values.itemType,
         title: values.title.trim(),
         description: values.description.trim(),
+        tagline: values.tagline?.trim() || undefined,
+        liveMetric: values.liveMetric?.trim() || undefined,
+        category: values.category?.trim() || undefined,
+        accentColor: values.accentColor?.trim() || undefined,
+        glowColor: values.glowColor?.trim() || undefined,
+        tags: parsedTags,
+        subSectors: values.subSectors,
+        overviewFeatures: values.overviewFeatures,
         badge: values.badge?.trim() || undefined,
         badgeColor: values.badgeColor?.trim() || undefined,
         imageUrl: values.imageUrl?.trim() || undefined,

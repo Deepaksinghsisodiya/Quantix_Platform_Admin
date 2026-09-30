@@ -119,6 +119,20 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
               #{item.sortOrder ?? index + 1}
             </span>
 
+            {/* Platform Variant Pill */}
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border shadow-2xs',
+                (item.siteVariant || 'Enterprise').toLowerCase() === 'restaurant'
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                  : (item.siteVariant || '').toLowerCase() === 'retail'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                  : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+              )}
+            >
+              {item.siteVariant || 'Enterprise'}
+            </span>
+
             {/* Type Identifier Badge */}
             {isPromo ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60">
@@ -205,12 +219,39 @@ export const SolutionCard: React.FC<SolutionCardProps> = ({
 
         {/* Content Info */}
         <div className="space-y-1.5">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors line-clamp-1 font-syne">
-            {item.title}
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors line-clamp-1 font-syne">
+              {item.title}
+            </h3>
+            {item.liveMetric && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/60 dark:border-amber-700/60 px-2 py-0.5 rounded-full shrink-0 shadow-2xs">
+                {item.liveMetric}
+              </span>
+            )}
+          </div>
+          {item.tagline && (
+            <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 line-clamp-1">
+              {item.tagline}
+            </p>
+          )}
           <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
             {item.description}
           </p>
+          {item.tags && item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {item.tags.slice(0, 4).map((tag, tIdx) => (
+                <span
+                  key={tIdx}
+                  className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                >
+                  {tag}
+                </span>
+              ))}
+              {item.tags.length > 4 && (
+                <span className="text-[10px] text-slate-400">+{item.tags.length - 4}</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Dynamic Telemetry / Destination Strip */}

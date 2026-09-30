@@ -61,11 +61,34 @@ export const EditSolutionPage: React.FC = () => {
       };
     }
 
+    const safeParse = (str?: string) => {
+      if (!str) return [];
+      try {
+        const val = JSON.parse(str);
+        return Array.isArray(val) ? val : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const parsedTags = item.tags && item.tags.length > 0 ? item.tags : safeParse(item.tagsJson);
+    const parsedSubSectors = item.subSectors && item.subSectors.length > 0 ? item.subSectors : safeParse(item.subSectorsJson);
+    const parsedOverviewFeatures = item.overviewFeatures && item.overviewFeatures.length > 0 ? item.overviewFeatures : safeParse(item.overviewFeaturesJson);
+
     return {
       siteVariant: item.siteVariant || 'Enterprise',
       itemType: item.itemType || (item.isSubdomain ? 'PromoCard' : 'SectorItem'),
       title: item.title || '',
       description: item.description || '',
+      tagline: item.tagline || '',
+      liveMetric: item.liveMetric || '',
+      category: item.category || '',
+      tags: parsedTags,
+      tagsInput: parsedTags.join(', '),
+      accentColor: item.accentColor || '#F59E0B',
+      glowColor: item.glowColor || 'rgba(245, 158, 11, 0.15)',
+      subSectors: parsedSubSectors,
+      overviewFeatures: parsedOverviewFeatures,
       badge: item.badge || '',
       badgeColor: item.badgeColor || '',
       imageUrl: item.imageUrl || '',
@@ -97,11 +120,23 @@ export const EditSolutionPage: React.FC = () => {
   const handleSubmit = async (values: SolutionFormValues) => {
     if (!id) return;
     try {
+      const parsedTags = values.tagsInput
+        ? values.tagsInput.split(',').map((t) => t.trim()).filter(Boolean)
+        : values.tags;
+
       const payload: SaveSolutionItemDto = {
-        siteVariant: 'Enterprise',
+        siteVariant: values.siteVariant,
         itemType: values.itemType,
         title: values.title.trim(),
         description: values.description.trim(),
+        tagline: values.tagline?.trim() || undefined,
+        liveMetric: values.liveMetric?.trim() || undefined,
+        category: values.category?.trim() || undefined,
+        accentColor: values.accentColor?.trim() || undefined,
+        glowColor: values.glowColor?.trim() || undefined,
+        tags: parsedTags,
+        subSectors: values.subSectors,
+        overviewFeatures: values.overviewFeatures,
         badge: values.badge?.trim() || undefined,
         badgeColor: values.badgeColor?.trim() || undefined,
         imageUrl: values.imageUrl?.trim() || undefined,

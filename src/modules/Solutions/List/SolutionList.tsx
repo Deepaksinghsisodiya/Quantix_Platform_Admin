@@ -19,10 +19,13 @@ import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { cn } from '@/lib/utils/cn';
 import { SolutionCard, SolutionCardSkeleton } from './SolutionCard';
-import type { SolutionItem } from '../Model/SolutionTypes';
+import type { SolutionItem, SiteVariantTab } from '../Model/SolutionTypes';
 
 interface SolutionListProps {
   items: SolutionItem[];
+  activeSiteVariant: SiteVariantTab;
+  onSiteVariantChange: (variant: SiteVariantTab) => void;
+  siteVariantCounts: Record<SiteVariantTab, number>;
   activeTab: 'PromoCard' | 'SectorItem' | 'All';
   onTabChange: (tab: 'PromoCard' | 'SectorItem' | 'All') => void;
   counts: {
@@ -41,14 +44,25 @@ interface SolutionListProps {
   isReordering?: boolean;
 }
 
+const SITE_VARIANT_TABS: Array<{ id: SiteVariantTab; label: string; icon: any }> = [
+  { id: 'Enterprise', label: 'Enterprise Platform', icon: Globe },
+  { id: 'Restaurant', label: 'Restaurant Platform', icon: Sparkles },
+  { id: 'Retail', label: 'Retail Platform', icon: Layers },
+  { id: 'Subdomains', label: 'Subdomains (Projects)', icon: ExternalLink },
+  { id: 'All', label: 'All Platforms', icon: Compass },
+];
+
 const SECTION_TABS = [
-  { id: 'PromoCard' as const, label: 'Subdomain Promo Cards (Left)', shortLabel: 'Subdomain Cards', icon: ExternalLink },
-  { id: 'SectorItem' as const, label: 'Sector Solutions & Pages (Right)', shortLabel: 'Sector Pages', icon: Layers },
-  { id: 'All' as const, label: 'All Items', shortLabel: 'All', icon: Compass },
+  { id: 'All' as const, label: 'All Solutions & Venues', shortLabel: 'All Items', icon: Compass },
+  { id: 'SectorItem' as const, label: 'Sector Pages & Venue Showcases', shortLabel: 'Venues / Sectors', icon: Layers },
+  { id: 'PromoCard' as const, label: 'Subdomain Promo Cards (Left)', shortLabel: 'Promo Cards', icon: ExternalLink },
 ];
 
 export const SolutionList: React.FC<SolutionListProps> = ({
   items = [],
+  activeSiteVariant,
+  onSiteVariantChange,
+  siteVariantCounts,
   activeTab,
   onTabChange,
   counts,
@@ -100,8 +114,18 @@ export const SolutionList: React.FC<SolutionListProps> = ({
     <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
       {/* 1. Standard Page Header */}
       <ATMPageHeader
-        title="Solutions (MegaMenu & Landing Pages)"
-        subtitle="Manage Enterprise Navbar Solutions dropdown: Left Subdomain External Cards & Right Sector Landing Pages."
+        title={activeSiteVariant === 'Subdomains' ? 'Subdomain Projects (External Portals)' : 'Solutions & Industry Venues'}
+        subtitle={
+          activeSiteVariant === 'Subdomains'
+            ? 'Manage the 2 Standalone Subdomain Projects (Restaurant on Port 3002 & Retail on Port 3001) that open in a new window.'
+            : activeSiteVariant === 'Enterprise'
+            ? 'Manage the 3 Core Enterprise Solutions (Restaurant POS System, Retail POS System, Cloud Multi-Store POS System).'
+            : activeSiteVariant === 'Restaurant'
+            ? 'Manage Restaurant dining solutions (Fine Dine, QSR, Cafe, Cloud Kitchen, Pub & Bar, etc.).'
+            : activeSiteVariant === 'Retail'
+            ? 'Manage Retail store solutions (Supermarket, Apparel, Electronics, Pharmacy, etc.).'
+            : 'Manage Solutions across all platforms and standalone Subdomain projects.'
+        }
         icon={Compass}
         iconColor="theme"
         breadcrumbs={[
@@ -110,40 +134,76 @@ export const SolutionList: React.FC<SolutionListProps> = ({
           { label: 'Solutions' },
         ]}
         action={{
-          label: 'Add Solution / Card',
+          label: activeSiteVariant === 'Subdomains' ? 'Add Subdomain Project' : `Add Solution (${activeSiteVariant === 'All' ? 'Enterprise' : activeSiteVariant})`,
           onClick: onOpenAdd,
           icon: Plus,
         }}
       />
 
-      {/* 2. KPI Stats Cards Grid */}
+      {/* 2. Top-Level Platform Selector Pills (Enterprise / Restaurant / Retail / All) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
+        {SITE_VARIANT_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isCurrent = activeSiteVariant === tab.id;
+          const count = siteVariantCounts[tab.id];
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onSiteVariantChange(tab.id)}
+              className={cn(
+                'inline-flex items-center gap-2 py-2 px-3.5 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 whitespace-nowrap cursor-pointer shadow-2xs',
+                isCurrent
+                  ? 'bg-primary-600 text-white dark:bg-primary-500 shadow-md ring-2 ring-primary-500/20'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+              )}
+            >
+              <Icon className={cn('h-4 w-4', isCurrent ? 'text-white' : 'text-slate-400')} />
+              <span>{tab.label}</span>
+              <span
+                className={cn(
+                  'ml-1 px-2 py-0.5 rounded-full text-[11px] font-black',
+                  isCurrent
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3. KPI Stats Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <ATMStatsCard
-          label="Total Solutions"
+          label={`Total Solutions (${activeSiteVariant})`}
           value={counts.All}
           icon={Compass}
           variant="accent"
-          description={`${liveCount} live in current view`}
+          description={`${liveCount} live on website`}
           onClick={() => onTabChange('All')}
         />
         <ATMStatsCard
-          label="Subdomain Cards (Left)"
-          value={counts.PromoCard}
-          icon={ExternalLink}
-          variant="amber"
-          description="Restaurant & Retail showcase"
-          onClick={() => onTabChange('PromoCard')}
-        />
-        <ATMStatsCard
-          label="Sector Solutions (Right)"
+          label="Sector & Venue Pages"
           value={counts.SectorItem}
           icon={Layers}
           variant="indigo"
-          description="Sector landing pages"
+          description="Landing pages & venue cards"
           onClick={() => onTabChange('SectorItem')}
         />
         <ATMStatsCard
-          label="Live on Navbar"
+          label="Subdomain Promo Cards"
+          value={counts.PromoCard}
+          icon={ExternalLink}
+          variant="amber"
+          description="Navbar showcase cards"
+          onClick={() => onTabChange('PromoCard')}
+        />
+        <ATMStatsCard
+          label="Live on Platform"
           value={liveCount}
           icon={CheckCircle2}
           variant="emerald"
@@ -265,10 +325,12 @@ export const SolutionList: React.FC<SolutionListProps> = ({
           <HelpCircle size={18} />
         </div>
         <div className="space-y-1 text-xs text-amber-900 dark:text-amber-200">
-          <div className="font-bold">Enterprise Solutions MegaMenu Architecture:</div>
+          <div className="font-bold">Multi-Platform Solutions & Subdomains Architecture:</div>
           <p className="text-amber-800/90 dark:text-amber-300/80 leading-relaxed">
-            • <strong>Left Cards (Subdomain):</strong> Take users to standalone platform websites (Restaurant: <code className="font-mono font-bold">http://localhost:3002</code>, Retail: <code className="font-mono font-bold">http://localhost:3001</code>).<br />
-            • <strong>Right Solutions (Landing Pages):</strong> Open detailed sector pages (<code className="font-mono font-bold">/solutions/[industrySlug]</code>) containing 3 Key Points, 6 Bento Workflows, and Sector FAQs.
+            • <strong>Enterprise Platform:</strong> Exactly 3 Core Sector Solutions (Restaurant POS System, Retail POS System, Cloud Multi-Store POS System) leading to deep sector pages.<br />
+            • <strong>Restaurant Platform:</strong> 7 Dedicated dining solutions (Fine Dine, QSR, Cafe, Cloud Kitchen, Bar & Brewery, Pizzeria, Dessert).<br />
+            • <strong>Retail Platform:</strong> 7 Dedicated retail solutions (Supermarket, Apparel, Electronics, Pharmacy, Convenience, Departmental, Footwear).<br />
+            • <strong>Subdomains (Projects):</strong> Exactly 2 Standalone external projects (Restaurant on Port 3002 & Retail on Port 3001) that open in a new window.
           </p>
         </div>
       </div>

@@ -138,14 +138,56 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
         {/* LEFT COLUMN: Main Form Inputs & Content Builders (8 Cols)                 */}
         {/* ========================================================================= */}
         <div className="lg:col-span-8 space-y-6 w-full">
-          {/* SECTION 1: ITEM TYPE & PURPOSE */}
+          {/* SECTION 1: TARGET PLATFORM & ITEM TYPE */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-6">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
               <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-              1. MegaMenu Item Type & Architecture
+              1. Platform Website & Menu Architecture
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+            {/* Target Website Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Target Platform Website *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  { id: 'Enterprise', label: 'Enterprise Platform', desc: '3 Core Enterprise solutions' },
+                  { id: 'Restaurant', label: 'Restaurant Platform', desc: 'Venue cards & dining workflows' },
+                  { id: 'Retail', label: 'Retail Platform', desc: 'Store types & checkout metrics' },
+                  { id: 'Subdomains', label: 'Subdomain Projects', desc: 'Portals (Port 3002 & 3001)' },
+                ].map((plat) => {
+                  const isSel = (values.siteVariant || 'Enterprise').toLowerCase() === plat.id.toLowerCase();
+                  return (
+                    <button
+                      key={plat.id}
+                      type="button"
+                      onClick={() => {
+                        setFieldValue('siteVariant', plat.id);
+                        if (plat.id === 'Subdomains') {
+                          setFieldValue('itemType', 'PromoCard');
+                          setFieldValue('isSubdomain', true);
+                        }
+                      }}
+                      className={cn(
+                        'p-3.5 rounded-xl border text-left transition-all cursor-pointer shadow-2xs',
+                        isSel
+                          ? 'border-primary-500 bg-primary-50/60 dark:bg-primary-950/40 ring-2 ring-primary-500/20'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 hover:border-slate-300'
+                      )}
+                    >
+                      <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                        <span>{plat.label}</span>
+                        {isSel && <span className="text-[10px] text-primary-600 dark:text-primary-400 font-black">✓</span>}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-normal">{plat.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-2">
               {/* Option 1: PromoCard */}
               <button
                 type="button"
@@ -191,7 +233,13 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
                 onClick={() => {
                   setFieldValue('itemType', 'SectorItem');
                   setFieldValue('isSubdomain', false);
-                  if (!values.categoryTitle) setFieldValue('categoryTitle', 'RESTAURANT & FOODSERVICE SOFTWARE');
+                  if (!values.categoryTitle) {
+                    values.siteVariant === 'Restaurant'
+                      ? setFieldValue('categoryTitle', 'RESTAURANT VENUE SOLUTIONS')
+                      : values.siteVariant === 'Retail'
+                      ? setFieldValue('categoryTitle', 'RETAIL VENUE SOLUTIONS')
+                      : setFieldValue('categoryTitle', 'RESTAURANT & FOODSERVICE SOFTWARE');
+                  }
                   if (!values.slug) setFieldValue('slug', 'restaurants');
                 }}
                 className={cn(
@@ -278,6 +326,78 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
                     handleChange(e);
                     setImgError(false);
                   }}
+                  onBlur={handleBlur}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2.5: VENUE & OVERVIEW CARD METADATA */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Venue Showcase & Overview Card Metadata
+            </h4>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ATMTextField
+                  name="liveMetric"
+                  label="Live Performance Metric Badge"
+                  placeholder="e.g. ⚡ Under 30s Table Turns or ⚡ 99.8% Barcode Scan Rate"
+                  value={values.liveMetric || ''}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  helperText="Displayed prominently on overview and venue solution cards."
+                />
+
+                <ATMTextField
+                  name="tagline"
+                  label="Tagline / Key Value Pitch"
+                  placeholder="e.g. Full-floor dining synchronization from host stand to kitchen"
+                  value={values.tagline || ''}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ATMTextField
+                  name="category"
+                  label="Venue Category / Sector Heading"
+                  placeholder="e.g. FINE DINING & BISTROS or GROCERY & SUPERMARKETS"
+                  value={values.category || ''}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                />
+
+                <ATMTextField
+                  name="tagsInput"
+                  label="Keywords / Feature Tags (Comma Separated)"
+                  placeholder="e.g. Dine-In, Tableside, KDS, Splits"
+                  value={values.tagsInput ?? (values.tags?.join(', ') || '')}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  helperText="Separate multiple feature pills with commas."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ATMTextField
+                  name="accentColor"
+                  label="Visual Accent Hex Color"
+                  placeholder="#F59E0B"
+                  value={values.accentColor || '#F59E0B'}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                />
+
+                <ATMTextField
+                  name="glowColor"
+                  label="Visual Glow Backdrop Color"
+                  placeholder="rgba(245, 158, 11, 0.15)"
+                  value={values.glowColor || 'rgba(245, 158, 11, 0.15)'}
+                  onChange={handleChange}
                   onBlur={handleBlur}
                 />
               </div>
@@ -695,12 +815,22 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
                     </div>
 
                     <div className="flex-1 space-y-1 min-w-0 pr-1">
-                      <span className="text-[8px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/40 px-1.5 py-0.2 rounded border border-amber-500/30">
-                        {values.badge || 'SOFTWARE BUNDLE'}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/40 px-1.5 py-0.2 rounded border border-amber-500/30">
+                          {values.badge || 'SOFTWARE BUNDLE'}
+                        </span>
+                        <span className="text-[8px] font-bold uppercase text-slate-400">
+                          • {values.siteVariant || 'Enterprise'}
+                        </span>
+                      </div>
                       <div className="text-xs font-bold text-white truncate">
                         {values.title || 'Restaurant POS & Kitchen Screens'}
                       </div>
+                      {values.tagline && (
+                        <div className="text-[10px] font-semibold text-amber-400 truncate">
+                          {values.tagline}
+                        </div>
+                      )}
                       <p className="text-[10px] text-slate-400 line-clamp-2">
                         {values.description || 'Table floor mapping, tableside ordering, kitchen display screens.'}
                       </p>
@@ -708,20 +838,32 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="text-[10px] font-black uppercase text-primary-400 tracking-wider border-b border-slate-800 pb-1">
-                      • {values.categoryTitle || 'RESTAURANT & FOODSERVICE SOFTWARE'}
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                      <span className="text-[10px] font-black uppercase text-primary-400 tracking-wider">
+                        • {values.categoryTitle || values.category || 'SECTOR SOLUTION'}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase text-slate-400">
+                        {values.siteVariant || 'Enterprise'}
+                      </span>
                     </div>
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-primary-500/30">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center shrink-0">
-                          <Utensils size={14} />
-                        </span>
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold text-white truncate">{values.title || 'Restaurant POS System'}</div>
-                          <div className="text-[10px] text-slate-400 truncate">{values.description || 'Table floor plans & kitchen orders'}</div>
+                    <div className="p-2.5 rounded-xl bg-slate-900 border border-primary-500/30 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center shrink-0">
+                            <Utensils size={14} />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white truncate">{values.title || 'Restaurant POS System'}</div>
+                            <div className="text-[10px] text-slate-400 truncate">{values.description || 'Table floor plans & kitchen orders'}</div>
+                          </div>
                         </div>
+                        <ChevronRight size={13} className="text-primary-400 shrink-0" />
                       </div>
-                      <ChevronRight size={13} className="text-primary-400 shrink-0" />
+                      {values.liveMetric && (
+                        <div className="inline-flex items-center gap-1 text-[9px] font-black text-amber-400 bg-amber-950/60 border border-amber-500/40 px-2 py-0.5 rounded-md">
+                          {values.liveMetric}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -729,12 +871,22 @@ export const SolutionForm: React.FC<SolutionFormProps> = ({
             ) : (
               // Landing Page Preview
               <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-3">
-                <span className="text-[9px] font-mono text-amber-400 uppercase tracking-widest">
-                  // {values.eyebrow || 'Full-Service Hospitality'}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-mono text-amber-400 uppercase tracking-widest">
+                    // {values.eyebrow || 'Full-Service Hospitality'}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500 uppercase">
+                    {values.siteVariant || 'Enterprise'}
+                  </span>
+                </div>
                 <div className="text-sm font-black text-white leading-snug">
                   {values.heroTitle || values.title || 'Enterprise Restaurant POS & Table Management'}
                 </div>
+                {values.liveMetric && (
+                  <span className="inline-block text-[10px] font-black text-amber-400 bg-amber-950/60 border border-amber-500/40 px-2 py-0.5 rounded-md">
+                    {values.liveMetric}
+                  </span>
+                )}
                 <p className="text-[11px] text-slate-300 line-clamp-3 leading-relaxed">
                   {values.heroDescription || values.description || 'Empower dining operations with floor plans and KDS.'}
                 </p>

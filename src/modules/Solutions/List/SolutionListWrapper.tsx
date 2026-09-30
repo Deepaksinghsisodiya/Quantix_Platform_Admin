@@ -10,14 +10,15 @@ import {
   useDeleteSolutionMutation,
   useReorderSolutionsMutation,
 } from '../Service/SolutionService';
-import type { SolutionItem } from '../Model/SolutionTypes';
+import type { SolutionItem, SiteVariantTab } from '../Model/SolutionTypes';
 
 export const SolutionListWrapper: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'PromoCard' | 'SectorItem' | 'All'>('PromoCard');
+  const [activeSiteVariant, setActiveSiteVariant] = useState<SiteVariantTab>('Enterprise');
+  const [activeTab, setActiveTab] = useState<'PromoCard' | 'SectorItem' | 'All'>('All');
   const [deletingItem, setDeletingItem] = useState<SolutionItem | null>(null);
 
-  // Queries & Mutations
+  // Queries & Mutations (Fetch all solutions and filter client-side for instant switching)
   const { data: solutionsRes, isLoading, isFetching, isError, refetch } = useGetAdminSolutionsQuery(undefined);
   const [toggleActive] = useToggleActiveSolutionMutation();
   const [deleteSolution, deleteState] = useDeleteSolutionMutation();
@@ -25,22 +26,53 @@ export const SolutionListWrapper: React.FC = () => {
 
   const allItems = useMemo(() => solutionsRes?.data || [], [solutionsRes?.data]);
 
-  const counts = useMemo(
+  // Variant counts
+  const siteVariantCounts = useMemo<Record<SiteVariantTab, number>>(
     () => ({
-      PromoCard: allItems.filter((s) => s.itemType === 'PromoCard').length,
-      SectorItem: allItems.filter((s) => s.itemType === 'SectorItem').length,
+      Enterprise: allItems.filter((s) => (s.siteVariant || '').toLowerCase() === 'enterprise' && !s.isSubdomain).length,
+      Restaurant: allItems.filter((s) => (s.siteVariant || '').toLowerCase() === 'restaurant' && !s.isSubdomain).length,
+      Retail: allItems.filter((s) => (s.siteVariant || '').toLowerCase() === 'retail' && !s.isSubdomain).length,
+      Subdomains: allItems.filter((s) => (s.siteVariant || '').toLowerCase() === 'subdomains' || s.isSubdomain).length,
       All: allItems.length,
     }),
     [allItems]
   );
 
+  // Items filtered by current site variant
+  const variantItems = useMemo(() => {
+    if (activeSiteVariant === 'All') return allItems;
+    if (activeSiteVariant === 'Subdomains') {
+      return allItems.filter(
+        (s) => (s.siteVariant || '').toLowerCase() === 'subdomains' || s.isSubdomain
+      );
+    }
+    if (activeSiteVariant === 'Enterprise') {
+      return allItems.filter(
+        (s) => (s.siteVariant || '').toLowerCase() === 'enterprise' && !s.isSubdomain
+      );
+    }
+    return allItems.filter(
+      (s) => (s.siteVariant || '').toLowerCase() === activeSiteVariant.toLowerCase() && !s.isSubdomain
+    );
+  }, [allItems, activeSiteVariant]);
+
+  // Type counts within the selected variant
+  const counts = useMemo(
+    () => ({
+      PromoCard: variantItems.filter((s) => s.itemType === 'PromoCard').length,
+      SectorItem: variantItems.filter((s) => s.itemType === 'SectorItem').length,
+      All: variantItems.length,
+    }),
+    [variantItems]
+  );
+
   const displayedItems = useMemo(() => {
-    let filtered = allItems;
+    let filtered = variantItems;
     if (activeTab !== 'All') {
-      filtered = allItems.filter((s) => s.itemType === activeTab);
+      filtered = variantItems.filter((s) => s.itemType === activeTab);
     }
     return filtered.slice().sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [allItems, activeTab]);
+  }, [variantItems, activeTab]);
 
   const handleToggleActive = async (item: SolutionItem) => {
     try {
@@ -86,15 +118,20 @@ export const SolutionListWrapper: React.FC = () => {
     <>
       <SolutionList
         items={displayedItems}
+        activeSiteVariant={activeSiteVariant}
+        onSiteVariantChange={setActiveSiteVariant}
+        siteVariantCounts={siteVariantCounts}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
         isLoading={isLoading || isFetching}
         isError={isError}
         onRetry={refetch}
-        onOpenAdd={() =>
-          navigate(`/content/solutions/new?itemType=${activeTab === 'All' ? 'SectorItem' : activeTab}&order=${displayedItems.length + 1}`)
-        }
+        onOpenAdd={() => {
+          const sv = activeSiteVariant === 'All' ? 'Enterprise' : activeSiteVariant;
+          const it = activeTab === 'All' ? (sv === 'Enterprise' ? 'SectorItem' : 'SectorItem') : activeTab;
+          navigate(`/content/solutions/new?siteVariant=${sv}&itemType=${it}&order=${displayedItems.length + 1}`);
+        }}
         onOpenEdit={(item) =>
           navigate(`/content/solutions/${item.solutionId || item.id}/edit`)
         }
@@ -108,7 +145,7 @@ export const SolutionListWrapper: React.FC = () => {
       <ATMConfirmModal
         isOpen={!!deletingItem}
         title="Delete Solution Item?"
-        description={`Are you sure you want to permanently remove "${deletingItem?.title}"? This will hide it from the Enterprise MegaMenu and website.`}
+        description={`Are you sure you want to permanently remove "${deletingItem?.title}" from ${deletingItem?.siteVariant || 'Enterprise'}? This will remove it from the live website.`}
         confirmLabel="Yes, Delete"
         variant="danger"
         isLoading={deleteState.isLoading}

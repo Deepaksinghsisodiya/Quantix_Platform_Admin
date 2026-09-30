@@ -16,7 +16,7 @@ import { ATMButton, ATMCard, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { cn } from '@/lib/utils/cn';
-import { HowItWorksCard } from './HowItWorksCard';
+import { HowItWorksCard, HowItWorksCardSkeleton, HowItWorksListItemSkeleton } from './HowItWorksCard';
 import type { HowItWorksStepItem, SiteVariantTab } from '../Model/HowItWorksTypes';
 
 interface HowItWorksListProps {
@@ -113,14 +113,14 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <ATMStatsCard
           label="Total Workflow Steps"
-          value={steps.length}
+          value={isLoading ? '-' : steps.length}
           icon={ListOrdered}
           variant="accent"
-          description={`${liveCount} live on ${activeTab}`}
+          description={isLoading ? 'Loading metrics...' : `${liveCount} live on ${activeTab}`}
         />
         <ATMStatsCard
           label="Enterprise Sequence"
-          value={counts.Enterprise || 0}
+          value={isLoading ? '-' : (counts.Enterprise || 0)}
           icon={Building2}
           variant="indigo"
           description="Multi-store rollout steps"
@@ -128,7 +128,7 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
         />
         <ATMStatsCard
           label="Restaurant Sequence"
-          value={counts.Restaurant || 0}
+          value={isLoading ? '-' : (counts.Restaurant || 0)}
           icon={UtensilsCrossed}
           variant="amber"
           description="Kitchen & floor flow"
@@ -136,7 +136,7 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
         />
         <ATMStatsCard
           label="Retail Sequence"
-          value={counts.Retail || 0}
+          value={isLoading ? '-' : (counts.Retail || 0)}
           icon={ShoppingBag}
           variant="emerald"
           description="Barcode & checkout flow"
@@ -228,10 +228,19 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
 
       {/* 5. Main Content Area */}
       {isLoading ? (
-        <ATMSkeleton
-          variant={viewMode === 'grid' ? 'card' : 'table-row'}
-          count={viewMode === 'grid' ? 3 : 4}
-        />
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <HowItWorksCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <HowItWorksListItemSkeleton key={i} />
+            ))}
+          </div>
+        )
       ) : isError ? (
         <ATMCard className="p-8 text-center border-rose-200 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20">
           <div className="inline-flex p-3 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400 mb-3">

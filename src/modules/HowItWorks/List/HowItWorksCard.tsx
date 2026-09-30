@@ -25,18 +25,73 @@ interface HowItWorksCardProps {
 export const HowItWorksCardSkeleton: React.FC = () => {
   return (
     <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 shadow-xs space-y-4 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-6 w-28 bg-slate-200 dark:bg-slate-800 rounded-md" />
+      {/* Header Row: Step number + Badge + Status */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-6 w-28 bg-slate-200 dark:bg-slate-800 rounded-md" />
+        </div>
         <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
       </div>
-      <div className="h-44 rounded-xl bg-slate-200 dark:bg-slate-800" />
-      <div className="space-y-2">
-        <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+
+      {/* Large Image Area */}
+      <div className="h-48 sm:h-52 rounded-xl bg-slate-200 dark:bg-slate-800 relative flex items-end p-3">
+        <div className="h-7 w-28 bg-slate-300 dark:bg-slate-700 rounded-lg" />
       </div>
-      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-        <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-8 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
+
+      {/* Title & Description Lines */}
+      <div className="space-y-2">
+        <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        <div className="h-3.5 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="h-3.5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
+      </div>
+
+      {/* Bullets Chips */}
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/70 space-y-1.5">
+        <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="flex gap-1.5">
+          <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-md" />
+          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-800 rounded-md" />
+        </div>
+      </div>
+
+      {/* Footer Actions */}
+      <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="flex items-center gap-1.5">
+          <div className="h-7 w-7 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-7 w-7 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-7 w-7 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+          <div className="h-7 w-7 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const HowItWorksListItemSkeleton: React.FC = () => {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 animate-pulse shadow-2xs">
+      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+        {/* Thumbnail Preview */}
+        <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded-full" />
+          </div>
+          <div className="h-3 w-4/5 bg-slate-200 dark:bg-slate-800 rounded" />
+        </div>
+      </div>
+
+      {/* Action Buttons Placeholder */}
+      <div className="flex items-center gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+        <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
       </div>
     </div>
   );

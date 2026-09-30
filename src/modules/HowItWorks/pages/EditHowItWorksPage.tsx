@@ -5,15 +5,84 @@ import { EditHowItWorksWrapper } from '../Edit/EditHowItWorksWrapper';
 import { useGetHowItWorksStepByIdQuery } from '../Service/HowItWorksService';
 
 const EditSkeleton: React.FC = () => (
-  <div className="animate-pulse space-y-6">
-    <div className="h-20 rounded-xl bg-slate-200 dark:bg-slate-800" />
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      <div className="lg:col-span-3 space-y-4">
-        <div className="h-48 rounded-xl bg-slate-200 dark:bg-slate-800" />
-        <div className="h-48 rounded-xl bg-slate-200 dark:bg-slate-800" />
+  <div className="w-full space-y-6 pb-12 animate-pulse">
+    {/* Page Header Skeleton */}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="space-y-2">
+        <div className="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="h-7 w-64 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        <div className="h-4 w-96 bg-slate-200 dark:bg-slate-800 rounded" />
       </div>
-      <div className="lg:col-span-2">
-        <div className="h-64 rounded-xl bg-slate-200 dark:bg-slate-800" />
+      <div className="flex items-center gap-2">
+        <div className="h-9 w-20 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+        <div className="h-9 w-28 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      </div>
+    </div>
+
+    {/* 12-Column Grid matching HowItWorksForm */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Left 7 Columns: Form Input Cards */}
+      <div className="lg:col-span-7 space-y-6">
+        {/* Card 1: Identity & Target Website */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+          <div className="h-5 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="h-20 rounded-xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-20 rounded-xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-20 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </div>
+
+        {/* Card 2: Copy & Feature Capabilities */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+          <div className="h-5 w-52 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-24 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-24 rounded-xl bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        {/* Card 3: Media Asset */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+          <div className="h-5 w-44 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        {/* Card 4: Metrics & Telemetry Chips */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+          <div className="h-5 w-60 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </div>
+      </div>
+
+      {/* Right 5 Columns: Step Showcase & Publishing Controls */}
+      <div className="lg:col-span-5 space-y-6">
+        {/* Showcase Simulation Card */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+          <div className="h-5 w-44 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-56 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div className="space-y-2">
+            <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-4 w-4/5 bg-slate-200 dark:bg-slate-800 rounded" />
+          </div>
+        </div>
+
+        {/* Publishing & Status Card */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+          <div className="h-5 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-14 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-11 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+        </div>
       </div>
     </div>
   </div>

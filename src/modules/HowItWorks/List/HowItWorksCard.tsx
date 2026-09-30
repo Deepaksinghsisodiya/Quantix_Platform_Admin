@@ -150,7 +150,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-500/10 text-[#FF4F00] border border-orange-500/20">
                 {badgeLabel}
               </span>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate font-syne">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white font-syne">
                 {step.title}
               </h4>
               <span
@@ -165,7 +165,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
                 {isActive ? 'Live' : 'Hidden'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               {step.description}
             </p>
           </div>
@@ -213,7 +213,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
       <div className="p-5 sm:p-6 flex flex-col gap-4 flex-1">
         {/* Header: Step Number, Badge & Status */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
             <span
               className={cn(
                 'inline-flex items-center justify-center h-8 px-2.5 rounded-lg font-mono font-bold text-xs border shrink-0 shadow-2xs',
@@ -225,7 +225,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
               Step {stepNumber}
             </span>
 
-            <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 truncate max-w-[180px]">
+            <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80">
               {badgeLabel}
             </span>
 
@@ -287,40 +287,60 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
           )}
         </div>
 
-        {/* Titles & Copy */}
+        {/* Titles & Copy without truncation */}
         <div className="space-y-1.5 flex-1">
-          <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#FF4F00] transition-colors font-syne">
+          <h3 className="font-bold text-base text-slate-900 dark:text-white leading-snug group-hover:text-[#FF4F00] transition-colors font-syne">
             {step.title}
           </h3>
           {step.description && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               {step.description}
             </p>
           )}
         </div>
 
-        {/* Bullet Highlights */}
+        {/* Bullet Highlights - Fully visible without truncation */}
         {step.bullets && step.bullets.length > 0 && (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/70 space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/70 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Step Highlights ({step.bullets.length})</span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {step.bullets.slice(0, 3).map((bullet, bIdx) => (
-                <span
+            <div className="space-y-1.5">
+              {step.bullets.map((bullet, bIdx) => (
+                <div
                   key={bIdx}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 truncate max-w-[220px]"
+                  className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300"
                 >
-                  <span className="w-1 h-1 rounded-full bg-orange-500 shrink-0" />
-                  <span className="truncate">{bullet}</span>
-                </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 mt-1.5" />
+                  <span className="leading-snug">{bullet}</span>
+                </div>
               ))}
-              {step.bullets.length > 3 && (
-                <span className="text-[10px] text-slate-400 self-center pl-1 font-mono">
-                  +{step.bullets.length - 3} more
-                </span>
-              )}
+            </div>
+          </div>
+        )}
+
+        {/* Telemetry Chips in Admin Card - Fully visible without truncation */}
+        {step.telemetryChips && step.telemetryChips.length > 0 && (
+          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/70 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <Layers className="w-3.5 h-3.5 text-blue-500" />
+              <span>Telemetry Chips ({step.telemetryChips.length})</span>
+            </div>
+            <div className="space-y-1.5">
+              {step.telemetryChips.map((chip, cIdx) => (
+                <div
+                  key={cIdx}
+                  className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-[11px]"
+                >
+                  <span className="font-mono text-slate-600 dark:text-slate-400 font-medium">
+                    {chip.label}
+                  </span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white text-right">
+                    {chip.sublabel}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}

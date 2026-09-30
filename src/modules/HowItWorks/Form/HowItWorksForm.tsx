@@ -555,7 +555,7 @@ export const HowItWorksForm: React.FC<HowItWorksFormProps> = ({
                     <span className="inline-flex items-center justify-center h-7 px-2 rounded-md font-mono font-bold text-xs bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/20">
                       Step {values.stepNumber || '01'}
                     </span>
-                    <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 truncate max-w-[160px]">
+                    <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                       {previewBadge}
                     </span>
                   </div>

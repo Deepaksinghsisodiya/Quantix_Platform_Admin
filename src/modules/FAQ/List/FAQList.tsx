@@ -14,7 +14,7 @@ import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
-import { FAQCard } from './FAQCard';
+import { FAQCard, FAQCardSkeleton } from './FAQCard';
 import type { FAQItem, FAQFilter } from '../Model/FAQTypes';
 import { cn } from '@/lib/utils/cn';
 
@@ -52,6 +52,11 @@ export const FAQList: React.FC<FAQListProps> = ({
     const p = (platform || '').toLowerCase();
     if (p === 'all') return true;
 
+    const sv = (item.siteVariant || '').toLowerCase();
+    if (sv && sv !== 'all') {
+      return sv === p;
+    }
+
     const mt = (item.merchantType || '').toLowerCase();
     const cat = (item.category || '').toLowerCase();
     const qText = (item.question || '').toLowerCase();
@@ -61,9 +66,9 @@ export const FAQList: React.FC<FAQListProps> = ({
     }
     if (p === 'restaurant') {
       return (
-        mt === 'standalone' ||
         mt === 'restaurant' ||
         cat === 'restaurant' ||
+        mt === 'standalone' ||
         qText.includes('restaurant') ||
         qText.includes('kds') ||
         qText.includes('menu') ||
@@ -72,7 +77,6 @@ export const FAQList: React.FC<FAQListProps> = ({
     }
     if (p === 'retail') {
       return (
-        mt === 'standalone' ||
         mt === 'retail' ||
         cat === 'retail' ||
         qText.includes('retail') ||
@@ -304,10 +308,34 @@ export const FAQList: React.FC<FAQListProps> = ({
 
       {/* Cards List or Skeletons */}
       {isLoading ? (
-        <ATMSkeleton
-          variant={viewMode === 'grid' ? 'card' : 'table-row'}
-          count={viewMode === 'grid' ? 4 : 5}
-        />
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <FAQCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 p-3.5 sm:p-4 bg-white dark:bg-[#12151c] animate-pulse"
+              >
+                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-4/5 bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                  <div className="h-8 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : filteredItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-12 text-center space-y-4">
           <div className="h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 text-[#FF4F00] mx-auto flex items-center justify-center">

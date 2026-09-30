@@ -31,17 +31,89 @@ export const EditCustomerSupportPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 max-w-[1200px] mx-auto px-1 sm:px-2 py-4 animate-fade-in">
-        <div className="space-y-2">
-          <ATMSkeleton variant="text" width="35%" height="2.2rem" />
-          <ATMSkeleton variant="text" width="55%" height="1.1rem" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-          <div className="lg:col-span-2 space-y-4">
-            <ATMSkeleton variant="card" height="26rem" />
+      <div className="w-full space-y-6 animate-fadeIn pb-12">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+          <div className="space-y-2">
+            <div className="h-7 w-64 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            <div className="h-4 w-96 max-w-full rounded bg-slate-200/80 dark:bg-slate-800/80 animate-pulse" />
           </div>
-          <div>
-            <ATMSkeleton variant="card" height="18rem" />
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-24 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            <div className="h-9 w-32 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Form Grid Skeleton (Full Width 12-cols) */}
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column (8 cols): Form Sections */}
+          <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+            {/* Section 1: Platform Selector Skeleton */}
+            <div className="p-6 sm:p-7 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5 animate-pulse">
+              <div className="h-5 w-48 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-800/60" />
+              </div>
+            </div>
+
+            {/* Section 2: Copy & Titles Skeleton */}
+            <div className="p-6 sm:p-7 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5 animate-pulse">
+              <div className="h-5 w-56 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="space-y-4">
+                <div className="h-10 w-full rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                  <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                </div>
+                <div className="h-24 w-full rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+              </div>
+            </div>
+
+            {/* Section 3: Pillars Skeleton */}
+            <div className="p-6 sm:p-7 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 animate-pulse">
+              <div className="h-5 w-44 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="space-y-3">
+                <div className="h-20 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-20 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-20 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+              </div>
+            </div>
+
+            {/* Section 4: Contact & Rep Skeleton */}
+            <div className="p-6 sm:p-7 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 animate-pulse">
+              <div className="h-5 w-60 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+                <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/60" />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column (4 cols): Sticky Preview Skeleton */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 animate-pulse">
+              <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4 space-y-3">
+                <div className="h-4 w-28 rounded-full bg-slate-800" />
+                <div className="h-5 w-40 rounded bg-slate-800" />
+                <div className="h-3 w-full rounded bg-slate-800" />
+                <div className="space-y-2 pt-2">
+                  <div className="h-10 rounded-xl bg-slate-900 border border-slate-800" />
+                  <div className="h-10 rounded-xl bg-slate-900 border border-slate-800" />
+                </div>
+                <div className="h-12 rounded-xl bg-slate-900 border border-slate-800 mt-2" />
+                <div className="h-8 rounded-xl bg-slate-800 mt-2" />
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 animate-pulse">
+              <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-6 w-44 rounded-lg bg-slate-100 dark:bg-slate-800/60" />
+            </div>
           </div>
         </div>
       </div>
@@ -121,7 +193,7 @@ export const EditCustomerSupportPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
       <ATMPageHeader
         title={`Edit ${item.siteVariant} Support Desk`}
         subtitle="Update 24/7 technical guarantees, response time SLAs, and direct phone hotline numbers."

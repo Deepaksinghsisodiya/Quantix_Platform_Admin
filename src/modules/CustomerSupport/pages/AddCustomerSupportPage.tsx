@@ -83,7 +83,7 @@ export const AddCustomerSupportPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
       <ATMPageHeader
         title="Add Customer Support Desk"
         subtitle="Configure a dedicated 24/7 technical assistance desk, service pillars, and direct hotline numbers."

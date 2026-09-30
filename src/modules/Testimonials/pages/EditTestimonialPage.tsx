@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMButton } from '@/shared/ui';
+import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { EditTestimonialWrapper } from '../Edit/EditTestimonialWrapper';
 import { useGetTestimonialByIdQuery } from '../Service/TestimonialService';
 
@@ -18,9 +18,48 @@ export const EditTestimonialPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full py-16 text-center space-y-3">
-        <RefreshCw size={28} className="mx-auto animate-spin text-[#FF4F00]" />
-        <p className="text-sm font-syne font-bold text-slate-600 dark:text-slate-400">Loading Testimonial Details...</p>
+      <div className="w-full space-y-6 pb-12 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
+          <div className="space-y-2">
+            <ATMSkeleton variant="text" width="300px" height="2rem" />
+            <ATMSkeleton variant="text" width="480px" height="1rem" />
+          </div>
+          <div className="flex items-center gap-3">
+            <ATMSkeleton variant="rect" rounded width="90px" height="2.5rem" />
+            <ATMSkeleton variant="rect" rounded width="130px" height="2.5rem" />
+          </div>
+        </div>
+
+        {/* Form Body Skeleton matching TestimonialForm layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7 space-y-5">
+            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+              <ATMSkeleton variant="text" width="220px" height="1.25rem" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ATMSkeleton variant="rect" rounded height="44px" />
+                <ATMSkeleton variant="rect" rounded height="44px" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ATMSkeleton variant="rect" rounded height="44px" />
+                <ATMSkeleton variant="rect" rounded height="44px" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+              <ATMSkeleton variant="text" width="200px" height="1.25rem" />
+              <ATMSkeleton variant="rect" rounded height="44px" />
+              <ATMSkeleton variant="rect" rounded height="110px" />
+            </div>
+          </div>
+
+          <div className="lg:col-span-5 space-y-5">
+            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-4">
+              <ATMSkeleton variant="text" width="160px" height="1.25rem" />
+              <ATMSkeleton variant="rect" rounded height="220px" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

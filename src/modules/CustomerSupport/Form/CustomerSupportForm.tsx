@@ -138,7 +138,7 @@ export const CustomerSupportForm: React.FC<CustomerSupportFormProps> = ({
   };
 
   return (
-    <Form id="customer-support-form" className="space-y-6 max-w-[1600px] mx-auto">
+    <Form id="customer-support-form" className="w-full space-y-6">
       <ATMFormHeaderActions
         onCancel={onCancel}
         isSubmitting={isSubmitting}
@@ -645,7 +645,7 @@ export const CustomerSupportForm: React.FC<CustomerSupportFormProps> = ({
                         <Icon size={10} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[11px] font-bold text-white truncate">
+                        <div className="text-[11px] font-bold text-white break-words">
                           {p.title || `Support Pillar ${pIdx + 1}`}
                         </div>
                       </div>
@@ -656,15 +656,15 @@ export const CustomerSupportForm: React.FC<CustomerSupportFormProps> = ({
 
               {/* Rep Strip */}
               <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-between gap-2 mt-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
                     {values.repName ? values.repName.charAt(0) : 'S'}
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-bold text-white truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-bold text-white break-words">
                       {values.repName || 'Sarah Jenkins'}
                     </div>
-                    <div className="text-[9.5px] text-slate-400 truncate">
+                    <div className="text-[9.5px] text-slate-400 break-words">
                       {values.repRole || 'Support Lead'}
                     </div>
                   </div>

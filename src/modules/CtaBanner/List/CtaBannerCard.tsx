@@ -21,17 +21,63 @@ interface CtaBannerCardProps {
 
 export const CtaBannerCardSkeleton: React.FC = () => {
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 shadow-xs space-y-5 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded-md" />
-        <div className="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />
+    <div className="w-full flex flex-col justify-between rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#12151c] shadow-xs overflow-hidden animate-pulse">
+      {/* Top Accent Gradient Line */}
+      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800" />
+
+      <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
+        {/* Header Badges */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="h-6 w-36 rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        {/* Content Section */}
+        <div className="space-y-2.5">
+          <div className="h-4 w-44 rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-4/5 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="space-y-1.5 pt-1">
+            <div className="h-3.5 w-full rounded bg-slate-200/80 dark:bg-slate-800/80" />
+            <div className="h-3.5 w-3/4 rounded bg-slate-200/80 dark:bg-slate-800/80" />
+          </div>
+        </div>
+
+        {/* Dual Button Chips Skeleton */}
+        <div className="flex items-center gap-2 pt-1">
+          <div className="h-7 w-32 rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-7 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        {/* Telemetry Chips Strip Skeleton */}
+        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <div className="h-3 w-36 rounded bg-slate-800" />
+          <div className="space-y-1.5">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-slate-700 shrink-0" />
+                <div className="h-3 w-40 rounded bg-slate-800" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Trust Badges Row Skeleton */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="h-3.5 w-28 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-3.5 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+        </div>
       </div>
-      <div className="space-y-2">
-        <div className="h-6 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+
+      {/* Footer Actions Strip Skeleton */}
+      <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3.5 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+        </div>
       </div>
-      <div className="h-16 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-      <div className="h-12 bg-slate-200 dark:bg-slate-800 rounded-xl" />
     </div>
   );
 };
@@ -89,7 +135,7 @@ export const CtaBannerCard: React.FC<CtaBannerCardProps> = ({
 
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-sm sm:text-base font-syne font-bold text-slate-900 dark:text-white truncate">
+              <h4 className="text-sm sm:text-base font-syne font-bold text-slate-900 dark:text-white break-words">
                 {item.heading}{' '}
                 {item.headingAccent && (
                   <span className="text-[#FF4F00]">{item.headingAccent}</span>
@@ -104,7 +150,7 @@ export const CtaBannerCard: React.FC<CtaBannerCardProps> = ({
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 break-words whitespace-normal leading-relaxed">
               CTA: {item.primaryCta?.label || 'Action'} • Subheading: {item.subheading || 'Run Every Location From One Platform'}
             </p>
           </div>
@@ -211,7 +257,7 @@ export const CtaBannerCard: React.FC<CtaBannerCardProps> = ({
           </h3>
 
           {item.subheading && (
-            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-400 break-words whitespace-normal leading-relaxed">
               {item.subheading}
             </p>
           )}
@@ -242,7 +288,7 @@ export const CtaBannerCard: React.FC<CtaBannerCardProps> = ({
               {item.telemetryChips.map((chip, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs">
                   <span className={cn('h-2 w-2 rounded-full shrink-0', chip.dotColor || 'bg-emerald-500')} />
-                  <span className="text-[11.5px] font-medium text-slate-200 truncate">{chip.label}</span>
+                  <span className="text-[11.5px] font-medium text-slate-200 break-words whitespace-normal">{chip.label}</span>
                 </div>
               ))}
             </div>

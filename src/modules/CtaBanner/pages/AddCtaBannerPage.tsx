@@ -87,7 +87,7 @@ export const AddCtaBannerPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
       <ATMPageHeader
         title="Create Final CTA Banner"
         subtitle="Configure high-converting storefront hero CTA banner with telemetry metrics, dual conversion routes, and trust guarantees."

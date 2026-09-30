@@ -44,6 +44,7 @@ export const AddFAQPage: React.FC = () => {
         answer: values.answer.trim(),
         category: values.category.trim(),
         merchantType,
+        siteVariant: values.siteVariant === 'All' ? 'Enterprise' : values.siteVariant,
         sortOrder: values.sortOrder,
         isActive: values.isActive,
       }).unwrap();

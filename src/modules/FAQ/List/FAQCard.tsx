@@ -58,6 +58,32 @@ export const FAQCard: React.FC<FAQCardProps> = ({
 
   // Platform discriminator & accent colors
   const getSiteVariantConfig = () => {
+    const sv = (item?.siteVariant || '').toLowerCase();
+    if (sv === 'enterprise') {
+      return {
+        label: 'Enterprise Platform',
+        icon: Building2,
+        accentColor: '#FF4F00',
+        badgeColor: 'bg-orange-500/10 text-[#FF4F00] border-orange-500/20',
+      };
+    }
+    if (sv === 'restaurant') {
+      return {
+        label: 'Restaurant & Dining',
+        icon: Utensils,
+        accentColor: '#f59e0b',
+        badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+      };
+    }
+    if (sv === 'retail') {
+      return {
+        label: 'Retail & Checkout',
+        icon: Store,
+        accentColor: '#10b981',
+        badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+      };
+    }
+
     const mt = (item?.merchantType || '').toLowerCase();
     const cat = (item?.category || '').toLowerCase();
     const qText = (item?.question || '').toLowerCase();
@@ -98,7 +124,7 @@ export const FAQCard: React.FC<FAQCardProps> = ({
     }
 
     return {
-      label: item?.merchantType || 'Global Platform',
+      label: item?.siteVariant || item?.merchantType || 'Global Platform',
       icon: HelpCircle,
       accentColor: '#FF4F00',
       badgeColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',

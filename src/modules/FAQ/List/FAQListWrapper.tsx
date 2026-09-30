@@ -49,7 +49,8 @@ export const FAQListWrapper: React.FC = () => {
 
   const handleToggleActive = async (item: FAQItem) => {
     try {
-      await toggleActive({ id: item.faqId, isActive: !item.isActive }).unwrap();
+      const id = item.faqId || (item as any).id;
+      await toggleActive({ id, isActive: !item.isActive }).unwrap();
       toast.success(
         item.isActive
           ? 'FAQ is now hidden from the website.'
@@ -73,7 +74,7 @@ export const FAQListWrapper: React.FC = () => {
     list[targetIndex] = moved;
 
     try {
-      await reorderFaqs(list.map((f) => f.faqId)).unwrap();
+      await reorderFaqs(list.map((f) => f.faqId || (f as any).id)).unwrap();
       toast.success('FAQ order updated.');
     } catch {
       toast.error('Failed to update FAQ order.');
@@ -92,7 +93,8 @@ export const FAQListWrapper: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!deletingItem) return;
     try {
-      await deleteFaq(deletingItem.faqId).unwrap();
+      const id = deletingItem.faqId || (deletingItem as any).id;
+      await deleteFaq(id).unwrap();
       toast.success('FAQ deleted successfully.');
       setDeletingItem(null);
     } catch (err: any) {

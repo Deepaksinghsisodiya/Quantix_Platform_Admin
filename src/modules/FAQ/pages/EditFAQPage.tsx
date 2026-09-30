@@ -30,17 +30,53 @@ export const EditFAQPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 max-w-[1200px] mx-auto px-1 sm:px-2 py-4 animate-fade-in">
-        <div className="space-y-2">
-          <ATMSkeleton variant="text" width="35%" height="2.2rem" />
-          <ATMSkeleton variant="text" width="55%" height="1.1rem" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-          <div className="lg:col-span-2 space-y-4">
-            <ATMSkeleton variant="card" height="26rem" />
+      <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
+          <div className="space-y-2">
+            <ATMSkeleton variant="text" width="280px" height="2rem" />
+            <ATMSkeleton variant="text" width="460px" height="1rem" />
           </div>
-          <div>
-            <ATMSkeleton variant="card" height="18rem" />
+          <div className="flex items-center gap-3">
+            <ATMSkeleton variant="rect" rounded width="90px" height="2.5rem" />
+            <ATMSkeleton variant="rect" rounded width="130px" height="2.5rem" />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-4">
+            <ATMSkeleton variant="text" width="220px" height="1.25rem" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {[1, 2, 3, 4].map((i) => (
+                <ATMSkeleton key={i} variant="rect" rounded height="96px" />
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-5">
+              <ATMSkeleton variant="text" width="200px" height="1.25rem" />
+              <div className="space-y-3">
+                <ATMSkeleton variant="text" width="120px" height="0.9rem" />
+                <ATMSkeleton variant="rect" rounded height="44px" />
+              </div>
+              <div className="space-y-3">
+                <ATMSkeleton variant="text" width="140px" height="0.9rem" />
+                <ATMSkeleton variant="rect" rounded height="130px" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-5">
+              <ATMSkeleton variant="text" width="180px" height="1.25rem" />
+              <div className="space-y-3">
+                <ATMSkeleton variant="text" width="100px" height="0.9rem" />
+                <ATMSkeleton variant="rect" rounded height="44px" />
+              </div>
+              <div className="space-y-3">
+                <ATMSkeleton variant="text" width="100px" height="0.9rem" />
+                <ATMSkeleton variant="rect" rounded height="44px" />
+              </div>
+              <ATMSkeleton variant="rect" rounded height="48px" />
+            </div>
           </div>
         </div>
       </div>
@@ -55,16 +91,17 @@ export const EditFAQPage: React.FC = () => {
     );
   }
 
-  const getSiteVariantFromMerchantType = (merchantType: string | null) => {
-    if (merchantType === 'Enterprise') return 'Enterprise';
-    if (merchantType === 'Standalone' || merchantType === 'Restaurant' || merchantType === 'Retail') {
-      return merchantType;
+  const getSiteVariant = (item: any) => {
+    if (item.siteVariant) return item.siteVariant;
+    if (item.merchantType === 'Enterprise') return 'Enterprise';
+    if (item.merchantType === 'Restaurant' || item.merchantType === 'Retail' || item.merchantType === 'Standalone') {
+      return item.merchantType;
     }
     return 'All';
   };
 
   const initialValues: FAQFormValues = {
-    siteVariant: getSiteVariantFromMerchantType(item.merchantType),
+    siteVariant: getSiteVariant(item),
     category: item.category || 'Platform',
     question: item.question || '',
     answer: item.answer || '',
@@ -82,11 +119,12 @@ export const EditFAQPage: React.FC = () => {
             : 'Standalone';
 
       await updateFaq({
-        id: item.faqId,
+        id: item.faqId || (item as any).id,
         question: values.question.trim(),
         answer: values.answer.trim(),
         category: values.category.trim(),
         merchantType,
+        siteVariant: values.siteVariant === 'All' ? 'Enterprise' : values.siteVariant,
         sortOrder: values.sortOrder,
         isActive: values.isActive,
       }).unwrap();

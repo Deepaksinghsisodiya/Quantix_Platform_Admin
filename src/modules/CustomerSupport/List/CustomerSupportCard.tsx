@@ -26,21 +26,70 @@ interface CustomerSupportCardProps {
 
 export const CustomerSupportCardSkeleton: React.FC = () => {
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 shadow-xs space-y-5 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-6 w-28 bg-slate-200 dark:bg-slate-800 rounded-full" />
-        <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
+    <div className="w-full flex flex-col justify-between rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#12151c] shadow-xs overflow-hidden animate-pulse">
+      {/* Top Accent Line */}
+      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800" />
+
+      <div className="p-5 sm:p-6 space-y-4 flex-1 flex flex-col">
+        {/* Header Badges */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="h-6 w-36 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        {/* Content Section */}
+        <div className="space-y-2.5">
+          <div className="h-5 w-44 rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-4/5 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="space-y-1.5 pt-1">
+            <div className="h-3.5 w-full rounded bg-slate-200/80 dark:bg-slate-800/80" />
+            <div className="h-3.5 w-3/4 rounded bg-slate-200/80 dark:bg-slate-800/80" />
+          </div>
+        </div>
+
+        {/* 3 Pillars Summary Cards */}
+        <div className="space-y-1.5 pt-1">
+          <div className="h-3 w-28 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="grid grid-cols-1 gap-1.5">
+            {[...Array(3)].map((_, idx) => (
+              <div
+                key={idx}
+                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 flex items-start gap-2.5"
+              >
+                <div className="h-6 w-6 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="h-3.5 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-2.5 w-48 rounded bg-slate-200/70 dark:bg-slate-800/60" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Representative & Direct Contact Strip */}
+        <div className="p-3 rounded-xl bg-orange-50/40 dark:bg-orange-950/20 border border-orange-200/40 dark:border-orange-900/30 flex items-center justify-between gap-2 mt-auto">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0" />
+            <div className="space-y-1 min-w-0">
+              <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-2.5 w-28 rounded bg-slate-200/70 dark:bg-slate-800/60" />
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="h-5 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </div>
       </div>
-      <div className="space-y-2">
-        <div className="h-6 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
-        <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+
+      {/* Footer Actions Strip */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="h-3 w-28 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="flex items-center gap-1.5">
+          <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+        </div>
       </div>
-      <div className="space-y-2">
-        <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
-        <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
-      </div>
-      <div className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl" />
-      <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl" />
     </div>
   );
 };
@@ -130,24 +179,24 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
             </div>
           )}
 
-          <div className="space-y-0.5 min-w-0 flex-1">
+          <div className="space-y-1 min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-sm sm:text-base font-syne font-bold text-slate-900 dark:text-white truncate">
+              <h4 className="text-sm sm:text-base font-syne font-bold text-slate-900 dark:text-white break-words">
                 {item.mainTitle}{' '}
                 {item.highlightWord && (
                   <span className="text-[#FF4F00]">{item.highlightWord}</span>
                 )}
               </h4>
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded shrink-0">
                 {variantInfo.label}
               </span>
               {item.responseTimeBadge && (
-                <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-full shrink-0">
                   <Clock size={9} /> {item.responseTimeBadge}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 break-words leading-relaxed">
               Rep: {item.repName || 'Support Specialist'} • Hotline: {item.directPhone || '24/7 Web Desk'}
             </p>
           </div>
@@ -244,7 +293,7 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
             </span>
           )}
 
-          <h3 className="text-lg sm:text-xl font-syne font-black text-slate-900 dark:text-white leading-tight">
+          <h3 className="text-lg sm:text-xl font-syne font-black text-slate-900 dark:text-white leading-tight break-words">
             {item.mainTitle}{' '}
             {item.highlightWord && (
               <span className="text-[#FF4F00]">{item.highlightWord}</span>
@@ -252,7 +301,7 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
           </h3>
 
           {item.description && (
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed break-words">
               {item.description}
             </p>
           )}
@@ -265,21 +314,21 @@ export const CustomerSupportCard: React.FC<CustomerSupportCardProps> = ({
               Support Pillars ({item.pillars.length})
             </span>
             <div className="grid grid-cols-1 gap-1.5">
-              {(item.pillars || []).slice(0, 3).map((pillar, pIdx) => {
+              {(item.pillars || []).slice(0, 4).map((pillar, pIdx) => {
                 const PillarIcon = renderPillarIcon(pillar?.iconKey);
                 return (
                   <div
                     key={pIdx}
-                    className="p-2 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 flex items-center gap-2"
+                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 flex items-start gap-2.5"
                   >
-                    <div className="h-5 w-5 rounded-lg bg-orange-500/10 text-[#FF4F00] flex items-center justify-center shrink-0">
-                      <PillarIcon size={11} strokeWidth={2.4} />
+                    <div className="h-6 w-6 rounded-lg bg-orange-500/10 text-[#FF4F00] flex items-center justify-center shrink-0 mt-0.5">
+                      <PillarIcon size={12} strokeWidth={2.4} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
+                      <div className="text-[11.5px] font-bold text-slate-900 dark:text-white break-words">
                         {pillar?.title || 'Support Feature'}
                       </div>
-                      <div className="text-[9.5px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 break-words leading-relaxed mt-0.5">
                         {pillar?.desc || ''}
                       </div>
                     </div>

@@ -12,7 +12,7 @@ import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMButton, ATMSkeleton } from '@/shared/ui';
 import { ATMStatsCard } from '@/shared/ui/ATMStatsCard';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
-import { CustomerSupportCard } from './CustomerSupportCard';
+import { CustomerSupportCard, CustomerSupportCardSkeleton } from './CustomerSupportCard';
 import type { SupportSectionItem, CustomerSupportFilter } from '../Model/CustomerSupportTypes';
 import { cn } from '@/lib/utils/cn';
 
@@ -89,7 +89,7 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12 max-w-[1600px] mx-auto px-1 sm:px-2">
+    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
       {/* Header */}
       <ATMPageHeader
         title="24/7 Dedicated Customer Support"
@@ -109,37 +109,37 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
       />
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <ATMStatsCard
           label="Total Support Desks"
-          value={stats.total}
+          value={isLoading ? '-' : stats.total}
           icon={Headphones}
           variant="accent"
-          description={`${stats.active} published live`}
+          description={isLoading ? 'Loading desks...' : `${stats.active} published live`}
           onClick={() => onFilterChange({ siteVariant: 'all' })}
         />
         <ATMStatsCard
           label="Enterprise Desk"
-          value={stats.enterprise}
+          value={isLoading ? '-' : stats.enterprise}
           icon={Building2}
           variant="indigo"
-          description="VIP Escalation Hotline"
+          description={isLoading ? 'Loading...' : 'VIP Escalation Hotline'}
           onClick={() => onFilterChange({ siteVariant: 'enterprise' })}
         />
         <ATMStatsCard
           label="Restaurant Desk"
-          value={stats.restaurant}
+          value={isLoading ? '-' : stats.restaurant}
           icon={Utensils}
           variant="amber"
-          description="Dining rush-hour standby"
+          description={isLoading ? 'Loading...' : 'Dining rush-hour standby'}
           onClick={() => onFilterChange({ siteVariant: 'restaurant' })}
         />
         <ATMStatsCard
           label="Retail Desk"
-          value={stats.retail}
+          value={isLoading ? '-' : stats.retail}
           icon={Store}
           variant="emerald"
-          description="Checkout & hardware desk"
+          description={isLoading ? 'Loading...' : 'Checkout & hardware desk'}
           onClick={() => onFilterChange({ siteVariant: 'retail' })}
         />
       </div>
@@ -227,14 +227,38 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
         </div>
       </div>
 
-      {/* Grid or List View with ATMSkeleton */}
+      {/* Content-Matching Skeleton Loader */}
       {isLoading ? (
-        <ATMSkeleton
-          variant={viewMode === 'grid' ? 'card' : 'table-row'}
-          count={viewMode === 'grid' ? 3 : 4}
-        />
+        viewMode === 'grid' ? (
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <CustomerSupportCardSkeleton />
+            <CustomerSupportCardSkeleton />
+            <CustomerSupportCardSkeleton />
+          </div>
+        ) : (
+          <div className="w-full flex flex-col gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 p-3.5 sm:p-4 bg-white dark:bg-[#12151c] animate-pulse"
+              >
+                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                  <div className="h-11 w-11 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="h-5 w-48 max-w-full bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3.5 w-64 max-w-full bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                  <div className="h-8 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : filteredItems.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-12 text-center space-y-4">
+        <div className="w-full rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-12 text-center space-y-4">
           <div className="mx-auto h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 text-[#FF4F00] flex items-center justify-center">
             <Headphones size={28} />
           </div>
@@ -255,6 +279,7 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
       ) : (
         <div
           className={cn(
+            'w-full',
             viewMode === 'grid'
               ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
               : 'flex flex-col gap-3'

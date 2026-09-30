@@ -4,11 +4,12 @@ import type { FAQItem, SaveFAQPayload } from '../Model/FAQTypes';
 
 export const faqApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAdminFaqs: builder.query<PagedResponse<FAQItem>, { category?: string; merchantType?: string } | void>({
+    getAdminFaqs: builder.query<PagedResponse<FAQItem>, { category?: string; merchantType?: string; siteVariant?: string } | void>({
       query: (arg) => {
         const params: Record<string, string> = {};
         if (arg?.category && arg.category !== '__all__') params.category = arg.category;
         if (arg?.merchantType && arg.merchantType !== '__all__') params.merchantType = arg.merchantType;
+        if (arg?.siteVariant && arg.siteVariant !== '__all__' && arg.siteVariant !== 'all') params.siteVariant = arg.siteVariant;
         return {
           url: '/api/v1/help-centre/faqs',
           method: 'GET',

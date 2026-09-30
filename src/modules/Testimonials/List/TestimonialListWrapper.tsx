@@ -13,10 +13,11 @@ import {
 import type { TestimonialItem, SiteVariantTab } from '../Model/TestimonialTypes';
 
 function matchesTab(item: TestimonialItem, tab: SiteVariantTab): boolean {
+  const sv = ((item as any).siteVariant || '').toLowerCase();
+  if (sv) return sv === tab.toLowerCase();
   const slug = (item.pageSlug || '').toLowerCase();
   if (tab === 'Restaurant') return slug === 'restaurant';
   if (tab === 'Retail') return slug === 'retail';
-  // Enterprise tab matches pageSlug === 'enterprise' or unset / merchantType === 'Enterprise'
   return slug === 'enterprise' || slug === '' || item.merchantType === 'Enterprise';
 }
 

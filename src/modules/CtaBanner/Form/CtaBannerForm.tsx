@@ -134,7 +134,7 @@ export const CtaBannerForm: React.FC<CtaBannerFormProps> = ({
   };
 
   return (
-    <Form id="cta-banner-form" className="space-y-6">
+    <Form id="cta-banner-form" className="w-full space-y-6">
       <ATMFormHeaderActions
         onCancel={onCancel}
         isSubmitting={isSubmitting}
@@ -616,7 +616,7 @@ export const CtaBannerForm: React.FC<CtaBannerFormProps> = ({
                 </h3>
 
                 {/* Subheading */}
-                <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto leading-relaxed line-clamp-3">
+                <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto leading-relaxed break-words whitespace-normal">
                   {values.subheading ||
                     'Join modern operators orchestrating seamless workflows with Quantix platform.'}
                 </p>

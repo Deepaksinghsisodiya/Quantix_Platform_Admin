@@ -13,10 +13,12 @@
 // =============================================================================
 
 window.__QUANTIX_CONFIG__ = {
-  // Base URL of the Quantix Platform API the SPA should call.
-  // Default matches the PlatformAPI local tester (http://localhost:5104).
-  // For staging / production set this to the publicly reachable API origin.
-  apiBaseUrl: "http://localhost:5104",
+  // Automatically points to local API on localhost, and live API on production.
+  apiBaseUrl:
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "192.168.31.91")
+      ? "http://localhost:5104"
+      : "https://quantixapi.foreteksolution.in",
 
   // When true the SPA wires MSW (Mock Service Worker) and serves canned
   // responses from src/lib/api/mock/mockHandlers.ts instead of hitting a real

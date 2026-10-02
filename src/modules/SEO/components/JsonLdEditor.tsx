@@ -58,8 +58,8 @@ export const JsonLdEditor: React.FC<JsonLdEditorProps> = ({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-          <Code2 className="w-3.5 h-3.5 text-orange-500" />
+        <label className="flex items-center gap-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+          <Code2 className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
           <span>Structured Data (JSON-LD / Schema.org)</span>
         </label>
 
@@ -77,7 +77,7 @@ export const JsonLdEditor: React.FC<JsonLdEditorProps> = ({
           <button
             type="button"
             onClick={loadSampleTemplate}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-mono font-bold bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-mono font-bold bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 hover:bg-primary-100 transition-colors cursor-pointer"
           >
             <FileCode className="w-3 h-3" />
             <span>Load {siteVariant} Schema</span>
@@ -90,9 +90,9 @@ export const JsonLdEditor: React.FC<JsonLdEditorProps> = ({
         onChange={(e) => handleTextChange(e.target.value)}
         rows={6}
         placeholder={`{\n  "@context": "https://schema.org",\n  "@type": "SoftwareApplication",\n  "name": "Quantix ${siteVariant} POS"\n}`}
-        className={`w-full font-mono text-xs p-3 rounded-xl border bg-slate-900 text-emerald-400 focus:outline-none focus:ring-2 transition-all ${
+        className={`w-full font-mono text-xs p-3 rounded-xl border bg-surface-950 text-emerald-400 focus:outline-none focus:ring-2 transition-all ${
           isValidJson
-            ? 'border-slate-800 focus:ring-orange-500/40 focus:border-orange-500'
+            ? 'border-surface-800 focus:ring-primary-500/40 focus:border-primary-500'
             : 'border-red-500 focus:ring-red-500/40'
         }`}
       />

@@ -225,6 +225,7 @@ const EditCustomerSupportPage = React.lazy(() => import('@/modules/CustomerSuppo
 const CtaBannerPage = React.lazy(() => import('@/modules/CtaBanner/List/CtaBannerListWrapper').then(m => ({ default: m.CtaBannerListWrapper })));
 const AddCtaBannerPage = React.lazy(() => import('@/modules/CtaBanner/pages/AddCtaBannerPage').then(m => ({ default: m.AddCtaBannerPage })));
 const EditCtaBannerPage = React.lazy(() => import('@/modules/CtaBanner/pages/EditCtaBannerPage').then(m => ({ default: m.EditCtaBannerPage })));
+const SeoManagementPage = React.lazy(() => import('@/modules/SEO/pages/SeoManagementPage').then(m => ({ default: m.SeoManagementPage })));
 const GalleriesPage = React.lazy(() => import('@/modules/content/pages/GalleriesPage'));
 
 // 2026-09-08 (content Phase 4): article templates.
@@ -425,6 +426,7 @@ export function AppRouter() {
             <Route path="content/cta-banner" element={<RoleGuard module="content"><CtaBannerPage /></RoleGuard>} />
             <Route path="content/cta-banner/new" element={<RoleGuard module="content"><AddCtaBannerPage /></RoleGuard>} />
             <Route path="content/cta-banner/edit/:id" element={<RoleGuard module="content"><EditCtaBannerPage /></RoleGuard>} />
+            <Route path="content/seo" element={<RoleGuard module="content"><SeoManagementPage /></RoleGuard>} />
             <Route path="content/galleries" element={<RoleGuard module="content"><GalleriesPage /></RoleGuard>} />
 
             <Route path="content/marketing" element={<RoleGuard module="content"><MarketingContentPage /></RoleGuard>} />

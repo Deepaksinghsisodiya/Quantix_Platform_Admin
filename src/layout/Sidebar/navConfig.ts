@@ -164,6 +164,7 @@ export const navItems: NavItem[] = [
       { label: 'Business Problems', icon: AlertTriangle, path: '/content/business-problems', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Customer Support', icon: Headphones, path: '/content/customer-support', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Final CTA Banner', icon: Sparkles, path: '/content/cta-banner', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'SEO & Google Ranking', icon: Globe, path: '/content/seo', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Galleries', icon: PenSquare, path: '/content/galleries', permission: 'content', codes: ['cms.view', 'cms.update'] },
       // 2026-09-05 (content Phase 1): Media Library, gated on the cms codes rather than the
       // coarse module flag alone.

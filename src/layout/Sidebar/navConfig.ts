@@ -23,6 +23,7 @@ import {
   Compass,
   Zap,
   AlertTriangle,
+  Globe,
   LucideIcon
 } from 'lucide-react';
 

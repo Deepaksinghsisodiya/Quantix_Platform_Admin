@@ -38,7 +38,7 @@ import {
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
-import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
 
 import { cn } from '@/lib/utils/cn';
 import { useLeads, useUpdateLead } from '@/lib/hooks/useHelpdesk';
@@ -316,19 +316,6 @@ function LeadsPage() {
     },
   ];
 
-  const rowActions: ((l: LeadVM) => RowAction<LeadVM>[]) = (l) => [
-    {
-      label: 'View Full CRM Record',
-      icon: Eye,
-      onClick: () => navigate(`/content/leads/${l.id}`),
-    },
-    {
-      label: 'Quick Side Preview',
-      icon: ExternalLink,
-      onClick: () => setSelectedId(l.id),
-    },
-  ];
-
   return (
     <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
       {/* Header */}
@@ -490,7 +477,6 @@ function LeadsPage() {
                 data={filteredLeads}
                 isLoading={isLoading}
                 onRowClick={(l) => navigate(`/content/leads/${l.id}`)}
-                rowActions={rowActions}
                 emptyMessage="No leads found."
                 density="comfortable"
               />

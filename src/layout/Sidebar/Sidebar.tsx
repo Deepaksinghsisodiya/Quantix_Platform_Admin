@@ -18,6 +18,16 @@ interface Props {
   badgeLabel?: string;
 }
 
+interface ActiveChild {
+  childPath: string;
+  parentPath: string;
+}
+
+interface ActiveMatch {
+  bestChild: ActiveChild | null;
+  bestTopLevel: string | null;
+}
+
 export const Sidebar: React.FC<Props> = ({
   items,
   mobileOpen,
@@ -35,34 +45,97 @@ export const Sidebar: React.FC<Props> = ({
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
 
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname === path;
-  };
+  // Determine matching child or top-level item based on current pathname (including /new, /:id, /edit)
+  const activeMatch = React.useMemo<ActiveMatch>(() => {
+    const pathname = location.pathname;
+    let bestChild: ActiveChild | null = null;
+    let bestTopLevel: string | null = null;
+    let maxChildLen = -1;
+    let maxTopLen = -1;
+
+    for (const item of items) {
+      if (item.children && item.children.length > 0) {
+        for (const c of item.children) {
+          const matches =
+            c.path === '/'
+              ? pathname === '/'
+              : pathname === c.path || pathname.startsWith(c.path + '/');
+          if (matches && c.path.length > maxChildLen) {
+            maxChildLen = c.path.length;
+            bestChild = { childPath: c.path, parentPath: item.path };
+          }
+        }
+      } else {
+        const matches =
+          item.path === '/'
+            ? pathname === '/'
+            : pathname === item.path || pathname.startsWith(item.path + '/');
+        if (matches && item.path.length > maxTopLen) {
+          maxTopLen = item.path.length;
+          bestTopLevel = item.path;
+        }
+      }
+    }
+
+    const result: ActiveMatch = { bestChild, bestTopLevel };
+    return result;
+  }, [location.pathname, items]);
 
   // ---- Nested item (sub-menu) expand state ----
   const [openItems, setOpenItems] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    items.forEach((item) => {
-      if (item.children?.length) {
-        initial[item.path] = item.children.some((c) => isActive(c.path));
+    const pathname = location.pathname;
+    let initialBestChild: ActiveChild | null = null;
+    let maxLen = -1;
+
+    for (const item of items) {
+      if (item.children && item.children.length > 0) {
+        for (const c of item.children) {
+          const matches =
+            c.path === '/'
+              ? pathname === '/'
+              : pathname === c.path || pathname.startsWith(c.path + '/');
+          if (matches && c.path.length > maxLen) {
+            maxLen = c.path.length;
+            initialBestChild = { childPath: c.path, parentPath: item.path };
+          }
+        }
       }
-    });
+    }
+
+    for (const item of items) {
+      if (item.children && item.children.length > 0) {
+        const shouldBeOpen =
+          Boolean(initialBestChild !== null && initialBestChild.parentPath === item.path) ||
+          (item.path !== '/' && (pathname === item.path || pathname.startsWith(item.path + '/')));
+        if (shouldBeOpen) {
+          initial[item.path] = true;
+        }
+      }
+    }
     return initial;
   });
 
   useEffect(() => {
-    // When navigation happens, open only the parent whose child is active.
+    // When navigation happens (e.g. entering /new or /:id/edit), maintain the active parent expanded
+    const bestChild = activeMatch.bestChild;
+    const pathname = location.pathname;
+
     setOpenItems(() => {
       const next: Record<string, boolean> = {};
-      items.forEach((item) => {
-        if (item.children?.some((c) => isActive(c.path))) {
-          next[item.path] = true;
+      for (const item of items) {
+        if (item.children && item.children.length > 0) {
+          const shouldBeOpen =
+            Boolean(bestChild !== null && bestChild.parentPath === item.path) ||
+            (item.path !== '/' && (pathname === item.path || pathname.startsWith(item.path + '/')));
+          if (shouldBeOpen) {
+            next[item.path] = true;
+          }
         }
-      });
+      }
       return next;
     });
-  }, [location.pathname, items]);
+  }, [location.pathname, items, activeMatch]);
 
   const toggleItem = useCallback((path: string) => {
     // Accordion behaviour: opening one parent closes all the others.
@@ -95,12 +168,33 @@ export const Sidebar: React.FC<Props> = ({
     opts: { nested?: boolean; hasChildren?: boolean; expanded?: boolean; onToggle?: () => void } = {}
   ) => {
     const { nested, hasChildren, expanded, onToggle } = opts;
-    const active = isActive(item.path);
-    const restricted = isRestrictedFor(item.path);
-    const hasActiveChild = hasChildren && item.children?.some((c) => isActive(c.path));
+    const bestChild = activeMatch.bestChild;
+    const bestTopLevel = activeMatch.bestTopLevel;
+    const pathname = location.pathname;
 
-    const isPillActive = active && !nested && !hasChildren;
-    const isChildActive = active && nested;
+    const isChildActive = Boolean(
+      nested &&
+        (bestChild !== null
+          ? bestChild.childPath === item.path
+          : item.path === '/'
+            ? pathname === '/'
+            : pathname === item.path || pathname.startsWith(item.path + '/'))
+    );
+    const isPillActive = Boolean(
+      !nested &&
+        !hasChildren &&
+        (bestTopLevel !== null
+          ? bestTopLevel === item.path
+          : item.path === '/'
+            ? pathname === '/'
+            : pathname === item.path || pathname.startsWith(item.path + '/'))
+    );
+    const hasActiveChild = Boolean(
+      hasChildren &&
+        ((bestChild !== null && bestChild.parentPath === item.path) ||
+          (item.path !== '/' && (pathname === item.path || pathname.startsWith(item.path + '/'))))
+    );
+    const restricted = isRestrictedFor(item.path);
 
     const content = (
       <>
@@ -214,7 +308,7 @@ const rowClasses = clsx(
         key={item.path}
         to={restricted ? '#' : item.path}
         onClick={(e) => handleNavClick(e, item.path)}
-        aria-current={active ? 'page' : undefined}
+        aria-current={isPillActive || isChildActive ? 'page' : undefined}
         aria-disabled={restricted || undefined}
         className={rowClasses}
       >

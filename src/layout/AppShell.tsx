@@ -55,7 +55,7 @@ const AppShell: React.FC = () => {
           {!user?.isPasswordChanged && <PasswordWarningBanner />}
 
           <div
-            className="flex-1 flex flex-col overflow-y-auto relative z-10 custom-scrollbar px-4 py-4 lg:px-6 lg:py-6"
+            className="flex-1 flex flex-col overflow-y-auto relative z-10 custom-scrollbar px-2.5 py-2 sm:px-3 sm:py-2.5 lg:px-3.5 lg:py-3"
           >
             <Suspense fallback={null}>
               <div key={location.pathname} className="animate-page-enter flex-1 flex flex-col min-h-full">

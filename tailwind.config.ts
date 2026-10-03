@@ -89,6 +89,7 @@ const config: Config = {
           '-apple-system',
           'sans-serif',
         ],
+        syne: ['Syne', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       fontSize: {

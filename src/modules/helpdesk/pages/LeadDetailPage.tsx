@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ATMBadge, ATMButton, ATMCard, ATMSkeleton, ATMSelectField, ATMTextArea } from '@/shared/ui';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, UserRound, Mail, Phone, Building2, Calendar, MessageSquare, Tag } from 'lucide-react';
+import { ArrowLeft, Save, UserRound, Mail, Phone, Building2, Calendar, MessageSquare, Tag, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateLead } from '@/lib/api/helpdesk';
 import { get } from '@/lib/api/client';
@@ -128,6 +128,7 @@ function LeadDetailPage() {
               <InfoRow icon={Mail} label="Email" value={lead.email} href={`mailto:${lead.email}`} />
               <InfoRow icon={Phone} label="Phone" value={lead.phone ?? '—'} href={lead.phone ? `tel:${lead.phone}` : undefined} />
               <InfoRow icon={Building2} label="Company" value={lead.companyName ?? '—'} />
+              <InfoRow icon={Store} label="Business Model" value={lead.merchantType ? lead.merchantType : '—'} />
               <InfoRow icon={Tag} label="Source" value={lead.source ?? lead.leadType ?? '—'} />
               <InfoRow icon={Calendar} label="Created" value={formatDateTime(lead.createdAt)} />
               <InfoRow icon={Calendar} label="Updated" value={formatDateTime(lead.updatedAt)} />

@@ -24,6 +24,7 @@ import {
   Zap,
   AlertTriangle,
   Globe,
+  Palette,
   LucideIcon
 } from 'lucide-react';
 
@@ -147,32 +148,24 @@ export const navItems: NavItem[] = [
     path: '/content',
     permission: null,
     children: [
-      { label: 'Blog Posts', icon: PenSquare, path: '/content/blog', permission: 'content', codes: ['blog.manage'] },
-      { label: 'Help Articles', icon: PenSquare, path: '/content/help', permission: 'content', codes: ['helpcentre.manage'] },
-      { label: 'FAQ', icon: PenSquare, path: '/content/faq', permission: 'content', codes: ['faq.manage'] },
-      // 2026-09-08 (content Phase 4): the skeletons blog posts and help articles start from.
-      { label: 'Article Templates', icon: PenSquare, path: '/content/templates', permission: 'content', codes: ['blog.manage', 'helpcentre.manage'] },
+      { label: 'Website Branding', icon: Palette, path: '/content/branding', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Hero Banners', icon: Sparkles, path: '/content/hero-banners', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Social Proof Metrics', icon: BarChart3, path: '/content/social-proof', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Marketing Content', icon: PenSquare, path: '/content/marketing', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Features (Bento & Vault)', icon: Zap, path: '/content/features', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Solutions (MegaMenu)', icon: Compass, path: '/content/solutions', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'How It Works', icon: ListOrdered, path: '/content/how-it-works', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Business Problems', icon: AlertTriangle, path: '/content/business-problems', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Testimonials', icon: Quote, path: '/content/testimonials', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Announcements', icon: Megaphone, path: '/content/announcements', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Clientele', icon: Handshake, path: '/content/clientele', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Integrations', icon: Layers, path: '/content/integrations', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'How It Works', icon: ListOrdered, path: '/content/how-it-works', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Solutions (MegaMenu)', icon: Compass, path: '/content/solutions', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Features (Bento & Vault)', icon: Zap, path: '/content/features', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Business Problems', icon: AlertTriangle, path: '/content/business-problems', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Customer Support', icon: Headphones, path: '/content/customer-support', permission: 'content', codes: ['cms.view', 'cms.update'] },
       { label: 'Final CTA Banner', icon: Sparkles, path: '/content/cta-banner', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Announcements', icon: Megaphone, path: '/content/announcements', permission: 'content', codes: ['cms.view', 'cms.update'] },
+      { label: 'Blog Posts', icon: PenSquare, path: '/content/blog', permission: 'content', codes: ['blog.manage'] },
+      { label: 'FAQ', icon: PenSquare, path: '/content/faq', permission: 'content', codes: ['faq.manage'] },
+      { label: 'Help Articles', icon: PenSquare, path: '/content/help', permission: 'content', codes: ['helpcentre.manage'] },
       { label: 'SEO & Google Ranking', icon: Globe, path: '/content/seo', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      { label: 'Galleries', icon: PenSquare, path: '/content/galleries', permission: 'content', codes: ['cms.view', 'cms.update'] },
-      // 2026-09-05 (content Phase 1): Media Library, gated on the cms codes rather than the
-      // coarse module flag alone.
       { label: 'Media Library', icon: PenSquare, path: '/content/media', permission: 'content', codes: ['cms.view', 'cms.create'] },
-      // 2026-09-08: leads moved here from Support. They come from the website's contact and
-      // demo forms and belong to the CRM half of the Content Manager's job; the Operator, who
-      // works tickets, never held crm.leads.view.
       { label: 'Leads', icon: PenSquare, path: '/content/leads', permission: 'content', codes: ['crm.leads.view'] },
     ]
   },

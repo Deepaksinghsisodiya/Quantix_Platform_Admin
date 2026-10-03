@@ -85,6 +85,7 @@ export const ROUTES = {
     CTA_BANNER_EDIT: (id: string) => `/content/cta-banner/${id}/edit`,
     GALLERIES: '/content/galleries',
     MEDIA: '/content/media',
+    BRANDING: '/content/branding',
     LEADS: '/content/leads',
     LEAD_DETAIL: (id: string) => `/content/leads/${id}`,
   },

@@ -89,7 +89,7 @@ export const CustomerSupportList: React.FC<CustomerSupportListProps> = ({
   ];
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="24/7 Dedicated Customer Support"

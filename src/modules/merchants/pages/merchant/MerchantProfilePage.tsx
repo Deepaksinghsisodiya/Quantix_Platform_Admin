@@ -133,7 +133,7 @@ export default function MerchantProfilePage() {
 
   if (profile.isLoading) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <ATMPageHeader icon={User} iconColor="theme" title="Profile" subtitle="Your account and contact details." />
         <div className="grid gap-5 lg:grid-cols-3">
           <aside className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#13151a]">
@@ -192,7 +192,7 @@ export default function MerchantProfilePage() {
   ];
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader icon={User} iconColor="theme" title="Profile" subtitle="Your account and contact details." />
       <div className="grid gap-5 lg:grid-cols-3">
         <aside className="relative self-start overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 p-5 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-[#13151a]/80">

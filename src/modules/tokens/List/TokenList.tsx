@@ -290,7 +290,7 @@ export const TokenList: React.FC<TokenListProps> = ({
   );
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Token History"
         subtitle="Every recharge token ever generated, across all Standalone merchants."

@@ -129,7 +129,7 @@ export const BrandingListWrapper: React.FC = () => {
   const activePort = activeVariant === 'Enterprise' ? 3003 : activeVariant === 'Restaurant' ? 3002 : 3001;
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* 1. ATMPageHeader with Breadcrumbs and Action */}
       <ATMPageHeader
         title="Website Branding & Header Logo"

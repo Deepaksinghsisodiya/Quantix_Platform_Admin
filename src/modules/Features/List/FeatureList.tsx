@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   Plus,
@@ -91,7 +91,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({
   const navbarCount = useMemo(() => safeItems.filter((s) => s.showInNavbar).length, [safeItems]);
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="Features CMS Manager"

@@ -125,7 +125,7 @@ function ArticleTemplatesPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Article Templates"
         subtitle="Starting points for blog posts and help articles: the headings and placeholder text a writer begins from."

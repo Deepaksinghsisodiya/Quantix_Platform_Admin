@@ -114,7 +114,7 @@ function TicketDetailPage() {
   /* ---- Loading / error / missing ---- */
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <ATMSkeleton variant="text" width="40%" height="32px" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
           <ATMSkeleton variant="card" height="600px" />
@@ -126,7 +126,7 @@ function TicketDetailPage() {
 
   if (ticketQuery.isError) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <ATMErrorState
           title="The ticket could not be loaded."
           message="Something went wrong while fetching this ticket."
@@ -141,7 +141,7 @@ function TicketDetailPage() {
 
   if (!ticket) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <ATMEmptyState
           icon={MessageSquare}
           title="Ticket not found"
@@ -262,7 +262,7 @@ function TicketDetailPage() {
   const comments = [...ticket.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         icon={MessageSquare}

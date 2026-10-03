@@ -373,7 +373,7 @@ function TicketQueuePage() {
 
   if (ticketsQuery.isError) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         {header}
         <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900/40 dark:bg-rose-950/40">
           <div className="flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
@@ -500,7 +500,7 @@ function TicketQueuePage() {
 
   /* ---- Render ---- */
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {header}
 
       {renderQuickStats()}

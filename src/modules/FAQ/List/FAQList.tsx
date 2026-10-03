@@ -139,7 +139,7 @@ export const FAQList: React.FC<FAQListProps> = ({
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="Frequently Asked Questions (FAQ)"

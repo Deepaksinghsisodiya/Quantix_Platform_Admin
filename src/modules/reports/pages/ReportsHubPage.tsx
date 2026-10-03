@@ -125,7 +125,7 @@ function ReportsHubPage() {
   const visibleCards = REPORT_CARDS.filter((c) => !c.module || hasPermission(c.module, 'view'));
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         icon={BarChart3}
         iconColor="theme"

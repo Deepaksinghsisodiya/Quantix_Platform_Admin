@@ -92,11 +92,13 @@ export const HowItWorksList: React.FC<HowItWorksListProps> = ({
   const hiddenCount = useMemo(() => steps.filter((s) => !(s.isActive ?? true)).length, [steps]);
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* 1. Header */}
       <ATMPageHeader
         title="How It Works (Workflow Engine)"
         subtitle="Manage the step-by-step interactive workflow sequences presented on Enterprise, Restaurant, and Retail landing pages."
+        icon={ListOrdered}
+        iconColor="theme"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Content Management' },

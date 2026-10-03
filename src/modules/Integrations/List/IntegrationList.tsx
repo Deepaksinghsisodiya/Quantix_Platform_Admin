@@ -118,7 +118,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({
   const hiddenCount = useMemo(() => safeIntegrations.filter((i) => !i.isActive).length, [safeIntegrations]);
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* 1. Header with Consistent Action & Icon */}
       <ATMPageHeader
         title="Integrations & Connectors CMS"

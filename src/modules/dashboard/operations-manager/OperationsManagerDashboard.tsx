@@ -44,7 +44,7 @@ export const OperationsManagerDashboard: React.FC<OperationsManagerDashboardProp
   const failed = safeQueue.filter((e) => e?.status === 'Failed').length;
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         icon={Briefcase}
         iconColor="theme"

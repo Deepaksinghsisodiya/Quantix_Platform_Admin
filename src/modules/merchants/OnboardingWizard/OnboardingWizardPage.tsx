@@ -720,7 +720,7 @@ const OnboardingWizardPage: React.FC = () => {
   if (isNew) return <Navigate to="/merchants/signups" replace />;
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="Merchant Onboarding"

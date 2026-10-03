@@ -88,7 +88,7 @@ export const CtaBannerList: React.FC<CtaBannerListProps> = ({
   ];
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8 animate-fadeIn pb-12">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <ATMPageHeader
         title="Final CTA Banner"

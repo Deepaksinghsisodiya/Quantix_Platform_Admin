@@ -88,7 +88,7 @@ function TicketMetricsPage() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         icon={MessageSquare}
         iconColor="theme"

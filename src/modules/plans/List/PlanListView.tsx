@@ -231,7 +231,7 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
   ];
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Toolbar: Reusable ATMSearch + Type & Status Filter Controls */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white dark:bg-[#13151a] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
         {/* Reusable ATMSearch Component */}

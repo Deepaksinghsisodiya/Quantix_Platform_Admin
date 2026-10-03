@@ -91,7 +91,7 @@ export const BusinessProblemList: React.FC<BusinessProblemListProps> = ({
   );
 
   return (
-    <div className="w-full space-y-6 animate-fade-in max-w-[1600px] mx-auto px-2">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Page Header */}
       <ATMPageHeader
         title="Business Problems CMS"

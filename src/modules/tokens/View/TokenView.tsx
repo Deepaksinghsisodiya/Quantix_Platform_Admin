@@ -167,7 +167,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <ATMPageHeader title="Token Detail" icon={Key} iconColor="indigo" onBack={onBack} />
         <div className="w-full max-w-[1600px] mx-auto space-y-6">
           <ATMSkeleton variant="card" className="h-40 w-full" />
@@ -188,7 +188,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
 
   if (isError || !token) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <ATMPageHeader title="Token Detail" icon={Key} iconColor="indigo" onBack={onBack} />
         <ATMCard padding="md" className="w-full max-w-[1600px] mx-auto">
           <div className="flex items-center justify-between gap-3">
@@ -213,7 +213,7 @@ export const TokenView: React.FC<TokenViewProps> = ({
   const gracePolicy = parseJsonRecord<Record<string, number>>(token.gracePolicyDays);
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Token Detail"
         icon={Key}

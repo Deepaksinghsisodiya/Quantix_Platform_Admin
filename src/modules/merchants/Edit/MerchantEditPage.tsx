@@ -33,7 +33,7 @@ export const MerchantEditPage: React.FC<MerchantEditPageProps> = ({
   const { errors, touched, isSubmitting } = formikProps;
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         title={title}
         subtitle="Merchant Profile Management"

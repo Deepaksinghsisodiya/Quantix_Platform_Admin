@@ -416,7 +416,7 @@ export const RateCardListPage: React.FC<RateCardListPageProps> = ({
   ];
 
 return (
-    <div className="w-full max-w-[1600px] mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header and Controls */}
       <ATMPageHeader
         title="Feature Rate Cards"

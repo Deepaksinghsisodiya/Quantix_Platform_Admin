@@ -93,7 +93,7 @@ export const HeroSectionList: React.FC<HeroSectionListProps> = ({
   const hiddenCount = useMemo(() => safeSlides.filter((s) => !s?.isActive).length, [safeSlides]);
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* 1. Header with Responsive Action */}
       <ATMPageHeader
         title="Hero Banners CMS"

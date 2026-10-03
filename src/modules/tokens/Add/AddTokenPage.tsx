@@ -97,7 +97,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
 
   if (!p.canGenerate) {
     return (
-      <div className="w-full space-y-6 animate-fade-in">
+      <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
         <div className="flex flex-col gap-3">
           <ATMBreadcrumbs />
           <ATMPageHeader title="Generate Tokens" subtitle="Issue a paid recharge token for a Standalone merchant." />
@@ -115,7 +115,7 @@ export const AddTokenPage: React.FC<AddTokenPageProps> = (p) => {
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3">
         <ATMBreadcrumbs />
         <ATMPageHeader

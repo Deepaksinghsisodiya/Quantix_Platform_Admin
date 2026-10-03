@@ -9,7 +9,7 @@ import { CreditCard } from 'lucide-react';
  * itself renders synchronously from the local rate-cards store.
  */
 export const RateCardListSkeleton: React.FC = () => (
-  <div className="w-full max-w-[1600px] mx-auto space-y-6 animate-fade-in">
+  <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-100 dark:bg-surface-850">

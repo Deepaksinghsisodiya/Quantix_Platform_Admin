@@ -223,7 +223,7 @@ export function GracePeriodConfigPage() {
   const policies = data?.data ?? [];
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         icon={Clock}
         iconColor="theme"

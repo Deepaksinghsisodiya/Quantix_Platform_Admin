@@ -41,7 +41,7 @@ export const FinanceManagerDashboard: React.FC<FinanceManagerDashboardProps> = (
     amount === undefined || !currency ? '—' : formatCurrency(amount, currency);
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         icon={DollarSign}
         iconColor="theme"

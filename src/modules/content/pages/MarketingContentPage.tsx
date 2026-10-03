@@ -151,7 +151,7 @@ function MarketingContentPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       <ATMPageHeader
         title="Marketing Content"
         subtitle="Blocks the public website renders: banners, feature highlights, case studies and more. Testimonials have their own page."

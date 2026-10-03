@@ -238,13 +238,14 @@ export const AllMerchantsWrapper: React.FC = () => {
   }, [params]);
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       {/* Page header and Stats Cards */}
       <div className="flex-shrink-0">
         <ATMPageHeader
           title="All Merchants"
           subtitle={`Manage all registered merchants on the ${brandName} platform.`}
           icon={Store}
+          iconColor="theme"
         />
 
         {/* Stats Grid */}

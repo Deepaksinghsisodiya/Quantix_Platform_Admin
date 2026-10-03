@@ -290,18 +290,42 @@ function LeadsPage() {
         </span>
       ),
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      renderCell: (_v, l) => (
+        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <ATMButton
+            variant="secondary"
+            size="sm"
+            leftIcon={<Eye className="h-3.5 w-3.5" />}
+            onClick={() => navigate(`/content/leads/${l.id}`)}
+          >
+            View
+          </ATMButton>
+          <ATMButton
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedId(l.id)}
+            title="Side Preview"
+          >
+            <ExternalLink className="h-3.5 w-3.5 text-slate-400 hover:text-primary-600" />
+          </ATMButton>
+        </div>
+      ),
+    },
   ];
 
   const rowActions: ((l: LeadVM) => RowAction<LeadVM>[]) = (l) => [
     {
-      label: 'Inspect Lead',
+      label: 'View Full CRM Record',
       icon: Eye,
-      onClick: () => setSelectedId(l.id),
+      onClick: () => navigate(`/content/leads/${l.id}`),
     },
     {
-      label: 'Open Full Profile',
+      label: 'Quick Side Preview',
       icon: ExternalLink,
-      onClick: () => navigate(`/content/leads/${l.id}`),
+      onClick: () => setSelectedId(l.id),
     },
   ];
 
@@ -465,7 +489,7 @@ function LeadsPage() {
                 columns={columns}
                 data={filteredLeads}
                 isLoading={isLoading}
-                onRowClick={(l) => setSelectedId(l.id)}
+                onRowClick={(l) => navigate(`/content/leads/${l.id}`)}
                 rowActions={rowActions}
                 emptyMessage="No leads found."
                 density="comfortable"
@@ -476,7 +500,7 @@ function LeadsPage() {
               {filteredLeads.map((lead) => (
                 <div
                   key={lead.id}
-                  onClick={() => setSelectedId(lead.id)}
+                  onClick={() => navigate(`/content/leads/${lead.id}`)}
                   className={cn(
                     'group cursor-pointer flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900/90',
                     selectedId === lead.id
@@ -526,19 +550,32 @@ function LeadsPage() {
                     )}
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between mt-3 text-xs">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-3 text-xs">
                     <span className="text-[11px] text-slate-400 font-mono">{lead.createdDate}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/content/leads/${lead.id}`);
-                      }}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                    >
-                      <span>Full Record</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <ATMButton
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Eye className="h-3.5 w-3.5" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/content/leads/${lead.id}`);
+                        }}
+                      >
+                        View Profile
+                      </ATMButton>
+                      <ATMButton
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedId(lead.id);
+                        }}
+                        title="Side Preview"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400 hover:text-primary-600" />
+                      </ATMButton>
+                    </div>
                   </div>
                 </div>
               ))}

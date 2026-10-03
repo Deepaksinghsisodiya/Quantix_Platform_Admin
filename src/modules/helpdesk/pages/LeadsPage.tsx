@@ -1,8 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ATMBadge, ATMButton, ATMCard, ATMStatsCard, ATMTextField, ATMSkeleton } from '@/shared/ui';
-import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
-import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
-import type { ATMTableColumn } from '@/shared/components/ATMTable/ATMTable';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   X,
@@ -18,9 +15,21 @@ import {
   Building2,
   Calendar,
   ExternalLink,
+  MessageSquare,
+  ArrowRight,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+
+import { ATMBadge, ATMButton, ATMCard, ATMStatsCard, ATMTextField, ATMSkeleton } from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
+import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
+import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
+import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATMTable';
+
 import { cn } from '@/lib/utils/cn';
 import { useLeads, useUpdateLead } from '@/lib/hooks/useHelpdesk';
 
@@ -29,7 +38,7 @@ import { useLeads, useUpdateLead } from '@/lib/hooks/useHelpdesk';
 /* -------------------------------------------------------------------------- */
 
 type LeadSource = 'Organic' | 'Paid' | 'Referral';
-type LeadInterest = 'Enterprise' | 'Standalone';
+type LeadInterest = 'Enterprise' | 'Standalone' | 'Restaurant' | 'Retail';
 type LeadStatus = 'New' | 'Contacted' | 'Qualified' | 'Lost';
 
 interface LeadVM {
@@ -58,9 +67,11 @@ const SOURCE_COLOR: Record<LeadSource, 'success' | 'primary' | 'warning'> = {
   Referral: 'warning',
 };
 
-const INTEREST_COLOR: Record<LeadInterest, 'purple' | 'primary'> = {
+const INTEREST_COLOR: Record<LeadInterest, 'purple' | 'primary' | 'warning' | 'emerald'> = {
   Enterprise: 'purple',
   Standalone: 'primary',
+  Restaurant: 'warning',
+  Retail: 'emerald',
 };
 
 const STATUS_FILTERS: Array<'All' | LeadStatus> = ['All', 'New', 'Contacted', 'Qualified', 'Lost'];
@@ -79,7 +90,11 @@ function mapStatus(status: string): LeadStatus {
 }
 
 function mapInterest(interest?: string | null): LeadInterest {
-  return interest === 'Standalone' ? 'Standalone' : 'Enterprise';
+  const i = (interest || '').toLowerCase();
+  if (i.includes('restaurant')) return 'Restaurant';
+  if (i.includes('retail')) return 'Retail';
+  if (i.includes('standalone')) return 'Standalone';
+  return 'Enterprise';
 }
 
 function formatDate(value?: string | null): string {
@@ -95,6 +110,7 @@ function formatDate(value?: string | null): string {
 
 function LeadsPage() {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | LeadStatus>('All');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -106,7 +122,7 @@ function LeadsPage() {
     const items = leadsQuery.data?.data ?? [];
     return items.map((l: any) => ({
       id: l.leadId ?? l.id,
-      name: l.name || l.contactPerson || '(no name)',
+      name: l.name || l.contactPerson || '(No name provided)',
       email: l.email ?? '—',
       phone: l.phone ?? '',
       company: l.companyName ?? '',
@@ -141,8 +157,8 @@ function LeadsPage() {
     updateMut.mutate(
       { leadId: id, data: { status } },
       {
-        onSuccess: () => toast.success(`Status updated to ${status}`),
-        onError: () => toast.error('Failed to update status'),
+        onSuccess: () => toast.success(`Lead moved to "${status}"`),
+        onError: () => toast.error('Failed to update lead status'),
       },
     );
   };
@@ -150,62 +166,109 @@ function LeadsPage() {
   const columns: ATMTableColumn<LeadVM>[] = [
     {
       key: 'name',
-      header: 'Lead',
+      header: 'Lead Name & Email',
       renderCell: (_v, l) => (
-        <div className="min-w-0">
-          <span className={cn('block truncate font-semibold text-slate-900 dark:text-slate-100', selectedId === l.id && 'text-primary-600 dark:text-primary-400')}>
-            {l.name}
-          </span>
-          <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">{l.email}</span>
+        <div className="flex items-center gap-3 min-w-0 max-w-xs">
+          <div className="h-9 w-9 shrink-0 rounded-full bg-primary-50 dark:bg-primary-950/60 border border-primary-200/60 dark:border-primary-800/60 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300">
+            {l.name ? l.name.charAt(0).toUpperCase() : 'L'}
+          </div>
+          <div className="min-w-0">
+            <span className={cn('block truncate font-semibold text-slate-900 dark:text-slate-100 text-sm', selectedId === l.id && 'text-primary-600 dark:text-primary-400')}>
+              {l.name}
+            </span>
+            <span className="block truncate text-xs text-slate-500 dark:text-slate-400 font-mono">{l.email}</span>
+          </div>
         </div>
       ),
     },
     {
       key: 'company',
-      header: 'Company',
-      renderCell: (_v, l) => <span className="text-slate-600 dark:text-slate-300">{l.company || '—'}</span>,
+      header: 'Company / Business',
+      renderCell: (_v, l) => (
+        <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+          <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="truncate">{l.company || '—'}</span>
+        </div>
+      ),
     },
     {
       key: 'phone',
-      header: 'Phone',
-      renderCell: (_v, l) => <span className="tabular-nums text-slate-600 dark:text-slate-300">{l.phone || '—'}</span>,
+      header: 'Phone Number',
+      renderCell: (_v, l) => (
+        l.phone ? (
+          <a
+            href={`tel:${l.phone}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline font-mono"
+          >
+            <Phone className="h-3 w-3" />
+            <span>{l.phone}</span>
+          </a>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        )
+      ),
     },
     {
       key: 'source',
-      header: 'Source',
+      header: 'Acquisition',
       renderCell: (_v, l) => <ATMBadge color={SOURCE_COLOR[l.source]} size="sm">{l.source}</ATMBadge>,
     },
     {
       key: 'interest',
-      header: 'Interest',
-      renderCell: (_v, l) => <ATMBadge color={INTEREST_COLOR[l.interest]} size="sm">{l.interest}</ATMBadge>,
+      header: 'Platform Tier',
+      renderCell: (_v, l) => <ATMBadge color={INTEREST_COLOR[l.interest] || 'primary'} size="sm">{l.interest}</ATMBadge>,
     },
     {
       key: 'status',
-      header: 'Status',
-      renderCell: (_v, l) => <ATMBadge color={STATUS_COLOR[l.status]} size="sm">{l.status}</ATMBadge>,
+      header: 'Pipeline Status',
+      renderCell: (_v, l) => <ATMBadge color={STATUS_COLOR[l.status]} size="sm" dot>{l.status}</ATMBadge>,
     },
     {
       key: 'createdDate',
-      header: 'Created',
-      renderCell: (_v, l) => <span className="whitespace-nowrap tabular-nums text-slate-500 dark:text-slate-400">{l.createdDate}</span>,
+      header: 'Received',
+      renderCell: (_v, l) => (
+        <span className="whitespace-nowrap tabular-nums text-xs text-slate-500 dark:text-slate-400 font-mono">
+          {l.createdDate}
+        </span>
+      ),
+    },
+  ];
+
+  const rowActions: ((l: LeadVM) => RowAction<LeadVM>[]) = (l) => [
+    {
+      label: 'Inspect Lead',
+      icon: Eye,
+      onClick: () => setSelectedId(l.id),
+    },
+    {
+      label: 'Open Full Profile',
+      icon: ExternalLink,
+      onClick: () => navigate(`/content/leads/${l.id}`),
     },
   ];
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
+      {/* Header */}
       <ATMPageHeader
         icon={Users}
         iconColor="theme"
-        title="Leads"
-        subtitle="Track and manage sales leads from every channel."
+        title="Sales Leads & Pipeline CRM"
+        subtitle="Manage customer enquiries, demo requests, and inbound sales leads across all platform websites."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Helpdesk & CRM', href: '/content/leads' },
+          { label: 'Sales Leads' },
+        ]}
       />
 
+      {/* Error state */}
       {isError && (
-        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900/40 dark:bg-rose-950/40">
-          <div className="flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Failed to load leads.</span>
+        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/40 dark:bg-rose-950/40">
+          <div className="flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300 font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>Failed to load sales leads. Check your backend API connection.</span>
           </div>
           <ATMButton variant="ghost" size="sm" onClick={() => { void leadsQuery.refetch(); }}>
             Retry
@@ -213,205 +276,335 @@ function LeadsPage() {
         </div>
       )}
 
-      {/* Pipeline summary */}
-      {leadsQuery.isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => <ATMSkeleton key={i} variant="card" height="118px" />)}
-        </div>
-      ) : (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <ATMStatsCard label="Total Leads" value={totalCount} icon={Users} variant="accent" description="All leads captured" />
-        <ATMStatsCard label="New" value={counts.New} icon={UserPlus} variant="indigo" description="Awaiting first contact" onClick={() => setStatusFilter('New')} />
-        <ATMStatsCard label="Contacted" value={counts.Contacted} icon={PhoneCall} variant="amber" description="In conversation" onClick={() => setStatusFilter('Contacted')} />
-        <ATMStatsCard label="Qualified" value={counts.Qualified} icon={BadgeCheck} variant="emerald" description="Ready to convert" onClick={() => setStatusFilter('Qualified')} />
+      {/* KPI Telemetry Pipeline Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <ATMStatsCard
+          label="Total Leads"
+          value={totalCount}
+          icon={Users}
+          variant="accent"
+          description="All captured prospects"
+          onClick={() => setStatusFilter('All')}
+        />
+        <ATMStatsCard
+          label="New Leads"
+          value={counts.New}
+          icon={UserPlus}
+          variant="indigo"
+          description="Awaiting initial contact"
+          onClick={() => setStatusFilter('New')}
+        />
+        <ATMStatsCard
+          label="In Contact"
+          value={counts.Contacted}
+          icon={PhoneCall}
+          variant="amber"
+          description="Active discussion"
+          onClick={() => setStatusFilter('Contacted')}
+        />
+        <ATMStatsCard
+          label="Qualified / Won"
+          value={counts.Qualified}
+          icon={BadgeCheck}
+          variant="emerald"
+          description="Ready for onboarding"
+          onClick={() => setStatusFilter('Qualified')}
+        />
       </div>
-      )}
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex flex-wrap items-center gap-1 rounded-xl bg-slate-100/80 p-1 dark:bg-slate-900/60">
+      {/* Filters & Search Toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900/60 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+        {/* Pipeline Status Filter Pills */}
+        <div className="inline-flex flex-wrap items-center gap-1 rounded-xl bg-slate-100/80 p-1 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-800/50">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setStatusFilter(s)}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
                 statusFilter === s
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white border border-slate-200/60 dark:border-slate-700/60'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               )}
             >
-              {s}
+              <span>{s}</span>
               {s !== 'All' && (
-                <span className="ml-1.5 tabular-nums text-slate-400 dark:text-slate-500">{counts[s]}</span>
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.2 text-[10px] tabular-nums font-bold',
+                    statusFilter === s
+                      ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                      : 'bg-slate-200/60 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+                  )}
+                >
+                  {counts[s]}
+                </span>
               )}
             </button>
           ))}
         </div>
 
-        <ATMTextField
-          className="w-full sm:w-72"
-          size="md"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or email..."
-          leftIcon={<Search className="h-4 w-4" />}
-          rightIcon={
-            search ? (
-              <button type="button" onClick={() => setSearch('')} className="cursor-pointer" aria-label="Clear search">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            ) : undefined
-          }
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Table */}
-        <div className="xl:col-span-2">
-          <ATMCard padding="none" className="overflow-hidden">
-            <ATMTable
-              columns={columns}
-              data={filteredLeads}
-              isLoading={isLoading}
-              onRowClick={(l) => setSelectedId(l.id)}
-              rowActions={(l) => [
-                { label: 'View', icon: Eye, onClick: () => setSelectedId(l.id) },
-                { label: 'Open', icon: Pencil, onClick: () => navigate(`/content/leads/${l.id}`) },
-              ]}
-              emptyMessage={
-                leads.length === 0
-                  ? 'No leads yet. New enquiries from the website will appear here.'
-                  : 'No leads match this filter.'
+        {/* Search & View Mode Controls */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-full sm:w-72">
+            <ATMTextField
+              placeholder="Search by name, email, company..."
+              size="sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+              rightIcon={
+                search ? (
+                  <button type="button" onClick={() => setSearch('')} className="cursor-pointer text-slate-400 hover:text-slate-600">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : undefined
               }
             />
-          </ATMCard>
+          </div>
+
+          <ATMViewModeToggle
+            value={viewMode === 'table' ? 'list' : 'grid'}
+            onChange={(m) => setViewMode(m === 'list' ? 'table' : 'cards')}
+            className="shrink-0"
+          />
+        </div>
+      </div>
+
+      {/* Main Grid: Data & Details Inspector */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* Table or Cards */}
+        <div className={cn('space-y-3', selected ? 'xl:col-span-2' : 'xl:col-span-3')}>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }, (_, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
+                  <ATMSkeleton variant="text" width="30%" />
+                  <ATMSkeleton variant="text" width="70%" />
+                </div>
+              ))}
+            </div>
+          ) : filteredLeads.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-12 text-center bg-white dark:bg-slate-900/40">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 mb-3 border border-primary-100 dark:border-primary-900/50">
+                <Users className="h-7 w-7" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">No leads match filter</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                {search || statusFilter !== 'All'
+                  ? 'Try clearing the search or status filter to see other prospect records.'
+                  : 'New lead inquiries from contact modals and website forms will appear here automatically.'}
+              </p>
+            </div>
+          ) : viewMode === 'table' ? (
+            <ATMCard padding="none" className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+              <ATMTable
+                columns={columns}
+                data={filteredLeads}
+                isLoading={isLoading}
+                onRowClick={(l) => setSelectedId(l.id)}
+                rowActions={rowActions}
+                emptyMessage="No leads found."
+                density="comfortable"
+              />
+            </ATMCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredLeads.map((lead) => (
+                <div
+                  key={lead.id}
+                  onClick={() => setSelectedId(lead.id)}
+                  className={cn(
+                    'group cursor-pointer flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900/90',
+                    selectedId === lead.id
+                      ? 'border-primary-500 ring-2 ring-primary-500/20'
+                      : 'border-slate-200/80 dark:border-slate-800/80 hover:border-primary-500/40'
+                  )}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <ATMBadge color={STATUS_COLOR[lead.status]} size="sm" dot>
+                        {lead.status}
+                      </ATMBadge>
+                      <ATMBadge color={INTEREST_COLOR[lead.interest] || 'primary'} size="sm">
+                        {lead.interest}
+                      </ATMBadge>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-base text-slate-900 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                        {lead.name}
+                      </h4>
+                      {lead.company && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          <Building2 className="h-3.5 w-3.5" />
+                          <span>{lead.company}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400 pt-1">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate font-mono">{lead.email}</span>
+                      </div>
+                      {lead.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span className="font-mono">{lead.phone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {lead.notes && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                        {lead.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between mt-3 text-xs">
+                    <span className="text-[11px] text-slate-400 font-mono">{lead.createdDate}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/content/leads/${lead.id}`);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                    >
+                      <span>Full Record</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {!isLoading && filteredLeads.length > 0 && (
-            <p className="mt-2 px-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
-              Showing {filteredLeads.length} of {totalCount} leads
+            <p className="px-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+              Showing {filteredLeads.length} of {totalCount} prospect records
             </p>
           )}
         </div>
 
-        {/* Detail panel */}
-        <div className="xl:col-span-1">
-          {selected ? (
-            <div className="sticky top-6">
-              <ATMCard
-                title={selected.name}
-                subtitle={selected.company || 'No company'}
-                action={
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(null)}
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                    aria-label="Close details"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                }
-              >
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <ATMBadge color={STATUS_COLOR[selected.status]}>{selected.status}</ATMBadge>
-                    <ATMBadge color={SOURCE_COLOR[selected.source]}>{selected.source}</ATMBadge>
-                    <ATMBadge color={INTEREST_COLOR[selected.interest]}>{selected.interest}</ATMBadge>
+        {/* Selected Lead Inspector Panel */}
+        {selected && (
+          <div className="xl:col-span-1">
+            <div className="sticky top-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-md dark:border-slate-800/80 dark:bg-slate-900/90 space-y-5">
+              {/* Lead Header */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <ATMBadge color={STATUS_COLOR[selected.status]} size="sm" dot>
+                      {selected.status}
+                    </ATMBadge>
+                    <ATMBadge color={SOURCE_COLOR[selected.source]} size="sm">
+                      {selected.source}
+                    </ATMBadge>
                   </div>
-
-                  <div className="space-y-3">
-                    <ContactRow icon={Mail} label="Email" value={selected.email} href={`mailto:${selected.email}`} />
-                    <ContactRow icon={Phone} label="Phone" value={selected.phone || '—'} href={selected.phone ? `tel:${selected.phone}` : undefined} />
-                    <ContactRow icon={Building2} label="Company" value={selected.company || '—'} />
-                    <ContactRow icon={Calendar} label="Captured" value={selected.createdDate} />
-                  </div>
-
-                  {selected.notes && (
-                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Notes</p>
-                      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">{selected.notes}</p>
-                    </div>
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">
+                    {selected.name}
+                  </h3>
+                  {selected.company && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                      <Building2 className="h-3.5 w-3.5" />
+                      <span>{selected.company}</span>
+                    </p>
                   )}
-
-                  <div className="border-t border-slate-200/80 pt-4 dark:border-slate-800">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Update status</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(['New', 'Contacted', 'Qualified', 'Lost'] as LeadStatus[]).map((status) => (
-                        <ATMButton
-                          key={status}
-                          variant={selected.status === status ? 'primary' : 'secondary'}
-                          size="sm"
-                          onClick={() => updateLeadStatus(selected.id, status)}
-                          disabled={updateMut.isPending}
-                        >
-                          {status}
-                        </ATMButton>
-                      ))}
-                    </div>
-                  </div>
-
-                  <ATMButton
-                    variant="outline"
-                    size="md"
-                    className="w-full"
-                    rightIcon={<ExternalLink className="h-4 w-4" />}
-                    onClick={() => navigate(`/content/leads/${selected.id}`)}
-                  >
-                    Open full record
-                  </ATMButton>
                 </div>
-              </ATMCard>
-            </div>
-          ) : (
-            <ATMCard>
-              <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
-                  <Users className="h-6 w-6 text-slate-400 dark:text-slate-500" />
-                </div>
-                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Select a lead</p>
-                <p className="max-w-[200px] text-xs text-slate-400 dark:text-slate-500">
-                  Choose a row to see contact details, notes and update the pipeline status.
-                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(null)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            </ATMCard>
-          )}
-        </div>
+
+              {/* Quick Communication Actions */}
+              <div className="grid grid-cols-2 gap-2">
+                {selected.email && selected.email !== '—' && (
+                  <a
+                    href={`mailto:${selected.email}`}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-100 dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/50 transition-colors"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    <span>Send Email</span>
+                  </a>
+                )}
+                {selected.phone ? (
+                  <a
+                    href={`tel:${selected.phone}`}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition-colors"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    <span>Call Phone</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-400 dark:bg-slate-800/40">
+                    <Phone className="h-3.5 w-3.5" />
+                    <span>No Phone</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Pipeline Advancement */}
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+                  Pipeline Stage
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(['New', 'Contacted', 'Qualified', 'Lost'] as LeadStatus[]).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => updateLeadStatus(selected.id, st)}
+                      disabled={updateMut.isPending}
+                      className={cn(
+                        'rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 border',
+                        selected.status === st
+                          ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300',
+                      )}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Enquiry Notes / Message */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+                  Enquiry Message
+                </span>
+                <div className="rounded-xl bg-slate-50 p-3.5 text-xs text-slate-700 dark:bg-slate-800/60 dark:text-slate-300 border border-slate-100 dark:border-slate-800 leading-relaxed max-h-40 overflow-y-auto">
+                  {selected.notes || 'No message attached to this enquiry.'}
+                </div>
+              </div>
+
+              {/* Full Details Navigation */}
+              <div className="pt-2">
+                <ATMButton
+                  variant="secondary"
+                  size="md"
+                  className="w-full justify-center"
+                  rightIcon={<ExternalLink className="h-4 w-4" />}
+                  onClick={() => navigate(`/content/leads/${selected.id}`)}
+                >
+                  Open Full Lead Profile
+                </ATMButton>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-}
-
-function ContactRow({
-  icon: Icon,
-  label,
-  value,
-  href,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  href?: string;
-}) {
-  const content = (
-    <div className="flex items-center gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</p>
-        <p className="truncate text-[13px] font-medium text-slate-800 dark:text-slate-200">{value}</p>
-      </div>
-    </div>
-  );
-
-  if (href) {
-    return (
-      <a href={href} className="block rounded-lg -mx-1 px-1 py-0.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60">
-        {content}
-      </a>
-    );
-  }
-  return content;
 }
 
 export default LeadsPage;

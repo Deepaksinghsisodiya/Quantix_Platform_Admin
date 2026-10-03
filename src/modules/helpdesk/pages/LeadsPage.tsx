@@ -20,11 +20,21 @@ import {
   Sparkles,
   CheckCircle2,
   Clock,
-  Send,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { ATMBadge, ATMButton, ATMCard, ATMStatsCard, ATMTextField, ATMSkeleton } from '@/shared/ui';
+import {
+  ATMBadge,
+  ATMButton,
+  ATMCard,
+  ATMStatsCard,
+  ATMTextField,
+  ATMSkeleton,
+  ATMModal,
+  ATMSelectField,
+  ATMTextArea,
+} from '@/shared/ui';
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { ATMViewModeToggle } from '@/shared/ui/ATMViewModeToggle';
 import { ATMTable } from '@/shared/components/ATMTable/ATMTable';
@@ -32,6 +42,7 @@ import type { ATMTableColumn, RowAction } from '@/shared/components/ATMTable/ATM
 
 import { cn } from '@/lib/utils/cn';
 import { useLeads, useUpdateLead } from '@/lib/hooks/useHelpdesk';
+import { post } from '@/lib/api/client';
 
 /* -------------------------------------------------------------------------- */
 /*  Local view-model types                                                     */
@@ -115,8 +126,54 @@ function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState<'All' | LeadStatus>('All');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Manual Lead Creation Modal State
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newLead, setNewLead] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    merchantType: 'Enterprise',
+    message: '',
+  });
+
   const leadsQuery = useLeads({ page: 1, pageSize: 100, search: search.trim() || undefined });
   const updateMut = useUpdateLead();
+
+  const handleCreateLead = async () => {
+    if (!newLead.name.trim() || !newLead.email.trim()) {
+      toast.error('Lead name and contact email are required.');
+      return;
+    }
+    setCreating(true);
+    try {
+      await post('/api/v1/contact/sales', {
+        name: newLead.name.trim(),
+        companyName: newLead.company.trim(),
+        email: newLead.email.trim(),
+        phone: newLead.phone.trim(),
+        merchantType: newLead.merchantType,
+        message: newLead.message.trim(),
+        source: 'Direct Admin CRM Entry',
+      });
+      toast.success(`New prospect "${newLead.name}" added to sales pipeline!`);
+      setCreateModalOpen(false);
+      setNewLead({
+        name: '',
+        company: '',
+        email: '',
+        phone: '',
+        merchantType: 'Enterprise',
+        message: '',
+      });
+      void leadsQuery.refetch();
+    } catch (err: any) {
+      toast.error(err?.data?.message || err?.message || 'Failed to capture lead.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const leads = useMemo<LeadVM[]>(() => {
     const items = leadsQuery.data?.data ?? [];
@@ -261,6 +318,11 @@ function LeadsPage() {
           { label: 'Helpdesk & CRM', href: '/content/leads' },
           { label: 'Sales Leads' },
         ]}
+        action={{
+          label: 'Add New Lead',
+          onClick: () => setCreateModalOpen(true),
+          icon: Plus,
+        }}
       />
 
       {/* Error state */}
@@ -603,6 +665,90 @@ function LeadsPage() {
           </div>
         )}
       </div>
+
+      {/* Manual Lead Capture Modal */}
+      <ATMModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        title="Capture New Sales Lead"
+        size="md"
+      >
+        <div className="space-y-4 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ATMTextField
+              name="name"
+              label="Contact / Person Name"
+              required
+              value={newLead.name}
+              onChange={(e) => setNewLead((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g. Rahul Sharma"
+            />
+            <ATMTextField
+              name="company"
+              label="Business / Company"
+              value={newLead.company}
+              onChange={(e) => setNewLead((prev) => ({ ...prev, company: e.target.value }))}
+              placeholder="e.g. Royal Spice Hospitality"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ATMTextField
+              name="email"
+              label="Email Address"
+              required
+              type="email"
+              value={newLead.email}
+              onChange={(e) => setNewLead((prev) => ({ ...prev, email: e.target.value }))}
+              placeholder="rahul@royalspice.com"
+            />
+            <ATMTextField
+              name="phone"
+              label="Phone Number"
+              type="tel"
+              value={newLead.phone}
+              onChange={(e) => setNewLead((prev) => ({ ...prev, phone: e.target.value }))}
+              placeholder="+91 98765 43210"
+            />
+          </div>
+
+          <ATMSelectField
+            name="merchantType"
+            label="Interested Platform Tier"
+            value={newLead.merchantType}
+            onChange={(v) => setNewLead((prev) => ({ ...prev, merchantType: String(v ?? 'Enterprise') }))}
+            options={[
+              { value: 'Enterprise', label: 'Quantix Enterprise Platform' },
+              { value: 'Restaurant', label: 'Quantix Restaurant & Dining POS' },
+              { value: 'Retail', label: 'Quantix Retail & Checkout POS' },
+              { value: 'Standalone', label: 'Quantix Standalone POS' },
+            ]}
+          />
+
+          <ATMTextArea
+            name="message"
+            label="Inquiry Message / Discussion Notes"
+            rows={3}
+            value={newLead.message}
+            onChange={(e) => setNewLead((prev) => ({ ...prev, message: e.target.value }))}
+            placeholder="Details about customer outlets, current software, demo requests, or requirements..."
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <ATMButton variant="ghost" onClick={() => setCreateModalOpen(false)}>
+              Cancel
+            </ATMButton>
+            <ATMButton
+              variant="primary"
+              onClick={() => { void handleCreateLead(); }}
+              loading={creating}
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              Add to Pipeline
+            </ATMButton>
+          </div>
+        </div>
+      </ATMModal>
     </div>
   );
 }

@@ -1,28 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { BookOpen, Save } from 'lucide-react';
+import {
+  BookOpen,
+  Save,
+  Type,
+  Layers,
+  Tag,
+  CheckCircle2,
+  FileQuestion,
+  FileText,
+  AlertTriangle,
+  ArrowLeft,
+  Sliders,
+} from 'lucide-react';
 
 import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { TemplatePicker } from '../components/TemplatePicker';
 import type { ArticleTemplate } from '../services/templatesApi';
-import { ATMButton, ATMCard, ATMTextField, ATMSkeleton, ATMTextArea, ATMSelectField, ATMCheckbox } from '@/shared/ui';
+import {
+  ATMButton,
+  ATMCard,
+  ATMTextField,
+  ATMSkeleton,
+  ATMTextArea,
+  ATMSelectField,
+  ATMCheckbox,
+  ATMBadge,
+} from '@/shared/ui';
 import {
   useGetHelpArticleQuery,
   useCreateHelpArticleMutation,
   useUpdateHelpArticleMutation,
   useGetHelpCategoriesQuery,
 } from '../services/contentApi';
-
-/**
- * Help Article editor — 2026-09-05 (content Phase 2).
- *
- * This page did not exist. The Help Articles list had a "New Article" button and a per-row edit
- * pencil, and both opened a toast reading "coming soon", so help articles were readable in the
- * portal and editable nowhere. The API has had create, update and delete the whole time.
- *
- * Reached by slug when editing, because that is what the API's single-article endpoint takes.
- */
 
 interface Draft {
   articleId: string;
@@ -92,8 +103,6 @@ function HelpArticleEditorPage() {
     setDraft((d) => ({ ...d, title: value, slug: slugTouched ? d.slug : slugify(value) }));
   };
 
-  // 2026-09-08 (content Phase 4): a template fills the body and, where still blank, the title
-  // and tags. Anything the writer has already typed is left alone.
   const applyTemplate = (t: ArticleTemplate) => {
     setDraft((d) => {
       const title = d.title.trim() ? d.title : (t.titlePattern ?? '');
@@ -110,7 +119,7 @@ function HelpArticleEditorPage() {
 
   const save = async () => {
     if (!draft.title.trim()) {
-      toast.error('A title is required.');
+      toast.error('Article title is required.');
       return;
     }
     if (!draft.slug.trim()) {
@@ -129,10 +138,10 @@ function HelpArticleEditorPage() {
     try {
       if (isEdit && draft.articleId) {
         await updateArticle({ articleId: draft.articleId, ...payload }).unwrap();
-        toast.success('Article saved.');
+        toast.success('Help article updated successfully.');
       } else {
         await createArticle(payload).unwrap();
-        toast.success('Article created.');
+        toast.success('New help article published.');
       }
       navigate('/content/help');
     } catch (err: any) {
@@ -140,117 +149,178 @@ function HelpArticleEditorPage() {
     }
   };
 
-  if (isEdit && articleQuery.isLoading) {
-    return (
-      <div className="w-full space-y-5">
-        <div className="space-y-2">
-          <ATMSkeleton width="30%" height="14px" className="rounded" />
-          <ATMSkeleton height="44px" className="rounded-lg" />
-        </div>
-        <div className="space-y-2">
-          <ATMSkeleton width="25%" height="14px" className="rounded" />
-          <ATMSkeleton height="360px" className="rounded-lg" />
-        </div>
-      </div>
-    );
-  }
+  const isSaving = createState.isLoading || updateState.isLoading;
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
+      {/* Header */}
       <ATMPageHeader
         icon={BookOpen}
         iconColor="theme"
-        title={isEdit ? 'Edit Help Article' : 'New Help Article'}
-        subtitle="Published on the website help centre."
+        title={isEdit ? `Edit Article: ${draft.title || 'Untitled'}` : 'New Knowledge Base Article'}
+        subtitle="Write troubleshooting guides, FAQs, and step-by-step documentation for customer support."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content', href: '/content/help' },
+          { label: isEdit ? 'Edit Guide' : 'New Guide' },
+        ]}
         onBack={() => navigate('/content/help')}
         extraActions={
-          <ATMButton
-            variant="primary"
-            size="md"
-            icon={Save}
-            loading={createState.isLoading || updateState.isLoading}
-            onClick={() => { void save(); }}
-          >
-            {isEdit ? 'Save changes' : 'Create article'}
-          </ATMButton>
+          <div className="flex items-center gap-2">
+            <ATMBadge variant={draft.isActive ? 'success' : 'default'} size="sm" dot>
+              {draft.isActive ? 'Live on Portal' : 'Hidden / Draft'}
+            </ATMBadge>
+            <ATMButton
+              variant="primary"
+              size="md"
+              leftIcon={<Save className="h-4 w-4" />}
+              loading={isSaving}
+              onClick={() => { void save(); }}
+            >
+              {isEdit ? 'Save Changes' : 'Publish Article'}
+            </ATMButton>
+          </div>
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <ATMCard padding="md">
-            <div className="space-y-4">
-              <ATMTextField
-                name="title"
-                label="Title"
-                value={draft.title}
-                onChange={(e) => onTitleChange(e.target.value)}
-              />
-              <ATMTextField
-                name="slug"
-                label="Slug"
-                value={draft.slug}
-                onChange={(e) => { setSlugTouched(true); update('slug', e.target.value); }}
-                helperText="The article's address on the help centre."
-              />
-              <div className="space-y-2">
-                <div className="flex items-center justify-end">
-                  <TemplatePicker kind="HelpArticle" hasContent={!!draft.body.trim()} onApply={applyTemplate} />
+      {isEdit && articleQuery.isLoading ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <ATMSkeleton height="120px" className="rounded-2xl" />
+            <ATMSkeleton height="320px" className="rounded-2xl" />
+          </div>
+          <div className="space-y-4">
+            <ATMSkeleton height="280px" className="rounded-2xl" />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Main Content Column (2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Identity Card */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Type className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Article Title & Help Route
+              </h4>
+
+              <div className="space-y-4">
+                <ATMTextField
+                  name="title"
+                  label="Article Title"
+                  required
+                  value={draft.title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  placeholder="e.g. How to pair Bluetooth Barcode Scanners with Quantix POS"
+                  className="[&_input]:text-base [&_input]:font-semibold"
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ATMTextField
+                    name="slug"
+                    label="URL Slug"
+                    required
+                    value={draft.slug}
+                    onChange={(e) => { setSlugTouched(true); update('slug', e.target.value); }}
+                    placeholder="bluetooth-scanner-pairing"
+                    className="[&_input]:font-mono text-xs"
+                    helperText="Unique URL address on the knowledge base."
+                  />
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Live URL Preview</label>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3 py-2 text-xs font-mono text-primary-600 dark:text-primary-400 truncate">
+                      https://quantix.io/help/{draft.slug || 'article-slug'}
+                    </div>
+                  </div>
                 </div>
-                <ATMTextArea
-                  name="body"
-                  label="Body (Markdown)"
-                  rows={18}
-                  value={draft.body}
-                  onChange={(e) => update('body', e.target.value)}
-                  placeholder="Write the article in Markdown..."
-                  className="[&_textarea]:font-mono"
+              </div>
+            </div>
+
+            {/* Content Body Editor */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  Documentation Body (Markdown)
+                </h4>
+                <TemplatePicker kind="HelpArticle" hasContent={!!draft.body.trim()} onApply={applyTemplate} />
+              </div>
+
+              <ATMTextArea
+                name="body"
+                rows={18}
+                value={draft.body}
+                onChange={(e) => update('body', e.target.value)}
+                placeholder="Write structured help documentation using Markdown (headings, lists, troubleshooting tips)..."
+                className="[&_textarea]:font-mono text-sm leading-relaxed"
+              />
+            </div>
+          </div>
+
+          {/* Sidebar Column (1/3) */}
+          <div className="space-y-6">
+            {/* Taxonomy & Hierarchy */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Layers className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Category & Order
+              </h4>
+
+              <div className="space-y-4">
+                <ATMSelectField
+                  name="categoryId"
+                  label="Documentation Category"
+                  value={draft.categoryId}
+                  onChange={(v) => update('categoryId', String(v ?? ''))}
+                  options={[
+                    { value: '', label: 'Uncategorized' },
+                    ...categories.map((c) => ({ value: c.contentId, label: c.title })),
+                  ]}
+                  helperText="Assign to help section (e.g. Hardware Setup, Billing, KDS)."
+                />
+
+                <ATMTextField
+                  name="sortOrder"
+                  label="Display Sort Priority"
+                  type="number"
+                  value={String(draft.sortOrder)}
+                  onChange={(e) => update('sortOrder', parseInt(e.target.value, 10) || 0)}
+                  helperText="Lower numbers appear first in the sidebar menu."
+                />
+
+                <ATMTextField
+                  name="tags"
+                  label="Search Keywords & Tags"
+                  value={draft.tags}
+                  onChange={(e) => update('tags', e.target.value)}
+                  placeholder="bluetooth, scanner, hardware, error"
+                  helperText="Comma-separated keywords for customer search bar."
                 />
               </div>
             </div>
-          </ATMCard>
-        </div>
 
-        <div className="space-y-4">
-          <ATMCard padding="md">
-            <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Placement</h3>
-            <div className="space-y-3">
-              {/* Categories come from the API. The list page hardcoded four, which made every
-                  article filed elsewhere invisible and unreachable. */}
-              <ATMSelectField
-                name="categoryId"
-                label="Category"
-                value={draft.categoryId}
-                onChange={(v) => update('categoryId', String(v ?? ''))}
-                options={[
-                  { value: '', label: 'No category' },
-                  ...categories.map((c) => ({ value: c.contentId, label: c.title })),
-                ]}
-              />
-              <ATMTextField
-                name="tags"
-                label="Tags"
-                value={draft.tags}
-                onChange={(e) => update('tags', e.target.value)}
-                helperText="Comma-separated. Used by help-centre search."
-              />
-              <ATMTextField
-                name="sortOrder"
-                label="Order"
-                type="number"
-                value={String(draft.sortOrder)}
-                onChange={(e) => update('sortOrder', parseInt(e.target.value, 10) || 0)}
-              />
-              <ATMCheckbox
-                name="isActive"
-                label="Published on the help centre"
-                checked={draft.isActive}
-                onChange={(checked) => update('isActive', checked)}
-              />
+            {/* Visibility & Portal Publishing */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Visibility Settings
+              </h4>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                <ATMCheckbox
+                  name="isActive"
+                  label="Publish live on Knowledge Base"
+                  checked={draft.isActive}
+                  onChange={(checked) => update('isActive', checked)}
+                />
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 pl-6">
+                  When enabled, this guide will be immediately indexable and visible to merchants.
+                </p>
+              </div>
             </div>
-          </ATMCard>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { ATMBadge, ATMButton, ATMCard, ATMTextField, ATMTextArea, ATMSelectField, ATMPageSkeleton } from '@/shared/ui';
-import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Globe, Calendar, AlertTriangle, FileEdit } from 'lucide-react';
+import {
+  Save,
+  Globe,
+  Calendar,
+  AlertTriangle,
+  FileEdit,
+  Type,
+  Image as ImageIcon,
+  Tag,
+  Share2,
+  Clock,
+  Layers,
+  ArrowLeft,
+  CheckCircle2,
+} from 'lucide-react';
 import { toast } from 'sonner';
+
+import {
+  ATMBadge,
+  ATMButton,
+  ATMCard,
+  ATMTextField,
+  ATMTextArea,
+  ATMSelectField,
+  ATMPageSkeleton,
+} from '@/shared/ui';
+import { ATMPageHeader } from '@/shared/components/ATMPageHeader';
 import { MediaPicker } from '../components/MediaPicker';
 import { TemplatePicker } from '../components/TemplatePicker';
 import type { ArticleTemplate } from '../services/templatesApi';
@@ -15,7 +38,6 @@ import {
   useUpdateBlogPost,
   useApproveReview,
 } from '@/lib/hooks/useContent';
-import type { BlogPost } from '@/lib/types/content';
 
 /* -------------------------------------------------------------------------- */
 /*  Local form draft type                                                      */
@@ -25,14 +47,11 @@ interface BlogPostDraft {
   title: string;
   slug: string;
   content: string;
-  /** 2026-09-05: the real category id. Was a free string picked from a hardcoded list and
-   *  never submitted. */
   categoryId: string;
   authorId: string;
   excerpt: string;
   tags: string;
   featuredImage: string;
-  /** 2026-09-05 (Phase 1): id of a media-library asset, when the image is hosted here. */
   featuredImageAssetId: string;
   status: 'Draft' | 'Review' | 'Published';
   scheduleDate: string;
@@ -60,20 +79,6 @@ const EMPTY_POST: BlogPostDraft = {
   canonicalUrl: '',
 };
 
-// 2026-09-05: the hardcoded CATEGORIES array is gone; categories come from GET /blog/categories.
-
-/**
- * 2026-09-05 (content Phase 2): reads the API's OWN field names.
- *
- * The editor and the API had never agreed on a shape. This mapper read `post.content`,
- * `post.seoMetadata.*` and `post.publishDate`, and the save built a matching payload — but the
- * API's BlogPostDto has `body`, flat `seoTitle` / `seoDescription`, and `publishedAt`. JSON
- * binding is case-insensitive, not name-inventing, so every one of those fields was dropped in
- * both directions. Only title, slug and status ever survived a save.
- *
- * The category was read from `tags[0]`, which is not a category at all, and the tag list was
- * treated as an array where the API stores a comma-separated string.
- */
 function postToDraft(post: any): BlogPostDraft {
   const tags: string = typeof post.tags === 'string' ? post.tags : (post.tags ?? []).join(', ');
   return {
@@ -106,7 +111,7 @@ function BlogEditorPage() {
 
   const [post, setPost] = useState<BlogPostDraft>(EMPTY_POST);
   const [pickerOpen, setPickerOpen] = useState(false);
-  // 2026-09-05: categories and authors come from the API, not a literal in this file.
+
   const blogCategories = useGetBlogCategoriesQuery().data?.data ?? [];
   const blogAuthors = useGetBlogAuthorsQuery().data?.data ?? [];
 
@@ -127,8 +132,6 @@ function BlogEditorPage() {
     setPost((prev) => ({ ...prev, [key]: value }));
   };
 
-  // 2026-09-08 (content Phase 4): a template fills the body and, where the draft is still blank,
-  // the title, excerpt and tags. Fields the writer has already typed are left alone.
   const applyTemplate = (t: ArticleTemplate) => {
     setPost((prev) => {
       const title = prev.title.trim() ? prev.title : (t.titlePattern ?? '');
@@ -142,7 +145,7 @@ function BlogEditorPage() {
         tags: prev.tags.trim() ? prev.tags : (t.tags ?? ''),
       };
     });
-    toast.success(`Started from "${t.name}".`);
+    toast.success(`Template "${t.name}" applied.`);
   };
 
   // Auto-generate slug from title
@@ -159,14 +162,10 @@ function BlogEditorPage() {
     }
   };
 
-  // 2026-09-05 (content Phase 2): mirrors BlogPostDto exactly. Category, schedule date, Open
-  // Graph image and canonical URL were all editable on this screen and none of them was sent.
   const buildPayload = (status: 'Draft' | 'Review' | 'Published') => ({
     title: post.title,
     slug: post.slug,
     body: post.content,
-    // Excerpt is its own field. It used to be silently aliased to the meta description, so the
-    // two could never differ.
     excerpt: post.excerpt || undefined,
     status: status === 'Review' ? 'Draft' : status,
     tags: post.tags || undefined,
@@ -178,8 +177,6 @@ function BlogEditorPage() {
     seoDescription: post.metaDescription || undefined,
     ogImageUrl: post.ogImage || undefined,
     canonicalUrl: post.canonicalUrl || undefined,
-    // A scheduled date only means anything on a Draft: ScheduledPublishJob promotes it when the
-    // time passes. Publishing now clears it, so the job cannot re-publish an edited post later.
     scheduledAt: status === 'Published' ? undefined : (post.scheduleDate || undefined),
   });
 
@@ -188,28 +185,40 @@ function BlogEditorPage() {
   const saving = createMut.isPending || updateMut.isPending || approveMut.isPending;
 
   const handleSaveDraft = () => {
+    if (!post.title.trim()) {
+      toast.error('Article title is required.');
+      return;
+    }
     if (isEditMode && id) {
       updateMut.mutate(
         { id, ...buildPayload('Draft') },
         {
-          onSuccess: () => toast.success('Draft saved'),
-          onError: () => toast.error('Failed to save draft'),
+          onSuccess: () => toast.success('Draft saved successfully.'),
+          onError: (err: any) => toast.error(err?.data?.message || 'Failed to save draft.'),
         },
       );
     } else {
       createMut.mutate(buildPayload('Draft'), {
         onSuccess: (resp) => {
-          toast.success('Draft saved');
+          toast.success('New article draft created.');
           if (resp?.data?.id) {
             navigate(`/content/blog/${resp.data.id}/edit`);
           }
         },
-        onError: () => toast.error('Failed to save draft'),
+        onError: (err: any) => toast.error(err?.data?.message || 'Failed to save draft.'),
       });
     }
   };
 
   const handlePublish = () => {
+    if (!post.title.trim()) {
+      toast.error('Article title is required.');
+      return;
+    }
+    if (!post.slug.trim()) {
+      toast.error('Article slug is required for publication.');
+      return;
+    }
     if (isEditMode && id) {
       updateMut.mutate(
         { id, ...buildPayload('Published') },
@@ -217,23 +226,23 @@ function BlogEditorPage() {
           onSuccess: () => {
             update('status', 'Published');
             approveMut.mutate(id, {
-              onSuccess: () => toast.success('Post published'),
-              onError: () => toast.error('Saved, but failed to publish'),
+              onSuccess: () => toast.success('Article published live to blog!'),
+              onError: () => toast.error('Saved, but failed to publish live.'),
             });
           },
-          onError: () => toast.error('Failed to publish post'),
+          onError: (err: any) => toast.error(err?.data?.message || 'Failed to publish post.'),
         },
       );
     } else {
       createMut.mutate(buildPayload('Published'), {
         onSuccess: (resp) => {
           update('status', 'Published');
-          toast.success('Post published');
+          toast.success('Article published live to blog!');
           if (resp?.data?.id) {
             navigate(`/content/blog/${resp.data.id}/edit`);
           }
         },
-        onError: () => toast.error('Failed to publish post'),
+        onError: (err: any) => toast.error(err?.data?.message || 'Failed to publish post.'),
       });
     }
   };
@@ -245,33 +254,52 @@ function BlogEditorPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-[1600px] mx-auto px-1 sm:px-2">
       {/* Header */}
       <ATMPageHeader
         icon={FileEdit}
         iconColor="theme"
-        title={isEditMode ? 'Edit Post' : 'New Post'}
-        subtitle="Draft, review and publish blog posts for the Quantix knowledge hub."
+        title={isEditMode ? `Edit: ${post.title || 'Untitled Article'}` : 'New Blog Article'}
+        subtitle="Author, configure SEO, attach media, and publish live content to the Quantix marketing portal."
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Content', href: '/content/blog' },
+          { label: isEditMode ? 'Edit Article' : 'New Article' },
+        ]}
         onBack={() => navigate('/content/blog')}
         extraActions={
           <div className="flex flex-wrap items-center gap-2">
-            <ATMBadge variant={STATUS_VARIANT[post.status]} size="sm">{post.status}</ATMBadge>
+            <ATMBadge variant={STATUS_VARIANT[post.status] || 'default'} size="sm" dot>
+              {post.status}
+            </ATMBadge>
             <TemplatePicker kind="Blog" hasContent={!!post.content.trim()} onApply={applyTemplate} />
-            <ATMButton variant="secondary" size="md" leftIcon={<Save className="h-4 w-4" />} loading={saving} onClick={handleSaveDraft}>
+            <ATMButton
+              variant="secondary"
+              size="md"
+              leftIcon={<Save className="h-4 w-4" />}
+              loading={saving}
+              onClick={handleSaveDraft}
+            >
               Save Draft
             </ATMButton>
-            <ATMButton variant="primary" size="md" leftIcon={<Globe className="h-4 w-4" />} onClick={handlePublish} loading={saving}>
-              Publish
+            <ATMButton
+              variant="primary"
+              size="md"
+              leftIcon={<Globe className="h-4 w-4" />}
+              onClick={handlePublish}
+              loading={saving}
+            >
+              Publish Live
             </ATMButton>
           </div>
         }
       />
 
       {isError && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
-          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Failed to load post.</span>
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/40 dark:bg-red-950/40">
+          <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300 font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>Failed to load post data from API.</span>
           </div>
           <ATMButton variant="ghost" size="sm" onClick={() => { void postQuery.refetch(); }}>
             Retry
@@ -282,138 +310,185 @@ function BlogEditorPage() {
       {isLoading ? (
         <ATMPageSkeleton variant="detail" />
       ) : (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Main editor */}
-        <div className="lg:col-span-2 space-y-4">
-          <ATMTextField
-            name="title"
-            label="Title"
-            value={post.title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="Post title..."
-            className="[&_input]:text-lg [&_input]:font-bold"
-          />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Main Content Column (2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Section 1: Article Identity */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Type className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Article Identity & Slug
+              </h4>
 
-          <ATMTextField
-            name="slug"
-            label="Slug"
-            value={post.slug}
-            onChange={(e) => update('slug', e.target.value)}
-            placeholder="post-slug"
-            className="[&_input]:font-mono"
-          />
+              <div className="space-y-4">
+                <ATMTextField
+                  name="title"
+                  label="Article Title"
+                  required
+                  value={post.title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  placeholder="e.g. Next-Generation Cloud POS Architecture for Retail Chains"
+                  className="[&_input]:text-base [&_input]:font-semibold"
+                />
 
-          <ATMTextArea
-            name="content"
-            label="Body (Markdown)"
-            rows={18}
-            value={post.content}
-            onChange={(e) => update('content', e.target.value)}
-            placeholder="Write your post content in Markdown..."
-            className="[&_textarea]:font-mono"
-          />
-        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ATMTextField
+                    name="slug"
+                    label="URL Slug"
+                    required
+                    value={post.slug}
+                    onChange={(e) => update('slug', e.target.value)}
+                    placeholder="cloud-pos-architecture"
+                    helperText="Unique path appended to /blog/ on public website."
+                    className="[&_input]:font-mono text-xs"
+                  />
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Live URL Preview</label>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3 py-2 text-xs font-mono text-primary-600 dark:text-primary-400 truncate">
+                      https://quantix.io/blog/{post.slug || 'untitled-post'}
+                    </div>
+                  </div>
+                </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Category & Tags */}
-          <ATMCard title="Category & Tags">
-            <div className="space-y-3">
-              {/* 2026-09-05: real categories, and the choice is now actually saved. */}
-              <ATMSelectField
-                name="categoryId"
-                label="Category"
-                value={post.categoryId}
-                onChange={(v) => update('categoryId', String(v ?? ''))}
-                options={[
-                  { value: '', label: 'No category' },
-                  ...blogCategories.map((c) => ({ value: c.categoryId, label: c.name })),
-                ]}
-                helperText={blogCategories.length === 0 ? 'No categories exist yet. Posts can still be saved without one.' : undefined}
-              />
-              <ATMSelectField
-                name="authorId"
-                label="Author"
-                value={post.authorId}
-                onChange={(v) => update('authorId', String(v ?? ''))}
-                options={[
-                  { value: '', label: 'No author' },
-                  ...blogAuthors.map((a) => ({ value: a.authorId, label: a.name })),
-                ]}
-              />
-              <ATMTextField
-                name="tags"
-                label="Tags (comma-separated)"
-                value={post.tags}
-                onChange={(e) => update('tags', e.target.value)}
-                placeholder="tag1, tag2, tag3"
-              />
+                <ATMTextArea
+                  name="excerpt"
+                  label="Excerpt / Quick Abstract"
+                  rows={2}
+                  value={post.excerpt}
+                  onChange={(e) => update('excerpt', e.target.value)}
+                  placeholder="Short introductory summary displayed on homepage cards and search results..."
+                  helperText="Recommended 1-2 sentences (approx 140-180 characters)."
+                />
+              </div>
             </div>
-          </ATMCard>
 
-          {/* Status & Schedule */}
-          <ATMCard title="Status & Schedule">
-            <div className="space-y-3">
-              <ATMSelectField
-                name="status"
-                label="Status"
-                value={post.status}
-                onChange={(v) => update('status', v as BlogPostDraft['status'])}
-                options={[
-                  { value: 'Draft', label: 'Draft' },
-                  { value: 'Review', label: 'Review' },
-                  { value: 'Published', label: 'Published' },
-                ]}
-              />
-              <ATMTextField
-                name="scheduleDate"
-                label="Schedule Date"
-                type="datetime-local"
-                value={post.scheduleDate}
-                onChange={(e) => update('scheduleDate', e.target.value)}
-                leftIcon={<Calendar className="h-4 w-4" />}
-              />
-            </div>
-          </ATMCard>
+            {/* Section 2: Article Body Editor */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <span className="flex items-center gap-2">
+                  <FileEdit className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  Article Content (Markdown)
+                </span>
+                <span className="text-[11px] font-mono text-slate-400">
+                  {post.content ? `${post.content.split(/\s+/).filter(Boolean).length} words` : '0 words'}
+                </span>
+              </h4>
 
-          {/* SEO */}
-          <ATMCard title="SEO">
-            <div className="space-y-3">
-              <ATMTextField
-                name="metaTitle"
-                label="Meta Title"
-                value={post.metaTitle}
-                onChange={(e) => update('metaTitle', e.target.value)}
-                placeholder="SEO title (max 60 chars)"
-                maxLength={60}
-                helperText={`${post.metaTitle.length}/60`}
-              />
               <ATMTextArea
-                name="metaDescription"
-                label="Meta Description"
-                rows={3}
-                value={post.metaDescription}
-                onChange={(e) => update('metaDescription', e.target.value)}
-                placeholder="SEO description (max 160 chars)"
-                maxLength={160}
-                helperText={`${post.metaDescription.length}/160`}
+                name="content"
+                rows={18}
+                value={post.content}
+                onChange={(e) => update('content', e.target.value)}
+                placeholder="Write full article in Markdown format (supports headings, code blocks, lists, quotes)..."
+                className="[&_textarea]:font-mono text-sm leading-relaxed"
               />
-              {/* 2026-09-05 (Phase 1): was a bare text box for a URL the operator had to host
-                  somewhere else. Now it picks from the platform's own media library. */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Featured Image</label>
+            </div>
+
+            {/* Section 3: Search Engine Optimization */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Globe className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Search Engine Optimization (SEO) & Social Meta
+              </h4>
+
+              <div className="space-y-4">
+                <ATMTextField
+                  name="metaTitle"
+                  label="Meta Title"
+                  value={post.metaTitle}
+                  onChange={(e) => update('metaTitle', e.target.value)}
+                  placeholder="Optimized page title for Google search results (max 60 chars)"
+                  maxLength={60}
+                  helperText={`${post.metaTitle.length}/60 characters`}
+                />
+
+                <ATMTextArea
+                  name="metaDescription"
+                  label="Meta Description"
+                  rows={3}
+                  value={post.metaDescription}
+                  onChange={(e) => update('metaDescription', e.target.value)}
+                  placeholder="Concise summary for search engine snippet display (max 160 chars)"
+                  maxLength={160}
+                  helperText={`${post.metaDescription.length}/160 characters`}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ATMTextField
+                    name="canonicalUrl"
+                    label="Canonical URL (Optional)"
+                    value={post.canonicalUrl}
+                    onChange={(e) => update('canonicalUrl', e.target.value)}
+                    placeholder="https://quantix.io/blog/my-post"
+                    helperText="Leave empty to use the default post URL."
+                  />
+                  <ATMTextField
+                    name="ogImage"
+                    label="Open Graph Social Image URL"
+                    value={post.ogImage}
+                    onChange={(e) => update('ogImage', e.target.value)}
+                    placeholder="1200×630px social banner"
+                    helperText="Image displayed when article is shared on Twitter/LinkedIn."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Column (1/3) */}
+          <div className="space-y-6">
+            {/* Featured Image */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <ImageIcon className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Featured Cover Image
+              </h4>
+
+              <div className="space-y-3">
                 {post.featuredImageAssetId ? (
-                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+                  <div className="relative rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-950/10">
                     <img
                       src={absoluteMediaUrl(`/api/v1/media/${post.featuredImageAssetId}/file`)}
-                      alt=""
-                      className="h-14 w-20 rounded object-cover"
+                      alt="Featured cover"
+                      className="h-40 w-full object-cover"
                     />
-                    <div className="flex flex-1 flex-col gap-1">
-                      <button type="button" onClick={() => setPickerOpen(true)} className="text-left text-xs font-semibold text-accent-600 hover:underline">
-                        Change image
+                    <div className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setPickerOpen(true)}
+                        className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+                      >
+                        Change Image
                       </button>
-                      <button type="button" onClick={() => update('featuredImageAssetId', '')} className="text-left text-xs text-slate-500 hover:underline">
+                      <button
+                        type="button"
+                        onClick={() => update('featuredImageAssetId', '')}
+                        className="text-xs font-semibold text-rose-500 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : post.featuredImage ? (
+                  <div className="relative rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-950/10">
+                    <img
+                      src={post.featuredImage}
+                      alt="Featured cover"
+                      className="h-40 w-full object-cover"
+                    />
+                    <div className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setPickerOpen(true)}
+                        className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+                      >
+                        Pick from Library
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => update('featuredImage', '')}
+                        className="text-xs font-semibold text-rose-500 hover:underline"
+                      >
                         Remove
                       </button>
                     </div>
@@ -422,45 +497,113 @@ function BlogEditorPage() {
                   <button
                     type="button"
                     onClick={() => setPickerOpen(true)}
-                    className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 hover:border-accent-400 hover:text-accent-600 dark:border-slate-600"
+                    className="w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-8 text-center transition-colors hover:border-primary-500 hover:bg-primary-50/20"
                   >
-                    Choose from the media library
+                    <div className="h-10 w-10 rounded-full bg-primary-50 dark:bg-primary-950/50 flex items-center justify-center text-primary-600">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Select Media Asset</p>
+                      <p className="text-[11px] text-slate-400">Choose high-res banner from vault</p>
+                    </div>
                   </button>
                 )}
+
                 <ATMTextField
                   name="featuredImage"
+                  label="Or External Image URL"
                   value={post.featuredImage}
                   onChange={(e) => update('featuredImage', e.target.value)}
-                  placeholder="or paste an externally hosted URL"
+                  placeholder="https://images.unsplash.com/..."
+                  className="text-xs"
                 />
               </div>
-              <ATMTextField
-                name="ogImage"
-                label="OG Image URL"
-                value={post.ogImage}
-                onChange={(e) => update('ogImage', e.target.value)}
-                placeholder="Open Graph image (1200×630 recommended)"
-              />
-              <ATMTextField
-                name="canonicalUrl"
-                label="Canonical URL"
-                value={post.canonicalUrl}
-                onChange={(e) => update('canonicalUrl', e.target.value)}
-                placeholder="https://quantix.io/blog/my-post (leave empty for auto)"
-              />
             </div>
-          </ATMCard>
+
+            {/* Publishing & Schedule */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Publishing Workflow
+              </h4>
+
+              <div className="space-y-4">
+                <ATMSelectField
+                  name="status"
+                  label="Publication Stage"
+                  value={post.status}
+                  onChange={(v) => update('status', v as BlogPostDraft['status'])}
+                  options={[
+                    { value: 'Draft', label: 'Draft (Internal only)' },
+                    { value: 'Review', label: 'Under Editorial Review' },
+                    { value: 'Published', label: 'Published Live to Public' },
+                  ]}
+                />
+
+                <ATMTextField
+                  name="scheduleDate"
+                  label="Schedule Auto-Publish"
+                  type="datetime-local"
+                  value={post.scheduleDate}
+                  onChange={(e) => update('scheduleDate', e.target.value)}
+                  leftIcon={<Clock className="h-4 w-4 text-slate-400" />}
+                  helperText="Leave blank for immediate publication."
+                />
+              </div>
+            </div>
+
+            {/* Category, Author & Tags */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Tag className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                Taxonomy & Authorship
+              </h4>
+
+              <div className="space-y-4">
+                <ATMSelectField
+                  name="categoryId"
+                  label="Category Topic"
+                  value={post.categoryId}
+                  onChange={(v) => update('categoryId', String(v ?? ''))}
+                  options={[
+                    { value: '', label: 'Uncategorized / General' },
+                    ...blogCategories.map((c) => ({ value: c.categoryId, label: c.name })),
+                  ]}
+                />
+
+                <ATMSelectField
+                  name="authorId"
+                  label="Author Byline"
+                  value={post.authorId}
+                  onChange={(v) => update('authorId', String(v ?? ''))}
+                  options={[
+                    { value: '', label: 'Editorial Team' },
+                    ...blogAuthors.map((a) => ({ value: a.authorId, label: a.name })),
+                  ]}
+                />
+
+                <ATMTextField
+                  name="tags"
+                  label="Article Tags"
+                  value={post.tags}
+                  onChange={(e) => update('tags', e.target.value)}
+                  placeholder="pos, cloud, omnichannel, hospitality"
+                  helperText="Comma-separated keywords for filtering."
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
       )}
 
+      {/* Media Picker Modal */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onSelect={(asset) => update('featuredImageAssetId', asset.assetId)}
         defaultFolder="blog"
         imagesOnly
-        title="Choose a featured image"
+        title="Select Featured Article Banner"
       />
     </div>
   );
